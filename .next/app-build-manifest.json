@@ -1,0 +1,10 @@
+# **App Name**: CognitoLearn
+
+## Core Features:
+
+- Brain Map Dashboard: Interactive syllabus graph with progress nodes (red/yellow/green).
+- Smart Revision Planner: AI-powered daily list auto-generated via spaced repetition; suggests revisions.
+- Adaptive Quiz Engine: 2-5 min quizzes; results update Brain Map. Generative AI selects questions.
+- Multilingual Cognitive Chatbot: Anchored to Brain Map to explain concepts.
+- Offline-First Mode: Caches the next 3-5 days of revision content.
+- Teacher Risk0evision c
