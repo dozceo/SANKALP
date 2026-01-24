@@ -2,10 +2,13 @@
 
 ## Project Overview
 
-**Sankalp** (internally "CognitoLearn") is an AI-powered educational platform designed to personalize the learning experience for students. It leverages Generative AI to create dynamic study plans, interactive syllabi, and adaptive assessment tools. The goal is to move beyond static learning materials and provide a responsive, intelligent tutor that adapts to the student's exam schedule and learning pace.
+**Sankalp** (internally "CognitoLearn") is an **ML-driven** educational platform that combines machine learning predictions with generative AI to personalize the learning experience. Unlike traditional LLM-only approaches, Sankalp uses trained ML models to make data-driven decisions about what to teach, when to revise, and where students need help — then leverages LLMs to generate engaging explanations.
 
-> **Status:** Prototype / Hackathon Demo  
-> This project demonstrates core AI capabilities but requires further development for production deployment.
+**Key Architecture:**  
+`User → Quiz → Feature Extraction → ML Prediction → ADK Logic → LLM Content`
+
+> **Status:** Functional Prototype with ML System  
+> This project demonstrates a production-grade ML architecture with synthetic data. Real user data integration pending.
 
 ## Key Features 🚀
 
@@ -31,6 +34,12 @@
 -   **Model Integration**: Google Generative AI (Gemini)
 -   **Database/Auth**: [Firebase](https://firebase.google.com/) (configured dependencies)
 
+### ML System
+-   **Training**: Python 3.8+, scikit-learn (Logistic Regression for Topic Mastery)
+-   **Inference**: Python scripts executed via Node.js subprocess
+-   **Feature Engineering**: TypeScript (extracts quiz patterns into ML features)
+-   **Production Path**: FastAPI microservice (documented for future deployment)
+
 ## Project Structure 📂
 
 ```
@@ -40,6 +49,12 @@ SANKALP/
 │   │   ├── flows/          # Genkit flows (Syllabus, Quiz, Chatbot)
 │   │   ├── genkit.ts       # Genkit configuration
 │   │   └── dev.ts          # Genkit dev server entry
+│   ├── ml/                 # ML System (NEW)
+│   │   ├── features/       # Feature engineering (TypeScript)
+│   │   ├── training/       # Model training scripts (Python)
+│   │   ├── inference/      # Prediction layer (Python + TS bridge)
+│   │   ├── models/         # Trained .pkl models
+│   │   └── README.md       # ML architecture documentation
 │   ├── app/                # Next.js App Router (Frontend)
 │   │   ├── (auth)/         # Authentication routes (Login/Signup)
 │   │   ├── (main)/         # Main dashboard routes (Home, Syllabus, Quiz)
@@ -72,35 +87,46 @@ The project uses Next.js **Server Actions** (implied in `actions.ts`) to call Ge
 
 ## Setup & Installation ⚙️
 
-1.  **Clone the Repository**
-    ```bash
-    git clone <repository_url>
-    cd SANKALP
-    ```
+### 1. Clone and Install Dependencies
+```bash
+git clone <repository_url>
+cd SANKALP
+npm install
+```
 
-2.  **Install Dependencies**
-    ```bash
-    npm install
-    ```
+### 2. Python ML Setup
+```bash
+cd src/ml/training
+pip install -r requirements.txt
+```
 
-3.  **Environment Configuration**
-    -   Create a `.env.local` file in the root.
-    -   Add your Gemini API key (currently found in `env.txt` - **DO NOT USE `env.txt` IN PRODUCTION**).
-    ```env
-    GEMINI_API_KEY=your_actual_api_key_here
-    NEXT_PUBLIC_FIREBASE_API_KEY=...
-    ```
+### 3. Train the ML Model
+```bash
+# Generate synthetic training data
+python generate_data.py
 
-4.  **Run Development Server**
-    ```bash
-    npm run dev
-    ```
-    Access the app at `http://localhost:3000`.
+# Train Topic Mastery model
+python train_mastery_model.py
+```
+This creates `src/ml/models/mastery_model.pk`l with ~75-85% accuracy.
 
-5.  **Run Genkit Dev Tools** (Optional - for testing AI flows)
-    ```bash
-    npm run genkit:dev
-    ```
+### 4. Environment Configuration
+Create `.env.local` in the root:
+```env
+GEMINI_API_KEY=your_actual_api_key_here
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+```
+⚠️ **Do not use `env.txt` in production!**
+
+### 5. Run Development Server
+```bash
+npm run dev  # Access at http://localhost:3000
+```
+
+### 6. (Optional) Test AI Flows
+```bash
+npm run genkit:dev
+```
 
 ## Converting to Production 🚧
 
