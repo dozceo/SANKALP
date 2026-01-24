@@ -14,6 +14,7 @@ export interface RawQuizResult {
 }
 
 export interface StudentHistory {
+    studentId?: string; // Optional for backwards compatibility
     quizResults: RawQuizResult[];
     lastLoginDate: Date;
     registrationDate: Date;

@@ -17,6 +17,13 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { extractMasteryFeatures, type StudentHistory } from '@/ml/features/student_features';
 import { predictMastery } from '@/ml/inference/ml-bridge';
+import {
+  makeRevisionDecision,
+  makeInterventionDecision,
+  selectContentStrategy,
+  logDecision,
+} from '@/ai/adk/decision-engine';
+import { DecisionAction, type MLSignals } from '@/ai/adk/types';
 
 const SmartRevisionPlannerInputSchema = z.object({
   brainMap: z.string().describe('The student\'s Brain Map data represented as a JSON string, including topics, progress, and last revision dates.'),
@@ -41,8 +48,8 @@ export async function smartRevisionPlanner(input: SmartRevisionPlannerInput): Pr
 }
 
 /**
- * ML-DRIVEN DECISION LOGIC
- * This replaces the pure LLM approach with data-driven predictions
+ * ADK-DRIVEN DECISION LOGIC
+ * Uses the ADK decision engine to make policy-based decisions
  */
 async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentHistory) {
   const decisions = [];
@@ -53,7 +60,7 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
       const features = extractMasteryFeatures(topic.name, studentHistory);
 
       // Step 2: Get ML prediction
-      const prediction = await predictMastery({
+      const mlPrediction = await predictMastery({
         avg_quiz_score: features.avg_quiz_score,
         attempts_per_topic: features.attempts_per_topic,
         days_since_last_revision: features.days_since_last_revision,
@@ -61,28 +68,64 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         time_spent_per_question: features.time_spent_per_question,
       });
 
-      // Step 3: Apply decision rules (this is the ADK layer)
-      let priority: 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
-      let shouldRevise = false;
+      // Step 3: Build ML Signals for ADK
+      const mlSignals: MLSignals = {
+        mastery_probability: mlPrediction.mastery_probability,
+        confidence: mlPrediction.confidence,
+        days_since_last_revision: features.days_since_last_revision,
+        attempts_count: features.attempts_per_topic,
+        performance_trend: "STABLE", // TODO: Calculate from history
+      };
 
-      if (prediction.mastery_probability < 0.4) {
-        priority = 'HIGH';
-        shouldRevise = true;
-      } else if (prediction.mastery_probability < 0.6) {
-        priority = 'MEDIUM';
-        shouldRevise = features.days_since_last_revision > 7; // Only if stale
-      } else if (features.days_since_last_revision > 14) {
-        priority = 'MEDIUM';
-        shouldRevise = true; // Spaced repetition
-      }
+      // Step 4: ADK makes the decision
+      const adkDecision = makeRevisionDecision({
+        studentId: studentHistory.studentId || "unknown",
+        topic: topic.name,
+        currentDate: new Date(),
+        examDate: brainMapData.examDate ? new Date(brainMapData.examDate) : undefined,
+        daysUntilExam: brainMapData.daysUntilExam,
+        mlSignals,
+      });
+
+      // Step 5: Log decision for analytics
+      logDecision(
+        {
+          studentId: studentHistory.studentId || "unknown",
+          topic: topic.name,
+          currentDate: new Date(),
+          mlSignals,
+        },
+        adkDecision
+      );
+
+      // Step 6: Check if ADK says to revise
+      const shouldRevise = [
+        DecisionAction.URGENT_REVISION,
+        DecisionAction.SCHEDULED_REVISION,
+        DecisionAction.ADAPTIVE_TEACHING,
+      ].includes(adkDecision.action);
 
       if (shouldRevise) {
         decisions.push({
           topic: topic.name,
-          masteryProbability: prediction.mastery_probability,
-          priority,
+          masteryProbability: mlPrediction.mastery_probability,
+          priority: adkDecision.priority,
           daysSinceRevision: features.days_since_last_revision,
+          adkDecision, // Pass full ADK context for LLM
         });
+      }
+
+      // Step 7: Check for teacher intervention
+      const intervention = makeInterventionDecision({
+        studentId: studentHistory.studentId || "unknown",
+        topic: topic.name,
+        currentDate: new Date(),
+        mlSignals,
+      });
+
+      if (intervention) {
+        console.log("[Teacher Intervention Required]", intervention);
+        // In production, save to DB for Teacher Mode dashboard
       }
     } catch (error) {
       console.error(`Failed to make decision for topic ${topic.name}:`, error);
@@ -91,8 +134,9 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         decisions.push({
           topic: topic.name,
           masteryProbability: 0.5,
-          priority: 'MEDIUM' as const,
+          priority: "MEDIUM" as const,
           daysSinceRevision: topic.daysSinceLastRevision,
+          adkDecision: null, // Mark as fallback
         });
       }
     }

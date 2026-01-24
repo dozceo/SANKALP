@@ -1,5 +1,17 @@
 {
-  "node": {},
+  "node": {
+    "409848605455ab7c492c98c951b4e15742c8a4472c": {
+      "workers": {
+        "app/(main)/syllabus/page": {
+          "moduleId": "[project]/.next-internal/server/app/(main)/syllabus/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(main)/syllabus/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/(main)/syllabus/page": "action-browser"
+      }
+    }
+  },
   "edge": {},
-  "encryptionKey": "PaL+eUfiq6eMDGejWOmAFmILMVQ4rbzEqHebH/6LYXA="
+  "encryptionKey": "CuNTmQVhS2wH6MbnbZpJ9wsoVUc7VLI9v9sPqgjq1bU="
 }

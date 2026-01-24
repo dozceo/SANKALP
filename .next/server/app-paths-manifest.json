@@ -1,0 +1,8 @@
+{
+  "/(main)/home/page": "app/(main)/home/page.js",
+  "/(main)/rewards/page": "app/(main)/rewards/page.js",
+  "/(main)/settings/page": "app/(main)/settings/page.js",
+  "/(main)/syllabus/page": "app/(main)/syllabus/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js"
+}
