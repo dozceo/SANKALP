@@ -1,124 +1,249 @@
-
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, TrendingUp, TrendingDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BarChart, TrendingUp, TrendingDown, ArrowLeft } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from "recharts";
+import { studentsData } from "@/data/studentsDataStatic";
+import { calculateStudentRisk } from "@/lib/generateStudentIntelligence";
+import Link from "next/link";
 
-
-const mockStudent = {
-    id: "alice-johnson",
-    name: "Alice Johnson",
-    avatar: "https://i.pravatar.cc/150?u=alice",
-    progress: 92,
-    subjects: [
-        { name: "Math", progress: 95 },
-        { name: "Science", progress: 88 },
-        { name: "History", progress: 90 },
-        { name: "English", progress: 98 },
-    ],
-    strengths: ["Algebra", "Grammar"],
-    weaknesses: ["Physics Formulas"]
+// Get initials for avatar
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase();
 };
 
+export default function StudentAnalyticsPage({ params }: { params: Promise<{ studentId: string }> }) {
+  const { studentId } = use(params);
+  const [chatbotPersonality, setChatbotPersonality] = useState("friendly-encouraging");
+  const [customInstructions, setCustomInstructions] = useState("");
 
-export default function StudentAnalyticsPage({ params }: { params: { studentId: string } }) {
-  const [chatbotPersonality, setChatbotPersonality] = useState("friendly and encouraging");
-  const [customInstructions, setCustomInstructions] = useState("When Alice struggles with a math problem, try to guide her with a similar, simpler example first. Avoid giving the direct answer.");
+  // Find the student
+  const student = studentsData.find(s => s.id === studentId);
 
-  const chartData = mockStudent.subjects;
+  if (!student) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Student Not Found</h2>
+          <p className="text-muted-foreground mb-4">
+            The student with ID "{studentId}" could not be found.
+          </p>
+          <Button asChild>
+            <Link href="/teacher">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Teacher Mode
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate risk and mastery
+  const risk = calculateStudentRisk(student);
+
+  // Prepare chart data from mastery scores
+  const chartData = student.masteryScores
+    ? Object.entries(student.masteryScores).map(([subject, score]) => ({
+      name: subject,
+      progress: Math.round(score * 100),
+    }))
+    : [];
+
   const chartConfig = {
     progress: {
       label: "Progress",
-      color: "hsl(var(--primary))",
+      color: "hsl(var(--chart-1))",
     },
+  };
+
+  // Set default custom instructions based on student
+  if (!customInstructions && student.weaknesses && student.weaknesses.length > 0) {
+    setCustomInstructions(
+      `When ${student.name.split(' ')[0]} struggles with ${student.weaknesses[0]}, try to guide with a similar, simpler example first. Avoid giving the direct answer.`
+    );
+  }
+
+  const handleSaveConfiguration = () => {
+    // TODO: Save chatbot configuration to database
+    console.log('Saving chatbot configuration:', {
+      studentId: student.id,
+      personality: chatbotPersonality,
+      instructions: customInstructions,
+    });
+    alert('Chatbot configuration saved successfully!');
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold font-headline">Student Analytics</h1>
-        <p className="text-muted-foreground">
-          Detailed view of {mockStudent.name}'s performance and settings.
-        </p>
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="outline" size="icon" asChild>
+          <Link href="/teacher">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold font-headline">Student Analytics</h1>
+          <p className="text-muted-foreground">
+            Detailed view of {student.name}'s performance and settings.
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - Performance */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Student Profile Card */}
           <Card>
             <CardHeader className="flex flex-row items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={mockStudent.avatar} />
-                <AvatarFallback>{mockStudent.name.charAt(0)}</AvatarFallback>
+              <Avatar className="h-16 w-16 bg-primary">
+                <AvatarFallback className="text-white font-medium">
+                  {getInitials(student.name)}
+                </AvatarFallback>
               </Avatar>
-              <div>
-                <CardTitle className="text-2xl">{mockStudent.name}</CardTitle>
-                <CardDescription>Overall Syllabus Progress: {mockStudent.progress}%</CardDescription>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <CardTitle className="text-2xl">{student.name}</CardTitle>
+                  <Badge variant={
+                    risk.riskLevel === 'High' ? 'destructive' :
+                      risk.riskLevel === 'Medium' ? 'secondary' :
+                        'default'
+                  }>
+                    {risk.riskLevel} Risk
+                  </Badge>
+                </div>
+                <CardDescription>
+                  Grade {student.grade} · Overall Syllabus Progress: {risk.avgMastery}%
+                </CardDescription>
               </div>
             </CardHeader>
             <CardContent>
-              <Progress value={mockStudent.progress} />
+              <Progress value={risk.avgMastery} className="h-3" />
             </CardContent>
           </Card>
 
-           <Card>
+          {/* Subject Performance Chart */}
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart className="h-5 w-5" />
                 Subject Performance
               </CardTitle>
+              <CardDescription>
+                Mastery level across different subjects
+              </CardDescription>
             </CardHeader>
             <CardContent>
-                 <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                    <RechartsBarChart accessibilityLayer data={chartData}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                        dataKey="name"
-                        tickLine={false}
-                        tickMargin={10}
-                        axisLine={false}
-                        />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="progress" fill="var(--color-progress)" radius={4} />
-                    </RechartsBarChart>
+              {chartData.length > 0 ? (
+                <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                  <RechartsBarChart accessibilityLayer data={chartData}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="name"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      tickFormatter={(value) => value.length > 10 ? value.slice(0, 10) + '...' : value}
+                    />
+                    <YAxis domain={[0, 100]} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="progress" fill="var(--color-progress)" radius={[8, 8, 0, 0]} />
+                  </RechartsBarChart>
                 </ChartContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                  No performance data available
+                </div>
+              )}
             </CardContent>
           </Card>
-          
-           <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <TrendingUp className="text-green-500"/> Strengths
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                        {mockStudent.strengths.map(s => <p key={s} className="text-sm">{s}</p>)}
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <TrendingDown className="text-red-500"/> Weaknesses
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                        {mockStudent.weaknesses.map(s => <p key={s} className="text-sm">{s}</p>)}
-                    </CardContent>
-                </Card>
-           </div>
 
+          {/* Strengths & Weaknesses */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <TrendingUp className="text-green-500 h-5 w-5" />
+                  Strengths
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {student.strengths && student.strengths.length > 0 ? (
+                  <ul className="space-y-2">
+                    {student.strengths.map((strength, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-green-500 mt-0.5">✓</span>
+                        <span className="text-sm">{strength}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No strengths recorded yet</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <TrendingDown className="text-red-500 h-5 w-5" />
+                  Weaknesses
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {student.weaknesses && student.weaknesses.length > 0 ? (
+                  <ul className="space-y-2">
+                    {student.weaknesses.map((weakness, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">⚠</span>
+                        <span className="text-sm">{weakness}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No weaknesses identified</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Top Weaknesses (from risk calculation) */}
+          {risk.topWeaknesses.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Focus Areas</CardTitle>
+                <CardDescription>
+                  Topics that need immediate attention
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {risk.topWeaknesses.map((topic, index) => (
+                    <Badge key={index} variant="destructive">
+                      {topic}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
+        {/* Right Column - Chatbot Customization */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -135,22 +260,60 @@ export default function StudentAnalyticsPage({ params }: { params: { studentId: 
                     <SelectValue placeholder="Select a tone" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="friendly and encouraging">Friendly & Encouraging</SelectItem>
-                    <SelectItem value="direct and formal">Direct & Formal</SelectItem>
+                    <SelectItem value="friendly-encouraging">Friendly & Encouraging</SelectItem>
+                    <SelectItem value="direct-formal">Direct & Formal</SelectItem>
+                    <SelectItem value="patient-supportive">Patient & Supportive</SelectItem>
+                    <SelectItem value="challenging-motivating">Challenging & Motivating</SelectItem>
+                    <SelectItem value="calm-reassuring">Calm & Reassuring</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="instructions">Custom Instructions</Label>
                 <Textarea
                   id="instructions"
-                  placeholder="e.g., Use analogies related to sports..."
-                  rows={6}
+                  placeholder="e.g., Use analogies related to sports when explaining concepts..."
+                  rows={8}
                   value={customInstructions}
                   onChange={(e) => setCustomInstructions(e.target.value)}
+                  className="resize-none"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Provide specific guidance on how the AI mentor should interact with {student.name.split(' ')[0]}.
+                </p>
               </div>
-              <Button className="w-full">Save Configuration</Button>
+
+              <Button className="w-full" onClick={handleSaveConfiguration}>
+                Save Configuration
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Student Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Student Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div>
+                <span className="text-muted-foreground">Email:</span>{" "}
+                <span className="font-medium">{student.email}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Grade Level:</span>{" "}
+                <span className="font-medium">{student.grade}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Last Active:</span>{" "}
+                <span className="font-medium">{student.lastActive}</span>
+              </div>
+              {student.connections && student.connections.length > 0 && (
+                <div>
+                  <span className="text-muted-foreground">Study Partners:</span>{" "}
+                  <span className="font-medium">{student.connections.length}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

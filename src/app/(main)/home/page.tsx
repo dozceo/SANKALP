@@ -13,31 +13,26 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ListChecks, FileQuestion, MessageCircle, Loader2, Book } from "lucide-react";
 import { LearningStateCard } from "@/components/LearningStateCard";
 import { TopicMasteryGrid } from "@/components/TopicMasteryGrid";
+import { InteractiveGraph } from "@/components/InteractiveGraph";
+import { useStudent } from "@/contexts/StudentContext";
+import { generateStudentIntelligence } from "@/lib/generateStudentIntelligence";
 import type { StudentIntelligence } from "@/types/intelligence";
 
 export default function HomePage() {
+  const { currentStudent } = useStudent();
   const [intelligence, setIntelligence] = useState<StudentIntelligence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchIntelligence() {
-      try {
-        const response = await fetch("/api/intelligence/student?studentId=demo_student");
-        if (response.ok) {
-          const data = await response.json();
-          setIntelligence(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch intelligence:", error);
-      } finally {
-        setIsLoading(false);
-      }
+    if (currentStudent) {
+      // Generate intelligence from student data
+      const intel = generateStudentIntelligence(currentStudent);
+      setIntelligence(intel);
+      setIsLoading(false);
     }
+  }, [currentStudent]);
 
-    fetchIntelligence();
-  }, []);
-
-  if (isLoading) {
+  if (isLoading || !currentStudent) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -56,7 +51,7 @@ export default function HomePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-headline">Welcome back, Alex!</h1>
+        <h1 className="text-3xl font-bold font-headline">Welcome back, {currentStudent.name}!</h1>
         <p className="text-muted-foreground">
           Here&apos;s your AI-powered learning dashboard for today.
         </p>
@@ -124,6 +119,22 @@ export default function HomePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Brain Map Visualization */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Student Learning Network</CardTitle>
+          <CardDescription>
+            Interactive visualization of student connections, topics, and skills
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <InteractiveGraph
+            onNodeClick={(nodeId) => console.log('Node clicked:', nodeId)}
+            highlightedNode={currentStudent.id}
+          />
+        </CardContent>
+      </Card>
 
       {/* Topic Mastery Grid - Replaces static Brain Map */}
       <TopicMasteryGrid intelligence={intelligence} />
