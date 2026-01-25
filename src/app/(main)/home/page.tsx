@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -6,160 +9,222 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Book, FlaskConical, Atom, Languages, History, ArrowRight, ListChecks, FileQuestion, MessageCircle, TrendingUp, TrendingDown } from "lucide-react";
-
-const brainMapData = [
-  {
-    title: "Mathematics",
-    progress: 85,
-    icon: Book,
-  },
-  {
-    title: "Physics",
-    progress: 60,
-    icon: Atom,
-  },
-  {
-    title: "Chemistry",
-    progress: 45,
-    icon: FlaskConical,
-  },
-  {
-    title: "English",
-    progress: 95,
-    icon: Languages,
-  },
-  {
-    title: "History",
-    progress: 20,
-    icon: History,
-  },
-];
-
-const revisionTasks = [
-    { topic: "Calculus", reason: "Last revised 3 weeks ago" },
-    { topic: "Organic Chemistry", reason: "Low progress" },
-]
+import { ArrowRight, ListChecks, FileQuestion, MessageCircle, Loader2, Book } from "lucide-react";
+import { LearningStateCard } from "@/components/LearningStateCard";
+import { TopicMasteryGrid } from "@/components/TopicMasteryGrid";
+import type { StudentIntelligence } from "@/types/intelligence";
 
 export default function HomePage() {
-  const overallProgress = Math.round(brainMapData.reduce((acc, node) => acc + node.progress, 0) / brainMapData.length);
-  const bestSubject = brainMapData.reduce((max, subject) => subject.progress > max.progress ? subject : max, brainMapData[0]);
-  const worstSubject = brainMapData.reduce((min, subject) => subject.progress < min.progress ? subject : min, brainMapData[0]);
+  const [intelligence, setIntelligence] = useState<StudentIntelligence | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchIntelligence() {
+      try {
+        const response = await fetch("/api/intelligence/student?studentId=demo_student");
+        if (response.ok) {
+          const data = await response.json();
+          setIntelligence(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch intelligence:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchIntelligence();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!intelligence) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Failed to load student intelligence</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold font-headline">Welcome back, Alex!</h1>
         <p className="text-muted-foreground">
-          Here&apos;s your personalized learning dashboard for today.
+          Here&apos;s your AI-powered learning dashboard for today.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Main Dashboard Cards */}
+      {/* ML-Driven Intelligence Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Learning State Card - Shows ML + ADK intelligence */}
+        <div className="md:col-span-2 lg:col-span-1">
+          <LearningStateCard intelligence={intelligence} />
+        </div>
+
+        {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Overall Progress</CardTitle>
-            <CardDescription>Across all your subjects.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <FileQuestion className="h-5 w-5" />
+              Take Quiz
+            </CardTitle>
+            <CardDescription>Test your knowledge</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center gap-4">
-             <div className="text-6xl font-bold text-primary">{overallProgress}%</div>
-             <Progress value={overallProgress} aria-label={`Overall progress: ${overallProgress}%`} />
+          <CardContent>
+            <Link href="/quiz">
+              <Button className="w-full">
+                Start Quiz
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-                <span>Today&apos;s Revision</span>
-                <ListChecks className="w-6 h-6 text-muted-foreground"/>
+            <CardTitle className="flex items-center gap-2">
+              <ListChecks className="h-5 w-5" />
+              Revision Plan
             </CardTitle>
-            <CardDescription>A couple of tasks from your planner.</CardDescription>
+            <CardDescription>Smart spaced repetition</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/planner">
+              <Button variant="outline" className="w-full">
+                View Plan
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              AI Chatbot
+            </CardTitle>
+            <CardDescription>Get instant help</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/chatbot">
+              <Button variant="outline" className="w-full">
+                Ask AI
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Topic Mastery Grid - Replaces static Brain Map */}
+      <TopicMasteryGrid intelligence={intelligence} />
+
+      {/* Urgent Revisions Alert */}
+      {intelligence.revisionUrgency === "URGENT" && (
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">⚠️ Urgent Revision Needed</CardTitle>
+            <CardDescription>
+              Our AI detected topics that need immediate attention
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {Object.entries(intelligence.mastery)
+              .filter(([_, signal]) => signal.priority === "HIGH")
+              .map(([topic, signal]) => (
+                <div key={topic} className="p-3 border rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-medium">{topic}</h4>
+                    <span className="text-xs text-muted-foreground">
+                      {Math.round(signal.score * 100)}% mastery
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Reason: Low mastery ({Math.round(signal.score * 100)}%) · {signal.daysSinceRevision} days since last revision
+                  </p>
+                </div>
+              ))}
+            <Link href="/planner">
+              <Button className="w-full mt-4">
+                Start Revision
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quick Actions Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Jump to a learning activity</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-             {revisionTasks.map(task => (
-                <div key={task.topic} className="flex justify-between items-center p-2 bg-muted rounded-md">
-                    <div>
-                        <p className="font-semibold text-sm">{task.topic}</p>
-                        <p className="text-xs text-muted-foreground">{task.reason}</p>
-                    </div>
-                    <Button size="sm" variant="ghost" asChild>
-                        <Link href="/planner">
-                           Revise <ArrowRight className="ml-2 h-4 w-4"/>
-                        </Link>
-                    </Button>
-                </div>
-             ))}
+            <Link href="/quiz">
+              <Button className="w-full justify-start">
+                <FileQuestion className="mr-2 h-4 w-4" />
+                Take a Quiz
+              </Button>
+            </Link>
+            <Link href="/syllabus">
+              <Button variant="outline" className="w-full justify-start">
+                <Book className="mr-2 h-4 w-4" />
+                Generate Syllabus
+              </Button>
+            </Link>
+            <Link href="/chatbot">
+              <Button variant="outline" className="w-full justify-start">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Ask AI Chatbot
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            <div>
-                <CardHeader>
-                    <CardTitle className="text-base font-medium">Strengths & Weaknesses</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-green-500"/>
-                        <div>
-                            <p className="text-sm font-semibold">{bestSubject.title}</p>
-                            <p className="text-xs text-muted-foreground">{bestSubject.progress}% Mastery</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <TrendingDown className="w-5 h-5 text-red-500"/>
-                        <div>
-                            <p className="text-sm font-semibold">{worstSubject.title}</p>
-                            <p className="text-xs text-muted-foreground">{worstSubject.progress}% Mastery</p>
-                        </div>
-                    </div>
-                </CardContent>
-            </div>
-             <div>
-                <CardHeader>
-                    <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" className="h-16 flex-col gap-1 text-xs" asChild>
-                        <Link href="/quiz">
-                            <FileQuestion className="w-5 h-5"/>
-                            <span>Take Quiz</span>
-                        </Link>
-                    </Button>
-                    <Button variant="outline" className="h-16 flex-col gap-1 text-xs" asChild>
-                        <Link href="/chat">
-                            <MessageCircle className="w-5 h-5" />
-                            <span>Ask Bot</span>
-                        </Link>
-                    </Button>
-                </CardContent>
-            </div>
-        </Card>
-
-
-        {/* Brain Map Section */}
-        <Card className="md:col-span-2 lg:col-span-3">
-            <CardHeader>
-                <CardTitle>Your Brain Map</CardTitle>
-                <CardDescription>Your interactive syllabus graph. Nodes are color-coded based on your mastery.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                 {brainMapData.map((node) => (
-                    <Card key={node.title} className="hover:shadow-md transition-shadow duration-300">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-md font-medium font-headline">{node.title}</CardTitle>
-                        <node.icon className="w-5 h-5 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <Progress value={node.progress} aria-label={`${node.title} progress: ${node.progress}%`} />
-                             <p className="text-xs text-muted-foreground mt-2">{node.progress}% mastered</p>
-                        </CardContent>
-                    </Card>
-                ))}
-            </CardContent>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ListChecks className="h-5 w-5" />
+              Today&apos;s Priorities
+            </CardTitle>
+            <CardDescription>
+              Based on ML analysis and ADK decisions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {Object.entries(intelligence.mastery)
+              .filter(([_, signal]) => signal.needsRevision)
+              .slice(0, 3)
+              .map(([topic, signal]) => (
+                <div key={topic} className="p-3 border rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium">{topic}</h4>
+                    <span className="text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
+                      {signal.priority}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {signal.daysSinceRevision} days since last revision
+                  </p>
+                </div>
+              ))}
+            {Object.values(intelligence.mastery).filter(s => s.needsRevision).length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                🎉 All caught up! Great work!
+              </p>
+            )}
+          </CardContent>
         </Card>
       </div>
     </div>

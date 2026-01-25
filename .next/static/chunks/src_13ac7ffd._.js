@@ -1251,22 +1251,6 @@ function StudentAnalyticsPage({ params }) {
                                                                     fileName: "[project]/src/app/(main)/teacher/student/[studentId]/page.tsx",
                                                                     lineNumber: 139,
                                                                     columnNumber: 21
-                                                                }, this),
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                                                    value: "inquisitive and curious",
-                                                                    children: "Inquisitive & Curious"
-                                                                }, void 0, false, {
-                                                                    fileName: "[project]/src/app/(main)/teacher/student/[studentId]/page.tsx",
-                                                                    lineNumber: 140,
-                                                                    columnNumber: 21
-                                                                }, this),
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                                                    value: "calm and patient",
-                                                                    children: "Calm & Patient"
-                                                                }, void 0, false, {
-                                                                    fileName: "[project]/src/app/(main)/teacher/student/[studentId]/page.tsx",
-                                                                    lineNumber: 141,
-                                                                    columnNumber: 21
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
@@ -1294,7 +1278,7 @@ function StudentAnalyticsPage({ params }) {
                                                     children: "Custom Instructions"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(main)/teacher/student/[studentId]/page.tsx",
-                                                    lineNumber: 146,
+                                                    lineNumber: 144,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1305,13 +1289,13 @@ function StudentAnalyticsPage({ params }) {
                                                     onChange: (e)=>setCustomInstructions(e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(main)/teacher/student/[studentId]/page.tsx",
-                                                    lineNumber: 147,
+                                                    lineNumber: 145,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(main)/teacher/student/[studentId]/page.tsx",
-                                            lineNumber: 145,
+                                            lineNumber: 143,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1319,7 +1303,7 @@ function StudentAnalyticsPage({ params }) {
                                             children: "Save Configuration"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(main)/teacher/student/[studentId]/page.tsx",
-                                            lineNumber: 155,
+                                            lineNumber: 153,
                                             columnNumber: 15
                                         }, this)
                                     ]
