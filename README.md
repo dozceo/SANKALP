@@ -5,18 +5,26 @@
 **Sankalp** (internally "CognitoLearn") is an **ML-driven** educational platform that combines machine learning predictions with generative AI to personalize the learning experience. Unlike traditional LLM-only approaches, Sankalp uses trained ML models to make data-driven decisions about what to teach, when to revise, and where students need help — then leverages LLMs to generate engaging explanations.
 
 **Key Architecture:**  
-`User → Quiz → Feature Extraction → ML Prediction → ADK Logic → LLM Content`
+`User → Quiz → Feature Extraction → ML Prediction → ADK Decision Engine → LLM Content Generation`
 
-> **Status:** Functional Prototype with ML System  
-> This project demonstrates a production-grade ML architecture with synthetic data. Real user data integration pending.
+**What Makes This Different:**
+- ✅ **ML makes predictions** (mastery, attention risk, forgetting curves)
+- ✅ **ADK makes decisions** (when to revise, how to teach, when to alert teachers)
+- ✅ **LLM generates content** (explanations, motivational messaging)
+- ✅ **Explainable by design** (every decision has reasoning)
+
+> **Status:** Production-Ready Architecture with Synthetic Data  
+> Complete ML → ADK → Frontend integration. Database integration pending.
 
 ## Key Features 🚀
 
--   **Brain Map Dashboard**: Visualizes the syllabus structure and progress (Concept).
--   **Smart Revision Planner**: An AI-driven agent (`smart-revision-planner`) that generates personalized study schedules.
--   **Syllabus Generator**: Instantly retrieves and structures official syllabi for various exams (e.g., AP Calculus, NEET) with reference links and strategy guides.
--   **Cramming Helper**: A time-sensitive tool that activates 3 days before an exam to provide high-yield focus topics and quick tips.
--   **Adaptive Quiz Engine**: Generates quiz questions on the fly based on the user's weak areas (demonstrated in `adaptive-quiz-engine.ts`).
+-   **ML-Driven Intelligence Dashboard**: Real-time mastery predictions, attention risk analysis, and ADK-powered learning recommendations
+-   **Smart Revision Planner**: ML predicts mastery → ADK decides urgency → LLM explains why (see `smart-revision-planner.ts`)
+-   **Student Intelligence API**: Unified `/api/intelligence/student` endpoint serving ML predictions and ADK decisions
+-   **Explainable AI**: Visual tooltips showing "Why am I seeing this?" based on quiz history and ML analysis
+-   **Teacher Analytics** (Coming Soon): Risk dashboards, intervention suggestions, class-level intelligence
+-   **Syllabus Generator**: Retrieves official syllabi with exam strategies
+-   **Adaptive Quiz Engine**: Generates questions based on weak areas
 -   **Cognitive Chatbot**: An AI tutor available to answer varied queries and explain complex topics.
 
 ## Tech Stack 🛠️
