@@ -1,0 +1,38 @@
+{
+  "node": {
+    "6035014dd975ec33f19f03e155b2d6df7ea7dd644b": {
+      "workers": {
+        "app/(main)/chat/page": {
+          "moduleId": "[project]/.next-internal/server/app/(main)/chat/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(main)/chat/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/(main)/chat/page": "action-browser"
+      }
+    },
+    "407c227542f9b50bb54f9a20d18ed11b551b163e95": {
+      "workers": {
+        "app/(main)/chat/page": {
+          "moduleId": "[project]/.next-internal/server/app/(main)/chat/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(main)/chat/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/(main)/chat/page": "action-browser"
+      }
+    },
+    "400c32a3f1505aa9524febaa0e8c91c154e4f93e6a": {
+      "workers": {
+        "app/(main)/chat/page": {
+          "moduleId": "[project]/.next-internal/server/app/(main)/chat/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(main)/chat/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/(main)/chat/page": "action-browser"
+      }
+    }
+  },
+  "edge": {}
+}

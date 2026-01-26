@@ -1,4 +1,14 @@
 {
+  "/(main)/brain-map/page": "app/(main)/brain-map/page.js",
+  "/(main)/chat/page": "app/(main)/chat/page.js",
   "/(main)/home/page": "app/(main)/home/page.js",
-  "/api/intelligence/student/route": "app/api/intelligence/student/route.js"
+  "/(main)/planner/page": "app/(main)/planner/page.js",
+  "/(main)/quiz/page": "app/(main)/quiz/page.js",
+  "/(main)/rewards/page": "app/(main)/rewards/page.js",
+  "/(main)/teacher/page": "app/(main)/teacher/page.js",
+  "/(main)/teacher/student/[studentId]/page": "app/(main)/teacher/student/[studentId]/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/intelligence/student/route": "app/api/intelligence/student/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js"
 }
