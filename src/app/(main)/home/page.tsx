@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ListChecks, FileQuestion, MessageCircle, Loader2, Book } from "lucide-react";
 import { LearningStateCard } from "@/components/LearningStateCard";
 import { TopicMasteryGrid } from "@/components/TopicMasteryGrid";
-import { InteractiveGraph } from "@/components/InteractiveGraph";
+import { PersonalKnowledgeGraph } from "@/components/PersonalKnowledgeGraph";
 import { useStudent } from "@/contexts/StudentContext";
 import { generateStudentIntelligence } from "@/lib/generateStudentIntelligence";
 import type { StudentIntelligence } from "@/types/intelligence";
@@ -120,19 +120,16 @@ export default function HomePage() {
         </Card>
       </div>
 
-      {/* Brain Map Visualization */}
+      {/* Personal Knowledge Network */}
       <Card>
         <CardHeader>
-          <CardTitle>Student Learning Network</CardTitle>
+          <CardTitle>My Knowledge Network</CardTitle>
           <CardDescription>
-            Interactive visualization of student connections, topics, and skills
+            Your study materials, strengths, weaknesses, and study group visualized
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <InteractiveGraph
-            onNodeClick={(nodeId) => console.log('Node clicked:', nodeId)}
-            highlightedNode={currentStudent.id}
-          />
+          <PersonalKnowledgeGraph student={currentStudent} height={450} />
         </CardContent>
       </Card>
 

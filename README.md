@@ -22,7 +22,7 @@
 -   **Smart Revision Planner**: ML predicts mastery → ADK decides urgency → LLM explains why (see `smart-revision-planner.ts`)
 -   **Student Intelligence API**: Unified `/api/intelligence/student` endpoint serving ML predictions and ADK decisions
 -   **Explainable AI**: Visual tooltips showing "Why am I seeing this?" based on quiz history and ML analysis
--   **Teacher Analytics** (Coming Soon): Risk dashboards, intervention suggestions, class-level intelligence
+-   **Teacher Analytics** : Risk dashboards, intervention suggestions, class-level intelligence
 -   **Syllabus Generator**: Retrieves official syllabi with exam strategies
 -   **Adaptive Quiz Engine**: Generates questions based on weak areas
 -   **Cognitive Chatbot**: An AI tutor available to answer varied queries and explain complex topics.

@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Download, ChevronRight } from "lucide-react";
 import { studentsData } from "@/data/studentsDataStatic";
 import { calculateStudentRisk } from "@/lib/generateStudentIntelligence";
+import { InteractiveGraph } from "@/components/InteractiveGraph";
+import { useRouter } from "next/navigation";
 
 // Get initials for avatar
 const getInitials = (name: string) => {
@@ -50,6 +52,8 @@ const getRiskVariant = (risk: string) => {
 };
 
 export default function TeacherPage() {
+  const router = useRouter();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
@@ -65,6 +69,29 @@ export default function TeacherPage() {
         </Button>
       </div>
 
+      {/* Student Learning Network */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Student Learning Network</CardTitle>
+          <CardDescription>
+            Interactive visualization of all students, connections, and shared topics
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <InteractiveGraph
+            onNodeClick={(nodeId) => {
+              // If it's a student node, navigate to their analytics
+              const student = studentsData.find(s => s.id === nodeId);
+              if (student) {
+                router.push(`/teacher/student/${nodeId}`);
+              }
+            }}
+            highlightedNode={null}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Class Overview Table */}
       <Card>
         <CardHeader>
           <CardTitle>Class Overview</CardTitle>

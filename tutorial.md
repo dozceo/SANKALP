@@ -240,7 +240,7 @@ useEffect(() => {
 3. **Fast Training**: Trains in seconds, not hours
 4. **No GPU Needed**: Runs on any machine
 
-**Trade-off:** Less accuracy than neural networks, but good enough for this use case (80% vs 85%).
+**Trade-off:** ==Less accuracy than neural networks, but good enough for this use case (80% vs 85%==).
 
 ---
 
