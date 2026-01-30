@@ -11,6 +11,7 @@ import { predictMastery } from "@/ml/inference/ml-bridge";
 import { makeRevisionDecision, makeInterventionDecision } from "@/ai/adk/decision-engine";
 import { DecisionAction, type MLSignals } from "@/ai/adk/types";
 import type { StudentIntelligence, MasterySignal, ADKMode } from "@/types/intelligence";
+import { getStudent, getQuizResults, getCachedPrediction, cachePrediction, saveADKDecision } from "@/lib/db-helpers";
 
 /**
  * GET /api/intelligence/student?studentId=xxx
@@ -21,44 +22,55 @@ export async function GET(request: NextRequest) {
     try {
         // Extract student ID from query params
         const searchParams = request.nextUrl.searchParams;
-        const studentId = searchParams.get("studentId") || "demo_student";
+        const studentId = searchParams.get("studentId");
 
-        // TODO: In production, fetch from database
-        // For now, use mock data to demonstrate the system
+        if (!studentId) {
+            return NextResponse.json(
+                { error: "studentId is required" },
+                { status: 400 }
+            );
+        }
+
+        // Fetch student from database
+        const student = await getStudent(studentId);
+
+        if (!student) {
+            return NextResponse.json(
+                { error: "Student not found" },
+                { status: 404 }
+            );
+        }
+
+        // Fetch quiz results from database
+        const quizResults = await getQuizResults(studentId, 100);
+
+        // If no quiz results, return empty state
+        if (quizResults.length === 0) {
+            return NextResponse.json({
+                mastery: {},
+                attentionRisk: "LOW",
+                revisionUrgency: "NONE",
+                adkDecision: "PROGRESS_MODE",
+                confidence: "LOW",
+                generatedAt: new Date().toISOString(),
+                studentId,
+                reasoning: ["No quiz history available yet"],
+                flags: [],
+            });
+        }
+
+        // Build student history object
         const studentHistory: StudentHistory = {
             studentId,
-            quizResults: [
-                {
-                    topic: "Algebra",
-                    score: 0.35,
-                    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-                    timeSpent: 180,
-                    questionsAttempted: 10,
-                },
-                {
-                    topic: "Algebra",
-                    score: 0.40,
-                    timestamp: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
-                    timeSpent: 200,
-                    questionsAttempted: 10,
-                },
-                {
-                    topic: "Geometry",
-                    score: 0.75,
-                    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-                    timeSpent: 150,
-                    questionsAttempted: 10,
-                },
-                {
-                    topic: "Calculus",
-                    score: 0.55,
-                    timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-                    timeSpent: 240,
-                    questionsAttempted: 10,
-                },
-            ],
-            lastLoginDate: new Date(),
-            registrationDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            quizResults: quizResults.map((qr) => ({
+                topic: qr.topic,
+                score: qr.score,
+                timestamp: qr.timestamp,
+                timeSpent: qr.timeSpent,
+                questionsAttempted: qr.questionsAttempted,
+            })),
+            lastLoginDate: student.lastLoginDate,
+            registrationDate: student.registrationDate,
         };
 
         // Get unique topics
@@ -74,14 +86,36 @@ export async function GET(request: NextRequest) {
             // Step 1: Extract features
             const features = extractMasteryFeatures(topic, studentHistory);
 
-            // Step 2: ML prediction
-            const mlPrediction = await predictMastery({
-                avg_quiz_score: features.avg_quiz_score,
-                attempts_per_topic: features.attempts_per_topic,
-                days_since_last_revision: features.days_since_last_revision,
-                quiz_score_variance: features.quiz_score_variance,
-                time_spent_per_question: features.time_spent_per_question,
-            });
+            // Step 2: Check cache first
+            const cached = await getCachedPrediction(studentId, topic);
+
+            let mlPrediction;
+            if (cached) {
+                mlPrediction = {
+                    mastery_probability: cached.masteryProbability,
+                    confidence: cached.confidence,
+                };
+            } else {
+                // Make fresh ML prediction
+                mlPrediction = await predictMastery({
+                    avg_quiz_score: features.avg_quiz_score,
+                    attempts_per_topic: features.attempts_per_topic,
+                    days_since_last_revision: features.days_since_last_revision,
+                    quiz_score_variance: features.quiz_score_variance,
+                    time_spent_per_question: features.time_spent_per_question,
+                });
+
+                // Cache the prediction (expires in 1 hour)
+                await cachePrediction({
+                    studentId,
+                    topic,
+                    masteryProbability: mlPrediction.mastery_probability,
+                    confidence: mlPrediction.confidence,
+                    daysSinceRevision: features.days_since_last_revision,
+                    createdAt: new Date(),
+                    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+                });
+            }
 
             // Step 3: Build ML signals
             const mlSignals: MLSignals = {
@@ -99,6 +133,17 @@ export async function GET(request: NextRequest) {
                 currentDate: new Date(),
                 mlSignals,
             });
+
+            // Log ADK decision to database (async, don't wait)
+            saveADKDecision({
+                studentId,
+                topic,
+                action: adkDecision.action,
+                priority: adkDecision.priority,
+                reasoning: adkDecision.reasoning,
+                flags: adkDecision.adkFlags,
+                timestamp: new Date(),
+            }).catch((err) => console.error("Failed to log ADK decision:", err));
 
             // Update aggregate state
             if (adkDecision.action === DecisionAction.URGENT_REVISION) {

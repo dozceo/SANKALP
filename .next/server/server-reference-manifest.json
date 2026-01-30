@@ -22,6 +22,17 @@
         "app/(main)/quiz/page": "action-browser"
       }
     },
+    "409848605455ab7c492c98c951b4e15742c8a4472c": {
+      "workers": {
+        "app/(main)/syllabus/page": {
+          "moduleId": "[project]/.next-internal/server/app/(main)/syllabus/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(main)/syllabus/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/(main)/syllabus/page": "action-browser"
+      }
+    },
     "6035014dd975ec33f19f03e155b2d6df7ea7dd644b": {
       "workers": {
         "app/(main)/chat/page": {

@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { type AdaptiveQuizOutput } from "@/ai/flows/adaptive-quiz-engine";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -21,7 +23,7 @@ type QuizQuestion = AdaptiveQuizOutput["quiz"][0];
 const quizFormSchema = z.object({
   topic: z.string().min(2, { message: "Topic must be at least 2 characters." }),
   numQuestions: z.coerce.number().min(1, "Please enter at least 1 question.").max(10, "You can generate a maximum of 10 questions."),
-  educationLevel: z.string().min(3, { message: "Please specify an educational level."}),
+  educationLevel: z.string().min(3, { message: "Please specify an educational level." }),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
 });
 
@@ -34,6 +36,11 @@ export default function QuizPage() {
   const [score, setScore] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [quizStartTime, setQuizStartTime] = useState<number>(0);
+  const [quizTopic, setQuizTopic] = useState("");
+
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof quizFormSchema>>({
     resolver: zodResolver(quizFormSchema),
@@ -44,6 +51,8 @@ export default function QuizPage() {
     setIsLoading(true);
     const result = await createQuiz(values);
     setQuiz(result.quiz);
+    setQuizTopic(values.topic);
+    setQuizStartTime(Date.now());
     setIsLoading(false);
     // Reset state for new quiz
     setCurrentQuestionIndex(0);
@@ -52,7 +61,7 @@ export default function QuizPage() {
     setIsAnswered(false);
     setSelectedAnswer(null);
   };
-  
+
   const handleAnswerSubmit = () => {
     if (!selectedAnswer) return;
     setIsAnswered(true);
@@ -61,13 +70,42 @@ export default function QuizPage() {
     }
   };
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     if (currentQuestionIndex < quiz!.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
       setIsAnswered(false);
     } else {
+      // Quiz finished - submit results
       setIsFinished(true);
+
+      if (user) {
+        const timeSpent = Math.floor((Date.now() - quizStartTime) / 1000); // seconds
+        const finalScore = score / quiz!.length;
+
+        try {
+          const response = await fetch('/api/quiz/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              studentId: user.uid,
+              topic: quizTopic,
+              score: finalScore,
+              timeSpent,
+              questionsAttempted: quiz!.length,
+            }),
+          });
+
+          if (response.ok) {
+            toast({
+              title: 'Quiz results saved!',
+              description: 'Your progress has been recorded.',
+            });
+          }
+        } catch (error) {
+          console.error('Error submitting quiz:', error);
+        }
+      }
     }
   };
 
@@ -90,65 +128,64 @@ export default function QuizPage() {
     const quizLength = quiz?.length || 0;
     const finalScore = (quizLength > 0) ? (score / quizLength) * 100 : 0;
     return (
-        <Card className="max-w-2xl mx-auto text-center">
-            <CardHeader>
-                <Award className="mx-auto h-16 w-16 text-yellow-500"/>
-                <CardTitle className="font-headline text-3xl">Quiz Complete!</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <p className="text-xl">Your final score is:</p>
-                <p className="text-5xl font-bold text-primary">{score} / {quizLength}</p>
-                <Progress value={finalScore} className="w-full" />
-                <Button onClick={resetQuiz}>Take Another Quiz</Button>
-            </CardContent>
-        </Card>
+      <Card className="max-w-2xl mx-auto text-center">
+        <CardHeader>
+          <Award className="mx-auto h-16 w-16 text-yellow-500" />
+          <CardTitle className="font-headline text-3xl">Quiz Complete!</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xl">Your final score is:</p>
+          <p className="text-5xl font-bold text-primary">{score} / {quizLength}</p>
+          <Progress value={finalScore} className="w-full" />
+          <Button onClick={resetQuiz}>Take Another Quiz</Button>
+        </CardContent>
+      </Card>
     );
   }
 
   if (quiz && currentQuestion) {
     return (
-        <Card className="max-w-2xl mx-auto">
-            <CardHeader>
-                <CardTitle className="font-headline text-2xl">Question {currentQuestionIndex + 1} of {quiz.length}</CardTitle>
-                <Progress value={((currentQuestionIndex + 1) / quiz.length) * 100} className="w-full" />
-                <CardDescription className="pt-4 text-lg">{currentQuestion.question}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <RadioGroup onValueChange={setSelectedAnswer} value={selectedAnswer || ""} disabled={isAnswered} className="space-y-2">
-                    {currentQuestion.options.map((option, index) => {
-                        const isCorrect = option === currentQuestion.correctAnswer;
-                        const isSelected = option === selectedAnswer;
-                        let variant: "correct" | "incorrect" | "default" = "default";
-                        if (isAnswered && isCorrect) variant = "correct";
-                        if (isAnswered && isSelected && !isCorrect) variant = "incorrect";
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="font-headline text-2xl">Question {currentQuestionIndex + 1} of {quiz.length}</CardTitle>
+          <Progress value={((currentQuestionIndex + 1) / quiz.length) * 100} className="w-full" />
+          <CardDescription className="pt-4 text-lg">{currentQuestion.question}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RadioGroup onValueChange={setSelectedAnswer} value={selectedAnswer || ""} disabled={isAnswered} className="space-y-2">
+            {currentQuestion.options.map((option, index) => {
+              const isCorrect = option === currentQuestion.correctAnswer;
+              const isSelected = option === selectedAnswer;
+              let variant: "correct" | "incorrect" | "default" = "default";
+              if (isAnswered && isCorrect) variant = "correct";
+              if (isAnswered && isSelected && !isCorrect) variant = "incorrect";
 
-                        return (
-                          <Label key={index} 
-                            className={`flex items-center p-4 rounded-md border cursor-pointer transition-all ${
-                                variant === 'correct' ? 'border-green-500 bg-green-50' : 
-                                variant === 'incorrect' ? 'border-red-500 bg-red-50' : 
-                                'hover:bg-accent'
-                            } ${isAnswered ? 'cursor-not-allowed' : ''}`}>
-                            <RadioGroupItem value={option} id={`option-${index}`} className="mr-3" />
-                            <span>{option}</span>
-                            {isAnswered && isCorrect && <CheckCircle className="ml-auto text-green-500" />}
-                            {isAnswered && isSelected && !isCorrect && <XCircle className="ml-auto text-red-500" />}
-                          </Label>
-                        );
-                    })}
-                </RadioGroup>
-                
-                <div className="mt-6 flex justify-end">
-                    {isAnswered ? (
-                        <Button onClick={handleNextQuestion}>
-                            {currentQuestionIndex < quiz.length - 1 ? "Next Question" : "Finish Quiz"}
-                        </Button>
-                    ) : (
-                        <Button onClick={handleAnswerSubmit} disabled={!selectedAnswer}>Submit Answer</Button>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
+              return (
+                <Label key={index}
+                  className={`flex items-center p-4 rounded-md border cursor-pointer transition-all ${variant === 'correct' ? 'border-green-500 bg-green-50' :
+                    variant === 'incorrect' ? 'border-red-500 bg-red-50' :
+                      'hover:bg-accent'
+                    } ${isAnswered ? 'cursor-not-allowed' : ''}`}>
+                  <RadioGroupItem value={option} id={`option-${index}`} className="mr-3" />
+                  <span>{option}</span>
+                  {isAnswered && isCorrect && <CheckCircle className="ml-auto text-green-500" />}
+                  {isAnswered && isSelected && !isCorrect && <XCircle className="ml-auto text-red-500" />}
+                </Label>
+              );
+            })}
+          </RadioGroup>
+
+          <div className="mt-6 flex justify-end">
+            {isAnswered ? (
+              <Button onClick={handleNextQuestion}>
+                {currentQuestionIndex < quiz.length - 1 ? "Next Question" : "Finish Quiz"}
+              </Button>
+            ) : (
+              <Button onClick={handleAnswerSubmit} disabled={!selectedAnswer}>Submit Answer</Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -180,7 +217,7 @@ export default function QuizPage() {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="educationLevel"
                 render={({ field }) => (
@@ -198,16 +235,16 @@ export default function QuizPage() {
                   control={form.control}
                   name="numQuestions"
                   render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Number of Questions</FormLabel>
-                           <FormControl>
-                            <Input type="number" min="1" max="10" {...field} />
-                          </FormControl>
-                           <FormMessage />
-                      </FormItem>
+                    <FormItem>
+                      <FormLabel>Number of Questions</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="1" max="10" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
                 />
-                 <FormField
+                <FormField
                   control={form.control}
                   name="difficulty"
                   render={({ field }) => (

@@ -14,6 +14,7 @@ import { ArrowRight, ListChecks, FileQuestion, MessageCircle, Loader2, Book } fr
 import { LearningStateCard } from "@/components/LearningStateCard";
 import { TopicMasteryGrid } from "@/components/TopicMasteryGrid";
 import { PersonalKnowledgeGraph } from "@/components/PersonalKnowledgeGraph";
+import { SankalpSwitch } from "@/components/SankalpSwitch";
 import { useStudent } from "@/contexts/StudentContext";
 import { generateStudentIntelligence } from "@/lib/generateStudentIntelligence";
 import type { StudentIntelligence } from "@/types/intelligence";
@@ -56,6 +57,9 @@ export default function HomePage() {
           Here&apos;s your AI-powered learning dashboard for today.
         </p>
       </div>
+
+      {/* SANKALP Loop Session */}
+      <SankalpSwitch />
 
       {/* ML-Driven Intelligence Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
