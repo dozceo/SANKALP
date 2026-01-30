@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useTheme } from "../theme-provider";
 import { StudentSelector } from "@/components/StudentSelector";
+import { LogoutButton } from "@/components/LogoutButton";
 
 const pathToTitle: { [key: string]: string } = {
   "/home": "Dashboard",
@@ -74,6 +75,7 @@ export function Header() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <LogoutButton />
       </div>
     </header>
   );

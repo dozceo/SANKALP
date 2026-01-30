@@ -111,7 +111,7 @@ export default function TeacherPage() {
                 router.push(`/teacher/student/${nodeId}`);
               }
             }}
-            highlightedNode={null}
+            highlightedNode={undefined}
           />
         </CardContent>
       </Card>

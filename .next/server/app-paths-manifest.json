@@ -1,11 +1,6 @@
 {
-  "/(main)/chat/page": "app/(main)/chat/page.js",
   "/(main)/home/page": "app/(main)/home/page.js",
-  "/(main)/planner/page": "app/(main)/planner/page.js",
-  "/(main)/quiz/page": "app/(main)/quiz/page.js",
-  "/(main)/syllabus/page": "app/(main)/syllabus/page.js",
   "/(main)/teacher/page": "app/(main)/teacher/page.js",
-  "/(main)/teacher/student/[studentId]/page": "app/(main)/teacher/student/[studentId]/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js"
 }

@@ -1319,6 +1319,10 @@ body {
   border-color: hsl(var(--destructive));
 }
 
+.border-destructive\/20 {
+  border-color: hsl(var(--destructive) / .2);
+}
+
 .border-destructive\/50 {
   border-color: hsl(var(--destructive) / .5);
 }
@@ -1334,6 +1338,10 @@ body {
 
 .border-primary {
   border-color: hsl(var(--primary));
+}
+
+.border-primary\/20 {
+  border-color: hsl(var(--primary) / .2);
 }
 
 .border-red-500 {
@@ -1406,9 +1414,19 @@ body {
   background-color: hsl(var(--destructive) / .1);
 }
 
+.bg-gray-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+}
+
 .bg-gray-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(107 114 128 / var(--tw-bg-opacity, 1));
+}
+
+.bg-green-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(220 252 231 / var(--tw-bg-opacity, 1));
 }
 
 .bg-green-50 {
@@ -1610,6 +1628,11 @@ body {
 .py-4 {
   padding-top: 1rem;
   padding-bottom: 1rem;
+}
+
+.py-6 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
 }
 
 .py-8 {
@@ -1837,9 +1860,19 @@ body {
   color: hsl(var(--foreground) / .5);
 }
 
+.text-gray-600 {
+  --tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--tw-text-opacity, 1));
+}
+
 .text-green-500 {
   --tw-text-opacity: 1;
   color: rgb(34 197 94 / var(--tw-text-opacity, 1));
+}
+
+.text-green-700 {
+  --tw-text-opacity: 1;
+  color: rgb(21 128 61 / var(--tw-text-opacity, 1));
 }
 
 .text-muted-foreground {

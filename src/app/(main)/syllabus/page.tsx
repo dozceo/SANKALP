@@ -128,6 +128,13 @@ export default function SyllabusPage() {
                     ))}
                   </ul>
                 </div>
+                <div className="pt-4 border-t">
+                  <Button onClick={handleSave} disabled={saving} className="w-full">
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Syllabus to Planner
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}

@@ -84,6 +84,9 @@ export const uploadFileWithProgress = (
 
 // Delete a file from Firebase Storage
 export const deleteFile = async (path: string): Promise<void> => {
+    if (!storage) {
+        throw new Error('Firebase Storage is not initialized. This function must be called in the browser.');
+    }
     try {
         const storageRef = ref(storage, path);
         await deleteObject(storageRef);
@@ -95,6 +98,9 @@ export const deleteFile = async (path: string): Promise<void> => {
 
 // Get download URL for a file
 export const getFileURL = async (path: string): Promise<string> => {
+    if (!storage) {
+        throw new Error('Firebase Storage is not initialized. This function must be called in the browser.');
+    }
     try {
         const storageRef = ref(storage, path);
         const downloadURL = await getDownloadURL(storageRef);
@@ -109,6 +115,9 @@ export const getFileURL = async (path: string): Promise<string> => {
 export const listFiles = async (
     path: string
 ): Promise<{ name: string; fullPath: string; url: string }[]> => {
+    if (!storage) {
+        throw new Error('Firebase Storage is not initialized. This function must be called in the browser.');
+    }
     try {
         const storageRef = ref(storage, path);
         const result = await listAll(storageRef);
@@ -164,5 +173,8 @@ export const uploadUserFile = async (
 
 // Export storage reference creator for advanced usage
 export const createStorageRef = (path: string): StorageReference => {
+    if (!storage) {
+        throw new Error('Firebase Storage is not initialized. This function must be called in the browser.');
+    }
     return ref(storage, path);
 };

@@ -6,6 +6,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { StudentProvider } from "@/contexts/StudentContext";
+import { EventTrackerInit } from "@/components/EventTrackerInit";
 
 export default function AppLayout({
   children,
@@ -14,6 +15,7 @@ export default function AppLayout({
 }) {
   return (
     <StudentProvider>
+      <EventTrackerInit />
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
           <Sidebar className="border-r">
