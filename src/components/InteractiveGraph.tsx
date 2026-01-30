@@ -1,11 +1,18 @@
 'use client';
 
 import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
-import ForceGraph2D, { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
+import dynamic from 'next/dynamic';
+import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { docsTree, flattenDocs, studentsData } from '@/data/studentsDataStatic';
 import { generateEnhancedGraphData } from '@/lib/generateEnhancedGraph';
 import type { GraphNode, DocNode, StudentNode } from '@/data/docsData';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X } from 'lucide-react';
+
+// Dynamically import ForceGraph2D with SSR disabled
+const ForceGraph2D = dynamic(
+  () => import('react-force-graph-2d'),
+  { ssr: false }
+);
 
 interface InteractiveGraphProps {
   onNodeClick?: (nodeId: string) => void;
