@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import ForceGraph2D, { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { docsTree, flattenDocs, studentsData } from '@/data/studentsDataStatic';
@@ -420,8 +422,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode }: InteractiveGr
               <ForceGraph2D
                 ref={modalGraphRef as React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>}
                 graphData={isGlobalView ? fullGraphData : localGraphData}
-                width={window.innerWidth * 0.9}
-                height={window.innerHeight * 0.85 - 48}
+                width={typeof window !== 'undefined' ? window.innerWidth * 0.9 : 1200}
+                height={typeof window !== 'undefined' ? window.innerHeight * 0.85 - 48 : 800}
                 backgroundColor="transparent"
                 nodeRelSize={8}
                 nodeCanvasObject={nodeCanvasObject}
