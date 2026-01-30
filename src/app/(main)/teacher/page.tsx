@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Table,
@@ -12,13 +13,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Download, ChevronRight } from "lucide-react";
-import { studentsData } from "@/data/studentsDataStatic";
-import { calculateStudentRisk } from "@/lib/generateStudentIntelligence";
+import { Download, ChevronRight, Loader2 } from "lucide-react";
 import { InteractiveGraph } from "@/components/InteractiveGraph";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 // Get initials for avatar
 const getInitials = (name: string) => {
@@ -28,19 +29,6 @@ const getInitials = (name: string) => {
     .join('')
     .toUpperCase();
 };
-
-// Calculate student data with risk assessment
-const studentData = studentsData.map(student => {
-  const risk = calculateStudentRisk(student);
-  return {
-    id: student.id,
-    name: student.name,
-    grade: student.grade,
-    progress: risk.avgMastery,
-    absenteeism: "Low", // Mock for now
-    dropoutRisk: risk.riskLevel,
-  };
-});
 
 const getRiskVariant = (risk: string) => {
   switch (risk.toLowerCase()) {
@@ -53,6 +41,44 @@ const getRiskVariant = (risk: string) => {
 
 export default function TeacherPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [students, setStudents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStudents() {
+      if (!user) return;
+
+      try {
+        const response = await fetch(`/api/teacher/students?teacherId=${user.uid}`);
+        if (response.ok) {
+          const data = await response.json();
+          setStudents(data.students || []);
+        }
+      } catch (error) {
+        console.error('Error fetching students:', error);
+        toast({
+          title: 'Failed to load students',
+          description: 'Could not fetch student data',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStudents();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -80,8 +106,7 @@ export default function TeacherPage() {
         <CardContent>
           <InteractiveGraph
             onNodeClick={(nodeId) => {
-              // If it's a student node, navigate to their analytics
-              const student = studentsData.find(s => s.id === nodeId);
+              const student = students.find(s => s.id === nodeId);
               if (student) {
                 router.push(`/teacher/student/${nodeId}`);
               }
@@ -109,43 +134,55 @@ export default function TeacherPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {studentData.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="bg-primary">
-                        <AvatarFallback className="text-white font-medium text-xs">
-                          {getInitials(student.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{student.name}</div>
-                        <div className="text-xs text-muted-foreground">Grade {student.grade}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress value={student.progress} className="w-full" />
-                      <span className="text-sm text-muted-foreground font-semibold w-10 text-right">{student.progress}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getRiskVariant(student.absenteeism)}>{student.absenteeism}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getRiskVariant(student.dropoutRisk)}>{student.dropoutRisk}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/teacher/student/${student.id}`}>
-                        View
-                        <ChevronRight className="h-4 w-4 ml-1" />
-                      </Link>
-                    </Button>
+              {students.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    No students enrolled yet
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                students.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="bg-primary">
+                          <AvatarFallback className="text-white font-medium text-xs">
+                            {getInitials(student.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{student.name}</div>
+                          <div className="text-xs text-muted-foreground">Grade {student.grade || 'N/A'}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={student.avgMastery || 0} className="w-full" />
+                        <span className="text-sm text-muted-foreground font-semibold w-10 text-right">
+                          {Math.round(student.avgMastery || 0)}%
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="default">Low</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getRiskVariant(student.dropoutRisk || 'low')}>
+                        {student.dropoutRisk || 'Low'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/teacher/student/${student.id}`}>
+                          View
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

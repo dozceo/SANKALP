@@ -1,16 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useStudent } from "@/contexts/StudentContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Loader2, GitBranch } from "lucide-react";
 
 export function AddStudyMaterial() {
-    const { currentStudent } = useStudent();
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const [converting, setConverting] = useState(false);
+    const [lastSavedId, setLastSavedId] = useState<string | null>(null);
+
     const [formData, setFormData] = useState({
         subject: "",
         topic: "",
@@ -37,19 +43,102 @@ export function AddStudyMaterial() {
         setFormData({ ...formData, referenceLinks: newLinks });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Add material to student data via context
-        console.log("Submitting study material:", formData);
 
-        // Reset form
-        setFormData({
-            subject: "",
-            topic: "",
-            chapter: "",
-            detailedNotes: "",
-            referenceLinks: [""],
-        });
+        if (!user) {
+            toast({
+                title: 'Not authenticated',
+                description: 'Please sign in first',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await fetch('/api/planner/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    studentId: user.uid,
+                    subject: formData.subject,
+                    topic: formData.topic,
+                    chapter: formData.chapter || undefined,
+                    notes: formData.detailedNotes,
+                    source: formData.referenceLinks.filter(link => link.trim() !== '').join(', '),
+                    addedAt: new Date().toISOString(),
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to save data');
+            }
+
+            setLastSavedId(data.id);
+
+            toast({
+                title: 'Study material added!',
+                description: 'Your notes have been saved successfully',
+            });
+
+            // Reset form
+            setFormData({
+                subject: "",
+                topic: "",
+                chapter: "",
+                detailedNotes: "",
+                referenceLinks: [""],
+            });
+        } catch (error: any) {
+            toast({
+                title: 'Failed to add material',
+                description: error.message,
+                variant: 'destructive',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConvertToBrainMap = async () => {
+        if (!lastSavedId) return;
+
+        setConverting(true);
+
+        try {
+            const response = await fetch('/api/planner/convert-to-node', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    plannerId: lastSavedId,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to convert');
+            }
+
+            toast({
+                title: 'Converted to brain map!',
+                description: 'Your study material is now a node in your brain map',
+            });
+
+            setLastSavedId(null);
+        } catch (error: any) {
+            toast({
+                title: 'Conversion failed',
+                description: error.message,
+                variant: 'destructive',
+            });
+        } finally {
+            setConverting(false);
+        }
     };
 
     return (
@@ -153,9 +242,25 @@ export function AddStudyMaterial() {
                         </p>
                     </div>
 
-                    <Button type="submit" className="w-full">
-                        Add Material
-                    </Button>
+                    <div className="flex gap-3">
+                        <Button type="submit" className="flex-1" disabled={loading}>
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Add Material
+                        </Button>
+                        {lastSavedId && (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={handleConvertToBrainMap}
+                                disabled={converting}
+                                className="flex-1"
+                            >
+                                {converting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                <GitBranch className="mr-2 h-4 w-4" />
+                                Convert to Brain Map
+                            </Button>
+                        )}
+                    </div>
                 </form>
             </CardContent>
         </Card>
