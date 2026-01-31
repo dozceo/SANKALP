@@ -36,8 +36,8 @@ const navItems = [
   { href: "/chat", icon: MessageCircle, label: "Chatbot" },
   { href: "/rewards", icon: Trophy, label: "Rewards" },
   { href: "/mentor", icon: HeartHandshake, label: "Mindful Mentor" },
+  { href: "/brain-map", icon: BrainCircuit, label: "Brain Map" },
   { type: "separator" },
-  { href: "/teacher", icon: UserCheck, label: "Teacher Mode" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
@@ -55,13 +55,8 @@ export function SidebarNav() {
       </SidebarHeader>
       <div className="flex-1 overflow-y-auto">
         <SidebarMenu className="p-2">
-          {navItems.map((item, index) => {
-            // Hide Teacher Mode if not a teacher
-            if (item.label === "Teacher Mode" && role !== 'teacher') {
-              return null;
-            }
-
-            return item.type === "separator" ? (
+          {navItems.map((item, index) =>
+            item.type === "separator" ? (
               <Separator key={index} className="my-2" />
             ) : (
               <SidebarMenuItem key={item.href}>
@@ -71,13 +66,13 @@ export function SidebarNav() {
                   tooltip={{ children: item.label }}
                 >
                   <Link href={item.href!}>
-                    <item.icon />
+                    {item.icon && <item.icon />}
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            );
-          })}
+            )
+          )}
         </SidebarMenu>
       </div>
       <SidebarFooter>
@@ -86,7 +81,7 @@ export function SidebarNav() {
             <div className="p-3 bg-secondary/50 rounded-lg border border-border">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                  My Student ID
+                  My User ID
                 </span>
                 <Button
                   variant="ghost"
