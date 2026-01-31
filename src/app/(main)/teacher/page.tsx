@@ -45,23 +45,35 @@ export default function TeacherPage() {
   const { toast } = useToast();
 
   const [students, setStudents] = useState<any[]>([]);
+  const [graphData, setGraphData] = useState<any>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchStudents() {
+    async function fetchData() {
       if (!user) return;
 
       try {
-        const response = await fetch(`/api/teacher/students?teacherId=${user.uid}`);
-        if (response.ok) {
-          const data = await response.json();
+        const [studentsRes, graphRes] = await Promise.all([
+          fetch(`/api/teacher/students?teacherId=${user.uid}`),
+          fetch(`/api/teacher/graph?teacherId=${user.uid}`)
+        ]);
+
+        if (studentsRes.ok) {
+          const data = await studentsRes.json();
           setStudents(data.students || []);
         }
+
+        if (graphRes.ok) {
+          const gData = await graphRes.json();
+          if (gData.success) {
+            setGraphData(gData);
+          }
+        }
       } catch (error) {
-        console.error('Error fetching students:', error);
+        console.error('Error fetching dashboard data:', error);
         toast({
-          title: 'Failed to load students',
-          description: 'Could not fetch student data',
+          title: 'Failed to load dashboard',
+          description: 'Could not fetch data',
           variant: 'destructive',
         });
       } finally {
@@ -69,7 +81,7 @@ export default function TeacherPage() {
       }
     }
 
-    fetchStudents();
+    fetchData();
   }, [user]);
 
   if (loading) {
@@ -105,6 +117,7 @@ export default function TeacherPage() {
         </CardHeader>
         <CardContent>
           <InteractiveGraph
+            graphData={graphData} // Pass fetched data
             onNodeClick={(nodeId) => {
               const student = students.find(s => s.id === nodeId);
               if (student) {

@@ -5,8 +5,27 @@
  * Run with: npm run seed-db
  */
 
-import { db } from '../src/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load environment variables from .env.local
+const envPath = resolve(process.cwd(), '.env.local');
+console.log('Loading env from:', envPath);
+config({ path: envPath });
+
+console.log('Project ID (from env):', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+
+// Fallback for local development if env not loaded
+if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+    console.log('⚠️ Env var missing, using fallback project ID');
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'sankalp-prerollout';
+}
+
+// Fallback for local development if env not loaded
+if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+    console.log('⚠️ Env var missing, using fallback project ID');
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'sankalp-prerollout';
+}
 
 // Test student data
 const TEST_STUDENTS = [
@@ -94,6 +113,10 @@ const TEST_QUIZ_RESULTS = [
 
 async function seedDatabase() {
     try {
+        // Dynamic import to ensure env vars are loaded first
+        const { db } = await import('../src/lib/firebase-admin');
+        const { FieldValue } = await import('firebase-admin/firestore');
+
         console.log('🌱 Starting database seeding...\n');
 
         // Create students

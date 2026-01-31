@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { href: "/home", icon: LayoutGrid, label: "Home" },
@@ -41,6 +42,7 @@ const navItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { role } = useAuth();
 
   return (
     <>
@@ -52,8 +54,13 @@ export function SidebarNav() {
       </SidebarHeader>
       <div className="flex-1 overflow-y-auto">
         <SidebarMenu className="p-2">
-          {navItems.map((item, index) =>
-            item.type === "separator" ? (
+          {navItems.map((item, index) => {
+            // Hide Teacher Mode if not a teacher
+            if (item.label === "Teacher Mode" && role !== 'teacher') {
+              return null;
+            }
+
+            return item.type === "separator" ? (
               <Separator key={index} className="my-2" />
             ) : (
               <SidebarMenuItem key={item.href}>
@@ -68,8 +75,8 @@ export function SidebarNav() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )
-          )}
+            );
+          })}
         </SidebarMenu>
       </div>
       <SidebarFooter>
