@@ -27,12 +27,15 @@ export function StudentProvider({ children }: { children: ReactNode }) {
         try {
             // Guard against undefined userId
             if (!user?.uid || user.uid === 'undefined') {
+                console.log('[StudentContext] No valid user ID, skipping fetch');
                 setLoading(false);
                 return;
             }
 
+            console.log('[StudentContext] Fetching student data for:', user.uid);
             // Fetch student data from API
             const response = await fetch(`/api/student?studentId=${user.uid}`);
+            console.log('[StudentContext] API response status:', response.status);
 
             if (response.ok) {
                 const data = await response.json();
@@ -51,8 +54,10 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                         lastActive: new Date().toISOString(),
                         masteryScores: data.student.masteryScores || {}
                     };
+                    console.log('[StudentContext] Student data loaded:', student);
                     setCurrentStudent(student);
                 } else {
+                    console.log('[StudentContext] No student data from API, creating minimal student');
                     // Student record doesn't exist yet - create minimal student
                     const student: StudentNode = {
                         id: user.uid,
@@ -87,7 +92,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                 setCurrentStudent(student);
             }
         } catch (error) {
-            console.error('Error fetching student:', error);
+            console.error('[StudentContext] Error fetching student:', error);
             // On error, still create minimal student
             const student: StudentNode = {
                 id: user.uid,

@@ -111,8 +111,8 @@ export default function OnboardingPage() {
                 {step === 1 && (
                     <div className="space-y-6">
                         <div>
-                            <h1 className="text-3xl font-bold mb-2">Welcome to Sankalp! 👋</h1>
-                            <p className="text-muted-foreground">Let's set up your personalized learning journey</p>
+                            <h1 className="text-3xl font-bold mb-2 text-foreground">Welcome to Sankalp! 👋</h1>
+                            <p className="text-foreground/80">Let's set up your personalized learning journey</p>
                         </div>
 
                         <div>
@@ -132,8 +132,8 @@ export default function OnboardingPage() {
                                         key={grade}
                                         onClick={() => setFormData({ ...formData, grade })}
                                         className={`p-3 rounded-lg border-2 transition-all ${formData.grade === grade
-                                                ? 'border-primary bg-primary/10 font-semibold'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-primary bg-primary/10 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         {grade}
@@ -148,8 +148,8 @@ export default function OnboardingPage() {
                 {step === 2 && (
                     <div className="space-y-6">
                         <div>
-                            <h2 className="text-2xl font-bold mb-2">What subjects are you studying?</h2>
-                            <p className="text-muted-foreground">Select all that apply</p>
+                            <h2 className="text-2xl font-bold mb-2 text-foreground">What subjects are you studying?</h2>
+                            <p className="text-foreground/80">Select all that apply</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -158,8 +158,8 @@ export default function OnboardingPage() {
                                     key={subject}
                                     onClick={() => handleSubjectToggle(subject)}
                                     className={`p-4 rounded-lg border-2 transition-all text-left ${formData.subjects.includes(subject)
-                                            ? 'border-primary bg-primary/10 font-semibold'
-                                            : 'border-gray-200 hover:border-gray-300'
+                                        ? 'border-primary bg-primary/10 font-semibold'
+                                        : 'border-gray-200 hover:border-gray-300'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between">
@@ -178,8 +178,8 @@ export default function OnboardingPage() {
                 {step === 3 && (
                     <div className="space-y-6">
                         <div>
-                            <h2 className="text-2xl font-bold mb-2">Tell us about your goals</h2>
-                            <p className="text-muted-foreground">What do you want to achieve this year?</p>
+                            <h2 className="text-2xl font-bold mb-2 text-foreground">Tell us about your goals</h2>
+                            <p className="text-foreground/80">What do you want to achieve this year?</p>
                         </div>
 
                         <div>
@@ -200,8 +200,8 @@ export default function OnboardingPage() {
                                         key={time}
                                         onClick={() => setFormData({ ...formData, dailyStudyTime: time })}
                                         className={`p-3 rounded-lg border-2 transition-all ${formData.dailyStudyTime === time
-                                                ? 'border-primary bg-primary/10 font-semibold'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-primary bg-primary/10 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         {time}
@@ -216,8 +216,8 @@ export default function OnboardingPage() {
                 {step === 4 && (
                     <div className="space-y-6">
                         <div>
-                            <h2 className="text-2xl font-bold mb-2">Join Your Class (Optional)</h2>
-                            <p className="text-muted-foreground">
+                            <h2 className="text-2xl font-bold mb-2 text-foreground">Join Your Class (Optional)</h2>
+                            <p className="text-foreground/80">
                                 If your teacher gave you a class code, enter it below
                             </p>
                         </div>

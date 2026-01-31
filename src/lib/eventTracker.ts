@@ -231,6 +231,12 @@ class EventTracker {
     async flush(): Promise<void> {
         if (this.queue.length === 0) return;
 
+        // Guard: Don't flush if studentId not set
+        if (!this.studentId) {
+            this.log('Cannot flush: studentId not set');
+            return;
+        }
+
         const batch = [...this.queue];
         this.queue = [];
 

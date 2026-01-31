@@ -114,8 +114,8 @@ export default function TeacherOnboardingPage() {
                 {step === 1 && (
                     <div className="space-y-6">
                         <div>
-                            <h1 className="text-3xl font-bold mb-2">Welcome, Teacher! 👨‍🏫</h1>
-                            <p className="text-muted-foreground">Let's set up your teaching dashboard</p>
+                            <h1 className="text-3xl font-bold mb-2 text-foreground">Welcome, Teacher! 👨‍🏫</h1>
+                            <p className="text-foreground/80">Let's set up your teaching dashboard</p>
                         </div>
 
                         <div>
@@ -133,8 +133,8 @@ export default function TeacherOnboardingPage() {
                 {step === 2 && (
                     <div className="space-y-6">
                         <div>
-                            <h2 className="text-2xl font-bold mb-2">What do you teach?</h2>
-                            <p className="text-muted-foreground">Select subjects and grade levels</p>
+                            <h2 className="text-2xl font-bold mb-2 text-foreground">What do you teach?</h2>
+                            <p className="text-foreground/80">Select subjects and grade levels</p>
                         </div>
 
                         <div>
@@ -145,8 +145,8 @@ export default function TeacherOnboardingPage() {
                                         key={subject}
                                         onClick={() => handleSubjectToggle(subject)}
                                         className={`p-3 rounded-lg border-2 transition-all text-left ${formData.subjects.includes(subject)
-                                                ? 'border-blue-600 bg-blue-50 font-semibold'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-blue-600 bg-blue-50 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         <div className="flex items-center justify-between">
@@ -168,8 +168,8 @@ export default function TeacherOnboardingPage() {
                                         key={grade}
                                         onClick={() => handleGradeLevelToggle(grade)}
                                         className={`p-3 rounded-lg border-2 transition-all ${formData.gradeLevels.includes(grade)
-                                                ? 'border-blue-600 bg-blue-50 font-semibold'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-blue-600 bg-blue-50 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         {grade}
@@ -184,8 +184,8 @@ export default function TeacherOnboardingPage() {
                 {step === 3 && (
                     <div className="space-y-6">
                         <div>
-                            <h2 className="text-2xl font-bold mb-2">About your institution</h2>
-                            <p className="text-muted-foreground">Help us understand your teaching environment</p>
+                            <h2 className="text-2xl font-bold mb-2 text-foreground">About your institution</h2>
+                            <p className="text-foreground/80">Help us understand your teaching environment</p>
                         </div>
 
                         <div>
@@ -205,8 +205,8 @@ export default function TeacherOnboardingPage() {
                                         key={size}
                                         onClick={() => setFormData({ ...formData, expectedClassSize: size })}
                                         className={`p-3 rounded-lg border-2 transition-all ${formData.expectedClassSize === size
-                                                ? 'border-blue-600 bg-blue-50 font-semibold'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-blue-600 bg-blue-50 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         {size} students

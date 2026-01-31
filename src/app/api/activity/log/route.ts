@@ -4,10 +4,55 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
+        // Parse request body with better error handling
+        const body = await req.json().catch(() => null);
+
+        if (!body) {
+            console.error('❌ [Activity Log] No JSON body received');
+            return NextResponse.json(
+                { error: 'Invalid JSON' },
+                { status: 400 }
+            );
+        }
+
+        // Check if this is a batch request (from EventTracker)
+        if (body.events && Array.isArray(body.events)) {
+            console.log(`📦 [Activity Log] Batch request with ${body.events.length} events`);
+
+            // Process each event in the batch
+            const processedIds = [];
+            for (const event of body.events) {
+                if (!event.studentId) {
+                    console.warn('⚠️ [Activity Log] Event missing studentId, skipping:', event);
+                    continue;
+                }
+
+                const logRef = await db.collection('activityLogs').add({
+                    studentId: event.studentId,
+                    sessionId: event.sessionId || null,
+                    timestamp: FieldValue.serverTimestamp(),
+                    eventId: event.id,
+                    action: event.action,
+                    timing: event.timing,
+                    data: event.data || {},
+                    metadata: event.metadata || {},
+                });
+
+                processedIds.push(logRef.id);
+            }
+
+            return NextResponse.json({
+                success: true,
+                processed: processedIds.length,
+                logIds: processedIds,
+            }, { status: 201 });
+        }
+
+        // Legacy single request format (for backwards compatibility)
         const { studentId, sessionId, activityType, details } = body;
 
         if (!studentId || !activityType) {
+            console.error('❌ [Activity Log] Invalid payload:', JSON.stringify(body, null, 2));
             return NextResponse.json(
                 { error: 'Missing required fields: studentId, activityType' },
                 { status: 400 }
@@ -70,7 +115,7 @@ export async function POST(req: NextRequest) {
             logId: logRef.id,
         }, { status: 201 });
     } catch (error) {
-        console.error('Error logging activity:', error);
+        console.error('❌ [Activity Log] Error logging activity:', error);
         return NextResponse.json(
             { error: 'Failed to log activity' },
             { status: 500 }
