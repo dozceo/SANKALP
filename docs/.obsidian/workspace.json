@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Features Overview.md",
+                "file": "Architecture Map.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Features Overview"
+              "title": "Architecture Map"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Features Overview.md",
+                "file": "Architecture Map.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for Features Overview"
+              "title": "Backlinks for Architecture Map"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Features Overview.md",
+                "file": "Architecture Map.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from Features Overview"
+              "title": "Outgoing links from Architecture Map"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Features Overview.md",
+                "file": "Architecture Map.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of Features Overview"
+              "title": "Outline of Architecture Map"
             }
           }
         ]
@@ -185,7 +185,9 @@
   },
   "active": "0e84ac6efaf8b7a3",
   "lastOpenFiles": [
+    "Firebase IAM Fix.md",
     "README.md",
+    "Features Overview.md",
     "Links.md",
     "blueprint.md",
     "README_OSDI.md"
