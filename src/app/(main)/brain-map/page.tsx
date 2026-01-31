@@ -14,7 +14,7 @@ export default function BrainMapPage() {
 
     useEffect(() => {
         async function fetchGraph() {
-            if (!user) return;
+            if (!user?.uid || user.uid === 'undefined') return;
 
             try {
                 const response = await fetch(`/api/student/graph?studentId=${user.uid}`);

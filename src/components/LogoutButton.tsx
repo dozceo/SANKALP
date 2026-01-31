@@ -40,7 +40,7 @@ export function LogoutButton() {
             });
 
             // Redirect to sign-in
-            router.push('/sign-in');
+            router.push('/login');
         } catch (error: any) {
             console.error('Logout error:', error);
             toast({

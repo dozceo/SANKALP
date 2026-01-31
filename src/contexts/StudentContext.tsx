@@ -25,6 +25,12 @@ export function StudentProvider({ children }: { children: ReactNode }) {
         }
 
         try {
+            // Guard against undefined userId
+            if (!user?.uid || user.uid === 'undefined') {
+                setLoading(false);
+                return;
+            }
+
             // Fetch student data from API
             const response = await fetch(`/api/student?studentId=${user.uid}`);
 

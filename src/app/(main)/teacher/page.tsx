@@ -50,7 +50,7 @@ export default function TeacherPage() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!user) return;
+      if (!user?.uid || user.uid === 'undefined') return;
 
       try {
         const [studentsRes, graphRes] = await Promise.all([

@@ -26,7 +26,7 @@ export default function JoinClassPage() {
                 description: 'Please sign in first',
                 variant: 'destructive',
             });
-            router.push('/sign-in');
+            router.push('/login');
             return;
         }
 

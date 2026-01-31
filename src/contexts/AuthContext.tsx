@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
     User,
+    Auth,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut as firebaseSignOut,
@@ -48,10 +49,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 // Fetch user role from Firestore
                 try {
-                    const response = await fetch(`/api/users/${firebaseUser.uid}`);
-                    if (response.ok) {
-                        const userData = await response.json();
-                        setRole(userData.role);
+                    if (firebaseUser?.uid) {
+                        const response = await fetch(`/api/users/${firebaseUser.uid}`);
+                        if (response.ok) {
+                            const userData = await response.json();
+                            setRole(userData.role);
+                        }
                     }
                 } catch (error) {
                     console.error('Error fetching user role:', error);
@@ -67,7 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const signIn = async (email: string, password: string) => {
-        await signInWithEmailAndPassword(auth, email, password);
+        if (!auth) throw new Error('Auth not initialized'); // Added guard
+        await signInWithEmailAndPassword(auth as Auth, email, password); // Cast auth to Auth
     };
 
     const signUp = async (
@@ -77,7 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userRole: 'student' | 'teacher',
         additionalData?: any
     ) => {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        if (!auth) throw new Error('Auth not initialized'); // Added guard
+        const userCredential = await createUserWithEmailAndPassword(auth as Auth, email, password); // Cast auth to Auth
 
         // Create user document in Firestore
         await fetch('/api/users/create', {

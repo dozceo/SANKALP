@@ -21,36 +21,38 @@ export default function RootPage() {
       }
 
       try {
-        // Check if user is a teacher
-        const teacherResponse = await fetch(`/api/teacher?teacherId=${user.uid}`);
-        if (teacherResponse.ok) {
-          const teacherData = await teacherResponse.json();
-          if (teacherData.teacher) {
-            // Teacher exists - check onboarding status
-            if (teacherData.teacher.onboardingCompleted) {
-              router.replace('/teacher');
-            } else {
-              router.replace('/teacher-onboarding');
+        if (user.uid) {
+          // Check if user is a teacher
+          const teacherResponse = await fetch(`/api/teacher?teacherId=${user.uid}`);
+          if (teacherResponse.ok) {
+            const teacherData = await teacherResponse.json();
+            if (teacherData.teacher) {
+              // Teacher exists - check onboarding status
+              if (teacherData.teacher.onboardingCompleted) {
+                router.replace('/teacher');
+              } else {
+                router.replace('/teacher-onboarding');
+              }
+              return;
             }
-            return;
           }
-        }
 
-        // User is a student - check onboarding status
-        const studentResponse = await fetch(`/api/student?studentId=${user.uid}`);
-        if (studentResponse.ok) {
-          const studentData = await studentResponse.json();
+          // User is a student - check onboarding status
+          const studentResponse = await fetch(`/api/student?studentId=${user.uid}`);
+          if (studentResponse.ok) {
+            const studentData = await studentResponse.json();
 
-          // Check if onboarding is completed
-          if (studentData.student?.onboardingCompleted) {
-            router.replace('/home');
+            // Check if onboarding is completed
+            if (studentData.student?.onboardingCompleted) {
+              router.replace('/home');
+            } else {
+              // New student - send to onboarding
+              router.replace('/onboarding');
+            }
           } else {
-            // New student - send to onboarding
+            // Student record doesn't exist yet - definitely need onboarding
             router.replace('/onboarding');
           }
-        } else {
-          // Student record doesn't exist yet - definitely need onboarding
-          router.replace('/onboarding');
         }
       } catch (error) {
         console.error('Error checking user status:', error);
