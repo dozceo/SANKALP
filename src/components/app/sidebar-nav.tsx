@@ -14,6 +14,7 @@ import {
   BrainCircuit,
   HeartHandshake,
   BookCopy,
+  Copy,
 } from "lucide-react";
 
 import {
@@ -42,7 +43,7 @@ const navItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { role } = useAuth();
+  const { user, role } = useAuth();
 
   return (
     <>
@@ -80,7 +81,30 @@ export function SidebarNav() {
         </SidebarMenu>
       </div>
       <SidebarFooter>
-        <div className="p-2">
+        <div className="p-4 space-y-4">
+          {user && (
+            <div className="p-3 bg-secondary/50 rounded-lg border border-border">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  My Student ID
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => {
+                    navigator.clipboard.writeText(user.uid);
+                  }}
+                  title="Copy ID"
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="text-xs font-mono truncate text-foreground/80">
+                {user.uid}
+              </div>
+            </div>
+          )}
           <Button variant="outline" className="w-full">
             Help & Feedback
           </Button>

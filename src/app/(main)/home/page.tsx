@@ -20,20 +20,20 @@ import { generateStudentIntelligence } from "@/lib/generateStudentIntelligence";
 import type { StudentIntelligence } from "@/types/intelligence";
 
 export default function HomePage() {
-  const { currentStudent } = useStudent();
+  const { currentStudent, loading: studentLoading } = useStudent();
   const [intelligence, setIntelligence] = useState<StudentIntelligence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (currentStudent) {
+    if (currentStudent && !studentLoading) {
       // Generate intelligence from student data
       const intel = generateStudentIntelligence(currentStudent);
       setIntelligence(intel);
       setIsLoading(false);
     }
-  }, [currentStudent]);
+  }, [currentStudent, studentLoading]);
 
-  if (isLoading || !currentStudent) {
+  if (isLoading || studentLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

@@ -26,7 +26,12 @@ export default function RootPage() {
         if (teacherResponse.ok) {
           const teacherData = await teacherResponse.json();
           if (teacherData.teacher) {
-            router.replace('/teacher');
+            // Teacher exists - check onboarding status
+            if (teacherData.teacher.onboardingCompleted) {
+              router.replace('/teacher');
+            } else {
+              router.replace('/teacher-onboarding');
+            }
             return;
           }
         }
