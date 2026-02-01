@@ -7,6 +7,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface Props {
     children: ReactNode;
@@ -38,21 +39,14 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error('Error boundary caught error:', error, errorInfo);
-
         this.setState({
             error,
             errorInfo
         });
 
-        // Log to error tracking service (Sentry, etc.)
-        if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-            // TODO: Send to error tracking service
-            console.error('Production error:', {
-                error: error.toString(),
-                errorInfo: errorInfo.componentStack
-            });
-        }
+        logger.error(error, {
+            componentStack: errorInfo.componentStack
+        });
     }
 
     render() {
