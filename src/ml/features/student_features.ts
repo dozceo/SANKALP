@@ -65,11 +65,16 @@ export function extractMasteryFeatures(
     const attempts_per_topic = topicQuizzes.length;
 
     // Calculate days_since_last_revision
-    const lastQuiz = topicQuizzes.sort(
-        (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-    )[0];
+    let latestTimestamp = topicQuizzes[0].timestamp.getTime();
+    for (let i = 1; i < topicQuizzes.length; i++) {
+        const ts = topicQuizzes[i].timestamp.getTime();
+        if (ts > latestTimestamp) {
+            latestTimestamp = ts;
+        }
+    }
+
     const days_since_last_revision = Math.floor(
-        (Date.now() - lastQuiz.timestamp.getTime()) / (1000 * 60 * 60 * 24)
+        (Date.now() - latestTimestamp) / (1000 * 60 * 60 * 24)
     );
 
     // Calculate quiz_score_variance
