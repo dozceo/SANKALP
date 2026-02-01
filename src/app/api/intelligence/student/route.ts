@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { extractMasteryFeatures, type StudentHistory } from "@/ml/features/student_features";
+import { extractMasteryFeatures, calculatePerformanceTrend, type StudentHistory } from "@/ml/features/student_features";
 import { predictMastery } from "@/ml/inference/ml-bridge";
 import { makeRevisionDecision, makeInterventionDecision } from "@/ai/adk/decision-engine";
 import { DecisionAction, type MLSignals } from "@/ai/adk/types";
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
                 confidence: mlPrediction.confidence,
                 daysSinceRevision: features.days_since_last_revision,
                 attempts: features.attempts_per_topic,
-                trend: "STABLE", // TODO: Calculate from history
+                trend: calculatePerformanceTrend(studentHistory.quizResults.filter(q => q.topic === topic)),
                 needsRevision: adkDecision.priority !== "LOW",
                 priority: adkDecision.priority,
             };
