@@ -19,6 +19,7 @@ export interface User {
     role: 'student' | 'teacher';
     createdAt: Date;
     lastLoginAt: Date;
+    onboardingCompleted?: boolean;
 }
 
 export interface Teacher {
@@ -29,6 +30,7 @@ export interface Teacher {
     school: string;
     subject: string;
     classIds: string[];
+    onboardingCompleted?: boolean;
 }
 
 export interface Class {
@@ -56,6 +58,9 @@ export interface Student {
     joinedClassAt?: Date;
     registrationDate: Date;
     lastLoginDate: Date;
+    chatbotPersonality?: string;
+    chatbotInstructions?: string;
+    onboardingCompleted?: boolean;
 }
 
 export interface QuizResult {
@@ -312,6 +317,9 @@ export async function getStudent(studentId: string): Promise<Student | null> {
             joinedClassAt: data?.joinedClassAt?.toDate(),
             registrationDate: data?.registrationDate?.toDate() || new Date(),
             lastLoginDate: data?.lastLoginDate?.toDate() || new Date(),
+            chatbotPersonality: data?.chatbotPersonality,
+            chatbotInstructions: data?.chatbotInstructions,
+            onboardingCompleted: data?.onboardingCompleted,
         };
     } catch (error) {
         console.error('Error fetching student:', error);
@@ -654,6 +662,7 @@ export async function getUser(userId: string): Promise<User | null> {
             role: data?.role || 'student',
             createdAt: data?.createdAt?.toDate() || new Date(),
             lastLoginAt: data?.lastLoginAt?.toDate() || new Date(),
+            onboardingCompleted: data?.onboardingCompleted,
         };
     } catch (error) {
         console.error('Error fetching user:', error);
@@ -781,6 +790,7 @@ export async function getTeacher(teacherId: string): Promise<Teacher | null> {
             school: data?.school || '',
             subject: data?.subject || '',
             classIds: data?.classIds || [],
+            onboardingCompleted: data?.onboardingCompleted,
         };
     } catch (error) {
         console.error('Error fetching teacher:', error);

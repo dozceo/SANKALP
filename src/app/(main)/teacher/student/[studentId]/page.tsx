@@ -15,6 +15,8 @@ import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from "
 import { studentsData } from "@/data/studentsDataStatic";
 import { calculateStudentRisk } from "@/lib/generateStudentIntelligence";
 import Link from "next/link";
+import { saveChatbotConfiguration } from "@/app/actions/student-configuration";
+import { useToast } from "@/hooks/use-toast";
 
 // Get initials for avatar
 const getInitials = (name: string) => {
@@ -29,6 +31,8 @@ export default function StudentAnalyticsPage({ params }: { params: Promise<{ stu
   const { studentId } = use(params);
   const [chatbotPersonality, setChatbotPersonality] = useState("friendly-encouraging");
   const [customInstructions, setCustomInstructions] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   // Find the student
   const student = studentsData.find(s => s.id === studentId);
@@ -77,14 +81,32 @@ export default function StudentAnalyticsPage({ params }: { params: Promise<{ stu
     );
   }
 
-  const handleSaveConfiguration = () => {
-    // TODO: Save chatbot configuration to database
-    console.log('Saving chatbot configuration:', {
-      studentId: student.id,
-      personality: chatbotPersonality,
-      instructions: customInstructions,
-    });
-    alert('Chatbot configuration saved successfully!');
+  const handleSaveConfiguration = async () => {
+    setIsSaving(true);
+    try {
+      const result = await saveChatbotConfiguration(student.id, chatbotPersonality, customInstructions);
+      if (result.success) {
+        toast({
+          title: "Configuration saved",
+          description: "The chatbot configuration has been successfully updated.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to save configuration. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving configuration:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -284,8 +306,8 @@ export default function StudentAnalyticsPage({ params }: { params: Promise<{ stu
                 </p>
               </div>
 
-              <Button className="w-full" onClick={handleSaveConfiguration}>
-                Save Configuration
+              <Button className="w-full" onClick={handleSaveConfiguration} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Configuration"}
               </Button>
             </CardContent>
           </Card>

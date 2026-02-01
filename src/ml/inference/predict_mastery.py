@@ -3,7 +3,7 @@ Topic Mastery Prediction Inference Script
 
 Loads the trained model and makes predictions on new student data.
 Accepts JSON input via stdin and outputs JSON predictions.
-Supports both single input (dict) and batch input (list of dicts).
+Supports persistent mode by reading line-by-line from stdin.
 
 Usage:
   echo '{"avg_quiz_score": 0.75, ...}' | python predict_mastery.py
@@ -28,10 +28,17 @@ def load_model():
         )
     return joblib.load(MODEL_PATH)
 
-def predict_single(model, features):
+# Global model instance
+model = None
+
+def predict_mastery(features):
     """
     Predict topic mastery for a single feature set
     """
+    global model
+    if model is None:
+        model = load_model()
+    
     # Extract features in correct order
     feature_vector = np.array([[
         features['avg_quiz_score'],
@@ -59,44 +66,45 @@ def predict_single(model, features):
 
 if __name__ == "__main__":
     try:
-        # Read JSON input from stdin
-        input_data = json.load(sys.stdin)
-        
-        # Load model once
+        # Pre-load model
         model = load_model()
         
-        if isinstance(input_data, list):
-            # Batch prediction
-            results = []
-            for features in input_data:
-                try:
-                    result = predict_single(model, features)
-                    results.append(result)
-                except Exception as e:
-                    results.append({
-                        "mastery_probability": 0.0,
-                        "confidence": 0.0,
-                        "predicted_class": "error",
-                        "error": str(e)
-                    })
-            print(json.dumps(results))
-        else:
-            # Single prediction
-            result = predict_single(model, input_data)
-            print(json.dumps(result))
-        
+        # Read from stdin line by line
+        for line in sys.stdin:
+            line = line.strip()
+            if not line:
+                continue
+
+            request_id = None
+            try:
+                input_data = json.loads(line)
+                request_id = input_data.get("_id")
+
+                # Make prediction
+                result = predict_mastery(input_data)
+
+                # Add back request_id if present
+                if request_id:
+                    result["_id"] = request_id
+
+                # Output JSON result
+                print(json.dumps(result))
+                sys.stdout.flush()
+
+            except Exception as e:
+                # Output error as JSON
+                error_result = {
+                    "error": str(e),
+                    "mastery_probability": 0.0,
+                    "confidence": 0.0,
+                    "predicted_class": "error"
+                }
+                if request_id:
+                    error_result["_id"] = request_id
+
+                print(json.dumps(error_result))
+                sys.stdout.flush()
+
     except Exception as e:
-        # Output error as JSON
-        error_result = {
-            "error": str(e),
-            "mastery_probability": 0.0,
-            "confidence": 0.0,
-            "predicted_class": "error"
-        }
-        # If input was a list, we probably should return a list with one error or handle it better,
-        # but top level exception means we failed completely.
-        # Ideally we wrap this in a list if we know we are in batch mode?
-        # But we might not know if json.load failed.
-        # We'll just output the object. The caller needs to handle it.
-        print(json.dumps(error_result))
+        sys.stderr.write(f"Fatal error: {str(e)}\n")
         sys.exit(1)

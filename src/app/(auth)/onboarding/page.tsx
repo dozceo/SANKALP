@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const GRADES = ['9th', '10th', '11th', '12th', 'College'];
 const SUBJECTS = [
@@ -32,6 +33,7 @@ const STUDY_TIMES = [
 export default function OnboardingPage() {
     const { user } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
@@ -66,13 +68,25 @@ export default function OnboardingPage() {
             });
 
             if (response.ok) {
+                toast({
+                    title: 'Onboarding complete!',
+                    description: 'Your profile has been set up successfully.',
+                });
                 router.push('/home');
             } else {
-                alert('Failed to complete onboarding. Please try again.');
+                toast({
+                    title: 'Onboarding failed',
+                    description: 'Failed to complete onboarding. Please try again.',
+                    variant: 'destructive',
+                });
             }
         } catch (error) {
             console.error('Onboarding error:', error);
-            alert('An error occurred. Please try again.');
+            toast({
+                title: 'Error',
+                description: 'An error occurred. Please try again.',
+                variant: 'destructive',
+            });
         } finally {
             setLoading(false);
         }

@@ -6,7 +6,7 @@ see more here https://nextjs.org/docs/messages/app-static-to-dynamic-error`),"__
   The quiz should be suitable for a "{{educationLevel}}" level.
   The questions should have a difficulty of "{{difficulty}}".
 
-  Each question should have 4 possible answers. One and only one answer is correct. 
+  Each question should have 4 possible answers. One and only one answer is correct.
 
   The output must be a valid JSON object with a 'quiz' field, containing an array of question objects.
   Each object must have "question", "options" (an array of 4 strings), and "correctAnswer" fields.

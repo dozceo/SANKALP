@@ -17,9 +17,6 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'student' | 'teacher'>('student');
-  const [grade, setGrade] = useState('');
-  const [school, setSchool] = useState('');
-  const [subject, setSubject] = useState('');
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const router = useRouter();
@@ -30,22 +27,19 @@ export default function SignUpPage() {
     setLoading(true);
 
     try {
-      const additionalData = role === 'student'
-        ? { grade }
-        : { school, subject };
-
-      await signUp(email, password, name, role, additionalData);
+      // Pass empty additional data as we will collect it during onboarding
+      await signUp(email, password, name, role, {});
 
       toast({
         title: 'Account created!',
         description: 'Welcome to SANKALP.',
       });
 
-      // Redirect based on role
+      // Redirect to onboarding based on role
       if (role === 'teacher') {
-        router.push('/teacher');
+        router.push('/teacher-onboarding');
       } else {
-        router.push('/join-class');
+        router.push('/onboarding');
       }
     } catch (error: any) {
       toast({
@@ -115,45 +109,6 @@ export default function SignUpPage() {
               required
             />
           </div>
-
-          {/* Conditional Fields */}
-          {role === 'student' && (
-            <div className="space-y-2">
-              <Label htmlFor="grade">Grade</Label>
-              <Input
-                id="grade"
-                placeholder="10"
-                value={grade}
-                onChange={(e) => setGrade(e.target.value)}
-                required
-              />
-            </div>
-          )}
-
-          {role === 'teacher' && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="school">School</Label>
-                <Input
-                  id="school"
-                  placeholder="Springfield High"
-                  value={school}
-                  onChange={(e) => setSchool(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
-                <Input
-                  id="subject"
-                  placeholder="Mathematics"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  required
-                />
-              </div>
-            </>
-          )}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
