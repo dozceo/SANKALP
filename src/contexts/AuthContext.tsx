@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 // Fetch user role from Firestore
                 try {
-                    if (firebaseUser?.uid) {
+                    if (firebaseUser?.uid && firebaseUser.uid !== 'undefined') {
                         const response = await fetch(`/api/users/${firebaseUser.uid}`);
                         if (response.ok) {
                             const userData = await response.json();
