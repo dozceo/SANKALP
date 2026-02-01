@@ -15,8 +15,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { extractMasteryFeatures, type StudentHistory } from '@/ml/features/student_features';
+import { extractMasteryFeatures, calculatePerformanceTrend, type StudentHistory } from '@/ml/features/student_features';
 import { predictMastery } from '@/ml/inference/ml-bridge';
+import { getStudent, getQuizResults } from '@/lib/db-helpers';
 import {
   makeRevisionDecision,
   makeInterventionDecision,
@@ -74,7 +75,9 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         confidence: mlPrediction.confidence,
         days_since_last_revision: features.days_since_last_revision,
         attempts_count: features.attempts_per_topic,
-        performance_trend: "STABLE", // TODO: Calculate from history
+        performance_trend: calculatePerformanceTrend(
+          studentHistory.quizResults.filter((q) => q.topic === topic.name)
+        ),
       };
 
       // Step 4: ADK makes the decision
@@ -201,12 +204,45 @@ const smartRevisionPlannerFlow = ai.defineFlow(
       brainMapData = { topics: [] };
     }
 
-    // Mock student history (in production, fetch from database)
-    const studentHistory: StudentHistory = {
-      quizResults: brainMapData.quizResults || [],
-      lastLoginDate: new Date(),
-      registrationDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-    };
+    // Fetch student history from database
+    let studentHistory: StudentHistory;
+
+    try {
+      const student = await getStudent(input.studentId);
+      if (student) {
+        const quizResults = await getQuizResults(input.studentId, 100);
+        studentHistory = {
+          studentId: input.studentId,
+          quizResults: quizResults.map((qr) => ({
+            topic: qr.topic,
+            score: qr.score,
+            timestamp: qr.timestamp,
+            timeSpent: qr.timeSpent,
+            questionsAttempted: qr.questionsAttempted,
+          })),
+          lastLoginDate: student.lastLoginDate,
+          registrationDate: student.registrationDate,
+        };
+      } else {
+        console.warn(`Student not found: ${input.studentId}. Using brainMap data.`);
+        // Fallback to data in brainMap if available
+        studentHistory = {
+          studentId: input.studentId,
+          quizResults: brainMapData.quizResults || [],
+          lastLoginDate: new Date(),
+          registrationDate: new Date(),
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching student history:', error);
+      // Fallback
+      studentHistory = {
+        studentId: input.studentId,
+        quizResults: brainMapData.quizResults || [],
+        lastLoginDate: new Date(),
+        registrationDate: new Date(),
+      };
+    }
 
     // ML-DRIVEN DECISIONS
     const mlDecisions = await makeRevisionDecisions(brainMapData, studentHistory);

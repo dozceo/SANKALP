@@ -37,6 +37,57 @@ export interface AttentionFeatures {
 }
 
 /**
+ * Calculate performance trend from quiz history
+ */
+export function calculatePerformanceTrend(
+    quizResults: RawQuizResult[]
+): "IMPROVING" | "STABLE" | "DECLINING" {
+    if (quizResults.length < 2) return "STABLE";
+
+    // Sort by date descending
+    const sorted = [...quizResults].sort(
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+    );
+
+    // Take last 5 attempts
+    const recent = sorted.slice(0, 5);
+
+    // Calculate slope of scores
+    // x = index (reverse chronological: 0 is most recent), y = score
+    // We want to see if score increases as we go to more recent (smaller index)
+    // Actually simpler: linear regression on (time, score)
+    // or just compare recent avg vs older avg
+
+    if (recent.length < 2) return "STABLE";
+
+    const scores = recent.map(r => r.score);
+
+    // Simple linear regression slope
+    // x = 0, 1, 2... (chronological)
+    // We reverse the array to be chronological
+    const chronoScores = scores.reverse();
+    const n = chronoScores.length;
+
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumXX = 0;
+
+    for (let i = 0; i < n; i++) {
+        sumX += i;
+        sumY += chronoScores[i];
+        sumXY += i * chronoScores[i];
+        sumXX += i * i;
+    }
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+
+    if (slope > 0.05) return "IMPROVING";
+    if (slope < -0.05) return "DECLINING";
+    return "STABLE";
+}
+
+/**
  * Extract Topic Mastery features for a specific topic
  */
 export function extractMasteryFeatures(
