@@ -74,7 +74,7 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         confidence: mlPrediction.confidence,
         days_since_last_revision: features.days_since_last_revision,
         attempts_count: features.attempts_per_topic,
-        performance_trend: "STABLE", // TODO: Calculate from history
+        performance_trend: calculatePerformanceTrend(topic.name, studentHistory),
       };
 
       // Step 4: ADK makes the decision
@@ -242,3 +242,53 @@ const smartRevisionPlannerFlow = ai.defineFlow(
     return { revisionList };
   }
 );
+
+/**
+ * Calculates the performance trend for a specific topic based on quiz history.
+ * Compares the average score of the most recent quizzes against the previous set.
+ */
+function calculatePerformanceTrend(
+  topic: string,
+  history: StudentHistory
+): "IMPROVING" | "STABLE" | "DECLINING" {
+  const topicQuizzes = history.quizResults
+    .filter((r) => r.topic === topic)
+    // Sort by timestamp descending (newest first)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  if (topicQuizzes.length < 2) {
+    return "STABLE";
+  }
+
+  let recent: number[] = [];
+  let previous: number[] = [];
+
+  // Determine window size based on available history
+  if (topicQuizzes.length >= 6) {
+    // Compare last 3 vs previous 3
+    recent = topicQuizzes.slice(0, 3).map((q) => q.score);
+    previous = topicQuizzes.slice(3, 6).map((q) => q.score);
+  } else if (topicQuizzes.length >= 4) {
+    // Compare last 2 vs previous 2
+    recent = topicQuizzes.slice(0, 2).map((q) => q.score);
+    previous = topicQuizzes.slice(2, 4).map((q) => q.score);
+  } else {
+    // Split remaining in half (e.g. 3 -> 1 vs 1, 2 -> 1 vs 1)
+    const midpoint = Math.floor(topicQuizzes.length / 2);
+    recent = topicQuizzes.slice(0, midpoint).map((q) => q.score);
+    previous = topicQuizzes.slice(midpoint, midpoint * 2).map((q) => q.score);
+  }
+
+  const recentAvg = recent.reduce((s, v) => s + v, 0) / recent.length;
+  const previousAvg = previous.reduce((s, v) => s + v, 0) / previous.length;
+
+  const threshold = 0.1; // 10% change required to indicate a trend
+
+  if (recentAvg > previousAvg + threshold) {
+    return "IMPROVING";
+  } else if (recentAvg < previousAvg - threshold) {
+    return "DECLINING";
+  }
+
+  return "STABLE";
+}
