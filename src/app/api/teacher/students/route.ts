@@ -30,14 +30,20 @@ export async function GET(req: NextRequest) {
                     ? quizResults.reduce((sum, r) => sum + r.score, 0) / quizResults.length
                     : 0;
 
-                const topics = [...new Set(quizResults.map(r => r.topic))];
-                const topicMastery: Record<string, number> = {};
+                const topicStats: Record<string, { sum: number; count: number }> = {};
 
-                topics.forEach(topic => {
-                    const topicResults = quizResults.filter(r => r.topic === topic);
-                    const topicAvg = topicResults.reduce((sum, r) => sum + r.score, 0) / topicResults.length;
-                    topicMastery[topic] = topicAvg;
-                });
+                for (const r of quizResults) {
+                    if (!topicStats[r.topic]) {
+                        topicStats[r.topic] = { sum: 0, count: 0 };
+                    }
+                    topicStats[r.topic].sum += r.score;
+                    topicStats[r.topic].count += 1;
+                }
+
+                const topicMastery: Record<string, number> = {};
+                for (const topic in topicStats) {
+                    topicMastery[topic] = topicStats[topic].sum / topicStats[topic].count;
+                }
 
                 return {
                     id: student.id,
