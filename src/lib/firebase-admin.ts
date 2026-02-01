@@ -40,6 +40,19 @@ const initializeFirebaseAdmin = () => {
                 projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
             });
         }
+        // For production: Use individual env vars (alternative to JSON)
+        else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+            const serviceAccount = {
+                projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            };
+
+            adminApp = initializeApp({
+                credential: cert(serviceAccount),
+                projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            });
+        }
         // For development: Use project ID only (requires Firebase CLI auth)
         else if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
             adminApp = initializeApp({
