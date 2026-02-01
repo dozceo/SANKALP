@@ -56,6 +56,8 @@ export interface Student {
     joinedClassAt?: Date;
     registrationDate: Date;
     lastLoginDate: Date;
+    chatbotPersonality?: string;
+    customInstructions?: string;
 }
 
 export interface QuizResult {
@@ -312,9 +314,32 @@ export async function getStudent(studentId: string): Promise<Student | null> {
             joinedClassAt: data?.joinedClassAt?.toDate(),
             registrationDate: data?.registrationDate?.toDate() || new Date(),
             lastLoginDate: data?.lastLoginDate?.toDate() || new Date(),
+            chatbotPersonality: data?.chatbotPersonality,
+            customInstructions: data?.customInstructions,
         };
     } catch (error) {
         console.error('Error fetching student:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update student's chatbot configuration
+ */
+export async function updateStudentChatbotConfig(
+    studentId: string,
+    config: { personality: string; instructions: string }
+): Promise<void> {
+    try {
+        await db.collection('students').doc(studentId).set(
+            {
+                chatbotPersonality: config.personality,
+                customInstructions: config.instructions,
+            },
+            { merge: true }
+        );
+    } catch (error) {
+        console.error('Error updating student chatbot config:', error);
         throw error;
     }
 }

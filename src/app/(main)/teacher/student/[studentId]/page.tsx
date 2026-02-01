@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -9,12 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, TrendingUp, TrendingDown, ArrowLeft } from "lucide-react";
+import { BarChart, TrendingUp, TrendingDown, ArrowLeft, Loader2 } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from "recharts";
 import { studentsData } from "@/data/studentsDataStatic";
 import { calculateStudentRisk } from "@/lib/generateStudentIntelligence";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
+import { saveChatbotConfigAction, getChatbotConfigAction } from "../../actions";
 
 // Get initials for avatar
 const getInitials = (name: string) => {
@@ -27,8 +29,33 @@ const getInitials = (name: string) => {
 
 export default function StudentAnalyticsPage({ params }: { params: Promise<{ studentId: string }> }) {
   const { studentId } = use(params);
+  const { toast } = useToast();
   const [chatbotPersonality, setChatbotPersonality] = useState("friendly-encouraging");
   const [customInstructions, setCustomInstructions] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load configuration
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        const result = await getChatbotConfigAction(studentId);
+        if (result.success && result.data) {
+          if (result.data.personality) {
+            setChatbotPersonality(result.data.personality);
+          }
+          if (result.data.instructions) {
+            setCustomInstructions(result.data.instructions);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load config", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadConfig();
+  }, [studentId]);
 
   // Find the student
   const student = studentsData.find(s => s.id === studentId);
@@ -71,20 +98,40 @@ export default function StudentAnalyticsPage({ params }: { params: Promise<{ stu
   };
 
   // Set default custom instructions based on student
-  if (!customInstructions && student.weaknesses && student.weaknesses.length > 0) {
-    setCustomInstructions(
-      `When ${student.name.split(' ')[0]} struggles with ${student.weaknesses[0]}, try to guide with a similar, simpler example first. Avoid giving the direct answer.`
-    );
-  }
+  useEffect(() => {
+    if (!isLoading && !customInstructions && student?.weaknesses && student.weaknesses.length > 0) {
+      setCustomInstructions(
+        `When ${student.name.split(' ')[0]} struggles with ${student.weaknesses[0]}, try to guide with a similar, simpler example first. Avoid giving the direct answer.`
+      );
+    }
+  }, [isLoading, customInstructions, student]);
 
-  const handleSaveConfiguration = () => {
-    // TODO: Save chatbot configuration to database
-    console.log('Saving chatbot configuration:', {
-      studentId: student.id,
-      personality: chatbotPersonality,
-      instructions: customInstructions,
-    });
-    alert('Chatbot configuration saved successfully!');
+  const handleSaveConfiguration = async () => {
+    setIsSaving(true);
+    try {
+      const result = await saveChatbotConfigAction(studentId, chatbotPersonality, customInstructions);
+      if (result.success) {
+        toast({
+          title: "Configuration Saved",
+          description: "Chatbot settings have been updated successfully.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to save configuration.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -255,7 +302,7 @@ export default function StudentAnalyticsPage({ params }: { params: Promise<{ stu
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="personality">Personality & Tone</Label>
-                <Select value={chatbotPersonality} onValueChange={setChatbotPersonality}>
+                <Select value={chatbotPersonality} onValueChange={setChatbotPersonality} disabled={isLoading || isSaving}>
                   <SelectTrigger id="personality">
                     <SelectValue placeholder="Select a tone" />
                   </SelectTrigger>
@@ -278,14 +325,22 @@ export default function StudentAnalyticsPage({ params }: { params: Promise<{ stu
                   value={customInstructions}
                   onChange={(e) => setCustomInstructions(e.target.value)}
                   className="resize-none"
+                  disabled={isLoading || isSaving}
                 />
                 <p className="text-xs text-muted-foreground">
                   Provide specific guidance on how the AI mentor should interact with {student.name.split(' ')[0]}.
                 </p>
               </div>
 
-              <Button className="w-full" onClick={handleSaveConfiguration}>
-                Save Configuration
+              <Button className="w-full" onClick={handleSaveConfiguration} disabled={isLoading || isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Configuration"
+                )}
               </Button>
             </CardContent>
           </Card>
