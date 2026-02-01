@@ -49,23 +49,36 @@ export default function QuizPage() {
 
   const onSubmit = async (values: z.infer<typeof quizFormSchema>) => {
     setIsLoading(true);
-    const result = await createQuiz(values);
-    setQuiz(result.quiz);
-    setQuizTopic(values.topic);
-    setQuizStartTime(Date.now());
-    setIsLoading(false);
-    // Reset state for new quiz
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setIsFinished(false);
-    setIsAnswered(false);
-    setSelectedAnswer(null);
+    try {
+      const result = await createQuiz(values);
+      setQuiz(result.quiz);
+      setQuizTopic(values.topic);
+      setQuizStartTime(Date.now());
+      // Reset state for new quiz
+      setCurrentQuestionIndex(0);
+      setScore(0);
+      setIsFinished(false);
+      setIsAnswered(false);
+      setSelectedAnswer(null);
+    } catch (error) {
+      console.error("Error creating quiz:", error);
+      toast({
+        title: "Error creating quiz",
+        description: "There was a problem generating your quiz. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAnswerSubmit = () => {
     if (!selectedAnswer) return;
     setIsAnswered(true);
-    if (selectedAnswer === quiz![currentQuestionIndex].correctAnswer) {
+    const correctAnswer = quiz![currentQuestionIndex].correctAnswer;
+
+    // Use loose comparison (trim whitespace)
+    if (selectedAnswer.trim() === correctAnswer.trim()) {
       setScore(score + 1);
     }
   };
@@ -154,7 +167,7 @@ export default function QuizPage() {
         <CardContent>
           <RadioGroup onValueChange={setSelectedAnswer} value={selectedAnswer || ""} disabled={isAnswered} className="space-y-2">
             {currentQuestion.options.map((option, index) => {
-              const isCorrect = option === currentQuestion.correctAnswer;
+              const isCorrect = option.trim() === currentQuestion.correctAnswer.trim();
               const isSelected = option === selectedAnswer;
               let variant: "correct" | "incorrect" | "default" = "default";
               if (isAnswered && isCorrect) variant = "correct";
