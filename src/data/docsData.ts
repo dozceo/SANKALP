@@ -99,11 +99,11 @@ export interface GraphData {
 }
 
 /**
- * Parse a single student markdown file
+ * Parse a single student markdown file (Async)
  */
-export function parseStudentMarkdown(filePath: string): StudentNode | null {
+export async function parseStudentMarkdown(filePath: string): Promise<StudentNode | null> {
     try {
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
+        const fileContent = await fs.promises.readFile(filePath, 'utf-8');
         const { data } = matter(fileContent);
 
         return {
@@ -126,26 +126,19 @@ export function parseStudentMarkdown(filePath: string): StudentNode | null {
 }
 
 /**
- * Load all student markdown files from the students directory
+ * Load all student markdown files from the students directory (Async)
  */
-export function loadAllStudents(): StudentNode[] {
+export async function loadAllStudents(): Promise<StudentNode[]> {
     const studentsDir = path.join(process.cwd(), 'data', 'students');
 
     try {
-        const files = fs.readdirSync(studentsDir);
-        const students: StudentNode[] = [];
+        const files = await fs.promises.readdir(studentsDir);
+        const promises = files
+            .filter(file => file.endsWith('.md'))
+            .map(file => parseStudentMarkdown(path.join(studentsDir, file)));
 
-        files.forEach(file => {
-            if (file.endsWith('.md')) {
-                const filePath = path.join(studentsDir, file);
-                const student = parseStudentMarkdown(filePath);
-                if (student) {
-                    students.push(student);
-                }
-            }
-        });
-
-        return students;
+        const results = await Promise.all(promises);
+        return results.filter((student): student is StudentNode => student !== null);
     } catch (error) {
         console.error('Error loading students:', error);
         return [];
@@ -271,6 +264,5 @@ export function createStudentTree(students: StudentNode[]): DocNode[] {
 }
 
 // Export the main data
-export const studentsData = loadAllStudents();
-export const docsTree = createStudentTree(studentsData);
-export const graphData = generateGraphData(studentsData);
+// Note: Synchronous data loading removed for performance.
+// Use loadAllStudents() async function if data is needed.
