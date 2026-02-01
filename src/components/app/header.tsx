@@ -37,7 +37,8 @@ const pathToTitle: { [key: string]: string } = {
   "/rewards": "Rewards",
   "/teacher": "Teacher Mode",
   "/settings": "Settings",
-  "/syllabus": "Academic Syllabus"
+  "/syllabus": "Academic Syllabus",
+  "/profile": "Student Profile"
 };
 
 export function Header() {
