@@ -75,6 +75,7 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         confidence: mlPrediction.confidence,
         days_since_last_revision: features.days_since_last_revision,
         attempts_count: features.attempts_per_topic,
+        // Calculate trend using linear regression on recent attempts
         performance_trend: calculatePerformanceTrend(
           studentHistory.quizResults.filter((q) => q.topic === topic.name)
         ),
