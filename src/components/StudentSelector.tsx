@@ -43,7 +43,10 @@ export function StudentSelector() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                <button
+                    aria-label={`Select student, currently selecting ${currentStudent.name}`}
+                    className="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                >
                     <Avatar className={`h-8 w-8 ${getAvatarColor(currentStudent.grade)}`}>
                         <AvatarFallback className="text-white font-medium text-sm">
                             {getInitials(currentStudent.name)}
