@@ -324,22 +324,61 @@ export async function getStudent(studentId: string): Promise<Student | null> {
 }
 
 /**
- * Update student's chatbot configuration
+ * Get batched quiz results for multiple students.
+ * Fetches results in chunks of 10 (Firestore 'in' limit) and groups them by studentId.
+ * Note: This fetches recent results for the group. Memory sorting/slicing is required by caller.
  */
-export async function updateStudentChatbotConfig(
-    studentId: string,
-    config: { personality: string; instructions: string }
-): Promise<void> {
+export async function getBatchedQuizResults(
+    studentIds: string[]
+): Promise<Map<string, QuizResult[]>> {
     try {
-        await db.collection('students').doc(studentId).set(
-            {
-                chatbotPersonality: config.personality,
-                customInstructions: config.instructions,
-            },
-            { merge: true }
+        if (studentIds.length === 0) {
+            return new Map();
+        }
+
+        // Chunk studentIds into groups of 10
+        const chunks = [];
+        for (let i = 0; i < studentIds.length; i += 10) {
+            chunks.push(studentIds.slice(i, i + 10));
+        }
+
+        // Execute queries in parallel
+        const querySnapshots = await Promise.all(
+            chunks.map(chunk =>
+                db.collection('quizResults')
+                    .where('studentId', 'in', chunk)
+                    .orderBy('timestamp', 'desc')
+                    .limit(2000) // Safety limit (approx 200 per student), caller must handle sorting/slicing
+                    .get()
+            )
         );
+
+        const resultMap = new Map<string, QuizResult[]>();
+
+        querySnapshots.forEach(snapshot => {
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const result: QuizResult = {
+                    id: doc.id,
+                    studentId: data.studentId,
+                    topic: data.topic,
+                    score: data.score,
+                    timeSpent: data.timeSpent,
+                    questionsAttempted: data.questionsAttempted,
+                    timestamp: data.timestamp?.toDate() || new Date(),
+                };
+
+                if (!resultMap.has(result.studentId)) {
+                    resultMap.set(result.studentId, []);
+                }
+                resultMap.get(result.studentId)?.push(result);
+            });
+        });
+
+        return resultMap;
+
     } catch (error) {
-        console.error('Error updating student chatbot config:', error);
+        console.error('Error fetching batched quiz results:', error);
         throw error;
     }
 }

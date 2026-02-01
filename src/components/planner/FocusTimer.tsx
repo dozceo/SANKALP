@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Clock, Play, Pause, RotateCcw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 type TimerMode = '25-min-focus' | '5-min-break' | '15-min-long-break';
 
@@ -22,12 +23,19 @@ const TIMER_DURATIONS = {
 };
 
 export function FocusTimer() {
+    const { toast } = useToast();
     const { currentStudent } = useStudent();
     const [selectedTopic, setSelectedTopic] = useState("");
     const [timerMode, setTimerMode] = useState<TimerMode>('25-min-focus');
     const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS[timerMode]);
     const [isRunning, setIsRunning] = useState(false);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+    }, []);
 
     // Get all topics from study materials
     const studyMaterials = currentStudent?.studyMaterials || [];
@@ -47,7 +55,21 @@ export function FocusTimer() {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
                         setIsRunning(false);
-                        // TODO: Show notification
+
+                        const title = timerMode === '25-min-focus' ? "Focus Session Complete!" : "Break Over!";
+                        const description = timerMode === '25-min-focus'
+                            ? "Great job! Take a well-deserved break."
+                            : "Time to get back to studying!";
+
+                        toast({
+                            title,
+                            description,
+                        });
+
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            new Notification(title, { body: description });
+                        }
+
                         return 0;
                     }
                     return prev - 1;
