@@ -1,6 +1,0 @@
-{
-  "/(main)/teacher/analytics/page": "app/(main)/teacher/analytics/page.js",
-  "/(main)/teacher/classes/page": "app/(main)/teacher/classes/page.js",
-  "/(main)/teacher/interventions/page": "app/(main)/teacher/interventions/page.js",
-  "/(main)/teacher/students/page": "app/(main)/teacher/students/page.js"
-}
