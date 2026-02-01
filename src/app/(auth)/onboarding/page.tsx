@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { generateFriendlyErrorMessage } from '@/app/actions/ai-error';
 
 const GRADES = ['9th', '10th', '11th', '12th', 'College'];
 const SUBJECTS = [
@@ -31,20 +32,35 @@ const STUDY_TIMES = [
 ];
 
 export default function OnboardingPage() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
-        name: user?.displayName || '',
+        name: '',
         grade: '',
         subjects: [] as string[],
         goals: '',
         dailyStudyTime: '',
         classCode: '',
     });
+
+    // Update name when user loads
+    useEffect(() => {
+        if (user?.displayName) {
+            setFormData(prev => ({ ...prev, name: user.displayName! }));
+        }
+    }, [user]);
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     const handleSubjectToggle = (subject: string) => {
         setFormData(prev => ({
@@ -80,11 +96,12 @@ export default function OnboardingPage() {
                     variant: 'destructive',
                 });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Onboarding error:', error);
+            const friendlyMessage = await generateFriendlyErrorMessage(error.message || 'Unknown error', 'Student Onboarding');
             toast({
-                title: 'Error',
-                description: 'An error occurred. Please try again.',
+                title: 'Onboarding Issue',
+                description: friendlyMessage,
                 variant: 'destructive',
             });
         } finally {

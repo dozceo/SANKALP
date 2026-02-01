@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Clock, PlayCircle, StopCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { generateFriendlyErrorMessage } from '@/app/actions/ai-error';
 
 interface SankalpSession {
     id: string;
@@ -63,7 +64,7 @@ export function SankalpSwitch() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     studentId: user.uid,
-                    duration,
+                    targetDuration: duration,
                 }),
             });
 
@@ -86,9 +87,10 @@ export function SankalpSwitch() {
                 description: `${duration} minute session begun!`,
             });
         } catch (error: any) {
+            const friendlyMessage = await generateFriendlyErrorMessage(error.message, 'Starting a Focus Session');
             toast({
                 title: 'Failed to start',
-                description: error.message,
+                description: friendlyMessage,
                 variant: 'destructive',
             });
         } finally {
