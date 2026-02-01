@@ -5,13 +5,10 @@
  * Route: /api/intelligence/student
  */
 
-import { NextRequest, NextResponse } from "next/server"; perf-batch-ml-inference-14829293095210078835
-import { extractMasteryFeatures, type StudentHistory } from "@/ml/features/student_features";
+import { NextRequest, NextResponse } from "next/server";
 import { batchPredictMastery } from "@/ml/inference/ml-bridge";
 import type { MasteryPredictionInput, MasteryPredictionOutput } from "@/ml/inference/types";
 import { extractMasteryFeatures, calculatePerformanceTrend, type StudentHistory } from "@/ml/features/student_features";
-import { predictMastery } from "@/ml/inference/ml-bridge";
-debug-and-preroll
 import { makeRevisionDecision, makeInterventionDecision } from "@/ai/adk/decision-engine";
 import { DecisionAction, type MLSignals } from "@/ai/adk/types";
 import type { StudentIntelligence, MasterySignal, ADKMode } from "@/types/intelligence";
