@@ -56,6 +56,8 @@ export interface Student {
     joinedClassAt?: Date;
     registrationDate: Date;
     lastLoginDate: Date;
+    chatbotPersonality?: string;
+    chatbotInstructions?: string;
 }
 
 export interface QuizResult {
@@ -312,6 +314,8 @@ export async function getStudent(studentId: string): Promise<Student | null> {
             joinedClassAt: data?.joinedClassAt?.toDate(),
             registrationDate: data?.registrationDate?.toDate() || new Date(),
             lastLoginDate: data?.lastLoginDate?.toDate() || new Date(),
+            chatbotPersonality: data?.chatbotPersonality,
+            chatbotInstructions: data?.chatbotInstructions,
         };
     } catch (error) {
         console.error('Error fetching student:', error);
