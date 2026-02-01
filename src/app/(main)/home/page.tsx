@@ -25,11 +25,30 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    async function fetchIntelligence() {
+      if (!currentStudent) return;
+
+      try {
+        const res = await fetch(`/api/intelligence/student?studentId=${currentStudent.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setIntelligence(data);
+        } else {
+          console.warn('Failed to fetch intelligence from API, falling back to local generation');
+          const intel = generateStudentIntelligence(currentStudent);
+          setIntelligence(intel);
+        }
+      } catch (error) {
+        console.error('Error fetching intelligence:', error);
+        const intel = generateStudentIntelligence(currentStudent);
+        setIntelligence(intel);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
     if (currentStudent && !studentLoading) {
-      // Generate intelligence from student data
-      const intel = generateStudentIntelligence(currentStudent);
-      setIntelligence(intel);
-      setIsLoading(false);
+      fetchIntelligence();
     }
   }, [currentStudent, studentLoading]);
 
