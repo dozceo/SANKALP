@@ -47,6 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (firebaseUser) {
                 setUser(firebaseUser);
 
+                // Optimization: Try to load role from localStorage first to speed up initial render
+                const cachedRole = localStorage.getItem(`sankalp_role_${firebaseUser.uid}`);
+                if (cachedRole) {
+                    setRole(cachedRole as 'student' | 'teacher');
+                }
+
                 // Fetch user role from Firestore
                 try {
                     if (firebaseUser?.uid) {
@@ -54,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         if (response.ok) {
                             const userData = await response.json();
                             setRole(userData.role);
+                            // Cache the role
+                            localStorage.setItem(`sankalp_role_${firebaseUser.uid}`, userData.role);
                         }
                     }
                 } catch (error) {
@@ -124,6 +132,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setRole(userRole);
+        // Cache the role on signup
+        localStorage.setItem(`sankalp_role_${userCredential.user.uid}`, userRole);
     };
 
     const signInWithGoogle = async () => {
