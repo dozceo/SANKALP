@@ -6,15 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Search, BookCopy, AlertTriangle, Link as LinkIcon, CalendarClock, Zap } from "lucide-react";
+import { Loader2, Search, BookCopy, AlertTriangle, Link as LinkIcon, CalendarClock, Zap, Save } from "lucide-react";
 import { getSyllabus } from "./actions";
 import { type SyllabusOutput } from "@/ai/flows/syllabus-generator";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SyllabusPage() {
   const [query, setQuery] = useState("");
   const [syllabus, setSyllabus] = useState<SyllabusOutput | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -33,7 +38,7 @@ export default function SyllabusPage() {
     }
     setLoading(false);
   };
-  
+
   const examDate = new Date();
   examDate.setDate(examDate.getDate() + 2); // Set exam date to 2 days from now for demonstration
   const today = new Date();
@@ -108,11 +113,11 @@ export default function SyllabusPage() {
                   <p className="text-muted-foreground whitespace-pre-wrap">{syllabus.structure}</p>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><CalendarClock className="w-5 h-5"/> Strategy & Timeline</h3>
+                  <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><CalendarClock className="w-5 h-5" /> Strategy & Timeline</h3>
                   <p className="text-muted-foreground whitespace-pre-wrap">{syllabus.strategy}</p>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><LinkIcon className="w-5 h-5"/> Reference Links</h3>
+                  <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><LinkIcon className="w-5 h-5" /> Reference Links</h3>
                   <ul className="space-y-2">
                     {syllabus.references.map((link, index) => (
                       <li key={index}>
@@ -123,36 +128,43 @@ export default function SyllabusPage() {
                     ))}
                   </ul>
                 </div>
+                <div className="pt-4 border-t">
+                  <Button onClick={handleSave} disabled={saving} className="w-full">
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Syllabus to Planner
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
         </TabsContent>
         <TabsContent value="cramming" className="mt-6">
-           <Card>
+          <Card>
             <CardHeader>
-                <CardTitle className="text-amber-500">Last-Minute Cramming Helper</CardTitle>
-                <CardDescription>It's go-time! Here are some focused tips for the final push before your exam on {examDate.toLocaleDateString()}.</CardDescription>
+              <CardTitle className="text-amber-500">Last-Minute Cramming Helper</CardTitle>
+              <CardDescription>It's go-time! Here are some focused tips for the final push before your exam on {examDate.toLocaleDateString()}.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div>
-                    <h4 className="font-semibold">Key Topics to Review</h4>
-                    <ul className="list-disc list-inside text-muted-foreground mt-2">
-                        <li>Focus on high-yield topics first.</li>
-                        <li>Review summary sheets and flashcards.</li>
-                        <li>Don't try to learn new complex concepts now.</li>
-                    </ul>
-                </div>
-                 <div>
-                    <h4 className="font-semibold">Quick Tips</h4>
-                    <ul className="list-disc list-inside text-muted-foreground mt-2">
-                        <li>Do one final mock test to simulate exam conditions.</li>
-                        <li>Get at least 7-8 hours of sleep the night before.</li>
-                        <li>Review formulas and key definitions one last time in the morning.</li>
-                    </ul>
-                </div>
-                 <Button>Generate a Quick 5-Question Refresher Quiz</Button>
+              <div>
+                <h4 className="font-semibold">Key Topics to Review</h4>
+                <ul className="list-disc list-inside text-muted-foreground mt-2">
+                  <li>Focus on high-yield topics first.</li>
+                  <li>Review summary sheets and flashcards.</li>
+                  <li>Don't try to learn new complex concepts now.</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold">Quick Tips</h4>
+                <ul className="list-disc list-inside text-muted-foreground mt-2">
+                  <li>Do one final mock test to simulate exam conditions.</li>
+                  <li>Get at least 7-8 hours of sleep the night before.</li>
+                  <li>Review formulas and key definitions one last time in the morning.</li>
+                </ul>
+              </div>
+              <Button>Generate a Quick 5-Question Refresher Quiz</Button>
             </CardContent>
-           </Card>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

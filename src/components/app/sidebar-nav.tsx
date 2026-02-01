@@ -14,6 +14,7 @@ import {
   BrainCircuit,
   HeartHandshake,
   BookCopy,
+  Copy,
 } from "lucide-react";
 
 import {
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { href: "/home", icon: LayoutGrid, label: "Home" },
@@ -34,13 +36,14 @@ const navItems = [
   { href: "/chat", icon: MessageCircle, label: "Chatbot" },
   { href: "/rewards", icon: Trophy, label: "Rewards" },
   { href: "/mentor", icon: HeartHandshake, label: "Mindful Mentor" },
+  { href: "/brain-map", icon: BrainCircuit, label: "Brain Map" },
   { type: "separator" },
-  { href: "/teacher", icon: UserCheck, label: "Teacher Mode" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { user, role } = useAuth();
 
   return (
     <>
@@ -63,7 +66,7 @@ export function SidebarNav() {
                   tooltip={{ children: item.label }}
                 >
                   <Link href={item.href!}>
-                    <item.icon />
+                    {item.icon && <item.icon />}
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
@@ -73,7 +76,30 @@ export function SidebarNav() {
         </SidebarMenu>
       </div>
       <SidebarFooter>
-        <div className="p-2">
+        <div className="p-4 space-y-4">
+          {user && (
+            <div className="p-3 bg-secondary/50 rounded-lg border border-border">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  My User ID
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => {
+                    navigator.clipboard.writeText(user.uid);
+                  }}
+                  title="Copy ID"
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="text-xs font-mono truncate text-foreground/80">
+                {user.uid}
+              </div>
+            </div>
+          )}
           <Button variant="outline" className="w-full">
             Help & Feedback
           </Button>

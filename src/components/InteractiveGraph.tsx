@@ -1,19 +1,29 @@
+'use client';
+
 import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
-import ForceGraph2D, { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
+import dynamic from 'next/dynamic';
+import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { docsTree, flattenDocs, studentsData } from '@/data/studentsDataStatic';
 import { generateEnhancedGraphData } from '@/lib/generateEnhancedGraph';
-import type { GraphNode, DocNode, StudentNode } from '@/data/docsData';
+import type { GraphNode, DocNode, StudentNode, GraphData } from '@/data/docsData';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X } from 'lucide-react';
+
+// Dynamically import ForceGraph2D with SSR disabled
+const ForceGraph2D = dynamic(
+  () => import('react-force-graph-2d'),
+  { ssr: false }
+);
 
 interface InteractiveGraphProps {
   onNodeClick?: (nodeId: string) => void;
   highlightedNode?: string;
+  graphData?: GraphData;
 }
 
 type ExtendedNodeObject = NodeObject & GraphNode;
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
-export function InteractiveGraph({ onNodeClick, highlightedNode }: InteractiveGraphProps) {
+export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: externalGraphData }: InteractiveGraphProps) {
   const graphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
   const modalGraphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -87,7 +97,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode }: InteractiveGr
     return { nodes: filteredNodes, links: filteredLinks };
   }, [highlightedNode, isGlobalView, fullGraphData]);
 
-  const graphData = isGlobalView ? fullGraphData : localGraphData;
+  // Use external data if provided, otherwise fallback to local/generated data
+  const graphData = externalGraphData || (isGlobalView ? fullGraphData : localGraphData);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -363,16 +374,16 @@ export function InteractiveGraph({ onNodeClick, highlightedNode }: InteractiveGr
         <GraphTitle title={isGlobalView ? 'Global Graph' : 'Local Graph'} />
 
         <ForceGraph2D
-          ref={graphRef as React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>}
+          ref={graphRef as any}
           graphData={graphData}
           width={dimensions.width}
           height={dimensions.height}
           backgroundColor="transparent"
           nodeRelSize={6}
-          nodeCanvasObject={nodeCanvasObject}
-          linkCanvasObject={linkCanvasObject}
+          nodeCanvasObject={nodeCanvasObject as any}
+          linkCanvasObject={linkCanvasObject as any}
           onNodeClick={(node) => handleNodeClick(node as ExtendedNodeObject, graphRef)}
-          onNodeHover={handleNodeHover}
+          onNodeHover={handleNodeHover as any}
           cooldownTicks={100}
           d3AlphaDecay={0.02}
           d3VelocityDecay={0.3}
@@ -418,16 +429,16 @@ export function InteractiveGraph({ onNodeClick, highlightedNode }: InteractiveGr
             {/* Modal Graph */}
             <div className="pt-12 h-full">
               <ForceGraph2D
-                ref={modalGraphRef as React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>}
+                ref={modalGraphRef as any}
                 graphData={isGlobalView ? fullGraphData : localGraphData}
-                width={window.innerWidth * 0.9}
-                height={window.innerHeight * 0.85 - 48}
+                width={typeof window !== 'undefined' ? window.innerWidth * 0.9 : 1200}
+                height={typeof window !== 'undefined' ? window.innerHeight * 0.85 - 48 : 800}
                 backgroundColor="transparent"
                 nodeRelSize={8}
-                nodeCanvasObject={nodeCanvasObject}
-                linkCanvasObject={linkCanvasObject}
+                nodeCanvasObject={nodeCanvasObject as any}
+                linkCanvasObject={linkCanvasObject as any}
                 onNodeClick={(node) => handleNodeClick(node as ExtendedNodeObject, modalGraphRef)}
-                onNodeHover={handleNodeHover}
+                onNodeHover={handleNodeHover as any}
                 cooldownTicks={100}
                 d3AlphaDecay={0.015}
                 d3VelocityDecay={0.25}

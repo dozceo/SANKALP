@@ -1,138 +1,126 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { InteractiveGraph } from '@/components/InteractiveGraph';
-import { studentsData } from '@/data/studentsDataStatic';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
+import { GraphData } from '@/data/docsData';
 
 export default function BrainMapPage() {
-    const [selectedNode, setSelectedNode] = useState<string>('alex-kumar');
+    const { user } = useAuth();
+    const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
+    const [loading, setLoading] = useState(true);
+    const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function fetchGraph() {
+            if (!user?.uid || user.uid === 'undefined') return;
+
+            try {
+                const response = await fetch(`/api/student/graph?studentId=${user.uid}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        setGraphData(data);
+                        // Select the student node by default
+                        const studentNode = data.nodes.find((n: any) => n.type === 'student');
+                        if (studentNode) {
+                            setSelectedNodeId(studentNode.id);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching brain map:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchGraph();
+    }, [user]);
 
     const handleNodeClick = (nodeId: string) => {
-        console.log('Node clicked:', nodeId);
-        setSelectedNode(nodeId);
+        setSelectedNodeId(nodeId);
     };
 
-    // Find the selected student
-    const selectedStudent = studentsData.find(s => s.id === selectedNode);
+    const selectedNode = graphData.nodes.find(n => n.id === selectedNodeId);
+
+    if (loading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-background p-6">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold mb-2">Student Brain Map</h1>
+                    <h1 className="text-3xl font-bold mb-2">My Brain Map</h1>
                     <p className="text-muted-foreground">
-                        Interactive visualization of student learning connections
+                        Visualize your learning journey and mastery
                     </p>
+                    {user && (
+                        <div className="mt-2 text-xs text-muted-foreground bg-secondary/50 p-2 rounded inline-block font-mono">
+                            User ID: {user.uid}
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Graph Visualization */}
                     <div className="lg:col-span-2">
-                        <div className="bg-card border border-border rounded-lg p-4">
+                        <div className="bg-card border border-border rounded-lg p-4 min-h-[500px]">
                             <InteractiveGraph
+                                graphData={graphData}
                                 onNodeClick={handleNodeClick}
-                                highlightedNode={selectedNode}
+                                highlightedNode={selectedNodeId || undefined}
                             />
                         </div>
                     </div>
 
-                    {/* Student Details Panel */}
+                    {/* Node Details Panel */}
                     <div className="lg:col-span-1">
                         <div className="bg-card border border-border rounded-lg p-6 sticky top-6">
                             <h2 className="text-xl font-semibold mb-4">
-                                {selectedStudent ? 'Student Details' : 'Select a Student'}
+                                {selectedNode ? 'Details' : 'Select a Node'}
                             </h2>
 
-                            {selectedStudent ? (
+                            {selectedNode ? (
                                 <div className="space-y-4">
                                     <div>
-                                        <h3 className="font-medium text-lg">{selectedStudent.name}</h3>
-                                        <p className="text-sm text-muted-foreground">
-                                            Grade {selectedStudent.grade} • {selectedStudent.email}
-                                        </p>
+                                        <h3 className="font-medium text-lg">{selectedNode.name}</h3>
+                                        <span className={`text-xs px-2 py-1 rounded capitalize ${selectedNode.type === 'strength' ? 'bg-green-100 text-green-700' :
+                                            selectedNode.type === 'weakness' ? 'bg-red-100 text-red-700' :
+                                                'bg-primary/10 text-primary'
+                                            }`}>
+                                            {selectedNode.type}
+                                        </span>
                                     </div>
 
-                                    <div>
-                                        <h4 className="text-sm font-semibold mb-2">Topics</h4>
-                                        <div className="flex flex-wrap gap-2">
-                                            {selectedStudent.topics?.map(topic => (
-                                                <span
-                                                    key={topic}
-                                                    className="px-2 py-1 bg-primary/10 text-primary rounded text-xs"
-                                                >
-                                                    {topic}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {selectedStudent.masteryScores && (
+                                    {selectedNode.mastery !== undefined && (
                                         <div>
-                                            <h4 className="text-sm font-semibold mb-2">Mastery Scores</h4>
-                                            <div className="space-y-2">
-                                                {Object.entries(selectedStudent.masteryScores).map(([topic, score]) => (
-                                                    <div key={topic}>
-                                                        <div className="flex justify-between text-xs mb-1">
-                                                            <span>{topic}</span>
-                                                            <span className="font-medium">{Math.round(score * 100)}%</span>
-                                                        </div>
-                                                        <div className="w-full bg-secondary rounded-full h-2">
-                                                            <div
-                                                                className="bg-primary h-2 rounded-full transition-all"
-                                                                style={{ width: `${score * 100}%` }}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                            <h4 className="text-sm font-semibold mb-2">Mastery</h4>
+                                            <div className="w-full bg-secondary rounded-full h-2.5">
+                                                <div
+                                                    className="bg-primary h-2.5 rounded-full"
+                                                    style={{ width: `${selectedNode.mastery * 100}%` }}
+                                                ></div>
                                             </div>
+                                            <p className="text-right text-xs mt-1">{Math.round(selectedNode.mastery * 100)}%</p>
                                         </div>
                                     )}
 
-                                    <div>
-                                        <h4 className="text-sm font-semibold mb-2">Strengths</h4>
-                                        <ul className="text-sm space-y-1">
-                                            {selectedStudent.strengths?.map(strength => (
-                                                <li key={strength} className="text-muted-foreground">
-                                                    • {strength}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-
-                                    <div>
-                                        <h4 className="text-sm font-semibold mb-2">Areas to Improve</h4>
-                                        <ul className="text-sm space-y-1">
-                                            {selectedStudent.weaknesses?.map(weakness => (
-                                                <li key={weakness} className="text-muted-foreground">
-                                                    • {weakness}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-
-                                    {selectedStudent.connections && selectedStudent.connections.length > 0 && (
-                                        <div>
-                                            <h4 className="text-sm font-semibold mb-2">Connected Students</h4>
-                                            <div className="space-y-1">
-                                                {selectedStudent.connections.map(connId => {
-                                                    const connStudent = studentsData.find(s => s.id === connId);
-                                                    return connStudent ? (
-                                                        <button
-                                                            key={connId}
-                                                            onClick={() => setSelectedNode(connId)}
-                                                            className="w-full text-left px-3 py-2 bg-secondary/50 hover:bg-secondary rounded text-sm transition-colors"
-                                                        >
-                                                            {connStudent.name}
-                                                        </button>
-                                                    ) : null;
-                                                })}
-                                            </div>
-                                        </div>
+                                    {selectedNode.type === 'student' && (
+                                        <p className="text-sm text-muted-foreground">
+                                            This is your personal learning node. It connects to all the topics you have studied.
+                                        </p>
                                     )}
                                 </div>
                             ) : (
                                 <p className="text-muted-foreground text-sm">
-                                    Click on a student node in the graph to view their details.
+                                    Click on any node in the graph to see more details about your progress.
                                 </p>
                             )}
                         </div>
@@ -145,19 +133,19 @@ export default function BrainMapPage() {
                     <div className="flex flex-wrap gap-4 text-sm">
                         <div className="flex items-center gap-2">
                             <div className="w-4 h-4 rounded-full bg-purple-600"></div>
-                            <span>Students</span>
+                            <span>Me</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded-full bg-purple-500"></div>
+                            <div className="w-4 h-4 rounded-full bg-gray-500"></div>
                             <span>Topics</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded-full bg-purple-400"></div>
-                            <span>Skills</span>
+                            <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                            <span>Strengths</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-12 h-0.5 bg-purple-400"></div>
-                            <span>Peer Connections</span>
+                            <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                            <span>Weaknesses</span>
                         </div>
                     </div>
                 </div>
@@ -165,3 +153,4 @@ export default function BrainMapPage() {
         </div>
     );
 }
+

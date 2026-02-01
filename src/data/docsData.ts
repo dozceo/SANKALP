@@ -73,6 +73,7 @@ export type NodeType =
     | 'topic'
     | 'weakness'
     | 'strength'
+    | 'peer'
     | 'skill';        // Keep for backward compatibility
 
 export interface GraphNode {

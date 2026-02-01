@@ -14,25 +14,26 @@ import { ArrowRight, ListChecks, FileQuestion, MessageCircle, Loader2, Book } fr
 import { LearningStateCard } from "@/components/LearningStateCard";
 import { TopicMasteryGrid } from "@/components/TopicMasteryGrid";
 import { PersonalKnowledgeGraph } from "@/components/PersonalKnowledgeGraph";
+import { SankalpSwitch } from "@/components/SankalpSwitch";
 import { useStudent } from "@/contexts/StudentContext";
 import { generateStudentIntelligence } from "@/lib/generateStudentIntelligence";
 import type { StudentIntelligence } from "@/types/intelligence";
 
 export default function HomePage() {
-  const { currentStudent } = useStudent();
+  const { currentStudent, loading: studentLoading } = useStudent();
   const [intelligence, setIntelligence] = useState<StudentIntelligence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (currentStudent) {
+    if (currentStudent && !studentLoading) {
       // Generate intelligence from student data
       const intel = generateStudentIntelligence(currentStudent);
       setIntelligence(intel);
       setIsLoading(false);
     }
-  }, [currentStudent]);
+  }, [currentStudent, studentLoading]);
 
-  if (isLoading || !currentStudent) {
+  if (isLoading || studentLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -56,6 +57,9 @@ export default function HomePage() {
           Here&apos;s your AI-powered learning dashboard for today.
         </p>
       </div>
+
+      {/* SANKALP Loop Session */}
+      <SankalpSwitch />
 
       {/* ML-Driven Intelligence Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
