@@ -5,10 +5,13 @@
  * Route: /api/intelligence/student
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"; perf-batch-ml-inference-14829293095210078835
 import { extractMasteryFeatures, type StudentHistory } from "@/ml/features/student_features";
 import { batchPredictMastery } from "@/ml/inference/ml-bridge";
 import type { MasteryPredictionInput, MasteryPredictionOutput } from "@/ml/inference/types";
+import { extractMasteryFeatures, calculatePerformanceTrend, type StudentHistory } from "@/ml/features/student_features";
+import { predictMastery } from "@/ml/inference/ml-bridge";
+debug-and-preroll
 import { makeRevisionDecision, makeInterventionDecision } from "@/ai/adk/decision-engine";
 import { DecisionAction, type MLSignals } from "@/ai/adk/types";
 import type { StudentIntelligence, MasterySignal, ADKMode } from "@/types/intelligence";
@@ -206,7 +209,7 @@ export async function GET(request: NextRequest) {
                 confidence: mlPrediction.confidence,
                 daysSinceRevision: features.days_since_last_revision,
                 attempts: features.attempts_per_topic,
-                trend: "STABLE", // TODO: Calculate from history
+                trend: calculatePerformanceTrend(studentHistory.quizResults.filter(q => q.topic === topic)),
                 needsRevision: adkDecision.priority !== "LOW",
                 priority: adkDecision.priority,
             };
