@@ -15,7 +15,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { extractMasteryFeatures, calculatePerformanceTrend, type StudentHistory } from '@/ml/features/student_features';
+import { extractMasteryFeatures, type StudentHistory } from '@/ml/features/student_features';
 import { predictMastery } from '@/ml/inference/ml-bridge';
 import { getStudent, getQuizResults } from '@/lib/db-helpers';
 import {
@@ -75,11 +75,7 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         confidence: mlPrediction.confidence,
         days_since_last_revision: features.days_since_last_revision,
         attempts_count: features.attempts_per_topic,
-       feat-performance-trend-1812230759835433384
         performance_trend: calculatePerformanceTrend(topic.name, studentHistory),
-        performance_trend: calculatePerformanceTrend(
-          studentHistory.quizResults.filter((q) => q.topic === topic.name)
-        ),main
       };
 
       // Step 4: ADK makes the decision

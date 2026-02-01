@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { batchPredictMastery } from "@/ml/inference/ml-bridge";
 import type { MasteryPredictionInput, MasteryPredictionOutput } from "@/ml/inference/types";
-import { extractMasteryFeatures, calculatePerformanceTrend, type StudentHistory } from "@/ml/features/student_features";
+import { extractMasteryFeatures, type StudentHistory } from "@/ml/features/student_features";
 import { makeRevisionDecision, makeInterventionDecision } from "@/ai/adk/decision-engine";
 import { DecisionAction, type MLSignals } from "@/ai/adk/types";
 import type { StudentIntelligence, MasterySignal, ADKMode } from "@/types/intelligence";
@@ -211,9 +211,7 @@ export async function GET(request: NextRequest) {
                 confidence: mlPrediction.confidence,
                 daysSinceRevision: features.days_since_last_revision,
                 attempts: features.attempts_per_topic,
-              feature/student-trend-calc-8872142549955436469
                 trend: trend,
-                trend: calculatePerformanceTrend(studentHistory.quizResults.filter(q => q.topic === topic)), main
                 needsRevision: adkDecision.priority !== "LOW",
                 priority: adkDecision.priority,
             };
