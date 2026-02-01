@@ -1,6 +1,21 @@
 {
-  "app": {},
-  "appUsingSizeAdjust": false,
+  "app": {
+    "[project]/src/app/(auth)/onboarding/page": [
+      "static/media/0e6a0e5f826ff4ae-s.p.5099a022.woff2",
+      "static/media/1a19cccc9d303251-s.p.85ad2b73.woff2",
+      "static/media/f05228a5f9ec0eae-s.p.b2529432.woff2",
+      "static/media/536b4d72a397ec90-s.p.a277c2de.woff2",
+      "static/media/2a65768255d6b625-s.p.d19752fb.woff2"
+    ],
+    "[project]/src/app/(main)/profile/page": [
+      "static/media/0e6a0e5f826ff4ae-s.p.5099a022.woff2",
+      "static/media/1a19cccc9d303251-s.p.85ad2b73.woff2",
+      "static/media/f05228a5f9ec0eae-s.p.b2529432.woff2",
+      "static/media/536b4d72a397ec90-s.p.a277c2de.woff2",
+      "static/media/2a65768255d6b625-s.p.d19752fb.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
   "pages": {},
   "pagesUsingSizeAdjust": false
 }

@@ -13,8 +13,11 @@ This information is used to shape Next.js' roadmap and prioritize features.
 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
 https://nextjs.org/telemetry
 
- ✓ Ready in 1539ms
- ○ Compiling /sign-up ...
- ✓ Compiled /sign-up in 9.7s
+ ✓ Ready in 1715ms
+ ○ Compiling /onboarding ...
+ ✓ Compiled /onboarding in 13.1s
 ⚠️ Firebase skipped (server-side rendering)
- GET /sign-up 200 in 11463ms
+ GET /onboarding 200 in 15354ms
+ ○ Compiling /profile ...
+ ✓ Compiled /profile in 2.1s
+ GET /profile 200 in 2560ms

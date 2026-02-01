@@ -1,3 +1,4 @@
 {
-  "/(main)/planner/page": "app/(main)/planner/page.js"
+  "/(auth)/onboarding/page": "app/(auth)/onboarding/page.js",
+  "/(main)/profile/page": "app/(main)/profile/page.js"
 }

@@ -1,19 +1,19 @@
 {
   "node": {
-    "0059cb6edb335b7c4dc5451b8fbba5a86041105984": {
+    "60acf003d9415ed1efb1010d13ee351aa475419567": {
       "workers": {
-        "app/(main)/planner/page": {
-          "moduleId": "[project]/.next-internal/server/app/(main)/planner/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(main)/planner/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+        "app/(auth)/onboarding/page": {
+          "moduleId": "[project]/.next-internal/server/app/(auth)/onboarding/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/actions/ai-error.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
-          "exportedName": "getRevisionPlan",
-          "filename": "src/app/(main)/planner/actions.ts"
+          "exportedName": "generateFriendlyErrorMessage",
+          "filename": "src/app/actions/ai-error.ts"
         }
       },
       "layer": {
-        "app/(main)/planner/page": "action-browser"
+        "app/(auth)/onboarding/page": "action-browser"
       },
-      "filename": "src/app/(main)/planner/actions.ts",
-      "exportedName": "getRevisionPlan"
+      "filename": "src/app/actions/ai-error.ts",
+      "exportedName": "generateFriendlyErrorMessage"
     }
   },
   "edge": {},

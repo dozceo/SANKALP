@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Mail, School, GraduationCap, Brain, TrendingUp, AlertCircle } from "lucide-react";
+import { MapPin, Mail, School, GraduationCap, Brain, TrendingUp, AlertCircle, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function ProfilePage() {
     const { currentStudent, loading } = useStudent();
@@ -96,6 +98,14 @@ export default function ProfilePage() {
                                     <School className="h-3 w-3" /> Sankalp High
                                 </span>
                             </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-4 md:mt-0 mb-2">
+                             <Link href="/settings">
+                                <Button variant="outline" size="sm" className="gap-2">
+                                    <Pencil className="h-3 w-3" />
+                                    Edit Profile
+                                </Button>
+                             </Link>
                         </div>
                      </div>
 
