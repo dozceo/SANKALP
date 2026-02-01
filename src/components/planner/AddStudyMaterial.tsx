@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStudent } from "@/contexts/StudentContext";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Plus, X, Loader2, GitBranch } from "lucide-react";
 
 export function AddStudyMaterial() {
     const { user } = useAuth();
+    const { addStudyMaterial } = useStudent();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [converting, setConverting] = useState(false);
@@ -58,27 +60,15 @@ export function AddStudyMaterial() {
         setLoading(true);
 
         try {
-            const response = await fetch('/api/planner/data', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    studentId: user.uid,
-                    subject: formData.subject,
-                    topic: formData.topic,
-                    chapter: formData.chapter || undefined,
-                    notes: formData.detailedNotes,
-                    source: formData.referenceLinks.filter(link => link.trim() !== '').join(', '),
-                    addedAt: new Date().toISOString(),
-                }),
+            const itemId = await addStudyMaterial({
+                subject: formData.subject,
+                topic: formData.topic,
+                chapter: formData.chapter,
+                detailedNotes: formData.detailedNotes,
+                referenceLinks: formData.referenceLinks,
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to save data');
-            }
-
-            setLastSavedId(data.id);
+            setLastSavedId(itemId);
 
             toast({
                 title: 'Study material added!',

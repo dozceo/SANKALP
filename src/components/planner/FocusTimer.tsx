@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Clock, Play, Pause, RotateCcw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 type TimerMode = '25-min-focus' | '5-min-break' | '15-min-long-break';
 
@@ -21,13 +22,36 @@ const TIMER_DURATIONS = {
     '15-min-long-break': 15 * 60,
 };
 
+// Psychological messages for different states
+const MESSAGES = {
+    focus_complete: [
+        "Great job! Your brain needs a recharge. Take a breath and stretch.",
+        "Focus session complete. Let your mind wander for a bit to consolidate learning.",
+        "You've earned a break! Stepping away now will help you focus better next time.",
+        "Well done! Rest is part of the work. Go grab some water."
+    ],
+    break_complete: [
+        "Break is over. Let's get back into the flow!",
+        "Refreshed? Time to conquer the next task.",
+        "Ready to focus? Your goals are waiting.",
+        "Time's up! Bring your attention back to your studies."
+    ]
+};
+
+const getRandomMessage = (type: 'focus_complete' | 'break_complete') => {
+    const messages = MESSAGES[type];
+    return messages[Math.floor(Math.random() * messages.length)];
+};
+
 export function FocusTimer() {
     const { currentStudent } = useStudent();
+    const { toast } = useToast();
     const [selectedTopic, setSelectedTopic] = useState("");
     const [timerMode, setTimerMode] = useState<TimerMode>('25-min-focus');
     const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS[timerMode]);
     const [isRunning, setIsRunning] = useState(false);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
 
     // Get all topics from study materials
     const studyMaterials = currentStudent?.studyMaterials || [];
@@ -40,24 +64,82 @@ export function FocusTimer() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const initAudio = () => {
+        try {
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContext) return;
+
+            if (!audioContextRef.current) {
+                audioContextRef.current = new AudioContext();
+            }
+
+            if (audioContextRef.current.state === 'suspended') {
+                audioContextRef.current.resume();
+            }
+        } catch (error) {
+            console.error("Error initializing audio:", error);
+        }
+    };
+
+    const playNotificationSound = () => {
+        try {
+            if (!audioContextRef.current) return;
+
+            const ctx = audioContextRef.current;
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, ctx.currentTime); // A4
+            oscillator.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1); // Jump to A5
+
+            gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
+
+            oscillator.start();
+            oscillator.stop(ctx.currentTime + 0.5);
+        } catch (error) {
+            console.error("Error playing sound:", error);
+        }
+    };
+
+    const handleTimerComplete = () => {
+        setIsRunning(false);
+        playNotificationSound();
+
+        const isFocusMode = timerMode === '25-min-focus';
+        const messageType = isFocusMode ? 'focus_complete' : 'break_complete';
+        const title = isFocusMode ? "Focus Session Complete!" : "Break Over!";
+        const message = getRandomMessage(messageType);
+
+        // Toast notification
+        toast({
+            title: title,
+            description: message,
+            duration: 5000,
+        });
+
+        // Browser notification
+        if (Notification.permission === "granted") {
+            new Notification(title, {
+                body: message,
+                icon: "/favicon.ico" // Assuming favicon exists
+            });
+        }
+    };
+
     // Timer logic
     useEffect(() => {
         if (isRunning && timeLeft > 0) {
             intervalRef.current = setInterval(() => {
                 setTimeLeft(prev => {
-                    if (prev <= 1) {
-                        setIsRunning(false);
-                        // TODO: Show notification
-                        return 0;
-                    }
+                    if (prev <= 0) return 0;
                     return prev - 1;
                 });
             }, 1000);
-        } else {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-            }
         }
 
         return () => {
@@ -67,11 +149,26 @@ export function FocusTimer() {
         };
     }, [isRunning, timeLeft]);
 
+    // Check for completion
+    useEffect(() => {
+        if (timeLeft === 0 && isRunning) {
+            handleTimerComplete();
+        }
+    }, [timeLeft, isRunning]);
+
+    const requestNotificationPermission = () => {
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    };
+
     const handleStart = () => {
         if (!selectedTopic) {
             alert("Please select a topic first");
             return;
         }
+        initAudio();
+        requestNotificationPermission();
         setIsRunning(true);
     };
 
