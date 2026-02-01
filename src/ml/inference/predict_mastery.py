@@ -7,6 +7,7 @@ Supports persistent mode by reading line-by-line from stdin.
 
 Usage:
   echo '{"avg_quiz_score": 0.75, ...}' | python predict_mastery.py
+  echo '[{"avg_quiz_score": 0.75, ...}, {"avg_quiz_score": 0.2, ...}]' | python predict_mastery.py
 """
 
 import sys
@@ -32,21 +33,7 @@ model = None
 
 def predict_mastery(features):
     """
-    Predict topic mastery given student features
-    
-    Args:
-        features: dict with keys:
-            - avg_quiz_score (float)
-            - attempts_per_topic (int)
-            - days_since_last_revision (int)
-            - quiz_score_variance (float)
-            - time_spent_per_question (float)
-    
-    Returns:
-        dict with:
-            - mastery_probability (float)
-            - confidence (float)
-            - predicted_class (str)
+    Predict topic mastery for a single feature set
     """
     global model
     if model is None:

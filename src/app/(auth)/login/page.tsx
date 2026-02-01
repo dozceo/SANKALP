@@ -28,8 +28,28 @@ export default function SignInPage() {
     try {
       const user = await signIn(email, password);
 
-      // Fetch user data to get actual role
+      // Fetch user data to get actual role and onboarding status
       const userResponse = await fetch(`/api/users/${user.uid}`);
+      let userData = null;
+      if (userResponse.ok) {
+          userData = await userResponse.json();
+      }
+
+      toast({
+        title: 'Welcome back!',
+        description: 'Successfully signed in.',
+      });
+
+      // Check onboarding status
+      if (userData && !userData.onboardingCompleted) {
+          const targetRole = userData.role || role;
+          if (targetRole === 'teacher') {
+              router.push('/teacher-onboarding');
+          } else {
+              router.push('/onboarding');
+          }
+          return;
+      }
 
       // Simple redirect based on selected role
       // In production, verify role matches
@@ -39,11 +59,6 @@ export default function SignInPage() {
         // Check if student has joined a class
         router.push('/home');
       }
-
-      toast({
-        title: 'Welcome back!',
-        description: 'Successfully signed in.',
-      });
     } catch (error: any) {
       toast({
         title: 'Sign in failed',
@@ -57,7 +72,25 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
+      const user = await signInWithGoogle();
+
+      // Fetch user data to get actual role and onboarding status
+      const userResponse = await fetch(`/api/users/${user.uid}`);
+      let userData = null;
+      if (userResponse.ok) {
+          userData = await userResponse.json();
+      }
+
+      // Check onboarding status
+      if (userData && !userData.onboardingCompleted) {
+          const targetRole = userData.role || role;
+          if (targetRole === 'teacher') {
+              router.push('/teacher-onboarding');
+          } else {
+              router.push('/onboarding');
+          }
+          return;
+      }
 
       if (role === 'teacher') {
         router.push('/teacher');
