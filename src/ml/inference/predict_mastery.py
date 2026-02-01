@@ -3,9 +3,11 @@ Topic Mastery Prediction Inference Script
 
 Loads the trained model and makes predictions on new student data.
 Accepts JSON input via stdin and outputs JSON predictions.
+Supports both single input (dict) and batch input (list of dicts).
 
 Usage:
   echo '{"avg_quiz_score": 0.75, ...}' | python predict_mastery.py
+  echo '[{"avg_quiz_score": 0.75, ...}, {"avg_quiz_score": 0.2, ...}]' | python predict_mastery.py
 """
 
 import sys
@@ -26,26 +28,10 @@ def load_model():
         )
     return joblib.load(MODEL_PATH)
 
-def predict_mastery(features):
+def predict_single(model, features):
     """
-    Predict topic mastery given student features
-    
-    Args:
-        features: dict with keys:
-            - avg_quiz_score (float)
-            - attempts_per_topic (int)
-            - days_since_last_revision (int)
-            - quiz_score_variance (float)
-            - time_spent_per_question (float)
-    
-    Returns:
-        dict with:
-            - mastery_probability (float)
-            - confidence (float)
-            - predicted_class (str)
+    Predict topic mastery for a single feature set
     """
-    model = load_model()
-    
     # Extract features in correct order
     feature_vector = np.array([[
         features['avg_quiz_score'],
@@ -76,11 +62,28 @@ if __name__ == "__main__":
         # Read JSON input from stdin
         input_data = json.load(sys.stdin)
         
-        # Make prediction
-        result = predict_mastery(input_data)
+        # Load model once
+        model = load_model()
         
-        # Output JSON result
-        print(json.dumps(result))
+        if isinstance(input_data, list):
+            # Batch prediction
+            results = []
+            for features in input_data:
+                try:
+                    result = predict_single(model, features)
+                    results.append(result)
+                except Exception as e:
+                    results.append({
+                        "mastery_probability": 0.0,
+                        "confidence": 0.0,
+                        "predicted_class": "error",
+                        "error": str(e)
+                    })
+            print(json.dumps(results))
+        else:
+            # Single prediction
+            result = predict_single(model, input_data)
+            print(json.dumps(result))
         
     except Exception as e:
         # Output error as JSON
@@ -90,5 +93,10 @@ if __name__ == "__main__":
             "confidence": 0.0,
             "predicted_class": "error"
         }
+        # If input was a list, we probably should return a list with one error or handle it better,
+        # but top level exception means we failed completely.
+        # Ideally we wrap this in a list if we know we are in batch mode?
+        # But we might not know if json.load failed.
+        # We'll just output the object. The caller needs to handle it.
         print(json.dumps(error_result))
         sys.exit(1)
