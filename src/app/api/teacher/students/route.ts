@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTeacherStudents, getTeacherClasses, getStudent, getQuizResults } from '@/lib/db-helpers';
-import { calculateStudentRisk } from '@/lib/generateStudentIntelligence';
+import { getTeacherStudents, getTeacherClasses, getBatchedQuizResults } from '@/lib/db-helpers';
 
 export async function GET(req: NextRequest) {
     try {
@@ -20,38 +19,47 @@ export async function GET(req: NextRequest) {
         // Get all students
         const students = await getTeacherStudents(teacherId);
 
-        // Enrich student data with quiz results and risk assessment
-        const enrichedStudents = await Promise.all(
-            students.map(async (student) => {
-                const quizResults = await getQuizResults(student.id, 20);
+        // Get all student IDs
+        const studentIds = students.map(s => s.id);
 
-                // Calculate basic metrics
-                const avgScore = quizResults.length > 0
-                    ? quizResults.reduce((sum, r) => sum + r.score, 0) / quizResults.length
-                    : 0;
+        // Fetch quiz results in batches (N+1 optimization)
+        const quizResultsMap = await getBatchedQuizResults(studentIds);
 
-                const topics = [...new Set(quizResults.map(r => r.topic))];
-                const topicMastery: Record<string, number> = {};
+        // Enrich student data with quiz results
+        const enrichedStudents = students.map((student) => {
+            const allQuizResults = quizResultsMap.get(student.id) || [];
 
-                topics.forEach(topic => {
-                    const topicResults = quizResults.filter(r => r.topic === topic);
-                    const topicAvg = topicResults.reduce((sum, r) => sum + r.score, 0) / topicResults.length;
-                    topicMastery[topic] = topicAvg;
-                });
+            // Sort by timestamp desc and take top 20
+            const quizResults = [...allQuizResults]
+                .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+                .slice(0, 20);
 
-                return {
-                    id: student.id,
-                    name: student.name,
-                    email: student.email,
-                    className: student.className,
-                    grade: student.grade,
-                    progress: Math.round(avgScore * 100),
-                    quizzesTaken: quizResults.length,
-                    topicMastery,
-                    lastActivity: quizResults[0]?.timestamp || student.lastLoginDate,
-                };
-            })
-        );
+            // Calculate basic metrics
+            const avgScore = quizResults.length > 0
+                ? quizResults.reduce((sum, r) => sum + r.score, 0) / quizResults.length
+                : 0;
+
+            const topics = [...new Set(quizResults.map(r => r.topic))];
+            const topicMastery: Record<string, number> = {};
+
+            topics.forEach(topic => {
+                const topicResults = quizResults.filter(r => r.topic === topic);
+                const topicAvg = topicResults.reduce((sum, r) => sum + r.score, 0) / topicResults.length;
+                topicMastery[topic] = topicAvg;
+            });
+
+            return {
+                id: student.id,
+                name: student.name,
+                email: student.email,
+                className: student.className,
+                grade: student.grade,
+                progress: Math.round(avgScore * 100),
+                quizzesTaken: quizResults.length,
+                topicMastery,
+                lastActivity: quizResults[0]?.timestamp || student.lastLoginDate,
+            };
+        });
 
         return NextResponse.json({
             success: true,
