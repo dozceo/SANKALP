@@ -17,9 +17,9 @@ interface AuthContextType {
     user: User | null;
     role: 'student' | 'teacher' | null;
     loading: boolean;
-    signIn: (email: string, password: string) => Promise<void>;
-    signUp: (email: string, password: string, name: string, role: 'student' | 'teacher', additionalData?: any) => Promise<void>;
-    signInWithGoogle: () => Promise<void>;
+    signIn: (email: string, password: string) => Promise<User>;
+    signUp: (email: string, password: string, name: string, role: 'student' | 'teacher', additionalData?: any) => Promise<User>;
+    signInWithGoogle: () => Promise<User>;
     signOut: () => Promise<void>;
 }
 
@@ -27,9 +27,9 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     role: null,
     loading: true,
-    signIn: async () => { },
-    signUp: async () => { },
-    signInWithGoogle: async () => { },
+    signIn: async () => { throw new Error('Not implemented'); },
+    signUp: async () => { throw new Error('Not implemented'); },
+    signInWithGoogle: async () => { throw new Error('Not implemented'); },
     signOut: async () => { },
 });
 
@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!auth) return;
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 setUser(firebaseUser);
@@ -79,7 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signIn = async (email: string, password: string) => {
         if (!auth) throw new Error('Auth not initialized'); // Added guard
-        await signInWithEmailAndPassword(auth as Auth, email, password); // Cast auth to Auth
+        const userCredential = await signInWithEmailAndPassword(auth as Auth, email, password); // Cast auth to Auth
+        return userCredential.user;
     };
 
     const signUp = async (
@@ -134,11 +136,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(userRole);
         // Cache the role on signup
         localStorage.setItem(`sankalp_role_${userCredential.user.uid}`, userRole);
+        return userCredential.user;
     };
 
     const signInWithGoogle = async () => {
+        if (!auth) throw new Error('Auth not initialized');
         const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
+        const userCredential = await signInWithPopup(auth, provider);
+        return userCredential.user;
     };
 
     const signOut = async () => {

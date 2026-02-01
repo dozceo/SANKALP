@@ -26,10 +26,10 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      const user = await signIn(email, password);
 
       // Fetch user data to get actual role
-      const userResponse = await fetch(`/api/users/${(await signIn(email, password))}`);
+      const userResponse = await fetch(`/api/users/${user.uid}`);
 
       // Simple redirect based on selected role
       // In production, verify role matches

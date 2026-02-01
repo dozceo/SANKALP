@@ -5,9 +5,13 @@
  * Route: /api/intelligence/student
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"; perf-batch-ml-inference-14829293095210078835
 import { extractMasteryFeatures, type StudentHistory } from "@/ml/features/student_features";
+import { batchPredictMastery } from "@/ml/inference/ml-bridge";
+import type { MasteryPredictionInput, MasteryPredictionOutput } from "@/ml/inference/types";
+import { extractMasteryFeatures, calculatePerformanceTrend, type StudentHistory } from "@/ml/features/student_features";
 import { predictMastery } from "@/ml/inference/ml-bridge";
+debug-and-preroll
 import { makeRevisionDecision, makeInterventionDecision } from "@/ai/adk/decision-engine";
 import { DecisionAction, type MLSignals } from "@/ai/adk/types";
 import type { StudentIntelligence, MasterySignal, ADKMode } from "@/types/intelligence";
@@ -82,35 +86,76 @@ export async function GET(request: NextRequest) {
         let highestUrgency: "NONE" | "SCHEDULED" | "URGENT" = "NONE";
         let overallAttentionRisk: "LOW" | "MEDIUM" | "HIGH" = "LOW";
 
-        for (const topic of topics) {
-            // Step 1: Extract features
-            const features = extractMasteryFeatures(topic, studentHistory);
+        // Prepare for batch processing
+        type TopicData = {
+            topic: string;
+            features: ReturnType<typeof extractMasteryFeatures>;
+            mlPrediction: Partial<MasteryPredictionOutput> | null;
+        };
+        const topicData: TopicData[] = [];
+        const topicsToPredict: Array<{ topic: string; features: MasteryPredictionInput }> = [];
 
-            // Step 2: Check cache first
-            const cached = await getCachedPrediction(studentId, topic);
+        // Pass 1: Extract features and check cache
+        // We use Promise.all to check cache in parallel
+        const cacheChecks = await Promise.all(
+            topics.map(async (topic) => {
+                const features = extractMasteryFeatures(topic, studentHistory);
+                const cached = await getCachedPrediction(studentId, topic);
+                return { topic, features, cached };
+            })
+        );
 
-            let mlPrediction;
+        for (const { topic, features, cached } of cacheChecks) {
             if (cached) {
-                mlPrediction = {
-                    mastery_probability: cached.masteryProbability,
-                    confidence: cached.confidence,
-                };
+                topicData.push({
+                    topic,
+                    features,
+                    mlPrediction: {
+                        mastery_probability: cached.masteryProbability,
+                        confidence: cached.confidence,
+                    },
+                });
             } else {
-                // Make fresh ML prediction
-                mlPrediction = await predictMastery({
+                const inputFeatures: MasteryPredictionInput = {
                     avg_quiz_score: features.avg_quiz_score,
                     attempts_per_topic: features.attempts_per_topic,
                     days_since_last_revision: features.days_since_last_revision,
                     quiz_score_variance: features.quiz_score_variance,
                     time_spent_per_question: features.time_spent_per_question,
-                });
+                };
+                topicsToPredict.push({ topic, features: inputFeatures });
+                topicData.push({ topic, features, mlPrediction: null });
+            }
+        }
 
-                // Cache the prediction (expires in 1 hour)
+        // Batch Prediction
+        let newPredictionsMap = new Map<string, MasteryPredictionOutput>();
+        if (topicsToPredict.length > 0) {
+            const batchResults = await batchPredictMastery(topicsToPredict);
+            newPredictionsMap = new Map(batchResults.map((r) => [r.topic, r.prediction]));
+        }
+
+        // Pass 2: Process all topics with predictions
+        for (const data of topicData) {
+            const { topic, features } = data;
+            let mlPrediction = data.mlPrediction;
+
+            if (!mlPrediction) {
+                // Retrieve from batch results
+                mlPrediction = newPredictionsMap.get(topic);
+
+                if (!mlPrediction || mlPrediction.predicted_class === "error") {
+                    console.error(`Prediction failed for topic ${topic}:`, mlPrediction?.error || "Unknown error");
+                    // Skip this topic to avoid breaking the whole response
+                    continue;
+                }
+
+                // Cache the new prediction
                 await cachePrediction({
                     studentId,
                     topic,
-                    masteryProbability: mlPrediction.mastery_probability,
-                    confidence: mlPrediction.confidence,
+                    masteryProbability: mlPrediction.mastery_probability!,
+                    confidence: mlPrediction.confidence!,
                     daysSinceRevision: features.days_since_last_revision,
                     createdAt: new Date(),
                     expiresAt: new Date(Date.now() + 60 * 60 * 1000),
@@ -164,7 +209,7 @@ export async function GET(request: NextRequest) {
                 confidence: mlPrediction.confidence,
                 daysSinceRevision: features.days_since_last_revision,
                 attempts: features.attempts_per_topic,
-                trend: "STABLE", // TODO: Calculate from history
+                trend: calculatePerformanceTrend(studentHistory.quizResults.filter(q => q.topic === topic)),
                 needsRevision: adkDecision.priority !== "LOW",
                 priority: adkDecision.priority,
             };
