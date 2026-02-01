@@ -22,6 +22,7 @@ const PYTHON_SCRIPT_PATH = path.join(
     "predict_mastery.py"
 );
 
+ perf/optimize-ml-inference-11361693388362047795
 interface PendingRequest {
     resolve: (value: MasteryPredictionOutput) => void;
     reject: (reason?: any) => void;
@@ -41,6 +42,42 @@ class PythonBridge {
     }
 
     private startProcess() {
+
+const API_URL = process.env.ML_API_URL || "http://localhost:8000/predict/mastery";
+
+/**
+ * Predict topic mastery using the trained ML model
+ * 
+ * @param features - Student features for a specific topic
+ * @returns Mastery prediction with probability and confidence
+ */
+export async function predictMastery(
+    features: MasteryPredictionInput
+): Promise<MasteryPredictionOutput> {
+    // Optimization: Try to call the API first (persistent server is much faster)
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1000); // 1s timeout for API
+
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(features),
+            signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+            return (await response.json()) as MasteryPredictionOutput;
+        }
+    } catch (error) {
+        // API not available or timeout, fall back to subprocess
+    }
+
+    return new Promise((resolve, reject) => {
+       main
         // Spawn Python process
         this.process = spawn("python", [PYTHON_SCRIPT_PATH]);
 

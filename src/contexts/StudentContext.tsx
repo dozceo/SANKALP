@@ -1,13 +1,22 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { StudentNode } from '@/data/docsData';
+import type { StudentNode, StudyMaterial } from '@/data/docsData';
 import { useAuth } from './AuthContext';
+
+export interface StudyMaterialInput {
+    subject: string;
+    topic: string;
+    chapter?: string;
+    detailedNotes: string;
+    referenceLinks?: string[];
+}
 
 interface StudentContextType {
     currentStudent: StudentNode | null;
     loading: boolean;
     refetch: () => void;
+    addStudyMaterial: (material: StudyMaterialInput) => Promise<string>;
 }
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
@@ -33,15 +42,19 @@ export function StudentProvider({ children }: { children: ReactNode }) {
             }
 
             console.log('[StudentContext] Fetching student data for:', user.uid);
-            // Fetch student data from API
-            const response = await fetch(`/api/student?studentId=${user.uid}`);
-            console.log('[StudentContext] API response status:', response.status);
 
-            if (response.ok) {
-                const data = await response.json();
+            // Parallel fetch for student info and study materials
+            const [studentRes, plannerRes] = await Promise.all([
+                fetch(`/api/student?studentId=${user.uid}`),
+                fetch(`/api/planner/data?studentId=${user.uid}`)
+            ]);
+
+            let student: StudentNode;
+
+            if (studentRes.ok) {
+                const data = await studentRes.json();
                 if (data.student) {
-                    // Transform to StudentNode format
-                    const student: StudentNode = {
+                    student = {
                         id: user.uid,
                         name: data.student.name || user.displayName || 'Student',
                         type: 'student',
@@ -54,12 +67,9 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                         lastActive: new Date().toISOString(),
                         masteryScores: data.student.masteryScores || {}
                     };
-                    console.log('[StudentContext] Student data loaded:', student);
-                    setCurrentStudent(student);
                 } else {
-                    console.log('[StudentContext] No student data from API, creating minimal student');
-                    // Student record doesn't exist yet - create minimal student
-                    const student: StudentNode = {
+                    // Minimal student
+                    student = {
                         id: user.uid,
                         name: user.displayName || 'Student',
                         type: 'student',
@@ -72,11 +82,10 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                         lastActive: new Date().toISOString(),
                         masteryScores: {}
                     };
-                    setCurrentStudent(student);
                 }
             } else {
-                // API error - still create minimal student to prevent blocking
-                const student: StudentNode = {
+                 // Fallback minimal student
+                 student = {
                     id: user.uid,
                     name: user.displayName || 'Student',
                     type: 'student',
@@ -89,8 +98,47 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                     lastActive: new Date().toISOString(),
                     masteryScores: {}
                 };
-                setCurrentStudent(student);
             }
+
+            // Process Planner Data into StudyMaterials
+            if (plannerRes.ok) {
+                const plannerData = await plannerRes.json();
+                if (plannerData.items && Array.isArray(plannerData.items)) {
+                    const materials: StudyMaterial[] = plannerData.items.map((item: any) => {
+                        // Attempt to extract chapter if we stored it in content
+                        // Format assumed: "Chapter: <chapter>\n\n<notes>"
+                        let chapter = undefined;
+                        let notes = item.content;
+
+                        if (item.content && item.content.startsWith("Chapter: ")) {
+                            const parts = item.content.split('\n\n');
+                            if (parts.length > 1) {
+                                chapter = parts[0].replace("Chapter: ", "");
+                                notes = parts.slice(1).join('\n\n');
+                            }
+                        }
+
+                        return {
+                            id: item.id,
+                            subject: item.subject,
+                            topic: item.topic,
+                            chapter: chapter,
+                            detailedNotes: notes,
+                            referenceLinks: item.attachments || [],
+                            nextReview: item.nextReviewDate || new Date().toISOString(),
+                            status: item.completed ? 'Reviewed' : (item.nextReviewDate && new Date(item.nextReviewDate) < new Date() ? 'Due' : 'Upcoming'),
+                            priority: 'MEDIUM',
+                            lastReviewed: item.completedAt,
+                            fileUploads: [] // API doesn't seem to return file uploads specifically distinct from attachments yet
+                        };
+                    });
+                    student.studyMaterials = materials;
+                }
+            }
+
+            console.log('[StudentContext] Student data loaded:', student);
+            setCurrentStudent(student);
+
         } catch (error) {
             console.error('[StudentContext] Error fetching student:', error);
             // On error, still create minimal student
@@ -113,6 +161,65 @@ export function StudentProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const addStudyMaterial = async (material: StudyMaterialInput) => {
+        if (!user?.uid) throw new Error("User not authenticated");
+
+        try {
+            // Prepare content with chapter if present
+            const content = material.chapter
+                ? `Chapter: ${material.chapter}\n\n${material.detailedNotes}`
+                : material.detailedNotes;
+
+            const payload = {
+                studentId: user.uid,
+                subject: material.subject,
+                topic: material.topic,
+                content: content,
+                type: 'class_notes',
+                attachments: material.referenceLinks?.filter(l => l.trim() !== '') || [],
+                date: new Date().toISOString(),
+            };
+
+            const response = await fetch('/api/planner/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to save study material');
+            }
+
+            // Update local state
+            if (currentStudent) {
+                const newMaterial: StudyMaterial = {
+                    id: data.itemId,
+                    subject: material.subject,
+                    topic: material.topic,
+                    chapter: material.chapter,
+                    detailedNotes: material.detailedNotes,
+                    referenceLinks: material.referenceLinks?.filter(l => l.trim() !== '') || [],
+                    nextReview: new Date().toISOString(), // Will be scheduled by backend logic ideally, but setting default here
+                    status: 'Upcoming',
+                    priority: 'MEDIUM',
+                    fileUploads: []
+                };
+
+                setCurrentStudent({
+                    ...currentStudent,
+                    studyMaterials: [newMaterial, ...(currentStudent.studyMaterials || [])]
+                });
+            }
+
+            return data.itemId;
+        } catch (error) {
+            console.error('[StudentContext] Error adding study material:', error);
+            throw error;
+        }
+    };
+
     useEffect(() => {
         fetchStudent();
     }, [user?.uid]);
@@ -121,7 +228,8 @@ export function StudentProvider({ children }: { children: ReactNode }) {
         <StudentContext.Provider value={{
             currentStudent,
             loading,
-            refetch: fetchStudent
+            refetch: fetchStudent,
+            addStudyMaterial
         }}>
             {children}
         </StudentContext.Provider>

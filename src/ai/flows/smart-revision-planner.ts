@@ -15,8 +15,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { extractMasteryFeatures, type StudentHistory } from '@/ml/features/student_features';
+import { extractMasteryFeatures, calculatePerformanceTrend, type StudentHistory } from '@/ml/features/student_features';
 import { predictMastery } from '@/ml/inference/ml-bridge';
+import { getStudent, getQuizResults } from '@/lib/db-helpers';
 import {
   makeRevisionDecision,
   makeInterventionDecision,
@@ -74,7 +75,11 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         confidence: mlPrediction.confidence,
         days_since_last_revision: features.days_since_last_revision,
         attempts_count: features.attempts_per_topic,
-        performance_trend: "STABLE", // TODO: Calculate from history
+       feat-performance-trend-1812230759835433384
+        performance_trend: calculatePerformanceTrend(topic.name, studentHistory),
+        performance_trend: calculatePerformanceTrend(
+          studentHistory.quizResults.filter((q) => q.topic === topic.name)
+        ),main
       };
 
       // Step 4: ADK makes the decision
@@ -201,12 +206,45 @@ const smartRevisionPlannerFlow = ai.defineFlow(
       brainMapData = { topics: [] };
     }
 
-    // Mock student history (in production, fetch from database)
-    const studentHistory: StudentHistory = {
-      quizResults: brainMapData.quizResults || [],
-      lastLoginDate: new Date(),
-      registrationDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-    };
+    // Fetch student history from database
+    let studentHistory: StudentHistory;
+
+    try {
+      const student = await getStudent(input.studentId);
+      if (student) {
+        const quizResults = await getQuizResults(input.studentId, 100);
+        studentHistory = {
+          studentId: input.studentId,
+          quizResults: quizResults.map((qr) => ({
+            topic: qr.topic,
+            score: qr.score,
+            timestamp: qr.timestamp,
+            timeSpent: qr.timeSpent,
+            questionsAttempted: qr.questionsAttempted,
+          })),
+          lastLoginDate: student.lastLoginDate,
+          registrationDate: student.registrationDate,
+        };
+      } else {
+        console.warn(`Student not found: ${input.studentId}. Using brainMap data.`);
+        // Fallback to data in brainMap if available
+        studentHistory = {
+          studentId: input.studentId,
+          quizResults: brainMapData.quizResults || [],
+          lastLoginDate: new Date(),
+          registrationDate: new Date(),
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching student history:', error);
+      // Fallback
+      studentHistory = {
+        studentId: input.studentId,
+        quizResults: brainMapData.quizResults || [],
+        lastLoginDate: new Date(),
+        registrationDate: new Date(),
+      };
+    }
 
     // ML-DRIVEN DECISIONS
     const mlDecisions = await makeRevisionDecisions(brainMapData, studentHistory);
@@ -242,3 +280,53 @@ const smartRevisionPlannerFlow = ai.defineFlow(
     return { revisionList };
   }
 );
+
+/**
+ * Calculates the performance trend for a specific topic based on quiz history.
+ * Compares the average score of the most recent quizzes against the previous set.
+ */
+function calculatePerformanceTrend(
+  topic: string,
+  history: StudentHistory
+): "IMPROVING" | "STABLE" | "DECLINING" {
+  const topicQuizzes = history.quizResults
+    .filter((r) => r.topic === topic)
+    // Sort by timestamp descending (newest first)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  if (topicQuizzes.length < 2) {
+    return "STABLE";
+  }
+
+  let recent: number[] = [];
+  let previous: number[] = [];
+
+  // Determine window size based on available history
+  if (topicQuizzes.length >= 6) {
+    // Compare last 3 vs previous 3
+    recent = topicQuizzes.slice(0, 3).map((q) => q.score);
+    previous = topicQuizzes.slice(3, 6).map((q) => q.score);
+  } else if (topicQuizzes.length >= 4) {
+    // Compare last 2 vs previous 2
+    recent = topicQuizzes.slice(0, 2).map((q) => q.score);
+    previous = topicQuizzes.slice(2, 4).map((q) => q.score);
+  } else {
+    // Split remaining in half (e.g. 3 -> 1 vs 1, 2 -> 1 vs 1)
+    const midpoint = Math.floor(topicQuizzes.length / 2);
+    recent = topicQuizzes.slice(0, midpoint).map((q) => q.score);
+    previous = topicQuizzes.slice(midpoint, midpoint * 2).map((q) => q.score);
+  }
+
+  const recentAvg = recent.reduce((s, v) => s + v, 0) / recent.length;
+  const previousAvg = previous.reduce((s, v) => s + v, 0) / previous.length;
+
+  const threshold = 0.1; // 10% change required to indicate a trend
+
+  if (recentAvg > previousAvg + threshold) {
+    return "IMPROVING";
+  } else if (recentAvg < previousAvg - threshold) {
+    return "DECLINING";
+  }
+
+  return "STABLE";
+}
