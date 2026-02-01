@@ -1,5 +1,3 @@
 {
-  "/(main)/home/page": "app/(main)/home/page.js",
-  "/(main)/profile/page": "app/(main)/profile/page.js",
-  "/verify-ui/page": "app/verify-ui/page.js"
+  "/(auth)/sign-up/page": "app/(auth)/sign-up/page.js"
 }

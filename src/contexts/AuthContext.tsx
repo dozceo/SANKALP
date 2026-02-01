@@ -16,6 +16,7 @@ import { auth } from '@/lib/firebase';
 interface AuthContextType {
     user: User | null;
     role: 'student' | 'teacher' | null;
+    onboardingCompleted: boolean | null;
     loading: boolean;
     signIn: (email: string, password: string) => Promise<User>;
     signUp: (email: string, password: string, name: string, role: 'student' | 'teacher', additionalData?: any) => Promise<User>;
@@ -26,6 +27,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
     user: null,
     role: null,
+    onboardingCompleted: null,
     loading: true,
     signIn: async () => { throw new Error('Not implemented'); },
     signUp: async () => { throw new Error('Not implemented'); },
@@ -40,6 +42,7 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<'student' | 'teacher' | null>(null);
+    const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -61,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         if (response.ok) {
                             const userData = await response.json();
                             setRole(userData.role);
+                            setOnboardingCompleted(userData.onboardingCompleted || false);
                             // Cache the role
                             localStorage.setItem(`sankalp_role_${firebaseUser.uid}`, userData.role);
                         }
@@ -71,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } else {
                 setUser(null);
                 setRole(null);
+                setOnboardingCompleted(null);
             }
             setLoading(false);
         });
@@ -142,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signInWithGoogle = async () => {
         if (!auth) throw new Error('Auth not initialized');
         const provider = new GoogleAuthProvider();
-        const userCredential = await signInWithPopup(auth, provider);
+        const userCredential = await signInWithPopup(auth as Auth, provider);
         return userCredential.user;
     };
 
@@ -155,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const value = {
         user,
         role,
+        onboardingCompleted,
         loading,
         signIn,
         signUp,

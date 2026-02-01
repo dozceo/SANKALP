@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const SUBJECTS = [
     'Mathematics',
@@ -28,6 +29,7 @@ const CLASS_SIZES = ['1-10', '11-30', '31-50', '51-100', '100+'];
 export default function TeacherOnboardingPage() {
     const { user } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
@@ -70,13 +72,25 @@ export default function TeacherOnboardingPage() {
             });
 
             if (response.ok) {
+                toast({
+                    title: 'Onboarding complete!',
+                    description: 'Your teacher profile has been set up successfully.',
+                });
                 router.push('/teacher');
             } else {
-                alert('Failed to complete onboarding. Please try again.');
+                toast({
+                    title: 'Onboarding failed',
+                    description: 'Failed to complete onboarding. Please try again.',
+                    variant: 'destructive',
+                });
             }
         } catch (error) {
             console.error('Onboarding error:', error);
-            alert('An error occurred. Please try again.');
+            toast({
+                title: 'Error',
+                description: 'An error occurred. Please try again.',
+                variant: 'destructive',
+            });
         } finally {
             setLoading(false);
         }
