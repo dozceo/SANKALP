@@ -69,7 +69,7 @@ async def health_check():
     }
 
 @app.post("/predict/mastery", response_model=MasteryPredictionOutput)
-async def predict_mastery(input_data: MasteryPredictionInput):
+def predict_mastery(input_data: MasteryPredictionInput):
     """
     Predict topic mastery given student features
     """
