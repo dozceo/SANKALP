@@ -8,6 +8,10 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
 
+    // Optimization: Use Sets for O(1) lookups instead of O(N) array searches
+    const existingNodeIds = new Set<string>();
+    const existingLinkKeys = new Set<string>();
+
     // Node colors by type
     const colors: Record<NodeType, string> = {
         student: '#9333EA',      // Purple
@@ -19,13 +23,27 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
         skill: '#F59E0B',        // Amber
     };
 
+    const addNode = (node: GraphNode) => {
+        nodes.push(node);
+        existingNodeIds.add(node.id);
+    };
+
+    const addLink = (link: GraphLink) => {
+        links.push(link);
+        // Store link key as "minId-maxId" to handle undirected check
+        const s = String(link.source);
+        const t = String(link.target);
+        const key = s < t ? `${s}-${t}` : `${t}-${s}`;
+        existingLinkKeys.add(key);
+    };
+
     students.forEach(student => {
         // Create student node
         const avgMastery = student.masteryScores
             ? Object.values(student.masteryScores).reduce((a, b) => a + b, 0) / Object.values(student.masteryScores).length
             : 0.5;
 
-        nodes.push({
+        addNode({
             id: student.id,
             name: student.name,
             val: 20,                // Largest node
@@ -39,7 +57,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                 const subjectId = `${student.id}-subject-${subject.id}`;
 
                 // Create subject node
-                nodes.push({
+                addNode({
                     id: subjectId,
                     name: subject.name,
                     val: 15,
@@ -49,7 +67,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                 });
 
                 // Link student to subject
-                links.push({
+                addLink({
                     source: student.id,
                     target: subjectId,
                     type: 'subject',
@@ -60,7 +78,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                     const chapterId = `${subjectId}-chapter-${chapter.id}`;
 
                     // Create chapter node
-                    nodes.push({
+                    addNode({
                         id: chapterId,
                         name: chapter.name,
                         val: 12,
@@ -70,7 +88,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                     });
 
                     // Link subject to chapter
-                    links.push({
+                    addLink({
                         source: subjectId,
                         target: chapterId,
                         type: 'chapter',
@@ -81,7 +99,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                         const topicId = `${chapterId}-topic-${topic.id}`;
 
                         // Create topic node
-                        nodes.push({
+                        addNode({
                             id: topicId,
                             name: topic.name,
                             val: 10,
@@ -92,7 +110,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                         });
 
                         // Link chapter to topic
-                        links.push({
+                        addLink({
                             source: chapterId,
                             target: topicId,
                             type: 'hierarchy',
@@ -101,7 +119,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                         // Create weakness node if applicable
                         if (topic.isWeakness) {
                             const weaknessId = `${topicId}-weakness`;
-                            nodes.push({
+                            addNode({
                                 id: weaknessId,
                                 name: `⚠️ ${topic.name}`,
                                 val: 8,
@@ -110,7 +128,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                                 parent: topicId,
                             });
 
-                            links.push({
+                            addLink({
                                 source: topicId,
                                 target: weaknessId,
                                 type: 'hierarchy',
@@ -120,7 +138,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                         // Create strength node if applicable
                         if (topic.isStrength) {
                             const strengthId = `${topicId}-strength`;
-                            nodes.push({
+                            addNode({
                                 id: strengthId,
                                 name: `✓ ${topic.name}`,
                                 val: 8,
@@ -129,7 +147,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                                 parent: topicId,
                             });
 
-                            links.push({
+                            addLink({
                                 source: topicId,
                                 target: strengthId,
                                 type: 'hierarchy',
@@ -151,8 +169,8 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
             // Create topic nodes
             topicSet.forEach(topic => {
                 const topicId = `topic-${topic.toLowerCase().replace(/\s+/g, '-')}`;
-                if (!nodes.find(n => n.id === topicId)) {
-                    nodes.push({
+                if (!existingNodeIds.has(topicId)) {
+                    addNode({
                         id: topicId,
                         name: topic,
                         val: 10,
@@ -161,7 +179,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                     });
                 }
 
-                links.push({
+                addLink({
                     source: student.id,
                     target: topicId,
                     type: 'topic',
@@ -171,8 +189,8 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
             // Create skill nodes
             skillSet.forEach(skill => {
                 const skillId = `skill-${skill.toLowerCase().replace(/\s+/g, '-')}`;
-                if (!nodes.find(n => n.id === skillId)) {
-                    nodes.push({
+                if (!existingNodeIds.has(skillId)) {
+                    addNode({
                         id: skillId,
                         name: skill,
                         val: 7,
@@ -181,7 +199,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                     });
                 }
 
-                links.push({
+                addLink({
                     source: student.id,
                     target: skillId,
                     type: 'skill',
@@ -191,14 +209,12 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
 
         // Create peer connections
         student.connections?.forEach(connectionId => {
-            const existingLink = links.find(
-                l =>
-                    (l.source === student.id && l.target === connectionId) ||
-                    (l.source === connectionId && l.target === student.id)
-            );
+            const s = String(student.id);
+            const t = String(connectionId);
+            const key = s < t ? `${s}-${t}` : `${t}-${s}`;
 
-            if (!existingLink) {
-                links.push({
+            if (!existingLinkKeys.has(key)) {
+                addLink({
                     source: student.id,
                     target: connectionId,
                     type: 'peer',
