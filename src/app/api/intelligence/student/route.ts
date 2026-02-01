@@ -12,6 +12,7 @@ import { makeRevisionDecision, makeInterventionDecision } from "@/ai/adk/decisio
 import { DecisionAction, type MLSignals } from "@/ai/adk/types";
 import type { StudentIntelligence, MasterySignal, ADKMode } from "@/types/intelligence";
 import { getStudent, getQuizResults, getCachedPrediction, cachePrediction, saveADKDecision } from "@/lib/db-helpers";
+import { calculateTrend } from "@/lib/trend-utils";
 
 /**
  * GET /api/intelligence/student?studentId=xxx
@@ -158,13 +159,17 @@ export async function GET(request: NextRequest) {
 
             allAdkFlags.push(...adkDecision.adkFlags);
 
+            // Calculate trend for this topic
+            const topicQuizzes = studentHistory.quizResults.filter(q => q.topic === topic);
+            const trend = calculateTrend(topicQuizzes);
+
             // Store mastery signal
             mastery[topic] = {
                 score: mlPrediction.mastery_probability,
                 confidence: mlPrediction.confidence,
                 daysSinceRevision: features.days_since_last_revision,
                 attempts: features.attempts_per_topic,
-                trend: "STABLE", // TODO: Calculate from history
+                trend: trend,
                 needsRevision: adkDecision.priority !== "LOW",
                 priority: adkDecision.priority,
             };
