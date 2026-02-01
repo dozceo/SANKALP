@@ -3,6 +3,7 @@ Topic Mastery Prediction Inference Script
 
 Loads the trained model and makes predictions on new student data.
 Accepts JSON input via stdin and outputs JSON predictions.
+Supports persistent mode by reading line-by-line from stdin.
 
 Usage:
   echo '{"avg_quiz_score": 0.75, ...}' | python predict_mastery.py
@@ -26,6 +27,9 @@ def load_model():
         )
     return joblib.load(MODEL_PATH)
 
+# Global model instance
+model = None
+
 def predict_mastery(features):
     """
     Predict topic mastery given student features
@@ -44,7 +48,9 @@ def predict_mastery(features):
             - confidence (float)
             - predicted_class (str)
     """
-    model = load_model()
+    global model
+    if model is None:
+        model = load_model()
     
     # Extract features in correct order
     feature_vector = np.array([[
@@ -73,22 +79,45 @@ def predict_mastery(features):
 
 if __name__ == "__main__":
     try:
-        # Read JSON input from stdin
-        input_data = json.load(sys.stdin)
+        # Pre-load model
+        model = load_model()
         
-        # Make prediction
-        result = predict_mastery(input_data)
-        
-        # Output JSON result
-        print(json.dumps(result))
-        
+        # Read from stdin line by line
+        for line in sys.stdin:
+            line = line.strip()
+            if not line:
+                continue
+
+            request_id = None
+            try:
+                input_data = json.loads(line)
+                request_id = input_data.get("_id")
+
+                # Make prediction
+                result = predict_mastery(input_data)
+
+                # Add back request_id if present
+                if request_id:
+                    result["_id"] = request_id
+
+                # Output JSON result
+                print(json.dumps(result))
+                sys.stdout.flush()
+
+            except Exception as e:
+                # Output error as JSON
+                error_result = {
+                    "error": str(e),
+                    "mastery_probability": 0.0,
+                    "confidence": 0.0,
+                    "predicted_class": "error"
+                }
+                if request_id:
+                    error_result["_id"] = request_id
+
+                print(json.dumps(error_result))
+                sys.stdout.flush()
+
     except Exception as e:
-        # Output error as JSON
-        error_result = {
-            "error": str(e),
-            "mastery_probability": 0.0,
-            "confidence": 0.0,
-            "predicted_class": "error"
-        }
-        print(json.dumps(error_result))
+        sys.stderr.write(f"Fatal error: {str(e)}\n")
         sys.exit(1)
