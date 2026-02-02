@@ -1,4 +1,5 @@
 {
   "/(auth)/onboarding/page": "app/(auth)/onboarding/page.js",
+  "/(auth)/teacher-onboarding/page": "app/(auth)/teacher-onboarding/page.js",
   "/(main)/profile/page": "app/(main)/profile/page.js"
 }

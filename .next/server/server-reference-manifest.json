@@ -7,10 +7,17 @@
           "async": false,
           "exportedName": "generateFriendlyErrorMessage",
           "filename": "src/app/actions/ai-error.ts"
+        },
+        "app/(auth)/teacher-onboarding/page": {
+          "moduleId": "[project]/.next-internal/server/app/(auth)/teacher-onboarding/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/actions/ai-error.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "generateFriendlyErrorMessage",
+          "filename": "src/app/actions/ai-error.ts"
         }
       },
       "layer": {
-        "app/(auth)/onboarding/page": "action-browser"
+        "app/(auth)/onboarding/page": "action-browser",
+        "app/(auth)/teacher-onboarding/page": "action-browser"
       },
       "filename": "src/app/actions/ai-error.ts",
       "exportedName": "generateFriendlyErrorMessage"

@@ -21,3 +21,6 @@ https://nextjs.org/telemetry
  ○ Compiling /profile ...
  ✓ Compiled /profile in 2.1s
  GET /profile 200 in 2560ms
+ ○ Compiling /teacher-onboarding ...
+ ✓ Compiled /teacher-onboarding in 11.7s
+ GET /teacher-onboarding 200 in 12660ms
