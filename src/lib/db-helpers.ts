@@ -410,6 +410,77 @@ export async function getQuizResults(
 }
 
 /**
+ * Get batched quiz results for multiple students
+ * Fetches data in chunks to respect Firestore 'in' query limits (10).
+ * Results are sorted by timestamp desc in memory.
+ */
+export async function getBatchedQuizResults(
+    studentIds: string[],
+    limitPerStudent?: number
+): Promise<Map<string, QuizResult[]>> {
+    if (!studentIds.length) {
+        return new Map();
+    }
+
+    // Chunk size 10 for 'in' query
+    const chunkSize = 10;
+    const chunks = [];
+    for (let i = 0; i < studentIds.length; i += chunkSize) {
+        chunks.push(studentIds.slice(i, i + chunkSize));
+    }
+
+    try {
+        const resultsMap = new Map<string, QuizResult[]>();
+
+        // Process chunks in parallel
+        await Promise.all(chunks.map(async (chunk) => {
+            const snapshot = await db
+                .collection('quizResults')
+                .where('studentId', 'in', chunk)
+                // We fetch all and sort in memory to be safe and avoid composite index requirements
+                // and to correctly apply per-student limits
+                .get();
+
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const result: QuizResult = {
+                    id: doc.id,
+                    studentId: data.studentId,
+                    topic: data.topic,
+                    score: data.score,
+                    timeSpent: data.timeSpent,
+                    questionsAttempted: data.questionsAttempted,
+                    timestamp: data.timestamp?.toDate() || new Date(),
+                };
+
+                const existing = resultsMap.get(result.studentId) || [];
+                existing.push(result);
+                resultsMap.set(result.studentId, existing);
+            });
+        }));
+
+        // Sort and slice per student
+        resultsMap.forEach((results, studentId) => {
+            // Sort by timestamp desc
+            results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+            // Apply limit if requested
+            if (limitPerStudent && results.length > limitPerStudent) {
+                resultsMap.set(studentId, results.slice(0, limitPerStudent));
+            } else {
+                // Ensure sorted array is set back (sort mutates, but good to be explicit)
+                resultsMap.set(studentId, results);
+            }
+        });
+
+        return resultsMap;
+    } catch (error) {
+        console.error('Error fetching batched quiz results:', error);
+        throw error;
+    }
+}
+
+/**
  * Save a quiz result
  */
 export async function saveQuizResult(result: Omit<QuizResult, 'id'>): Promise<string> {
@@ -1005,20 +1076,28 @@ export async function getStudentsInClass(classId: string): Promise<Student[]> {
 /**
  * Get all students for a teacher (across all their classes)
  */
-export async function getTeacherStudents(teacherId: string): Promise<Student[]> {
+export async function getTeacherStudents(
+    teacherId: string,
+    options?: { select?: string[] }
+): Promise<Student[]> {
     try {
-        const snapshot = await db
+        let query = db
             .collection('students')
-            .where('teacherId', '==', teacherId)
-            .get();
+            .where('teacherId', '==', teacherId);
+
+        if (options?.select && options.select.length > 0) {
+            query = query.select(...options.select);
+        }
+
+        const snapshot = await query.get();
 
         return snapshot.docs.map((doc) => {
             const data = doc.data();
             return {
                 id: doc.id,
                 userId: data.userId || doc.id,
-                email: data.email,
-                name: data.name,
+                email: data.email || '',
+                name: data.name || '',
                 classId: data.classId,
                 className: data.className,
                 teacherId: data.teacherId,
