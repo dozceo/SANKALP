@@ -305,51 +305,57 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       {showToggle && (
         <button
           onClick={() => setIsGlobalView(!isGlobalView)}
-          className={`p-1.5 rounded transition-colors ${isGlobalView
+          className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isGlobalView
             ? 'bg-primary/30 text-primary'
             : 'bg-secondary/80 hover:bg-secondary text-muted-foreground hover:text-foreground'
             }`}
           title={isGlobalView ? 'Show local graph' : 'Show global graph'}
+          aria-label={isGlobalView ? 'Show local graph' : 'Show global graph'}
         >
-          {isGlobalView ? <Globe className="w-4 h-4" /> : <Target className="w-4 h-4" />}
+          {isGlobalView ? <Globe className="w-4 h-4" aria-hidden="true" /> : <Target className="w-4 h-4" aria-hidden="true" />}
         </button>
       )}
       <button
         onClick={() => handleZoom(1.5, graphRefProp)}
-        className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+        className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
         title="Zoom in"
+        aria-label="Zoom in"
       >
-        <ZoomIn className="w-4 h-4" />
+        <ZoomIn className="w-4 h-4" aria-hidden="true" />
       </button>
       <button
         onClick={() => handleZoom(0.67, graphRefProp)}
-        className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+        className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
         title="Zoom out"
+        aria-label="Zoom out"
       >
-        <ZoomOut className="w-4 h-4" />
+        <ZoomOut className="w-4 h-4" aria-hidden="true" />
       </button>
       <button
         onClick={() => handleReset(graphRefProp)}
-        className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+        className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
         title="Reset view"
+        aria-label="Reset view"
       >
-        <RotateCcw className="w-4 h-4" />
+        <RotateCcw className="w-4 h-4" aria-hidden="true" />
       </button>
       {!isModalOpen && (
         <>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
             title={isExpanded ? 'Collapse' : 'Expand'}
+            aria-label={isExpanded ? 'Collapse graph' : 'Expand graph'}
           >
-            {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isExpanded ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="p-1.5 bg-primary/20 hover:bg-primary/30 rounded text-primary transition-colors"
+            className="p-1.5 bg-primary/20 hover:bg-primary/30 rounded text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
             title="Open fullscreen"
+            aria-label="Open fullscreen view"
           >
-            <Maximize2 className="w-4 h-4" />
+            <Maximize2 className="w-4 h-4" aria-hidden="true" />
           </button>
         </>
       )}
@@ -415,9 +421,10 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                className="p-2 hover:bg-secondary rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                aria-label="Close fullscreen view"
               >
-                <X className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+                <X className="w-5 h-5 text-muted-foreground hover:text-foreground" aria-hidden="true" />
               </button>
             </div>
 
