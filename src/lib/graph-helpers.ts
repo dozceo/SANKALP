@@ -1,6 +1,6 @@
 import { db } from './firebase-admin';
 import { GraphData, GraphNode, GraphLink, NodeType } from '@/data/docsData';
-import { getQuizResults, getTeacherStudents } from './db-helpers';
+import { getQuizResults, getTeacherStudents, getBatchedQuizResults } from './db-helpers';
 
 /**
  * Fetch and generate personal graph data for a student
@@ -95,8 +95,14 @@ export async function fetchTeacherGraphData(teacherId: string): Promise<GraphDat
     };
 
     try {
-        const students = await getTeacherStudents(teacherId);
+        const students = await getTeacherStudents(teacherId, {
+            select: ['userId', 'name']
+        });
         const topicNodes = new Map<string, string>(); // Name -> ID
+
+        // Batch fetch quiz results
+        const studentIds = students.map(s => s.id);
+        const quizResultsMap = await getBatchedQuizResults(studentIds, 20);
 
         // Create Student Nodes
         for (const student of students) {
@@ -108,8 +114,8 @@ export async function fetchTeacherGraphData(teacherId: string): Promise<GraphDat
                 color: colors.student
             });
 
-            // Fetch their recent activity
-            const results = await getQuizResults(student.id, 20);
+            // Get their recent activity
+            const results = quizResultsMap.get(student.id) || [];
 
             // Link to Topics
             results.forEach(r => {

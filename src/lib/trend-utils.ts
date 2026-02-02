@@ -19,13 +19,14 @@ export type Trend = "IMPROVING" | "STABLE" | "DECLINING";
  * - Uses a 10% threshold (0.1) to determine significant change.
  *
  * @param results List of quiz results containing score and timestamp
+ * @param skipSort If true, assumes results are already sorted by timestamp descending
  * @returns "IMPROVING" | "STABLE" | "DECLINING"
  */
-export function calculateTrend(results: TrendInput[]): Trend {
+export function calculateTrend(results: TrendInput[], skipSort: boolean = false): Trend {
     if (results.length < 2) return "STABLE";
 
     // Sort by timestamp descending (newest first)
-    const sorted = [...results].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    const sorted = skipSort ? results : [...results].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
     const count = sorted.length;
     let recentAvg: number;

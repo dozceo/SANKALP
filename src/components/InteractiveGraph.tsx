@@ -3,7 +3,7 @@
 import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
-import { docsTree, flattenDocs, studentsData } from '@/data/studentsDataStatic';
+import { docsTree, studentsData, flatDocs } from '@/data/studentsDataStatic';
 import { generateEnhancedGraphData } from '@/lib/generateEnhancedGraph';
 import type { GraphNode, DocNode, StudentNode, GraphData } from '@/data/docsData';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X } from 'lucide-react';
@@ -40,7 +40,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   const localGraphData = useMemo(() => {
     if (!highlightedNode || isGlobalView) return fullGraphData;
 
-    const flatNodes = flattenDocs(docsTree);
+    // Use pre-calculated flatDocs to avoid O(N) traversal on every render
+    const flatNodes = flatDocs;
     const currentNode = flatNodes.find(n => n.id === highlightedNode);
 
     if (!currentNode) return fullGraphData;

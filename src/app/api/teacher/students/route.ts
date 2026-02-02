@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTeacherStudents, getTeacherClasses, getStudent, getQuizResults } from '@/lib/db-helpers';
+import { getTeacherStudents, getTeacherClasses, getStudent, getBatchedQuizResults } from '@/lib/db-helpers';
 import { calculateStudentRisk } from '@/lib/generateStudentIntelligence';
 
 export async function GET(req: NextRequest) {
@@ -18,46 +18,50 @@ export async function GET(req: NextRequest) {
         const classes = await getTeacherClasses(teacherId);
 
         // Get all students
-        const students = await getTeacherStudents(teacherId);
+        const students = await getTeacherStudents(teacherId, {
+            select: ['userId', 'name', 'email', 'className', 'grade', 'lastLoginDate']
+        });
+
+        // Batch fetch quiz results for all students (optimization)
+        const studentIds = students.map(s => s.id);
+        const quizResultsMap = await getBatchedQuizResults(studentIds, 20);
 
         // Enrich student data with quiz results and risk assessment
-        const enrichedStudents = await Promise.all(
-            students.map(async (student) => {
-                const quizResults = await getQuizResults(student.id, 20);
+        const enrichedStudents = students.map((student) => {
+            const quizResults = quizResultsMap.get(student.id) || [];
 
-                // Calculate basic metrics
-                const avgScore = quizResults.length > 0
-                    ? quizResults.reduce((sum, r) => sum + r.score, 0) / quizResults.length
-                    : 0;
+            // Calculate basic metrics
+            const avgScore = quizResults.length > 0
+                ? quizResults.reduce((sum, r) => sum + r.score, 0) / quizResults.length
+                : 0;
 
-                const topicStats: Record<string, { sum: number; count: number }> = {};
+            const topicStats: Record<string, { sum: number; count: number }> = {};
 
-                for (const r of quizResults) {
-                    if (!topicStats[r.topic]) {
-                        topicStats[r.topic] = { sum: 0, count: 0 };
-                    }
-                    topicStats[r.topic].sum += r.score;
-                    topicStats[r.topic].count += 1;
+            for (const r of quizResults) {
+                if (!topicStats[r.topic]) {
+                    topicStats[r.topic] = { sum: 0, count: 0 };
                 }
+                topicStats[r.topic].sum += r.score;
+                topicStats[r.topic].count += 1;
+            }
 
-                const topicMastery: Record<string, number> = {};
-                for (const topic in topicStats) {
-                    topicMastery[topic] = topicStats[topic].sum / topicStats[topic].count;
-                }
+            const topicMastery: Record<string, number> = {};
+            for (const topic in topicStats) {
+                topicMastery[topic] = topicStats[topic].sum / topicStats[topic].count;
+            }
 
-                return {
-                    id: student.id,
-                    name: student.name,
-                    email: student.email,
-                    className: student.className,
-                    grade: student.grade,
-                    progress: Math.round(avgScore * 100),
-                    quizzesTaken: quizResults.length,
-                    topicMastery,
-                    lastActivity: quizResults[0]?.timestamp || student.lastLoginDate,
-                };
-            })
-        );
+            return {
+                id: student.id,
+                name: student.name,
+                email: student.email,
+                className: student.className,
+                grade: student.grade,
+                progress: Math.round(avgScore * 100),
+                quizzesTaken: quizResults.length,
+                topicMastery,
+                lastActivity: quizResults[0]?.timestamp || student.lastLoginDate,
+            };
+        });
 
         return NextResponse.json({
             success: true,
