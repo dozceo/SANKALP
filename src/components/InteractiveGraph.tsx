@@ -36,32 +36,45 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
   const fullGraphData = useMemo(() => generateEnhancedGraphData(studentsData), []);
 
+  // Optimization: Pre-calculate adjacency map for O(1) lookups
+  // This avoids O(N) searching for connections on every interaction
+  const adjacencyMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+
+    // Use fullGraphData.links as the source of truth for connections
+    fullGraphData.links.forEach(link => {
+      const s = typeof link.source === 'object' ? (link.source as any).id : link.source;
+      const t = typeof link.target === 'object' ? (link.target as any).id : link.target;
+
+      if (s && t) {
+        if (!map.has(s)) map.set(s, new Set());
+        if (!map.has(t)) map.set(t, new Set());
+        map.get(s)!.add(t);
+        map.get(t)!.add(s);
+      }
+    });
+    return map;
+  }, [fullGraphData]);
+
   // Generate local graph data (only nodes connected to highlighted node)
   const localGraphData = useMemo(() => {
     if (!highlightedNode || isGlobalView) return fullGraphData;
 
-    // Use pre-calculated flatDocs to avoid O(N) traversal on every render
-    const flatNodes = flatDocs;
-    const currentNode = flatNodes.find(n => n.id === highlightedNode);
-
-    if (!currentNode) return fullGraphData;
-
     // Find all connected node IDs
     const connected = new Set<string>([highlightedNode]);
 
-    // Add connections from current node
-    if (currentNode.connections) {
-      currentNode.connections.forEach(id => connected.add(id));
+    // Add immediate neighbors using the optimized adjacency map (O(1))
+    const neighbors = adjacencyMap.get(highlightedNode);
+    if (neighbors) {
+      neighbors.forEach(n => connected.add(n));
     }
 
-    // Add nodes that have connections to current node
-    flatNodes.forEach(node => {
-      if (node.connections?.includes(highlightedNode)) {
-        connected.add(node.id);
-      }
-    });
+    // Still need to find parent/children relationships if they aren't explicit in links
+    // But generateEnhancedGraphData creates links for parent-child, so adjacencyMap is sufficient
+    // We keep a small fallback for safety if specific hierarchical navigation is needed
+    // that isn't in links (though it should be).
 
-    // Add parent nodes
+    // Add parent nodes (hierarchy fallback)
     function findParent(nodes: DocNode[], targetId: string, parentId?: string): string | undefined {
       for (const node of nodes) {
         if (node.id === targetId) return parentId;
@@ -75,13 +88,6 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
     const parentId = findParent(docsTree, highlightedNode);
     if (parentId) connected.add(parentId);
-
-    // Add child nodes
-    const currentDocNode = flatNodes.find(n => n.id === highlightedNode);
-    if (currentDocNode && 'children' in currentDocNode) {
-      const docWithChildren = currentDocNode as DocNode;
-      docWithChildren.children?.forEach(child => connected.add(child.id));
-    }
 
     setConnectedNodes(connected);
 
@@ -210,7 +216,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       node.x, node.y, nodeSize
     );
     const baseColor = nodeColor(node);
-    nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
+    // Use memoized color function to prevent expensive recalculation on every frame
+    nodeGradient.addColorStop(0, memoizedLightenColor(baseColor, 20));
     nodeGradient.addColorStop(1, baseColor);
 
     ctx.beginPath();
@@ -464,12 +471,22 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   );
 }
 
-// Helper function to lighten a hex color
-function lightenColor(hex: string, percent: number): string {
+// Memoized helper function to lighten a hex color
+// Caches results to avoid expensive parsing and bitwise operations on every frame
+const colorCache = new Map<string, string>();
+
+function memoizedLightenColor(hex: string, percent: number): string {
+  const key = `${hex}-${percent}`;
+  if (colorCache.has(key)) return colorCache.get(key)!;
+
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
   const R = Math.min(255, (num >> 16) + amt);
   const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
   const B = Math.min(255, (num & 0x0000ff) + amt);
-  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+
+  const result = `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+  colorCache.set(key, result);
+
+  return result;
 }

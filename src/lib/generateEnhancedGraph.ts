@@ -39,10 +39,6 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
 
     students.forEach(student => {
         // Create student node
-        const avgMastery = student.masteryScores
-            ? Object.values(student.masteryScores).reduce((a, b) => a + b, 0) / Object.values(student.masteryScores).length
-            : 0.5;
-
         addNode({
             id: student.id,
             name: student.name,
