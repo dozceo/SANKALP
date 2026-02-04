@@ -20,7 +20,11 @@ export async function getMotivationalAdvice(studentConcern: string) {
             source: 'ai'
         };
     } catch(e) {
-        console.error("[MentorAction] AI counseling failed:", e);
+        console.error('MENTOR_FLOW_FAILED', {
+            message: e instanceof Error ? e.message : 'Unknown error',
+            stack: e instanceof Error ? e.stack : undefined,
+            studentConcern
+        });
         // Serve an empathetic randomized fallback
         return {
             content: getMentorFallback(),

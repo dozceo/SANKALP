@@ -15,7 +15,12 @@ const getCachedSyllabus = unstable_cache(
             }
             return result;
         } catch (error) {
-            console.error("[SyllabusAction] AI Generation failed, falling back to static syllabus.", error);
+            console.error('SYLLABUS_FLOW_FAILED', {
+                message: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined,
+                query,
+            });
+            // Return high-quality fallback syllabus
             return getFallbackSyllabus(query);
         }
     },

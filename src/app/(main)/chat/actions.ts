@@ -23,7 +23,12 @@ export async function getExplanation(concept: string, language: string) {
             source: 'ai'
         };
     } catch(e) {
-        console.error("[ChatAction] AI explanation failed:", e);
+        console.error('CHATBOT_FLOW_FAILED', {
+            message: e instanceof Error ? e.message : 'Unknown error',
+            stack: e instanceof Error ? e.stack : undefined,
+            concept,
+            language
+        });
         // Serve a high-quality language-aware fallback
         return {
             content: getChatbotFallback(concept, language),
