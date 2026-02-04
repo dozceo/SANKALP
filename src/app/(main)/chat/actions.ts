@@ -4,6 +4,7 @@
 import { explainConcept } from "@/ai/flows/multilingual-cognitive-chatbot";
 import { textToSpeech } from "@/ai/flows/text-to-speech";
 import { speechToSpeech } from "@/ai/flows/speech-to-speech";
+import { getChatbotFallback } from "@/lib/chat-fallback";
 
 export async function getExplanation(concept: string, language: string) {
     try {
@@ -12,10 +13,16 @@ export async function getExplanation(concept: string, language: string) {
             language,
             brainMapContext: "This concept is part of the introductory algebra syllabus, focusing on solving linear equations."
         });
+
+        if (!response || !response.explanation) {
+            throw new Error("Empty explanation returned from AI");
+        }
+
         return response.explanation;
     } catch(e) {
-        console.error(e);
-        return "Sorry, I encountered an error while generating an explanation. Please try again."
+        console.error("[ChatAction] AI explanation failed:", e);
+        // Serve a high-quality language-aware fallback
+        return getChatbotFallback(concept, language);
     }
 }
 

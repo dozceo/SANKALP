@@ -2,6 +2,7 @@
 "use server";
 
 import { getMotivationalCounseling } from "@/ai/flows/mindful-mentor";
+import { getMentorFallback } from "@/lib/chat-fallback";
 
 export async function getMotivationalAdvice(studentConcern: string) {
     try {
@@ -9,9 +10,15 @@ export async function getMotivationalAdvice(studentConcern: string) {
             studentConcern,
             studentHistory: "The student has been feeling overwhelmed with their chemistry coursework and has an upcoming exam."
         });
+
+        if (!response || !response.advice) {
+            throw new Error("Empty advice returned from AI");
+        }
+
         return response.advice;
     } catch(e) {
-        console.error(e);
-        return "I'm sorry, I'm having a little trouble right now. Could you please try again in a moment?"
+        console.error("[MentorAction] AI counseling failed:", e);
+        // Serve an empathetic randomized fallback
+        return getMentorFallback();
     }
 }
