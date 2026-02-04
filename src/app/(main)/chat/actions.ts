@@ -18,11 +18,17 @@ export async function getExplanation(concept: string, language: string) {
             throw new Error("Empty explanation returned from AI");
         }
 
-        return response.explanation;
+        return {
+            content: response.explanation,
+            source: 'ai'
+        };
     } catch(e) {
         console.error("[ChatAction] AI explanation failed:", e);
         // Serve a high-quality language-aware fallback
-        return getChatbotFallback(concept, language);
+        return {
+            content: getChatbotFallback(concept, language),
+            source: 'fallback'
+        };
     }
 }
 

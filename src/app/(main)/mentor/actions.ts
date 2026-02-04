@@ -15,10 +15,16 @@ export async function getMotivationalAdvice(studentConcern: string) {
             throw new Error("Empty advice returned from AI");
         }
 
-        return response.advice;
+        return {
+            content: response.advice,
+            source: 'ai'
+        };
     } catch(e) {
         console.error("[MentorAction] AI counseling failed:", e);
         // Serve an empathetic randomized fallback
-        return getMentorFallback();
+        return {
+            content: getMentorFallback(),
+            source: 'fallback'
+        };
     }
 }
