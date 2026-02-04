@@ -19,27 +19,48 @@ export async function POST(req: NextRequest) {
         if (body.events && Array.isArray(body.events)) {
             console.log(`📦 [Activity Log] Batch request with ${body.events.length} events`);
 
-            // Process each event in the batch
-            const processedIds = [];
-            for (const event of body.events) {
-                if (!event.studentId) {
-                    console.warn('⚠️ [Activity Log] Event missing studentId, skipping:', event);
-                    continue;
+            // Process each event in the batch (Optimized with Batched Writes)
+            const events = body.events;
+            const processedIds: string[] = [];
+            const BATCH_SIZE = 500;
+
+            const chunks = [];
+            for (let i = 0; i < events.length; i += BATCH_SIZE) {
+                chunks.push(events.slice(i, i + BATCH_SIZE));
+            }
+
+            const chunkResults = await Promise.all(chunks.map(async (chunk) => {
+                const batch = db.batch();
+                const chunkIds: string[] = [];
+
+                for (const event of chunk) {
+                    if (!event.studentId) {
+                        console.warn('⚠️ [Activity Log] Event missing studentId, skipping:', event);
+                        continue;
+                    }
+
+                    const logRef = db.collection('activityLogs').doc();
+                    batch.set(logRef, {
+                        studentId: event.studentId,
+                        sessionId: event.sessionId || null,
+                        timestamp: FieldValue.serverTimestamp(),
+                        eventId: event.id,
+                        action: event.action,
+                        timing: event.timing,
+                        data: event.data || {},
+                        metadata: event.metadata || {},
+                    });
+
+                    chunkIds.push(logRef.id);
                 }
 
-                const logRef = await db.collection('activityLogs').add({
-                    studentId: event.studentId,
-                    sessionId: event.sessionId || null,
-                    timestamp: FieldValue.serverTimestamp(),
-                    eventId: event.id,
-                    action: event.action,
-                    timing: event.timing,
-                    data: event.data || {},
-                    metadata: event.metadata || {},
-                });
+                if (chunkIds.length > 0) {
+                    await batch.commit();
+                }
+                return chunkIds;
+            }));
 
-                processedIds.push(logRef.id);
-            }
+            chunkResults.forEach(ids => processedIds.push(...ids));
 
             return NextResponse.json({
                 success: true,
