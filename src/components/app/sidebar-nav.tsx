@@ -30,6 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { href: "/home", icon: LayoutGrid, label: "Home" },
+  { href: "/classes", icon: UserCheck, label: "Classroom" },
   { href: "/planner", icon: ListTodo, label: "My Planner" },
   { href: "/syllabus", icon: BookCopy, label: "Syllabus" },
   { href: "/quiz", icon: FileQuestion, label: "Quiz" },

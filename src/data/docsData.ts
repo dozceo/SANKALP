@@ -66,6 +66,9 @@ export interface StudentNode {
     masteryScores?: Record<string, number>;
     badges?: Badge[];
     streak?: number;
+    classId?: string;
+    className?: string;
+    teacherName?: string;
 
     // New hierarchical study data
     subjects?: Subject[];
