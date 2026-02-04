@@ -35,22 +35,29 @@ export function calculateTrend(results: TrendInput[], skipSort: boolean = false)
     if (count >= 4) {
         // Split into two halves
         const mid = Math.floor(count / 2);
-
-        // Take recent half and previous half
         const compareCount = mid;
-        const recentSet = sorted.slice(0, compareCount);
-        const previousSet = sorted.slice(compareCount, compareCount * 2);
 
-        recentAvg = recentSet.reduce((sum, r) => sum + r.score, 0) / compareCount;
-        previousAvg = previousSet.reduce((sum, r) => sum + r.score, 0) / compareCount;
+        let recentSum = 0;
+        for (let i = 0; i < compareCount; i++) {
+            recentSum += sorted[i].score;
+        }
+        recentAvg = recentSum / compareCount;
+
+        let previousSum = 0;
+        for (let i = compareCount; i < compareCount * 2; i++) {
+            previousSum += sorted[i].score;
+        }
+        previousAvg = previousSum / compareCount;
     } else {
         // 2 or 3 items
         // Compare most recent (1) vs average of the rest (1 or 2)
-        const recent = sorted[0];
-        const others = sorted.slice(1);
+        recentAvg = sorted[0].score;
 
-        recentAvg = recent.score;
-        previousAvg = others.reduce((sum, r) => sum + r.score, 0) / others.length;
+        let previousSum = 0;
+        for (let i = 1; i < count; i++) {
+            previousSum += sorted[i].score;
+        }
+        previousAvg = previousSum / (count - 1);
     }
 
     const diff = recentAvg - previousAvg;

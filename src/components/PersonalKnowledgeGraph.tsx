@@ -4,6 +4,7 @@ import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { generatePersonalGraph } from '@/lib/generatePersonalGraph';
+import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, StudentNode } from '@/data/docsData';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
@@ -251,12 +252,3 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
     );
 }
 
-// Helper function to lighten a hex color
-function lightenColor(hex: string, percent: number): string {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.min(255, (num >> 16) + amt);
-    const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
-    const B = Math.min(255, (num & 0x0000ff) + amt);
-    return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
-}
