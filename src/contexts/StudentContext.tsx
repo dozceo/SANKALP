@@ -68,7 +68,9 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                         weaknesses: data.student.weaknesses || [],
                         connections: [],
                         lastActive: new Date().toISOString(),
-                        masteryScores: data.student.masteryScores || {}
+                        masteryScores: data.student.masteryScores || {},
+                        badges: data.student.badges || [],
+                        streak: data.student.streak || 0
                     };
                 } else {
                     // Minimal student
@@ -83,7 +85,9 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                         weaknesses: [],
                         connections: [],
                         lastActive: new Date().toISOString(),
-                        masteryScores: {}
+                        masteryScores: {},
+                        badges: [],
+                        streak: 0
                     };
                 }
             } else {
