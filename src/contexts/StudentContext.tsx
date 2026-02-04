@@ -22,12 +22,15 @@ interface StudentContextType {
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
 export function StudentProvider({ children }: { children: ReactNode }) {
-    const { user } = useAuth();
+    const { user, role, loading: authLoading } = useAuth();
     const [currentStudent, setCurrentStudent] = useState<StudentNode | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchStudent = async () => {
-        if (!user) {
+        // Wait for auth to finish loading before deciding what to fetch
+        if (authLoading) return;
+
+        if (!user || role !== 'student') {
             setCurrentStudent(null);
             setLoading(false);
             return;
@@ -222,7 +225,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         fetchStudent();
-    }, [user?.uid]);
+    }, [user?.uid, role, authLoading]);
 
     return (
         <StudentContext.Provider value={{
