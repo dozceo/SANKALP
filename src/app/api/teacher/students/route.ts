@@ -50,13 +50,20 @@ export async function GET(req: NextRequest) {
                 topicMastery[topic] = topicStats[topic].sum / topicStats[topic].count;
             }
 
+            const avgMastery = Math.round(avgScore * 100);
+            let dropoutRisk = 'Low';
+            if (avgMastery < 40) dropoutRisk = 'High';
+            else if (avgMastery < 60) dropoutRisk = 'Medium';
+
             return {
                 id: student.id,
                 name: student.name,
                 email: student.email,
                 className: student.className,
                 grade: student.grade,
-                progress: Math.round(avgScore * 100),
+                progress: avgMastery,
+                avgMastery: avgMastery,
+                dropoutRisk: dropoutRisk,
                 quizzesTaken: quizResults.length,
                 topicMastery,
                 lastActivity: quizResults[0]?.timestamp || student.lastLoginDate,
