@@ -54,6 +54,7 @@ export interface Student {
     classId?: string;
     className?: string;
     teacherId?: string;
+    teacherName?: string;
     grade?: string;
     joinedClassAt?: Date;
     registrationDate: Date;
@@ -313,6 +314,7 @@ export async function getStudent(studentId: string): Promise<Student | null> {
             classId: data?.classId,
             className: data?.className,
             teacherId: data?.teacherId,
+            teacherName: data?.teacherName,
             grade: data?.grade,
             joinedClassAt: data?.joinedClassAt?.toDate(),
             registrationDate: data?.registrationDate?.toDate() || new Date(),
@@ -1032,6 +1034,7 @@ export async function addStudentToClass(studentId: string, classCode: string): P
             classId: classDoc.id,
             className: classDoc.className,
             teacherId: classDoc.teacherId,
+            teacherName: classDoc.teacherName,
             grade: classDoc.grade,
             joinedClassAt: FieldValue.serverTimestamp(),
         });

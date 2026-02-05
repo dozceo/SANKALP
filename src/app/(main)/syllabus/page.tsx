@@ -21,6 +21,41 @@ export default function SyllabusPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const handleSave = async () => {
+    if (!user || !syllabus) return;
+    setSaving(true);
+    try {
+      const response = await fetch('/api/syllabus/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: user.uid,
+          examName: query,
+          title: syllabus.title,
+          structure: syllabus.structure,
+          strategy: syllabus.strategy,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Syllabus Saved!",
+          description: "Your syllabus has been added to your planner.",
+        });
+      } else {
+        throw new Error("Failed to save syllabus");
+      }
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Failed to save the syllabus. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
@@ -102,6 +137,12 @@ export default function SyllabusPage() {
 
           {syllabus && (
             <Card className="mt-6">
+              {syllabus.isFallback && (
+                <div className="bg-amber-50 text-amber-700 px-4 py-2 text-xs border-b border-amber-100 flex items-center gap-2">
+                  <Loader2 className="h-3 w-3" />
+                  AI is currently offline. Serving a standard syllabus outline for {query}.
+                </div>
+              )}
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl font-headline">
                   <BookCopy /> {syllabus.title}

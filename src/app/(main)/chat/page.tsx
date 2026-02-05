@@ -52,9 +52,9 @@ export default function ChatPage() {
         setInput("");
         setIsLoading(true);
         
-        const botResponse = await getExplanation(input, language);
+        const result = await getExplanation(input, language);
         
-        const botMessage: Message = { id: Date.now() + 1, role: "bot", content: botResponse };
+        const botMessage: Message = { id: Date.now() + 1, role: "bot", content: result.content };
         setMessages(prev => [...prev, botMessage]);
         setIsLoading(false);
     };

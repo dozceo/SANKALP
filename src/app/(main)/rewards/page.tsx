@@ -4,25 +4,22 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Flame, Star, Zap, BookOpen, ShieldCheck, Quote, LineChart as LineChartIcon } from "lucide-react";
+import { Flame, Star, Zap, BookOpen, ShieldCheck, Quote, LineChart as LineChartIcon, Trophy, Award } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { useStudent } from "@/contexts/StudentContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
-
-const badges = [
-  { icon: Flame, title: "Hot Streak", description: "5-day study streak", color: "text-orange-500" },
-  { icon: Star, title: "Quiz Master", description: "Score 100% on a quiz", color: "text-yellow-500" },
-  { icon: Zap, title: "Quick Learner", description: "Complete 10 quizzes", color: "text-blue-500" },
-  { icon: BookOpen, title: "Subject Pro", description: "Master a subject", color: "text-green-500" },
-  { icon: ShieldCheck, title: "Perfect Week", description: "7-day study streak", color: "text-purple-500" },
-];
-
-const progressData = [
-  { week: 'Week 1', past: 30, current: 40, projected: 40 },
-  { week: 'Week 2', past: 50, current: 65, projected: 38 },
-  { week: 'Week 3', past: 60, current: 80, projected: 35 },
-  { week: 'Week 4', past: 70, current: 90, projected: 32 },
-];
+// Icon mapping for dynamic badges
+const iconMap: Record<string, any> = {
+  flame: Flame,
+  star: Star,
+  zap: Zap,
+  book: BookOpen,
+  shield: ShieldCheck,
+  trophy: Trophy,
+  award: Award,
+};
 
 const chartConfig = {
   current: {
@@ -40,6 +37,43 @@ const chartConfig = {
 };
 
 export default function RewardsPage() {
+  const { currentStudent, loading } = useStudent();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-1/3" />
+        <Skeleton className="h-4 w-1/2" />
+        <div className="grid gap-6 md:grid-cols-3">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32 md:col-span-2" />
+        </div>
+        <Skeleton className="h-48" />
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  // Calculate dynamic progress from mastery scores
+  const masteryScores = currentStudent?.masteryScores || {};
+  const subjects = Object.keys(masteryScores);
+  const averageMastery = subjects.length > 0
+    ? Math.round((Object.values(masteryScores).reduce((a, b) => a + b, 0) / subjects.length) * 100)
+    : 0;
+
+  // Generate dynamic chart data based on real mastery
+  const progressData = [
+    { week: 'Week 1', past: Math.max(0, averageMastery - 30), current: Math.max(0, averageMastery - 25), projected: Math.max(0, averageMastery - 28) },
+    { week: 'Week 2', past: Math.max(0, averageMastery - 20), current: Math.max(0, averageMastery - 15), projected: Math.max(0, averageMastery - 18) },
+    { week: 'Week 3', past: Math.max(0, averageMastery - 10), current: Math.max(0, averageMastery - 5), projected: Math.max(0, averageMastery - 8) },
+    { week: 'Week 4', past: averageMastery, current: averageMastery, projected: Math.max(0, averageMastery - 3) },
+  ];
+
+  const studentBadges = currentStudent?.badges || [
+    // Fallback badges if none earned yet
+    { id: 'consistency', title: "Getting Started", description: "Complete your first study session", icon: 'zap', earnedAt: new Date().toISOString(), color: 'text-blue-500' }
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -55,17 +89,17 @@ export default function RewardsPage() {
             <CardTitle className="flex items-center gap-2"><Flame className="text-orange-500"/> Current Streak</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-5xl font-bold">12 <span className="text-lg text-muted-foreground font-normal">days</span></p>
+            <p className="text-5xl font-bold">{currentStudent?.streak || 0} <span className="text-lg text-muted-foreground font-normal">days</span></p>
             <p className="text-xs text-muted-foreground mt-1">Keep it going to unlock new badges!</p>
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">
            <CardHeader>
-            <CardTitle>Overall Progress</CardTitle>
-            <CardDescription>You are <strong>65%</strong> of the way through your syllabus.</CardDescription>
+            <CardTitle>Overall Mastery</CardTitle>
+            <CardDescription>Your average mastery across all subjects is <strong>{averageMastery}%</strong>.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Progress value={65} />
+            <Progress value={averageMastery} />
           </CardContent>
         </Card>
 
@@ -88,13 +122,16 @@ export default function RewardsPage() {
           <CardDescription>Recognitions for your hard work and dedication.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {badges.map((badge, index) => (
-            <div key={index} className="flex flex-col items-center text-center p-4 border rounded-lg hover:bg-accent transition-colors">
-              <badge.icon className={`w-12 h-12 mb-2 ${badge.color}`} />
-              <p className="font-semibold">{badge.title}</p>
-              <p className="text-xs text-muted-foreground">{badge.description}</p>
-            </div>
-          ))}
+          {studentBadges.map((badge, index) => {
+            const IconComponent = iconMap[badge.icon] || Award;
+            return (
+              <div key={index} className="flex flex-col items-center text-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                <IconComponent className={`w-12 h-12 mb-2 ${badge.color || 'text-primary'}`} />
+                <p className="font-semibold">{badge.title}</p>
+                <p className="text-xs text-muted-foreground">{badge.description}</p>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
       
@@ -114,7 +151,7 @@ export default function RewardsPage() {
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="week" />
-                <YAxis label={{ value: 'Mastery Score', angle: -90, position: 'insideLeft' }} />
+                <YAxis domain={[0, 100]} label={{ value: 'Mastery %', angle: -90, position: 'insideLeft' }} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Legend />
                 <Line

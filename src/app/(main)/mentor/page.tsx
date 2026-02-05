@@ -48,9 +48,9 @@ export default function MentorPage() {
         setInput("");
         setIsLoading(true);
         
-        const botResponse = await getMotivationalAdvice(input);
+        const result = await getMotivationalAdvice(input);
         
-        const botMessage: Message = { id: Date.now() + 1, role: "bot", content: botResponse };
+        const botMessage: Message = { id: Date.now() + 1, role: "bot", content: result.content };
         setMessages(prev => [...prev, botMessage]);
         setIsLoading(false);
     };
