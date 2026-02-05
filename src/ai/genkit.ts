@@ -11,9 +11,12 @@ import { googleAI, gemini20Flash } from '@genkit-ai/googleai';
 const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
 
 if (typeof window === 'undefined') {
-  console.log('[Genkit Init] AI API Key present:', !!apiKey);
+  console.log('[Genkit] Initializing server-side Genkit runtime...');
+  console.log('[Genkit] GOOGLE_GENAI_API_KEY present:', !!process.env.GOOGLE_GENAI_API_KEY);
+  console.log('[Genkit] GEMINI_API_KEY present:', !!process.env.GEMINI_API_KEY);
+
   if (!apiKey) {
-    console.warn('[Genkit Init] WARNING: No AI API key found. Genkit flows will likely fail.');
+    console.error('[Genkit] ERROR: No AI API key found in environment variables. AI features will fail.');
   }
 }
 
