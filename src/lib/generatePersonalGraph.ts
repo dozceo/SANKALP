@@ -1,6 +1,20 @@
 import { StudentNode, GraphData, GraphNode, GraphLink } from '@/data/docsData';
 import { studentsData } from '@/data/studentsDataStatic';
 
+// Optimization: Cache student map for O(1) lookups
+let studentMapCache: Map<string, StudentNode> | null = null;
+let lastDataLength = 0;
+
+function getStudentById(id: string): StudentNode | undefined {
+    // Rebuild cache if data length changes (simple invalidation)
+    if (!studentMapCache || studentsData.length !== lastDataLength) {
+        studentMapCache = new Map();
+        studentsData.forEach(s => studentMapCache!.set(s.id, s));
+        lastDataLength = studentsData.length;
+    }
+    return studentMapCache.get(id);
+}
+
 /**
  * Generate personal knowledge graph for a single student
  * Shows: Student → Study Materials (Subjects/Chapters/Topics) + Strengths + Weaknesses + Study Group
@@ -143,7 +157,8 @@ export function generatePersonalGraph(student: StudentNode): GraphData {
     // 5. Study Group (Peer Connections)
     if (student.connections && student.connections.length > 0) {
         student.connections.forEach(peerId => {
-            const peer = studentsData.find(s => s.id === peerId);
+            // Optimization: Use Map lookup instead of O(N) find
+            const peer = getStudentById(peerId);
             if (peer) {
                 // Add peer node (smaller than center student)
                 nodes.push({
