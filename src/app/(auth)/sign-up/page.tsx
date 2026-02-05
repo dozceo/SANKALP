@@ -54,11 +54,15 @@ export default function SignUpPage() {
   };
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="text-center">
-        <BrainCircuit className="mx-auto h-10 w-10 text-primary" />
-        <CardTitle className="text-2xl font-headline mt-2">Create an Account</CardTitle>
-        <CardDescription>Enter your information to get started.</CardDescription>
+    <Card className="w-full max-w-sm shadow-md border-border/60">
+      <CardHeader className="text-center space-y-1">
+        <div className="flex justify-center mb-2">
+          <div className="p-3 rounded-full bg-primary/10">
+            <BrainCircuit className="h-10 w-10 text-primary" />
+          </div>
+        </div>
+        <CardTitle className="text-3xl font-headline tracking-tight">Create an Account</CardTitle>
+        <CardDescription className="text-base">Enter your information to get started.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
