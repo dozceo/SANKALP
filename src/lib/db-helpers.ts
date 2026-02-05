@@ -53,6 +53,7 @@ export interface Student {
     name: string;
     classId?: string;
     className?: string;
+    classSubject?: string;
     teacherId?: string;
     teacherName?: string;
     grade?: string;
@@ -313,6 +314,7 @@ export async function getStudent(studentId: string): Promise<Student | null> {
             name: data?.name || '',
             classId: data?.classId,
             className: data?.className,
+            classSubject: data?.classSubject,
             teacherId: data?.teacherId,
             teacherName: data?.teacherName,
             grade: data?.grade,
@@ -1024,7 +1026,19 @@ export async function addStudentToClass(studentId: string, classCode: string): P
             throw new Error('Class not found');
         }
 
-        // Add student to class
+        // Check if student is already in a class and remove them if so
+        const student = await getStudent(studentId);
+        if (student?.classId) {
+            // Only remove if it's a different class
+            if (student.classId !== classDoc.id) {
+                await removeStudentFromClass(studentId, student.classId);
+            } else {
+                // Already in this class, nothing to do
+                return;
+            }
+        }
+
+        // Add student to new class
         await db.collection('classes').doc(classDoc.id).update({
             studentIds: FieldValue.arrayUnion(studentId),
         });
@@ -1033,6 +1047,7 @@ export async function addStudentToClass(studentId: string, classCode: string): P
         await db.collection('students').doc(studentId).update({
             classId: classDoc.id,
             className: classDoc.className,
+            classSubject: classDoc.subject,
             teacherId: classDoc.teacherId,
             teacherName: classDoc.teacherName,
             grade: classDoc.grade,
@@ -1040,6 +1055,32 @@ export async function addStudentToClass(studentId: string, classCode: string): P
         });
     } catch (error) {
         console.error('Error adding student to class:', error);
+        throw error;
+    }
+}
+
+/**
+ * Remove student from class
+ */
+export async function removeStudentFromClass(studentId: string, classId: string): Promise<void> {
+    try {
+        // Remove student from class document
+        await db.collection('classes').doc(classId).update({
+            studentIds: FieldValue.arrayRemove(studentId),
+        });
+
+        // Clear class info from student document
+        await db.collection('students').doc(studentId).update({
+            classId: FieldValue.delete(),
+            className: FieldValue.delete(),
+            classSubject: FieldValue.delete(),
+            teacherId: FieldValue.delete(),
+            teacherName: FieldValue.delete(),
+            grade: FieldValue.delete(),
+            joinedClassAt: FieldValue.delete(),
+        });
+    } catch (error) {
+        console.error('Error removing student from class:', error);
         throw error;
     }
 }
@@ -1063,6 +1104,7 @@ export async function getStudentsInClass(classId: string): Promise<Student[]> {
                 name: data.name,
                 classId: data.classId,
                 className: data.className,
+                classSubject: data.classSubject,
                 teacherId: data.teacherId,
                 grade: data.grade,
                 joinedClassAt: data.joinedClassAt?.toDate(),
@@ -1103,6 +1145,7 @@ export async function getTeacherStudents(
                 name: data.name || '',
                 classId: data.classId,
                 className: data.className,
+                classSubject: data.classSubject,
                 teacherId: data.teacherId,
                 grade: data.grade,
                 joinedClassAt: data.joinedClassAt?.toDate(),
