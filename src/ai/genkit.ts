@@ -1,21 +1,25 @@
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import { genkit } from 'genkit';
+import { googleAI, gemini20Flash } from '@genkit-ai/googleai';
 
-// Check for API key and log status (Server-side only)
+/**
+ * Genkit Configuration
+ *
+ * Optimized for production-grade EdTech features using Gemini 2.0 Flash.
+ * Robustly handles API key aliasing for seamless deployment.
+ */
+
+const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
+
 if (typeof window === 'undefined') {
-  // Alias GEMINI_API_KEY to GOOGLE_GENAI_API_KEY if needed, as Genkit plugin expects the latter
-  if (!process.env.GOOGLE_GENAI_API_KEY && process.env.GEMINI_API_KEY) {
-    process.env.GOOGLE_GENAI_API_KEY = process.env.GEMINI_API_KEY;
-  }
-
-  const hasKey = !!process.env.GOOGLE_GENAI_API_KEY;
-  console.log('[Genkit Init] AI API Key present:', hasKey);
-  if (!hasKey) {
+  console.log('[Genkit Init] AI API Key present:', !!apiKey);
+  if (!apiKey) {
     console.warn('[Genkit Init] WARNING: No AI API key found. Genkit flows will likely fail.');
   }
 }
 
 export const ai = genkit({
-  plugins: [googleAI()], // googleAI plugin typically looks for GOOGLE_GENAI_API_KEY
-  model: 'googleai/gemini-1.5-flash', // Most reliable model for standard Genkit usage
+  plugins: [
+    googleAI({ apiKey }), // Explicitly pass key to ensure it's loaded before plugin init
+  ],
+  model: gemini20Flash, // Gemini 2.0 Flash: Best-in-class balance of speed and reasoning for interactive learning
 });
