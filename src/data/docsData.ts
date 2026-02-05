@@ -68,6 +68,7 @@ export interface StudentNode {
     streak?: number;
     classId?: string;
     className?: string;
+    classSubject?: string;
     teacherName?: string;
 
     // New hierarchical study data

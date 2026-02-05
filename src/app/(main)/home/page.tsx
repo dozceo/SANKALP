@@ -10,7 +10,7 @@ import {
   CardDescription
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ListChecks, FileQuestion, MessageCircle, Loader2, Book } from "lucide-react";
+import { ArrowRight, ListChecks, FileQuestion, MessageCircle, Loader2, Book, Users } from "lucide-react";
 import { LearningStateCard } from "@/components/LearningStateCard";
 import { TopicMasteryGrid } from "@/components/TopicMasteryGrid";
 import { PersonalKnowledgeGraph } from "@/components/PersonalKnowledgeGraph";
@@ -133,7 +133,7 @@ export default function HomePage() {
             <CardDescription>Get instant help</CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/chatbot">
+            <Link href="/chat">
               <Button variant="outline" className="w-full">
                 Ask AI
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -142,6 +142,32 @@ export default function HomePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Join Class CTA if not enrolled */}
+      {!currentStudent.classId && (
+        <Card className="border-primary/30 bg-primary/5 shadow-md overflow-hidden relative">
+          <div className="absolute right-0 top-0 p-8 opacity-10 pointer-events-none">
+            <Users className="h-32 w-32" />
+          </div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Users className="h-6 w-6" />
+              Enrolled in a Class?
+            </CardTitle>
+            <CardDescription className="text-foreground/70">
+              Join your official classroom to get personalized feedback and tracked progress from your teacher.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/classes">
+              <Button className="shadow-lg shadow-primary/20">
+                Join Your Classroom
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Personal Knowledge Network */}
       <Card>
@@ -214,7 +240,7 @@ export default function HomePage() {
                 Generate Syllabus
               </Button>
             </Link>
-            <Link href="/chatbot">
+            <Link href="/chat">
               <Button variant="outline" className="w-full justify-start">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Ask AI Chatbot
