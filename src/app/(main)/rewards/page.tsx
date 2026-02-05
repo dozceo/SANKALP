@@ -1,17 +1,21 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Flame, Star, Zap, BookOpen, ShieldCheck, Quote, LineChart as LineChartIcon, Trophy, Award } from "lucide-react";
+import { Flame, Star, Zap, BookOpen, ShieldCheck, Quote, LineChart as LineChartIcon, Trophy, Award, Target } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
-import { useStudent } from "@/contexts/StudentContext";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useStudent } from "@/hooks/useStudent";
+import { RewardsSkeleton } from "@/components/rewards/RewardsSkeleton";
+import {
+  getSubjectMastery,
+  getOverallMastery,
+  getStudentBadges,
+  getProgressProjection
+} from "@/lib/rewards/calculateRewards";
 
 // Icon mapping for dynamic badges
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   flame: Flame,
   star: Star,
   zap: Zap,
@@ -40,39 +44,14 @@ export default function RewardsPage() {
   const { currentStudent, loading } = useStudent();
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-1/3" />
-        <Skeleton className="h-4 w-1/2" />
-        <div className="grid gap-6 md:grid-cols-3">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32 md:col-span-2" />
-        </div>
-        <Skeleton className="h-48" />
-        <Skeleton className="h-64" />
-      </div>
-    );
+    return <RewardsSkeleton />;
   }
 
-  // Calculate dynamic progress from mastery scores
-  const masteryScores = currentStudent?.masteryScores || {};
-  const subjects = Object.keys(masteryScores);
-  const averageMastery = subjects.length > 0
-    ? Math.round((Object.values(masteryScores).reduce((a, b) => a + b, 0) / subjects.length) * 100)
-    : 0;
-
-  // Generate dynamic chart data based on real mastery
-  const progressData = [
-    { week: 'Week 1', past: Math.max(0, averageMastery - 30), current: Math.max(0, averageMastery - 25), projected: Math.max(0, averageMastery - 28) },
-    { week: 'Week 2', past: Math.max(0, averageMastery - 20), current: Math.max(0, averageMastery - 15), projected: Math.max(0, averageMastery - 18) },
-    { week: 'Week 3', past: Math.max(0, averageMastery - 10), current: Math.max(0, averageMastery - 5), projected: Math.max(0, averageMastery - 8) },
-    { week: 'Week 4', past: averageMastery, current: averageMastery, projected: Math.max(0, averageMastery - 3) },
-  ];
-
-  const studentBadges = currentStudent?.badges || [
-    // Fallback badges if none earned yet
-    { id: 'consistency', title: "Getting Started", description: "Complete your first study session", icon: 'zap', earnedAt: new Date().toISOString(), color: 'text-blue-500' }
-  ];
+  // Derive all data using utility functions
+  const subjectsMastery = getSubjectMastery(currentStudent);
+  const averageMastery = getOverallMastery(currentStudent);
+  const progressData = getProgressProjection(currentStudent);
+  const studentBadges = getStudentBadges(currentStudent);
 
   return (
     <div className="space-y-6">
@@ -84,6 +63,7 @@ export default function RewardsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Streak Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Flame className="text-orange-500"/> Current Streak</CardTitle>
@@ -93,16 +73,47 @@ export default function RewardsPage() {
             <p className="text-xs text-muted-foreground mt-1">Keep it going to unlock new badges!</p>
           </CardContent>
         </Card>
+
+        {/* Overall Mastery Card */}
         <Card className="lg:col-span-2">
            <CardHeader>
             <CardTitle>Overall Mastery</CardTitle>
             <CardDescription>Your average mastery across all subjects is <strong>{averageMastery}%</strong>.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Progress value={averageMastery} />
+            <Progress value={averageMastery} className="h-3" />
           </CardContent>
         </Card>
 
+        {/* Subject Breakdown Card */}
+        <Card className="md:col-span-2 lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              Subject Mastery Breakdown
+            </CardTitle>
+            <CardDescription>How you're performing across different areas of study.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {subjectsMastery.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {subjectsMastery.map((subject) => (
+                  <div key={subject.subject} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">{subject.label}</span>
+                      <span className="text-muted-foreground">{subject.value}%</span>
+                    </div>
+                    <Progress value={subject.value} className="h-2" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No subject data available yet. Start practicing to see your progress!</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Daily Motivation Card */}
         <Card className="md:col-span-2 lg:col-span-3">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Quote className="w-5 h-5 text-primary" /> Daily Motivation</CardTitle>
@@ -116,25 +127,37 @@ export default function RewardsPage() {
         </Card>
       </div>
 
+      {/* Badges Card */}
       <Card>
         <CardHeader>
           <CardTitle>Badges Earned</CardTitle>
           <CardDescription>Recognitions for your hard work and dedication.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {studentBadges.map((badge, index) => {
-            const IconComponent = iconMap[badge.icon] || Award;
-            return (
-              <div key={index} className="flex flex-col items-center text-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <IconComponent className={`w-12 h-12 mb-2 ${badge.color || 'text-primary'}`} />
-                <p className="font-semibold">{badge.title}</p>
-                <p className="text-xs text-muted-foreground">{badge.description}</p>
-              </div>
-            );
-          })}
+        <CardContent>
+          {studentBadges.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {studentBadges.map((badge, index) => {
+                const IconComponent = iconMap[badge.icon] || Award;
+                return (
+                  <div key={index} className="flex flex-col items-center text-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                    <IconComponent className={`w-12 h-12 mb-2 ${badge.color || 'text-primary'}`} />
+                    <p className="font-semibold">{badge.title}</p>
+                    <p className="text-xs text-muted-foreground">{badge.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 border-2 border-dashed rounded-lg">
+              <Award className="w-12 h-12 mx-auto text-muted-foreground opacity-50 mb-2" />
+              <p className="font-medium text-muted-foreground">No badges earned yet</p>
+              <p className="text-sm text-muted-foreground">Complete quizzes and maintain streaks to earn badges!</p>
+            </div>
+          )}
         </CardContent>
       </Card>
       
+      {/* Projection Chart Card */}
       <Card>
         <CardHeader>
             <CardTitle className="flex items-center gap-2">

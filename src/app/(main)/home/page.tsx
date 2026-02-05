@@ -15,7 +15,7 @@ import { LearningStateCard } from "@/components/LearningStateCard";
 import { TopicMasteryGrid } from "@/components/TopicMasteryGrid";
 import { PersonalKnowledgeGraph } from "@/components/PersonalKnowledgeGraph";
 import { SankalpSwitch } from "@/components/SankalpSwitch";
-import { useStudent } from "@/contexts/StudentContext";
+import { useStudent } from "@/hooks/useStudent";
 import { generateStudentIntelligence } from "@/lib/generateStudentIntelligence";
 import type { StudentIntelligence } from "@/types/intelligence";
 
