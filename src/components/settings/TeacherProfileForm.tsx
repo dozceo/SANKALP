@@ -40,7 +40,10 @@ export function TeacherProfileForm() {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (!user?.uid) return;
+            if (!user?.uid) {
+                setFetching(false);
+                return;
+            }
             try {
                 const response = await fetch(`/api/teacher?teacherId=${user.uid}`);
                 if (response.ok) {
@@ -141,8 +144,9 @@ export function TeacherProfileForm() {
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium mb-2">Your Name</label>
+                        <label htmlFor="teacher-name" className="block text-sm font-medium mb-2">Your Name</label>
                         <Input
+                            id="teacher-name"
                             placeholder="Enter your full name"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -150,12 +154,13 @@ export function TeacherProfileForm() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-2">Subjects</label>
-                        <div className="flex flex-wrap gap-2">
+                        <label id="teacher-subjects-label" className="block text-sm font-medium mb-2">Subjects</label>
+                        <div role="group" aria-labelledby="teacher-subjects-label" className="flex flex-wrap gap-2">
                             {SUBJECTS.map(subject => (
                                 <button
                                     key={subject}
                                     type="button"
+                                    aria-pressed={formData.subjects.includes(subject)}
                                     onClick={() => handleSubjectToggle(subject)}
                                     className={`px-3 py-2 rounded-lg border text-sm transition-all flex items-center gap-2 ${formData.subjects.includes(subject)
                                         ? 'border-blue-600 bg-blue-50 font-semibold'
@@ -170,12 +175,13 @@ export function TeacherProfileForm() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-2">Grade Levels</label>
-                        <div className="flex flex-wrap gap-2">
+                        <label id="teacher-grades-label" className="block text-sm font-medium mb-2">Grade Levels</label>
+                        <div role="group" aria-labelledby="teacher-grades-label" className="flex flex-wrap gap-2">
                             {GRADE_LEVELS.map(grade => (
                                 <button
                                     key={grade}
                                     type="button"
+                                    aria-pressed={formData.gradeLevels.includes(grade)}
                                     onClick={() => handleGradeLevelToggle(grade)}
                                     className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.gradeLevels.includes(grade)
                                         ? 'border-blue-600 bg-blue-50 font-semibold'
@@ -189,8 +195,9 @@ export function TeacherProfileForm() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-2">School/Institution Name</label>
+                        <label htmlFor="school-name" className="block text-sm font-medium mb-2">School/Institution Name</label>
                         <Input
+                            id="school-name"
                             placeholder="e.g., Springfield High School"
                             value={formData.schoolName}
                             onChange={e => setFormData({ ...formData, schoolName: e.target.value })}
@@ -198,12 +205,14 @@ export function TeacherProfileForm() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-2">Expected Class Size</label>
-                        <div className="flex flex-wrap gap-2">
+                        <label id="class-size-label" className="block text-sm font-medium mb-2">Expected Class Size</label>
+                        <div role="radiogroup" aria-labelledby="class-size-label" className="flex flex-wrap gap-2">
                             {CLASS_SIZES.map(size => (
                                 <button
                                     key={size}
                                     type="button"
+                                    role="radio"
+                                    aria-checked={formData.expectedClassSize === size}
                                     onClick={() => setFormData({ ...formData, expectedClassSize: size })}
                                     className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.expectedClassSize === size
                                         ? 'border-blue-600 bg-blue-50 font-semibold'
