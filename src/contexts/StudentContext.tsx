@@ -21,7 +21,7 @@ interface StudentContextType {
     leaveClass: () => Promise<any>;
 }
 
-const StudentContext = createContext<StudentContextType | undefined>(undefined);
+export const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
 export function StudentProvider({ children }: { children: ReactNode }) {
     const { user, role, loading: authLoading } = useAuth();
@@ -318,10 +318,3 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     );
 }
 
-export function useStudent() {
-    const context = useContext(StudentContext);
-    if (context === undefined) {
-        throw new Error('useStudent must be used within a StudentProvider');
-    }
-    return context;
-}
