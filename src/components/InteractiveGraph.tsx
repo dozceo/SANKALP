@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { docsTree, studentsData, flatDocs } from '@/data/studentsDataStatic';
 import { generateEnhancedGraphData } from '@/lib/generateEnhancedGraph';
+import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, DocNode, StudentNode, GraphData } from '@/data/docsData';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X } from 'lucide-react';
 
@@ -36,51 +37,36 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
   const fullGraphData = useMemo(() => generateEnhancedGraphData(studentsData), []);
 
+  // Optimization: Pre-calculate adjacency map for O(1) connection lookups
+  const adjacencyMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    fullGraphData.links.forEach(l => {
+      // Handle both string and object cases (force-graph mutates links)
+      const source = l.source as unknown;
+      const target = l.target as unknown;
+      const sourceId = typeof source === 'object' && source && 'id' in source ? (source as { id: string }).id : String(source);
+      const targetId = typeof target === 'object' && target && 'id' in target ? (target as { id: string }).id : String(target);
+
+      if (!map.has(sourceId)) map.set(sourceId, new Set());
+      if (!map.has(targetId)) map.set(targetId, new Set());
+
+      map.get(sourceId)!.add(targetId);
+      map.get(targetId)!.add(sourceId);
+    });
+    return map;
+  }, [fullGraphData]);
+
   // Generate local graph data (only nodes connected to highlighted node)
   const localGraphData = useMemo(() => {
     if (!highlightedNode || isGlobalView) return fullGraphData;
 
-    // Use pre-calculated flatDocs to avoid O(N) traversal on every render
-    const flatNodes = flatDocs;
-    const currentNode = flatNodes.find(n => n.id === highlightedNode);
-
-    if (!currentNode) return fullGraphData;
-
-    // Find all connected node IDs
+    // Find all connected node IDs using optimized adjacency map
     const connected = new Set<string>([highlightedNode]);
 
-    // Add connections from current node
-    if (currentNode.connections) {
-      currentNode.connections.forEach(id => connected.add(id));
-    }
-
-    // Add nodes that have connections to current node
-    flatNodes.forEach(node => {
-      if (node.connections?.includes(highlightedNode)) {
-        connected.add(node.id);
-      }
-    });
-
-    // Add parent nodes
-    function findParent(nodes: DocNode[], targetId: string, parentId?: string): string | undefined {
-      for (const node of nodes) {
-        if (node.id === targetId) return parentId;
-        if (node.children) {
-          const found = findParent(node.children, targetId, node.id);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    }
-
-    const parentId = findParent(docsTree, highlightedNode);
-    if (parentId) connected.add(parentId);
-
-    // Add child nodes
-    const currentDocNode = flatNodes.find(n => n.id === highlightedNode);
-    if (currentDocNode && 'children' in currentDocNode) {
-      const docWithChildren = currentDocNode as DocNode;
-      docWithChildren.children?.forEach(child => connected.add(child.id));
+    // Add direct connections (O(1) lookup vs previous O(N) traversal)
+    const neighbors = adjacencyMap.get(highlightedNode);
+    if (neighbors) {
+      neighbors.forEach(id => connected.add(id));
     }
 
     setConnectedNodes(connected);
@@ -210,6 +196,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       node.x, node.y, nodeSize
     );
     const baseColor = nodeColor(node);
+    // Use cached lightenColor utility
     nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
     nodeGradient.addColorStop(1, baseColor);
 
@@ -462,14 +449,4 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       )}
     </>
   );
-}
-
-// Helper function to lighten a hex color
-function lightenColor(hex: string, percent: number): string {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = Math.min(255, (num >> 16) + amt);
-  const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
-  const B = Math.min(255, (num & 0x0000ff) + amt);
-  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
 }

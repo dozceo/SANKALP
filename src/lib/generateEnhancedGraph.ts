@@ -1,4 +1,4 @@
-import { StudentNode, GraphData, GraphNode, GraphLink, NodeType } from './docsData';
+import { StudentNode, GraphData, GraphNode, GraphLink, NodeType } from '@/data/docsData';
 
 /**
  * Enhanced graph generation with hierarchical node support
