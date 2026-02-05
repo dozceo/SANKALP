@@ -62,7 +62,15 @@ const syllabusGeneratorFlow = ai.defineFlow(
     outputSchema: SyllabusOutputSchema,
   },
   async (input) => {
+    console.log('[SyllabusFlow] Executing flow for query:', input.query);
     const { output } = await prompt(input);
-    return output!;
+
+    if (!output) {
+      console.error('[SyllabusFlow] AI failed to generate output for query:', input.query);
+      throw new Error('AI failed to generate a valid syllabus response.');
+    }
+
+    console.log('[SyllabusFlow] Flow execution completed successfully');
+    return output;
   }
 );
