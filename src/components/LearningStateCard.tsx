@@ -24,10 +24,13 @@ interface LearningStateCardProps {
 }
 
 export function LearningStateCard({ intelligence }: LearningStateCardProps) {
-    const overallMastery = useMemo(() => Object.values(intelligence.mastery).reduce(
-        (sum, m) => sum + m.score,
-        0
-    ) / Object.keys(intelligence.mastery).length, [intelligence.mastery]);
+    const overallMastery = useMemo(() => {
+        const masteryValues = Object.values(intelligence.mastery);
+        if (masteryValues.length === 0) return 0;
+
+        const sum = masteryValues.reduce((acc, m) => acc + m.score, 0);
+        return sum / masteryValues.length;
+    }, [intelligence.mastery]);
 
     return (
         <Card>

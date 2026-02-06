@@ -21,8 +21,19 @@ interface InteractiveGraphProps {
   graphData?: GraphData;
 }
 
-type ExtendedNodeObject = NodeObject & GraphNode;
+type ExtendedNodeObject = NodeObject & GraphNode & { __lightColor?: string };
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
+
+// Static colors to avoid reallocation
+const TYPE_COLORS: Record<string, string> = {
+  student: '#9333EA',    // Purple
+  subject: '#3B82F6',    // Blue
+  chapter: '#06B6D4',    // Cyan
+  topic: '#6B7280',      // Gray
+  weakness: '#EF4444',   // Red
+  strength: '#10B981',   // Green
+  skill: '#F59E0B',      // Amber
+};
 
 export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: externalGraphData }: InteractiveGraphProps) {
   const graphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
@@ -56,6 +67,13 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     return map;
   }, [fullGraphData]);
 
+  // Optimization: Pre-calculate node map for O(1) lookups
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, ExtendedNodeObject>();
+    fullGraphData.nodes.forEach(n => map.set(n.id, n as ExtendedNodeObject));
+    return map;
+  }, [fullGraphData]);
+
   // Generate local graph data (only nodes connected to highlighted node)
   const localGraphData = useMemo(() => {
     if (!highlightedNode || isGlobalView) return fullGraphData;
@@ -72,7 +90,13 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     setConnectedNodes(connected);
 
     // Filter nodes and links
-    const filteredNodes = fullGraphData.nodes.filter(n => connected.has(n.id));
+    // Optimization: Use nodeMap for O(1) lookup instead of O(N) filter
+    const filteredNodes: ExtendedNodeObject[] = [];
+    connected.forEach(id => {
+      const node = nodeMap.get(id);
+      if (node) filteredNodes.push(node);
+    });
+
     const filteredLinks = fullGraphData.links.filter(l => {
       const source = l.source as unknown;
       const target = l.target as unknown;
@@ -82,7 +106,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     });
 
     return { nodes: filteredNodes, links: filteredLinks };
-  }, [highlightedNode, isGlobalView, fullGraphData]);
+  }, [highlightedNode, isGlobalView, fullGraphData, adjacencyMap, nodeMap]);
 
   // Use external data if provided, otherwise fallback to local/generated data
   const graphData = externalGraphData || (isGlobalView ? fullGraphData : localGraphData);
@@ -153,18 +177,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       return '#c4b5fd'; // Hovered node - even lighter
     }
 
-    // Default colors by node type
-    const typeColors: Record<string, string> = {
-      student: '#9333EA',    // Purple
-      subject: '#3B82F6',    // Blue
-      chapter: '#06B6D4',    // Cyan
-      topic: '#6B7280',      // Gray
-      weakness: '#EF4444',   // Red
-      strength: '#10B981',   // Green
-      skill: '#F59E0B',      // Amber
-    };
-
-    return typeColors[node.type] || '#6d28d9'; // Fallback
+    // Optimization: Use static TYPE_COLORS map
+    return TYPE_COLORS[node.type] || '#6d28d9'; // Fallback
   }, [highlightedNode, hoveredNode]);
 
   const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
@@ -196,8 +210,19 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       node.x, node.y, nodeSize
     );
     const baseColor = nodeColor(node);
-    // Use cached lightenColor utility
-    nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
+
+    // Optimization: Cache lightenColor result on node object to avoid re-calculation per frame
+    let lightColor: string;
+    if (isHighlighted || isHovered) {
+      lightColor = lightenColor(baseColor, 20);
+    } else {
+      if (!node.__lightColor) {
+        node.__lightColor = lightenColor(baseColor, 20);
+      }
+      lightColor = node.__lightColor;
+    }
+
+    nodeGradient.addColorStop(0, lightColor);
     nodeGradient.addColorStop(1, baseColor);
 
     ctx.beginPath();

@@ -1,0 +1,3 @@
+## 2024-05-23 - Graph Visualization Optimization
+**Learning:** React Force Graph calls `nodeCanvasObject` every frame (60Hz) for every node. Even simple utility functions like color parsing or string manipulation inside this callback accumulate massive overhead. Caching derived values (like lightened colors) directly on the mutable Node object provided by the library prevents thousands of redundant calculations per second.
+**Action:** When using `react-force-graph` or similar canvas-based libraries, always cache derived rendering properties on the data object itself, and hoist static configurations (like color maps) outside the render loop.

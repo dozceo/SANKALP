@@ -19,7 +19,7 @@ interface PersonalKnowledgeGraphProps {
     height?: number;
 }
 
-type ExtendedNodeObject = NodeObject & GraphNode;
+type ExtendedNodeObject = NodeObject & GraphNode & { __lightColor?: string };
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
 export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowledgeGraphProps) {
@@ -107,7 +107,19 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             node.x, node.y, nodeSize
         );
         const baseColor = nodeColor(node);
-        nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
+
+        // Optimization: Cache lightenColor result on node object
+        let lightColor: string;
+        if (isCenter || isHovered) {
+             lightColor = lightenColor(baseColor, 20);
+        } else {
+             if (!node.__lightColor) {
+                 node.__lightColor = lightenColor(baseColor, 20);
+             }
+             lightColor = node.__lightColor;
+        }
+
+        nodeGradient.addColorStop(0, lightColor);
         nodeGradient.addColorStop(1, baseColor);
 
         ctx.beginPath();
@@ -230,15 +242,15 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
             {/* Graph */}
             <ForceGraph2D
-                ref={graphRef as React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>}
+                ref={graphRef as any}
                 graphData={graphData}
                 width={dimensions.width}
                 height={dimensions.height}
                 backgroundColor="transparent"
                 nodeRelSize={6}
-                nodeCanvasObject={nodeCanvasObject}
-                linkCanvasObject={linkCanvasObject}
-                onNodeHover={handleNodeHover}
+                nodeCanvasObject={nodeCanvasObject as any}
+                linkCanvasObject={linkCanvasObject as any}
+                onNodeHover={handleNodeHover as any}
                 cooldownTicks={100}
                 d3AlphaDecay={0.02}
                 d3VelocityDecay={0.3}
