@@ -21,6 +21,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
         weakness: '#EF4444',     // Red
         strength: '#10B981',     // Green
         skill: '#F59E0B',        // Amber
+        peer: '#A78BFA',         // Light Purple
     };
 
     const addNode = (node: GraphNode) => {

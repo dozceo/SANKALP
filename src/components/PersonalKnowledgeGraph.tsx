@@ -19,7 +19,10 @@ interface PersonalKnowledgeGraphProps {
     height?: number;
 }
 
-type ExtendedNodeObject = NodeObject & GraphNode;
+type ExtendedNodeObject = NodeObject & GraphNode & {
+    _cachedLightColor?: string;
+    _cachedBaseColor?: string;
+};
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
 export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowledgeGraphProps) {
@@ -107,7 +110,16 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             node.x, node.y, nodeSize
         );
         const baseColor = nodeColor(node);
-        nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
+
+        // Optimization: Cache lightened color on node object to avoid recalculation on every frame
+        let lightColor = node._cachedLightColor;
+        if (!lightColor || node._cachedBaseColor !== baseColor) {
+            lightColor = lightenColor(baseColor, 20);
+            node._cachedLightColor = lightColor;
+            node._cachedBaseColor = baseColor;
+        }
+
+        nodeGradient.addColorStop(0, lightColor);
         nodeGradient.addColorStop(1, baseColor);
 
         ctx.beginPath();

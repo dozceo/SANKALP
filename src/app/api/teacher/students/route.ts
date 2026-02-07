@@ -14,13 +14,13 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // Get teacher's classes
-        const classes = await getTeacherClasses(teacherId);
-
-        // Get all students
-        const students = await getTeacherStudents(teacherId, {
-            select: ['userId', 'name', 'email', 'className', 'grade', 'lastLoginDate']
-        });
+        // Optimization: Fetch classes and students in parallel
+        const [classes, students] = await Promise.all([
+            getTeacherClasses(teacherId),
+            getTeacherStudents(teacherId, {
+                select: ['userId', 'name', 'email', 'className', 'grade', 'lastLoginDate']
+            })
+        ]);
 
         // Batch fetch quiz results for all students (optimization)
         const studentIds = students.map(s => s.id);

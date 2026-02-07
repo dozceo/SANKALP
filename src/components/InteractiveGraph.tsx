@@ -24,6 +24,17 @@ interface InteractiveGraphProps {
 type ExtendedNodeObject = NodeObject & GraphNode;
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
+// Optimization: Define colors outside component to prevent object allocation on every render/node call
+const NODE_TYPE_COLORS: Record<string, string> = {
+  student: '#9333EA',    // Purple
+  subject: '#3B82F6',    // Blue
+  chapter: '#06B6D4',    // Cyan
+  topic: '#6B7280',      // Gray
+  weakness: '#EF4444',   // Red
+  strength: '#10B981',   // Green
+  skill: '#F59E0B',      // Amber
+};
+
 export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: externalGraphData }: InteractiveGraphProps) {
   const graphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
   const modalGraphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
@@ -153,18 +164,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       return '#c4b5fd'; // Hovered node - even lighter
     }
 
-    // Default colors by node type
-    const typeColors: Record<string, string> = {
-      student: '#9333EA',    // Purple
-      subject: '#3B82F6',    // Blue
-      chapter: '#06B6D4',    // Cyan
-      topic: '#6B7280',      // Gray
-      weakness: '#EF4444',   // Red
-      strength: '#10B981',   // Green
-      skill: '#F59E0B',      // Amber
-    };
-
-    return typeColors[node.type] || '#6d28d9'; // Fallback
+    return NODE_TYPE_COLORS[node.type] || '#6d28d9'; // Fallback
   }, [highlightedNode, hoveredNode]);
 
   const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {

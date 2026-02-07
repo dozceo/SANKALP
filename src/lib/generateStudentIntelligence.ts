@@ -40,15 +40,24 @@ export function generateStudentIntelligence(student: StudentNode): StudentIntell
         });
     }
 
-    // Calculate average mastery
-    const scores = Object.values(mastery).map(m => m.score);
-    const avgMastery = scores.length > 0
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
-        : 0.5;
+    // Calculate average mastery and priority counts in one pass
+    let totalScore = 0;
+    let highPriorityCount = 0;
+    const masteryValues = Object.values(mastery);
+    const count = masteryValues.length;
+
+    if (count > 0) {
+        for (let i = 0; i < count; i++) {
+            const m = masteryValues[i];
+            totalScore += m.score;
+            if (m.priority === 'HIGH') highPriorityCount++;
+        }
+    }
+
+    const avgMastery = count > 0 ? totalScore / count : 0.5;
 
     // Determine revision urgency
     let revisionUrgency: 'URGENT' | 'SCHEDULED' | 'NONE' = 'NONE';
-    const highPriorityCount = Object.values(mastery).filter(m => m.priority === 'HIGH').length;
 
     if (avgMastery < 0.5 || highPriorityCount >= 2) {
         revisionUrgency = 'URGENT';
@@ -97,8 +106,14 @@ export function calculateStudentRisk(student: StudentNode): {
         ? Object.values(student.masteryScores)
         : [];
 
+    // Optimization: Calculate average in a simple loop to avoid reduce() callback overhead
+    let totalScore = 0;
+    for (let i = 0; i < scores.length; i++) {
+        totalScore += scores[i];
+    }
+
     const avgMastery = scores.length > 0
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
+        ? totalScore / scores.length
         : 0.5;
 
     let riskLevel: 'Low' | 'Medium' | 'High' = 'Low';
