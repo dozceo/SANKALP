@@ -86,15 +86,28 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
         if (node.x === undefined || node.y === undefined) return;
 
+        // Optimization: Use pre-calculated colors
+        let baseColor: string;
+        let lightColor: string;
+
+        if (isHovered) {
+            baseColor = '#c4b5fd';
+            lightColor = '#e9d5ff';
+        } else {
+            baseColor = node.color || '#6d28d9';
+            // Use pre-calculated light color if available, otherwise calculate once
+            lightColor = node.lightColor || lightenColor(baseColor, 20);
+        }
+
         // Glow effect for center/hovered nodes
         if (isCenter || isHovered) {
             const gradient = ctx.createRadialGradient(
                 node.x, node.y, 0,
                 node.x, node.y, nodeSize * 3
             );
-            const glowColor = node.color || '#9333EA';
-            gradient.addColorStop(0, `${glowColor}66`);
-            gradient.addColorStop(1, `${glowColor}00`);
+            // Use baseColor for glow, but transparent
+            gradient.addColorStop(0, `${baseColor}66`); // Hex opacity
+            gradient.addColorStop(1, `${baseColor}00`);
             ctx.beginPath();
             ctx.arc(node.x, node.y, nodeSize * 3, 0, 2 * Math.PI);
             ctx.fillStyle = gradient;
@@ -106,8 +119,8 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
             node.x, node.y, nodeSize
         );
-        const baseColor = nodeColor(node);
-        nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
+
+        nodeGradient.addColorStop(0, lightColor);
         nodeGradient.addColorStop(1, baseColor);
 
         ctx.beginPath();
@@ -137,7 +150,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             ctx.fillStyle = isCenter ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#d1d5db';
             ctx.fillText(label, node.x, node.y + nodeSize + 3);
         }
-    }, [student.id, hoveredNode, nodeColor]);
+    }, [student.id, hoveredNode]); // Removed nodeColor dependency
 
     const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
         const start = link.source;
