@@ -1,7 +1,5 @@
 "use server";
 
-export const runtime = 'nodejs';
-
 import { generateQuiz, type AdaptiveQuizInput } from "@/ai/flows/adaptive-quiz-engine";
 import { unstable_cache } from "next/cache";
 import { getFallbackQuiz } from "@/lib/quiz-fallback";

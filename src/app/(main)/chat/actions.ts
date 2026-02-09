@@ -1,8 +1,6 @@
 
 "use server";
 
-export const runtime = 'nodejs';
-
 import { explainConcept } from "@/ai/flows/multilingual-cognitive-chatbot";
 import { textToSpeech } from "@/ai/flows/text-to-speech";
 import { speechToSpeech } from "@/ai/flows/speech-to-speech";

@@ -1,8 +1,6 @@
 
 "use server";
 
-export const runtime = 'nodejs';
-
 import { getMotivationalCounseling } from "@/ai/flows/mindful-mentor";
 import { getMentorFallback } from "@/lib/chat-fallback";
 
