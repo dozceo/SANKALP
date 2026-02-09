@@ -1,4 +1,5 @@
 import { StudentNode, GraphData, GraphNode, GraphLink, NodeType } from '@/data/docsData';
+import { lightenColor } from '@/lib/color-utils';
 
 /**
  * Enhanced graph generation with hierarchical node support
@@ -21,28 +22,42 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
         weakness: '#EF4444',     // Red
         strength: '#10B981',     // Green
         skill: '#F59E0B',        // Amber
+        peer: '#8B5CF6',         // Light Purple (fallback)
     };
 
     const addNode = (node: GraphNode) => {
-        nodes.push(node);
-        existingNodeIds.add(node.id);
+        // Optimization: Prevent duplicate nodes
+        if (!existingNodeIds.has(node.id)) {
+            // Optimization: Pre-calculate light color to avoid runtime calculation during render
+            if (node.color && !node.lightColor) {
+                node.lightColor = lightenColor(node.color, 20);
+            }
+            nodes.push(node);
+            existingNodeIds.add(node.id);
+        }
     };
 
-    const addLink = (link: GraphLink) => {
+    const addLink = (link: GraphLink, checkExists = false) => {
+        if (checkExists) {
+            // Store link key as "minId-maxId" to handle undirected check
+            const s = String(link.source);
+            const t = String(link.target);
+            const key = s < t ? `${s}-${t}` : `${t}-${s}`;
+
+            if (existingLinkKeys.has(key)) return;
+            existingLinkKeys.add(key);
+        }
         links.push(link);
-        // Store link key as "minId-maxId" to handle undirected check
-        const s = String(link.source);
-        const t = String(link.target);
-        const key = s < t ? `${s}-${t}` : `${t}-${s}`;
-        existingLinkKeys.add(key);
     };
 
     students.forEach(student => {
-        // Create student node
-        const avgMastery = student.masteryScores
-            ? Object.values(student.masteryScores).reduce((a, b) => a + b, 0) / Object.values(student.masteryScores).length
+        // Optimization: Calculate average mastery once
+        const masteryValues = student.masteryScores ? Object.values(student.masteryScores) : [];
+        const avgMastery = masteryValues.length > 0
+            ? masteryValues.reduce((a, b) => a + b, 0) / masteryValues.length
             : 0.5;
 
+        // Create student node
         addNode({
             id: student.id,
             name: student.name,
@@ -169,15 +184,14 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
             // Create topic nodes
             topicSet.forEach(topic => {
                 const topicId = `topic-${topic.toLowerCase().replace(/\s+/g, '-')}`;
-                if (!existingNodeIds.has(topicId)) {
-                    addNode({
-                        id: topicId,
-                        name: topic,
-                        val: 10,
-                        type: 'topic',
-                        color: colors.topic,
-                    });
-                }
+                // Check handled by addNode
+                addNode({
+                    id: topicId,
+                    name: topic,
+                    val: 10,
+                    type: 'topic',
+                    color: colors.topic,
+                });
 
                 addLink({
                     source: student.id,
@@ -189,15 +203,14 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
             // Create skill nodes
             skillSet.forEach(skill => {
                 const skillId = `skill-${skill.toLowerCase().replace(/\s+/g, '-')}`;
-                if (!existingNodeIds.has(skillId)) {
-                    addNode({
-                        id: skillId,
-                        name: skill,
-                        val: 7,
-                        type: 'skill',
-                        color: colors.skill,
-                    });
-                }
+                // Check handled by addNode
+                addNode({
+                    id: skillId,
+                    name: skill,
+                    val: 7,
+                    type: 'skill',
+                    color: colors.skill,
+                });
 
                 addLink({
                     source: student.id,
@@ -209,17 +222,12 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
 
         // Create peer connections
         student.connections?.forEach(connectionId => {
-            const s = String(student.id);
-            const t = String(connectionId);
-            const key = s < t ? `${s}-${t}` : `${t}-${s}`;
-
-            if (!existingLinkKeys.has(key)) {
-                addLink({
-                    source: student.id,
-                    target: connectionId,
-                    type: 'peer',
-                });
-            }
+            // Optimization: Only generate key for peer connections where duplication is possible
+            addLink({
+                source: student.id,
+                target: connectionId,
+                type: 'peer',
+            }, true); // Enable existence check
         });
     });
 

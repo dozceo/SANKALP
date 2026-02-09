@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useStudent } from "@/hooks/useStudent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import {
     Select,
     SelectContent,
@@ -164,7 +166,11 @@ export function FocusTimer() {
 
     const handleStart = () => {
         if (!selectedTopic) {
-            alert("Please select a topic first");
+            toast({
+                title: "Topic Required",
+                description: "Please select a topic before starting the timer.",
+                variant: "destructive",
+            });
             return;
         }
         initAudio();
@@ -200,11 +206,11 @@ export function FocusTimer() {
             <CardContent className="space-y-6">
                 {/* Topic Selection */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium">
+                    <Label htmlFor="study-topic">
                         What do you want to study?
-                    </label>
+                    </Label>
                     <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-                        <SelectTrigger>
+                        <SelectTrigger id="study-topic">
                             <SelectValue placeholder="Select a topic" />
                         </SelectTrigger>
                         <SelectContent>
@@ -250,17 +256,16 @@ export function FocusTimer() {
 
                 {/* Timer Display */}
                 <div className="text-center space-y-4">
-                    <div className="text-7xl font-bold tabular-nums text-primary">
+                    <div
+                        className="text-7xl font-bold tabular-nums text-primary"
+                        role="timer"
+                        aria-label="Time remaining"
+                    >
                         {formatTime(timeLeft)}
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="w-full bg-secondary rounded-full h-2">
-                        <div
-                            className="bg-primary h-2 rounded-full transition-all duration-1000"
-                            style={{ width: `${progress}%` }}
-                        />
-                    </div>
+                    <Progress value={progress} className="h-2" />
 
                     {/* Control Buttons */}
                     <div className="flex gap-4 justify-center pt-4">

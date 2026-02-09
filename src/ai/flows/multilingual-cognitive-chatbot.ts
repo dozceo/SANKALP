@@ -57,7 +57,12 @@ const explainConceptFlow = ai.defineFlow(
     outputSchema: ExplainConceptOutputSchema,
   },
   async input => {
+    console.log('[MultilingualChatbot] Starting flow execution...');
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      console.error('[MultilingualChatbot] Flow completed but returned no output');
+      throw new Error('AI failed to generate an explanation.');
+    }
+    return output;
   }
 );

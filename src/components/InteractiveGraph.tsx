@@ -24,7 +24,7 @@ interface InteractiveGraphProps {
 type ExtendedNodeObject = NodeObject & GraphNode;
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
-// Optimization: Move constants outside component to prevent re-creation
+// Optimization: Move constant outside component to prevent re-creation
 const NODE_TYPE_COLORS: Record<string, string> = {
   student: '#9333EA',    // Purple
   subject: '#3B82F6',    // Blue
@@ -35,103 +35,7 @@ const NODE_TYPE_COLORS: Record<string, string> = {
   skill: '#F59E0B',      // Amber
 };
 
-// Optimization: Extract GraphControls to prevent re-definition on every render
-interface GraphControlsProps {
-  graphRefProp: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>;
-  showToggle?: boolean;
-  isGlobalView: boolean;
-  setIsGlobalView: (value: boolean) => void;
-  isExpanded: boolean;
-  setIsExpanded: (value: boolean) => void;
-  isModalOpen: boolean;
-  setIsModalOpen: (value: boolean) => void;
-  onZoom: (factor: number, ref: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
-  onReset: (ref: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
-}
-
-const GraphControls = ({
-  graphRefProp,
-  showToggle = true,
-  isGlobalView,
-  setIsGlobalView,
-  isExpanded,
-  setIsExpanded,
-  isModalOpen,
-  setIsModalOpen,
-  onZoom,
-  onReset
-}: GraphControlsProps) => (
-  <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-    {showToggle && (
-      <button
-        onClick={() => setIsGlobalView(!isGlobalView)}
-        className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isGlobalView
-          ? 'bg-primary/30 text-primary'
-          : 'bg-secondary/80 hover:bg-secondary text-muted-foreground hover:text-foreground'
-          }`}
-        title={isGlobalView ? 'Show local graph' : 'Show global graph'}
-        aria-label={isGlobalView ? 'Show local graph' : 'Show global graph'}
-      >
-        {isGlobalView ? <Globe className="w-4 h-4" aria-hidden="true" /> : <Target className="w-4 h-4" aria-hidden="true" />}
-      </button>
-    )}
-    <button
-      onClick={() => onZoom(1.5, graphRefProp)}
-      className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-      title="Zoom in"
-      aria-label="Zoom in"
-    >
-      <ZoomIn className="w-4 h-4" aria-hidden="true" />
-    </button>
-    <button
-      onClick={() => onZoom(0.67, graphRefProp)}
-      className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-      title="Zoom out"
-      aria-label="Zoom out"
-    >
-      <ZoomOut className="w-4 h-4" aria-hidden="true" />
-    </button>
-    <button
-      onClick={() => onReset(graphRefProp)}
-      className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-      title="Reset view"
-      aria-label="Reset view"
-    >
-      <RotateCcw className="w-4 h-4" aria-hidden="true" />
-    </button>
-    {!isModalOpen && (
-      <>
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-          title={isExpanded ? 'Collapse' : 'Expand'}
-          aria-label={isExpanded ? 'Collapse graph' : 'Expand graph'}
-        >
-          {isExpanded ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
-        </button>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="p-1.5 bg-primary/20 hover:bg-primary/30 rounded text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-          title="Open fullscreen"
-          aria-label="Open fullscreen view"
-        >
-          <Maximize2 className="w-4 h-4" aria-hidden="true" />
-        </button>
-      </>
-    )}
-  </div>
-);
-
-const GraphTitle = ({ title, nodeCount }: { title: string, nodeCount: number }) => (
-  <div className="absolute top-2 left-3 z-10 flex items-center gap-2">
-    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-      {title}
-    </span>
-    <span className="text-[10px] text-muted-foreground/60">
-      {nodeCount} nodes
-    </span>
-  </div>
-);
+const DEFAULT_NODE_COLOR = '#6d28d9';
 
 export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: externalGraphData }: InteractiveGraphProps) {
   const graphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
@@ -246,26 +150,6 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     }
   };
 
-  const nodeColor = useCallback((node: ExtendedNodeObject) => {
-    // Use custom color if specified
-    if (node.color) {
-      return node.color;
-    }
-
-    // Highlighted node
-    if (node.id === highlightedNode) {
-      return '#a78bfa'; // Active node - lighter purple
-    }
-
-    // Hovered node
-    if (node.id === hoveredNode) {
-      return '#c4b5fd'; // Hovered node - even lighter
-    }
-
-    // Optimization: Use constant lookup table instead of creating object on every call
-    return NODE_TYPE_COLORS[node.type] || '#6d28d9'; // Fallback
-  }, [highlightedNode, hoveredNode]);
-
   const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.name;
     const baseSize = node.val || 8;
@@ -274,6 +158,23 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     const nodeSize = (isHighlighted || isHovered ? baseSize * 1.3 : baseSize) / globalScale;
 
     if (node.x === undefined || node.y === undefined) return;
+
+    // Optimization: Efficient color determination
+    let baseColor: string;
+    let lightColor: string;
+
+    if (isHighlighted) {
+      baseColor = '#a78bfa';
+      lightColor = '#c4b5fd';
+    } else if (isHovered) {
+      baseColor = '#c4b5fd';
+      lightColor = '#e9d5ff';
+    } else {
+      // Use pre-calculated or type-based colors
+      baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
+      // Use pre-calculated light color if available, otherwise calculate once (memoized)
+      lightColor = node.lightColor || lightenColor(baseColor, 20);
+    }
 
     // Glow effect for highlighted/hovered nodes
     if (isHighlighted || isHovered) {
@@ -294,9 +195,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
       node.x, node.y, nodeSize
     );
-    const baseColor = nodeColor(node);
-    // Use cached lightenColor utility
-    nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
+
+    nodeGradient.addColorStop(0, lightColor);
     nodeGradient.addColorStop(1, baseColor);
 
     ctx.beginPath();
@@ -326,7 +226,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fillStyle = isHighlighted ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#a1a1aa';
       ctx.fillText(label, node.x, node.y + nodeSize + 3);
     }
-  }, [highlightedNode, hoveredNode, nodeColor]);
+  }, [highlightedNode, hoveredNode]);
 
   const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const start = link.source;

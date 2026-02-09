@@ -65,7 +65,12 @@ const mindfulMentorFlow = ai.defineFlow(
     outputSchema: MotivationalCounselingOutputSchema,
   },
   async input => {
+    console.log('[MindfulMentor] Starting flow execution...');
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      console.error('[MindfulMentor] Flow completed but returned no output');
+      throw new Error('AI failed to generate advice.');
+    }
+    return output;
   }
 );
