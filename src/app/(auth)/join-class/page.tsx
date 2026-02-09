@@ -66,15 +66,18 @@ export default function JoinClassPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center">
-            <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <BrainCircuit className="mx-auto h-12 w-12 text-primary" />
-                    <CardTitle className="text-2xl font-headline mt-2">Join Your Class</CardTitle>
-                    <CardDescription>
-                        Enter the 6-character class code provided by your teacher
-                    </CardDescription>
-                </CardHeader>
+        <Card className="w-full max-w-md shadow-md border-border/60">
+            <CardHeader className="text-center space-y-1">
+                <div className="flex justify-center mb-2">
+                    <div className="p-3 rounded-full bg-primary/10">
+                        <BrainCircuit className="h-10 w-10 text-primary" />
+                    </div>
+                </div>
+                <CardTitle className="text-3xl font-headline tracking-tight">Join Your Class</CardTitle>
+                <CardDescription className="text-base">
+                    Enter the 6-character class code provided by your teacher
+                </CardDescription>
+            </CardHeader>
                 <CardContent>
                     <form onSubmit={handleJoin} className="space-y-4">
                         <div className="space-y-2">
@@ -109,6 +112,5 @@ export default function JoinClassPage() {
                     </form>
                 </CardContent>
             </Card>
-        </div>
     );
 }

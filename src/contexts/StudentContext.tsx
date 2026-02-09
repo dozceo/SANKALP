@@ -17,17 +17,22 @@ interface StudentContextType {
     loading: boolean;
     refetch: () => void;
     addStudyMaterial: (material: StudyMaterialInput) => Promise<string>;
+    joinClass: (classCode: string) => Promise<any>;
+    leaveClass: () => Promise<any>;
 }
 
-const StudentContext = createContext<StudentContextType | undefined>(undefined);
+export const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
 export function StudentProvider({ children }: { children: ReactNode }) {
-    const { user } = useAuth();
+    const { user, role, loading: authLoading } = useAuth();
     const [currentStudent, setCurrentStudent] = useState<StudentNode | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchStudent = async () => {
-        if (!user) {
+        // Wait for auth to finish loading before deciding what to fetch
+        if (authLoading) return;
+
+        if (!user || role !== 'student') {
             setCurrentStudent(null);
             setLoading(false);
             return;
@@ -65,8 +70,18 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                         weaknesses: data.student.weaknesses || [],
                         connections: [],
                         lastActive: new Date().toISOString(),
-                        masteryScores: data.student.masteryScores || {}
+                        masteryScores: data.student.masteryScores || {},
+                        badges: data.student.badges || [],
+                        streak: data.student.streak || 0,
+                        classId: data.student.classId,
+                        className: data.student.className,
+                        classSubject: data.student.classSubject,
+                        teacherName: data.student.teacherName, // Might be undefined if not in student doc
+                        joinedClassAt: data.student.joinedClassAt,
                     };
+
+                    // If we have a classId but no teacherName, we might want to fetch it
+                    // But for now, let's assume it's either there or we'll live without it in the dashboard
                 } else {
                     // Minimal student
                     student = {
@@ -80,7 +95,9 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                         weaknesses: [],
                         connections: [],
                         lastActive: new Date().toISOString(),
-                        masteryScores: {}
+                        masteryScores: {},
+                        badges: [],
+                        streak: 0
                     };
                 }
             } else {
@@ -222,24 +239,82 @@ export function StudentProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         fetchStudent();
-    }, [user?.uid]);
+    }, [user?.uid, role, authLoading]);
+
+    const joinClass = async (classCode: string) => {
+        if (!user) throw new Error("User not authenticated");
+
+        try {
+            const token = await user.getIdToken();
+            const response = await fetch('/api/classes/join', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    studentId: user.uid,
+                    classCode: classCode,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to join class');
+            }
+
+            // Refetch student data to update the UI
+            await fetchStudent();
+            return data;
+        } catch (error) {
+            console.error('[StudentContext] Error joining class:', error);
+            throw error;
+        }
+    };
+
+    const leaveClass = async () => {
+        if (!user) throw new Error("User not authenticated");
+
+        try {
+            const token = await user.getIdToken();
+            const response = await fetch('/api/classes/leave', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    studentId: user.uid,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to leave class');
+            }
+
+            // Refetch student data to update the UI
+            await fetchStudent();
+            return data;
+        } catch (error) {
+            console.error('[StudentContext] Error leaving class:', error);
+            throw error;
+        }
+    };
 
     return (
         <StudentContext.Provider value={{
             currentStudent,
             loading,
             refetch: fetchStudent,
-            addStudyMaterial
+            addStudyMaterial,
+            joinClass,
+            leaveClass
         }}>
             {children}
         </StudentContext.Provider>
     );
 }
 
-export function useStudent() {
-    const context = useContext(StudentContext);
-    if (context === undefined) {
-        throw new Error('useStudent must be used within a StudentProvider');
-    }
-    return context;
-}

@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, TrendingUp, Brain, Info } from "lucide-react";
@@ -24,14 +24,10 @@ interface LearningStateCardProps {
 }
 
 export function LearningStateCard({ intelligence }: LearningStateCardProps) {
-    const overallMastery = useMemo(() => {
-        const scores = Object.values(intelligence.mastery);
-        if (scores.length === 0) return 0;
-        return scores.reduce(
-            (sum, m) => sum + m.score,
-            0
-        ) / scores.length;
-    }, [intelligence.mastery]);
+    const overallMastery = useMemo(() => Object.values(intelligence.mastery).reduce(
+        (sum, m) => sum + m.score,
+        0
+    ) / Object.keys(intelligence.mastery).length, [intelligence.mastery]);
 
     return (
         <Card>

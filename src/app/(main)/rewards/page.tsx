@@ -1,28 +1,29 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Flame, Star, Zap, BookOpen, ShieldCheck, Quote, LineChart as LineChartIcon } from "lucide-react";
+import { Flame, Star, Zap, BookOpen, ShieldCheck, Quote, LineChart as LineChartIcon, Trophy, Award, Target } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { useStudent } from "@/hooks/useStudent";
+import { RewardsSkeleton } from "@/components/rewards/RewardsSkeleton";
+import {
+  getSubjectMastery,
+  getOverallMastery,
+  getStudentBadges,
+  getProgressProjection
+} from "@/lib/rewards/calculateRewards";
 
-
-const badges = [
-  { icon: Flame, title: "Hot Streak", description: "5-day study streak", color: "text-orange-500" },
-  { icon: Star, title: "Quiz Master", description: "Score 100% on a quiz", color: "text-yellow-500" },
-  { icon: Zap, title: "Quick Learner", description: "Complete 10 quizzes", color: "text-blue-500" },
-  { icon: BookOpen, title: "Subject Pro", description: "Master a subject", color: "text-green-500" },
-  { icon: ShieldCheck, title: "Perfect Week", description: "7-day study streak", color: "text-purple-500" },
-];
-
-const progressData = [
-  { week: 'Week 1', past: 30, current: 40, projected: 40 },
-  { week: 'Week 2', past: 50, current: 65, projected: 38 },
-  { week: 'Week 3', past: 60, current: 80, projected: 35 },
-  { week: 'Week 4', past: 70, current: 90, projected: 32 },
-];
+// Icon mapping for dynamic badges
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  flame: Flame,
+  star: Star,
+  zap: Zap,
+  book: BookOpen,
+  shield: ShieldCheck,
+  trophy: Trophy,
+  award: Award,
+};
 
 const chartConfig = {
   current: {
@@ -40,6 +41,18 @@ const chartConfig = {
 };
 
 export default function RewardsPage() {
+  const { currentStudent, loading } = useStudent();
+
+  if (loading) {
+    return <RewardsSkeleton />;
+  }
+
+  // Derive all data using utility functions
+  const subjectsMastery = getSubjectMastery(currentStudent);
+  const averageMastery = getOverallMastery(currentStudent);
+  const progressData = getProgressProjection(currentStudent);
+  const studentBadges = getStudentBadges(currentStudent);
+
   return (
     <div className="space-y-6">
       <div>
@@ -50,25 +63,57 @@ export default function RewardsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Streak Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Flame className="text-orange-500"/> Current Streak</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-5xl font-bold">12 <span className="text-lg text-muted-foreground font-normal">days</span></p>
+            <p className="text-5xl font-bold">{currentStudent?.streak || 0} <span className="text-lg text-muted-foreground font-normal">days</span></p>
             <p className="text-xs text-muted-foreground mt-1">Keep it going to unlock new badges!</p>
           </CardContent>
         </Card>
+
+        {/* Overall Mastery Card */}
         <Card className="lg:col-span-2">
            <CardHeader>
-            <CardTitle>Overall Progress</CardTitle>
-            <CardDescription>You are <strong>65%</strong> of the way through your syllabus.</CardDescription>
+            <CardTitle>Overall Mastery</CardTitle>
+            <CardDescription>Your average mastery across all subjects is <strong>{averageMastery}%</strong>.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Progress value={65} />
+            <Progress value={averageMastery} className="h-3" />
           </CardContent>
         </Card>
 
+        {/* Subject Breakdown Card */}
+        <Card className="md:col-span-2 lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              Subject Mastery Breakdown
+            </CardTitle>
+            <CardDescription>How you're performing across different areas of study.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {subjectsMastery.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {subjectsMastery.map((subject) => (
+                  <div key={subject.subject} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">{subject.label}</span>
+                      <span className="text-muted-foreground">{subject.value}%</span>
+                    </div>
+                    <Progress value={subject.value} className="h-2" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No subject data available yet. Start practicing to see your progress!</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Daily Motivation Card */}
         <Card className="md:col-span-2 lg:col-span-3">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Quote className="w-5 h-5 text-primary" /> Daily Motivation</CardTitle>
@@ -82,22 +127,37 @@ export default function RewardsPage() {
         </Card>
       </div>
 
+      {/* Badges Card */}
       <Card>
         <CardHeader>
           <CardTitle>Badges Earned</CardTitle>
           <CardDescription>Recognitions for your hard work and dedication.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {badges.map((badge, index) => (
-            <div key={index} className="flex flex-col items-center text-center p-4 border rounded-lg hover:bg-accent transition-colors">
-              <badge.icon className={`w-12 h-12 mb-2 ${badge.color}`} />
-              <p className="font-semibold">{badge.title}</p>
-              <p className="text-xs text-muted-foreground">{badge.description}</p>
+        <CardContent>
+          {studentBadges.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {studentBadges.map((badge, index) => {
+                const IconComponent = iconMap[badge.icon] || Award;
+                return (
+                  <div key={index} className="flex flex-col items-center text-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                    <IconComponent className={`w-12 h-12 mb-2 ${badge.color || 'text-primary'}`} />
+                    <p className="font-semibold">{badge.title}</p>
+                    <p className="text-xs text-muted-foreground">{badge.description}</p>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          ) : (
+            <div className="text-center py-8 border-2 border-dashed rounded-lg">
+              <Award className="w-12 h-12 mx-auto text-muted-foreground opacity-50 mb-2" />
+              <p className="font-medium text-muted-foreground">No badges earned yet</p>
+              <p className="text-sm text-muted-foreground">Complete quizzes and maintain streaks to earn badges!</p>
+            </div>
+          )}
         </CardContent>
       </Card>
       
+      {/* Projection Chart Card */}
       <Card>
         <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -114,7 +174,7 @@ export default function RewardsPage() {
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="week" />
-                <YAxis label={{ value: 'Mastery Score', angle: -90, position: 'insideLeft' }} />
+                <YAxis domain={[0, 100]} label={{ value: 'Mastery %', angle: -90, position: 'insideLeft' }} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Legend />
                 <Line

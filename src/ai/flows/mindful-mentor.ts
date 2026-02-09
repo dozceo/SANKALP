@@ -23,7 +23,15 @@ const MotivationalCounselingOutputSchema = z.object({
 export type MotivationalCounselingOutput = z.infer<typeof MotivationalCounselingOutputSchema>;
 
 export async function getMotivationalCounseling(input: MotivationalCounselingInput): Promise<MotivationalCounselingOutput> {
-  return mindfulMentorFlow(input);
+  console.log('[MindfulMentor] Providing counseling for concern:', input.studentConcern.substring(0, 50) + '...');
+  try {
+    const result = await mindfulMentorFlow(input);
+    console.log('[MindfulMentor] Successfully generated advice');
+    return result;
+  } catch (error) {
+    console.error('[MindfulMentor] Error in flow execution:', error);
+    throw error;
+  }
 }
 
 const prompt = ai.definePrompt({
@@ -57,7 +65,12 @@ const mindfulMentorFlow = ai.defineFlow(
     outputSchema: MotivationalCounselingOutputSchema,
   },
   async input => {
+    console.log('[MindfulMentor] Starting flow execution...');
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      console.error('[MindfulMentor] Flow completed but returned no output');
+      throw new Error('AI failed to generate advice.');
+    }
+    return output;
   }
 );

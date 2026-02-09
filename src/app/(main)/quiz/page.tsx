@@ -30,6 +30,7 @@ const quizFormSchema = z.object({
 
 export default function QuizPage() {
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
+  const [isFallback, setIsFallback] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
@@ -52,6 +53,7 @@ export default function QuizPage() {
     try {
       const result = await createQuiz(values);
       setQuiz(result.quiz);
+      setIsFallback(!!result.isFallback);
       setQuizTopic(values.topic);
       setQuizStartTime(Date.now());
       // Reset state for new quiz
@@ -159,6 +161,12 @@ export default function QuizPage() {
   if (quiz && currentQuestion) {
     return (
       <Card className="max-w-2xl mx-auto">
+        {isFallback && (
+          <div className="bg-amber-50 text-amber-700 px-4 py-2 text-xs border-b border-amber-100 flex items-center gap-2">
+            <Loader2 className="h-3 w-3" />
+            AI is busy. Serving high-quality standard questions for {quizTopic}.
+          </div>
+        )}
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Question {currentQuestionIndex + 1} of {quiz.length}</CardTitle>
           <Progress value={((currentQuestionIndex + 1) / quiz.length) * 100} className="w-full" />

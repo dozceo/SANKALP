@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addStudentToClass, getClassByCode } from '@/lib/db-helpers';
+import { removeStudentFromClass, getStudent } from '@/lib/db-helpers';
 import { auth } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { studentId, classCode } = body;
+        const { studentId } = body;
 
         // Extract and verify token
         const authHeader = req.headers.get('Authorization');
@@ -35,39 +35,33 @@ export async function POST(req: NextRequest) {
         }
 
         // Validate required fields
-        if (!studentId || !classCode) {
+        if (!studentId) {
             return NextResponse.json(
-                { error: 'Missing required fields: studentId, classCode' },
+                { error: 'Missing required field: studentId' },
                 { status: 400 }
             );
         }
 
-        // Verify class exists
-        const classDoc = await getClassByCode(classCode);
-        if (!classDoc) {
+        // Get student to find their current class
+        const student = await getStudent(studentId);
+        if (!student || !student.classId) {
             return NextResponse.json(
-                { error: 'Invalid class code' },
-                { status: 404 }
+                { error: 'Student is not currently in a class' },
+                { status: 400 }
             );
         }
 
-        // Add student to class
-        await addStudentToClass(studentId, classCode);
+        // Remove student from class
+        await removeStudentFromClass(studentId, student.classId);
 
         return NextResponse.json({
             success: true,
-            class: {
-                id: classDoc.id,
-                className: classDoc.className,
-                teacherName: classDoc.teacherName,
-                subject: classDoc.subject,
-                grade: classDoc.grade,
-            },
+            message: 'Successfully left the class'
         });
     } catch (error) {
-        console.error('Error joining class:', error);
+        console.error('Error leaving class:', error);
         return NextResponse.json(
-            { error: 'Failed to join class' },
+            { error: 'Failed to leave class' },
             { status: 500 }
         );
     }

@@ -210,24 +210,22 @@ export async function batchPredictMastery(
         return [];
     }
 
-    // Optimization: Reuse persistent bridge via predictMastery instead of spawning new processes
-    // This avoids process startup overhead (~500ms) and leverages the persistent Python process
-    const promises = topicFeatures.map(async (item) => {
+    // Optimization: Use the persistent bridge for all predictions in parallel
+    // This avoids spawning a new Python process for every batch request
+    const promises = topicFeatures.map(async ({ topic, features }) => {
         try {
-            const prediction = await predictMastery(item.features);
-            return {
-                topic: item.topic,
-                prediction
-            };
+            const prediction = await bridge.predict(features);
+            return { topic, prediction };
         } catch (error) {
+            console.error(`Prediction failed for topic ${topic}:`, error);
             return {
-                topic: item.topic,
+                topic,
                 prediction: {
                     mastery_probability: 0,
                     confidence: 0,
                     predicted_class: "error" as const,
-                    error: String(error)
-                }
+                    error: error instanceof Error ? error.message : String(error),
+                },
             };
         }
     });
