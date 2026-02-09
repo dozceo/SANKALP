@@ -59,9 +59,6 @@ env:
 
   # ---- Gemini / Google GenAI ----
   - variable: GOOGLE_GENAI_API_KEY
-    secret: AIzaSyAlxLxX8OaiKkWTIq5Nq57YnJHgYORSoP4
-
-
-  # Pinned version (recommended)
-  - variable: PINNED_GOOGLE_GENAI_API_KEY
-    secret: AIzaSyAlxLxX8OaiKkWTIq5Nq57YnJHgYORSoP4@1
+    value: AIzaSyAlxLxX8OaiKkWTIq5Nq57YnJHgYORSoP4
+    availability:
+      - RUNTIME
