@@ -35,7 +35,7 @@ export function TopicMasteryGrid({ intelligence }: TopicMasteryGridProps) {
                     return (
                         <Card
                             key={topic}
-                            className={`hover:shadow-md transition-shadow duration-300 ${isPriority ? "border-destructive" : ""
+                            className={`transition-colors duration-300 ${isPriority ? "border-destructive" : ""
                                 }`}
                         >
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -43,15 +43,15 @@ export function TopicMasteryGrid({ intelligence }: TopicMasteryGridProps) {
                                     {topic}
                                 </CardTitle>
                                 {isPriority ? (
-                                    <AlertCircle className="h-4 w-4 text-destructive" />
+                                    <AlertCircle className="h-4 w-4 text-destructive" aria-label="High Priority" role="img" />
                                 ) : isStrong ? (
-                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                    <CheckCircle2 className="h-4 w-4 text-green-500" aria-label="Strong Mastery" role="img" />
                                 ) : (
-                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                    <Clock className="h-4 w-4 text-muted-foreground" aria-label="Standard Priority" role="img" />
                                 )}
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                <Progress value={masteryPercent} />
+                                <Progress value={masteryPercent} aria-label={`Mastery: ${masteryPercent}%`} />
                                 <div className="flex justify-between items-center">
                                     <p className="text-xs text-muted-foreground">
                                         {masteryPercent}% mastered

@@ -7,9 +7,13 @@ import type { StudentIntelligence, MasterySignal } from '@/types/intelligence';
  */
 export function generateStudentIntelligence(student: StudentNode): StudentIntelligence {
     const mastery: Record<string, MasterySignal> = {};
+    let totalScore = 0;
+    let topicCount = 0;
+    let highPriorityCount = 0;
 
     // Convert mastery scores to intelligence signals
     if (student.masteryScores) {
+        // Optimization: Single pass loop for aggregations
         Object.entries(student.masteryScores).forEach(([topic, score]) => {
             // Simulate days since revision (random for demo, should come from quiz history)
             const daysSinceRevision = Math.floor(Math.random() * 14);
@@ -37,18 +41,21 @@ export function generateStudentIntelligence(student: StudentNode): StudentIntell
                 priority: priority,
                 needsRevision: score < 0.7 || daysSinceRevision > 7,
             };
+
+            // Aggregate metrics in the same loop
+            totalScore += score;
+            topicCount++;
+            if (priority === 'HIGH') {
+                highPriorityCount++;
+            }
         });
     }
 
     // Calculate average mastery
-    const scores = Object.values(mastery).map(m => m.score);
-    const avgMastery = scores.length > 0
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
-        : 0.5;
+    const avgMastery = topicCount > 0 ? totalScore / topicCount : 0.5;
 
     // Determine revision urgency
     let revisionUrgency: 'URGENT' | 'SCHEDULED' | 'NONE' = 'NONE';
-    const highPriorityCount = Object.values(mastery).filter(m => m.priority === 'HIGH').length;
 
     if (avgMastery < 0.5 || highPriorityCount >= 2) {
         revisionUrgency = 'URGENT';
@@ -97,8 +104,14 @@ export function calculateStudentRisk(student: StudentNode): {
         ? Object.values(student.masteryScores)
         : [];
 
+    // Optimization: Calculate average in a simple loop to avoid reduce() callback overhead
+    let totalScore = 0;
+    for (let i = 0; i < scores.length; i++) {
+        totalScore += scores[i];
+    }
+
     const avgMastery = scores.length > 0
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
+        ? totalScore / scores.length
         : 0.5;
 
     let riskLevel: 'Low' | 'Medium' | 'High' = 'Low';
