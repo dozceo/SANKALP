@@ -19,7 +19,10 @@ interface PersonalKnowledgeGraphProps {
     height?: number;
 }
 
-type ExtendedNodeObject = NodeObject & GraphNode;
+type ExtendedNodeObject = NodeObject & GraphNode & {
+    _cachedLightColor?: string;
+    _cachedBaseColor?: string;
+};
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
 export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowledgeGraphProps) {

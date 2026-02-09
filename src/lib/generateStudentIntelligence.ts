@@ -104,8 +104,14 @@ export function calculateStudentRisk(student: StudentNode): {
         ? Object.values(student.masteryScores)
         : [];
 
+    // Optimization: Calculate average in a simple loop to avoid reduce() callback overhead
+    let totalScore = 0;
+    for (let i = 0; i < scores.length; i++) {
+        totalScore += scores[i];
+    }
+
     const avgMastery = scores.length > 0
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
+        ? totalScore / scores.length
         : 0.5;
 
     let riskLevel: 'Low' | 'Medium' | 'High' = 'Low';
