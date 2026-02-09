@@ -15,7 +15,7 @@
               "state": {
                 "file": "Architecture Map.md",
                 "mode": "source",
-                "source": false
+                "source": true
               },
               "icon": "lucide-file",
               "title": "Architecture Map"
@@ -78,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200,
+    "collapsed": true
   },
   "right": {
     "id": "c491d92b1ced3dcf",
@@ -185,9 +186,11 @@
   },
   "active": "0e84ac6efaf8b7a3",
   "lastOpenFiles": [
+    "Features Overview.md",
+    "Deployment Guide.md",
+    "Architecture Map.md",
     "Firebase IAM Fix.md",
     "README.md",
-    "Features Overview.md",
     "Links.md",
     "blueprint.md",
     "README_OSDI.md"
