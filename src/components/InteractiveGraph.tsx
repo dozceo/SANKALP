@@ -21,7 +21,7 @@ interface InteractiveGraphProps {
   graphData?: GraphData;
 }
 
-type ExtendedNodeObject = NodeObject & GraphNode;
+type ExtendedNodeObject = NodeObject & GraphNode & { __lightColor?: string };
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
 // Optimization: Move constant outside component to prevent re-creation
@@ -69,6 +69,13 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     return map;
   }, [fullGraphData]);
 
+  // Optimization: Pre-calculate node map for O(1) lookups
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, ExtendedNodeObject>();
+    fullGraphData.nodes.forEach(n => map.set(n.id, n as ExtendedNodeObject));
+    return map;
+  }, [fullGraphData]);
+
   // Generate local graph data (only nodes connected to highlighted node)
   const localGraphData = useMemo(() => {
     if (!highlightedNode || isGlobalView) return fullGraphData;
@@ -85,7 +92,13 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     setConnectedNodes(connected);
 
     // Filter nodes and links
-    const filteredNodes = fullGraphData.nodes.filter(n => connected.has(n.id));
+    // Optimization: Use nodeMap for O(1) lookup instead of O(N) filter
+    const filteredNodes: ExtendedNodeObject[] = [];
+    connected.forEach(id => {
+      const node = nodeMap.get(id);
+      if (node) filteredNodes.push(node);
+    });
+
     const filteredLinks = fullGraphData.links.filter(l => {
       const source = l.source as unknown;
       const target = l.target as unknown;
@@ -95,7 +108,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     });
 
     return { nodes: filteredNodes, links: filteredLinks };
-  }, [highlightedNode, isGlobalView, fullGraphData]);
+  }, [highlightedNode, isGlobalView, fullGraphData, adjacencyMap, nodeMap]);
 
   // Use external data if provided, otherwise fallback to local/generated data
   const graphData = externalGraphData || (isGlobalView ? fullGraphData : localGraphData);
