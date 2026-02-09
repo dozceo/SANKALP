@@ -71,7 +71,12 @@ const adaptiveQuizFlow = ai.defineFlow(
     outputSchema: AdaptiveQuizOutputSchema,
   },
   async input => {
+    console.log('[AdaptiveQuizEngine] Starting flow execution...');
     const {output} = await adaptiveQuizPrompt(input);
-    return output!;
+    if (!output) {
+      console.error('[AdaptiveQuizEngine] Flow completed but returned no output');
+      throw new Error('AI failed to generate quiz questions.');
+    }
+    return output;
   }
 );

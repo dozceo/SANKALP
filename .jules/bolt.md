@@ -1,3 +1,7 @@
-## 2024-05-23 - Graph Visualization Optimization
-**Learning:** React Force Graph calls `nodeCanvasObject` every frame (60Hz) for every node. Even simple utility functions like color parsing or string manipulation inside this callback accumulate massive overhead. Caching derived values (like lightened colors) directly on the mutable Node object provided by the library prevents thousands of redundant calculations per second.
-**Action:** When using `react-force-graph` or similar canvas-based libraries, always cache derived rendering properties on the data object itself, and hoist static configurations (like color maps) outside the render loop.
+## 2024-05-23 - Python Process Spawning Overhead
+**Learning:** `batchPredictMastery` in `ml-bridge.ts` spawns a new Python process for every batch request. This incurs significant overhead (process startup, import time).
+**Action:** Reuse the persistent `PythonBridge` instance or implement a persistent batch processing mechanism. For now, using `Promise.all` with the existing `predictMastery` (which uses the bridge) is a quick win.
+
+## 2024-05-23 - Unused Code in API
+**Learning:** `calculateStudentRisk` is imported but unused in `src/app/api/teacher/students/route.ts`. Dead code should be removed to keep the codebase clean, even if performance impact is negligible.
+**Action:** Verify usage before removing.

@@ -1,5 +1,7 @@
 "use server";
 
+export const runtime = 'nodejs';
+
 import { generateQuiz, type AdaptiveQuizInput } from "@/ai/flows/adaptive-quiz-engine";
 import { unstable_cache } from "next/cache";
 import { getFallbackQuiz } from "@/lib/quiz-fallback";
@@ -15,7 +17,11 @@ const getCachedQuiz = unstable_cache(
       }
       return result;
     } catch (error) {
-      console.error("[QuizAction] AI Generation failed, falling back to static quiz.", error);
+      console.error("[QUIZ_ERROR] AI Generation failed:", {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        topic: values.topic
+      });
       // Return fallback quiz but don't throw, so the user still gets a quiz
       return getFallbackQuiz(values.topic, values.numQuestions);
     }

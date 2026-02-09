@@ -24,8 +24,8 @@ interface InteractiveGraphProps {
 type ExtendedNodeObject = NodeObject & GraphNode & { __lightColor?: string };
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
-// Static colors to avoid reallocation
-const TYPE_COLORS: Record<string, string> = {
+// Optimization: Move constant outside component to prevent re-creation
+const NODE_TYPE_COLORS: Record<string, string> = {
   student: '#9333EA',    // Purple
   subject: '#3B82F6',    // Blue
   chapter: '#06B6D4',    // Cyan
@@ -34,6 +34,8 @@ const TYPE_COLORS: Record<string, string> = {
   strength: '#10B981',   // Green
   skill: '#F59E0B',      // Amber
 };
+
+const DEFAULT_NODE_COLOR = '#6d28d9';
 
 export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: externalGraphData }: InteractiveGraphProps) {
   const graphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
@@ -161,26 +163,6 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     }
   };
 
-  const nodeColor = useCallback((node: ExtendedNodeObject) => {
-    // Use custom color if specified
-    if (node.color) {
-      return node.color;
-    }
-
-    // Highlighted node
-    if (node.id === highlightedNode) {
-      return '#a78bfa'; // Active node - lighter purple
-    }
-
-    // Hovered node
-    if (node.id === hoveredNode) {
-      return '#c4b5fd'; // Hovered node - even lighter
-    }
-
-    // Optimization: Use static TYPE_COLORS map
-    return TYPE_COLORS[node.type] || '#6d28d9'; // Fallback
-  }, [highlightedNode, hoveredNode]);
-
   const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.name;
     const baseSize = node.val || 8;
@@ -189,6 +171,23 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     const nodeSize = (isHighlighted || isHovered ? baseSize * 1.3 : baseSize) / globalScale;
 
     if (node.x === undefined || node.y === undefined) return;
+
+    // Optimization: Efficient color determination
+    let baseColor: string;
+    let lightColor: string;
+
+    if (isHighlighted) {
+      baseColor = '#a78bfa';
+      lightColor = '#c4b5fd';
+    } else if (isHovered) {
+      baseColor = '#c4b5fd';
+      lightColor = '#e9d5ff';
+    } else {
+      // Use pre-calculated or type-based colors
+      baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
+      // Use pre-calculated light color if available, otherwise calculate once (memoized)
+      lightColor = node.lightColor || lightenColor(baseColor, 20);
+    }
 
     // Glow effect for highlighted/hovered nodes
     if (isHighlighted || isHovered) {
@@ -209,18 +208,6 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
       node.x, node.y, nodeSize
     );
-    const baseColor = nodeColor(node);
-
-    // Optimization: Cache lightenColor result on node object to avoid re-calculation per frame
-    let lightColor: string;
-    if (isHighlighted || isHovered) {
-      lightColor = lightenColor(baseColor, 20);
-    } else {
-      if (!node.__lightColor) {
-        node.__lightColor = lightenColor(baseColor, 20);
-      }
-      lightColor = node.__lightColor;
-    }
 
     nodeGradient.addColorStop(0, lightColor);
     nodeGradient.addColorStop(1, baseColor);
@@ -252,7 +239,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fillStyle = isHighlighted ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#a1a1aa';
       ctx.fillText(label, node.x, node.y + nodeSize + 3);
     }
-  }, [highlightedNode, hoveredNode, nodeColor]);
+  }, [highlightedNode, hoveredNode]);
 
   const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const start = link.source;
