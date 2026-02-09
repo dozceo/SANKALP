@@ -103,6 +103,7 @@ export async function fetchTeacherGraphData(teacherId: string): Promise<GraphDat
         // Batch fetch quiz results
         const studentIds = students.map(s => s.id);
         const quizResultsMap = await getBatchedQuizResults(studentIds, 20);
+        const existingLinks = new Set<string>();
 
         // Create Student Nodes
         for (const student of students) {
@@ -133,12 +134,13 @@ export async function fetchTeacherGraphData(teacherId: string): Promise<GraphDat
                 }
 
                 // Avoid duplicate links
-                const linkExists = links.some(l =>
-                    (l.source === student.id && l.target === topicId) ||
-                    (l.source === topicId && l.target === student.id)
-                );
+                // Use a sorted key to handle undirected edges efficiently
+                const s = student.id;
+                const t = topicId;
+                const key = s < t ? `${s}-${t}` : `${t}-${s}`;
 
-                if (!linkExists) {
+                if (!existingLinks.has(key)) {
+                    existingLinks.add(key);
                     links.push({
                         source: student.id,
                         target: topicId,
