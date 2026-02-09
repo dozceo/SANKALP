@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle, BookOpen, GraduationCap, School, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateFriendlyErrorMessage } from '@/app/actions/ai-error';
@@ -50,7 +52,7 @@ export default function TeacherOnboardingPage() {
 
     if (authLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-background">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         );
@@ -122,161 +124,165 @@ export default function TeacherOnboardingPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-            <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg border border-slate-100 p-8">
-                {/* Progress Bar */}
-                <div className="mb-8">
-                    <div className="flex justify-between mb-2 gap-2">
-                        {[1, 2, 3].map(i => (
-                            <div
-                                key={i}
-                                className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                                    i <= step ? 'bg-primary' : 'bg-slate-100'
-                                }`}
-                            />
-                        ))}
-                    </div>
-                    <p className="text-xs font-medium text-slate-500 text-center uppercase tracking-wide">
-                        Step {step} of 3
-                    </p>
-                </div>
-
-                {/* Step 1: Personal Info */}
-                {step === 1 && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="text-center space-y-2">
-                            <div className="mx-auto w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                                <span className="text-2xl">👨‍🏫</span>
-                            </div>
-                            <h1 className="text-3xl font-bold text-slate-900">Welcome, Teacher!</h1>
-                            <p className="text-slate-500">Let's set up your teaching dashboard</p>
+        <div className="w-full max-w-2xl mx-auto">
+            <Card className="shadow-xl border-border/60 overflow-hidden">
+                <CardHeader className="bg-muted/30 pb-8">
+                    {/* Progress Bar */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between gap-2">
+                            {[1, 2, 3].map(i => (
+                                <div
+                                    key={i}
+                                    className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                                        i <= step ? 'bg-primary' : 'bg-primary/20'
+                                    }`}
+                                />
+                            ))}
                         </div>
-
-                        <div className="space-y-4">
-                            <label className="block text-sm font-semibold text-slate-700">Your Full Name</label>
-                            <Input
-                                placeholder="e.g. Sarah Mitchell"
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                className="h-12 text-lg bg-white border-slate-200 focus:border-primary focus:ring-primary/20"
-                            />
+                        <div className="flex justify-between items-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <span>Teacher Setup</span>
+                            <span>Step {step} of 3</span>
                         </div>
                     </div>
-                )}
+                </CardHeader>
 
-                {/* Step 2: Subjects & Grade Levels */}
-                {step === 2 && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="text-center space-y-2">
-                             <div className="mx-auto w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center mb-4">
-                                <BookOpen className="w-6 h-6 text-purple-600" />
+                <CardContent className="pt-8">
+                    {/* Step 1: Personal Info */}
+                    {step === 1 && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="text-center space-y-2">
+                                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-3xl">
+                                    👨‍🏫
+                                </div>
+                                <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">Welcome, Teacher!</h1>
+                                <p className="text-muted-foreground text-lg text-balance">Let's set up your teaching dashboard and personalized tools.</p>
                             </div>
-                            <h2 className="text-2xl font-bold text-slate-900">What do you teach?</h2>
-                            <p className="text-slate-500">Select your subjects and grade levels</p>
-                        </div>
 
-                        <div className="space-y-4">
-                            <label className="block text-sm font-semibold text-slate-700">Subjects</label>
-                            <div className="grid grid-cols-2 gap-3">
-                                {SUBJECTS.map(subject => (
-                                    <button
-                                        key={subject}
-                                        onClick={() => handleSubjectToggle(subject)}
-                                        className={`p-4 rounded-lg border transition-all text-left relative group ${
-                                            formData.subjects.includes(subject)
-                                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                                        }`}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <span className={`font-medium ${formData.subjects.includes(subject) ? 'text-primary' : 'text-slate-700'}`}>
-                                                {subject}
-                                            </span>
-                                            {formData.subjects.includes(subject) && (
-                                                <CheckCircle className="w-5 h-5 text-primary" />
-                                            )}
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <label className="block text-sm font-semibold text-slate-700">Grade Levels</label>
-                            <div className="grid grid-cols-3 gap-3">
-                                {GRADE_LEVELS.map(grade => (
-                                    <button
-                                        key={grade}
-                                        onClick={() => handleGradeLevelToggle(grade)}
-                                        className={`p-3 rounded-lg border transition-all text-center ${
-                                            formData.gradeLevels.includes(grade)
-                                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20 text-primary font-medium'
-                                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600'
-                                        }`}
-                                    >
-                                        {grade}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 3: School & Class Size */}
-                {step === 3 && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="text-center space-y-2">
-                             <div className="mx-auto w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-4">
-                                <School className="w-6 h-6 text-green-600" />
-                            </div>
-                            <h2 className="text-2xl font-bold text-slate-900">About your institution</h2>
-                            <p className="text-slate-500">Help us understand your teaching environment</p>
-                        </div>
-
-                        <div className="space-y-4">
-                            <label className="block text-sm font-semibold text-slate-700">School / Institution Name</label>
-                            <div className="relative">
-                                <School className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
+                            <div className="space-y-4">
+                                <Label htmlFor="name" className="text-base font-semibold">Your Full Name</Label>
                                 <Input
-                                    placeholder="e.g. Springfield High School"
-                                    value={formData.schoolName}
-                                    onChange={e => setFormData({ ...formData, schoolName: e.target.value })}
-                                    className="pl-10 h-12"
+                                    id="name"
+                                    placeholder="e.g. Sarah Mitchell"
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    className="h-12 text-lg"
                                 />
                             </div>
                         </div>
+                    )}
 
-                        <div className="space-y-4">
-                            <label className="block text-sm font-semibold text-slate-700">Total Students</label>
-                            <div className="grid grid-cols-2 gap-3">
-                                {CLASS_SIZES.map(size => (
-                                    <button
-                                        key={size}
-                                        onClick={() => setFormData({ ...formData, expectedClassSize: size })}
-                                        className={`p-4 rounded-lg border transition-all flex items-center gap-3 ${
-                                            formData.expectedClassSize === size
-                                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                                        }`}
-                                    >
-                                        <Users className={`h-5 w-5 ${formData.expectedClassSize === size ? 'text-primary' : 'text-slate-400'}`} />
-                                        <span className={`font-medium ${formData.expectedClassSize === size ? 'text-primary' : 'text-slate-700'}`}>
-                                            {size}
-                                        </span>
-                                    </button>
-                                ))}
+                    {/* Step 2: Subjects & Grade Levels */}
+                    {step === 2 && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="text-center space-y-2">
+                                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                    <BookOpen className="w-8 h-8 text-primary" />
+                                </div>
+                                <h2 className="text-3xl font-headline font-bold text-foreground">What do you teach?</h2>
+                                <p className="text-muted-foreground text-lg">Select your subjects and grade levels.</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label className="text-base font-semibold">Subjects</Label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {SUBJECTS.map(subject => (
+                                        <button
+                                            key={subject}
+                                            onClick={() => handleSubjectToggle(subject)}
+                                            className={`p-4 rounded-xl border-2 transition-all text-left relative group ${
+                                                formData.subjects.includes(subject)
+                                                ? 'border-primary bg-primary/5 text-primary font-bold shadow-sm'
+                                                : 'border-border hover:border-primary/30 hover:bg-accent/50'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span>{subject}</span>
+                                                {formData.subjects.includes(subject) ? (
+                                                    <CheckCircle className="w-5 h-5 text-primary" />
+                                                ) : (
+                                                    <div className="w-5 h-5 rounded-full border border-border group-hover:border-primary/30" />
+                                                )}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label className="text-base font-semibold">Grade Levels</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {GRADE_LEVELS.map(grade => (
+                                        <button
+                                            key={grade}
+                                            onClick={() => handleGradeLevelToggle(grade)}
+                                            className={`p-3 rounded-xl border-2 transition-all text-center ${
+                                                formData.gradeLevels.includes(grade)
+                                                ? 'border-primary bg-primary/5 text-primary font-bold shadow-sm'
+                                                : 'border-border hover:border-primary/30 hover:bg-accent/50'
+                                            }`}
+                                        >
+                                            {grade}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+
+                    {/* Step 3: School & Class Size */}
+                    {step === 3 && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="text-center space-y-2">
+                                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                    <School className="w-8 h-8 text-primary" />
+                                </div>
+                                <h2 className="text-3xl font-headline font-bold text-foreground">About your institution</h2>
+                                <p className="text-muted-foreground text-lg text-balance">Help us understand your teaching environment.</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label htmlFor="school" className="text-base font-semibold">School / Institution Name</Label>
+                                <div className="relative">
+                                    <School className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                    <Input
+                                        id="school"
+                                        placeholder="e.g. Springfield High School"
+                                        value={formData.schoolName}
+                                        onChange={e => setFormData({ ...formData, schoolName: e.target.value })}
+                                        className="pl-10 h-12"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label className="text-base font-semibold">Total Students</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {CLASS_SIZES.map(size => (
+                                        <button
+                                            key={size}
+                                            onClick={() => setFormData({ ...formData, expectedClassSize: size })}
+                                            className={`p-4 rounded-xl border-2 transition-all flex items-center justify-center gap-3 ${
+                                                formData.expectedClassSize === size
+                                                ? 'border-primary bg-primary/5 text-primary font-bold shadow-sm'
+                                                : 'border-border hover:border-primary/30 hover:bg-accent/50'
+                                            }`}
+                                        >
+                                            <Users className={`h-5 w-5 ${formData.expectedClassSize === size ? 'text-primary' : 'text-muted-foreground'}`} />
+                                            <span>{size}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
 
                 {/* Navigation Buttons */}
-                <div className="flex justify-between mt-10 pt-6 border-t border-slate-100">
+                <CardFooter className="flex justify-between border-t p-8 bg-muted/10">
                     <Button
                         variant="ghost"
                         onClick={() => setStep(step - 1)}
                         disabled={step === 1 || loading}
-                        className="text-slate-500 hover:text-slate-900"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back
@@ -286,7 +292,7 @@ export default function TeacherOnboardingPage() {
                         <Button
                             onClick={() => setStep(step + 1)}
                             disabled={!canProceed() || loading}
-                            className="bg-primary hover:bg-primary/90 min-w-[120px]"
+                            className="min-w-[120px]"
                         >
                             Next
                             <ArrowRight className="w-4 h-4 ml-2" />
@@ -295,7 +301,7 @@ export default function TeacherOnboardingPage() {
                         <Button
                             onClick={handleSubmit}
                             disabled={!canProceed() || loading}
-                            className="bg-primary hover:bg-primary/90 min-w-[140px]"
+                            className="min-w-[140px]"
                         >
                             {loading ? (
                                 <>
@@ -310,8 +316,8 @@ export default function TeacherOnboardingPage() {
                             )}
                         </Button>
                     )}
-                </div>
-            </div>
+                </CardFooter>
+            </Card>
         </div>
     );
 }

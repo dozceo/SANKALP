@@ -1,7 +1,10 @@
 
 "use server";
 
+export const runtime = 'nodejs';
+
 import { getMotivationalCounseling } from "@/ai/flows/mindful-mentor";
+import { getMentorFallback } from "@/lib/chat-fallback";
 
 export async function getMotivationalAdvice(studentConcern: string) {
     try {
@@ -9,9 +12,25 @@ export async function getMotivationalAdvice(studentConcern: string) {
             studentConcern,
             studentHistory: "The student has been feeling overwhelmed with their chemistry coursework and has an upcoming exam."
         });
-        return response.advice;
+
+        if (!response || !response.advice) {
+            throw new Error("Empty advice returned from AI");
+        }
+
+        return {
+            content: response.advice,
+            source: 'ai'
+        };
     } catch(e) {
-        console.error(e);
-        return "I'm sorry, I'm having a little trouble right now. Could you please try again in a moment?"
+        console.error('[MENTOR_ERROR] Flow execution failed:', {
+            error: e instanceof Error ? e.message : 'Unknown error',
+            stack: e instanceof Error ? e.stack : undefined,
+            studentConcern
+        });
+        // Serve an empathetic randomized fallback
+        return {
+            content: getMentorFallback(),
+            source: 'fallback'
+        };
     }
 }

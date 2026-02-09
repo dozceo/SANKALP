@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { docsTree, studentsData, flatDocs } from '@/data/studentsDataStatic';
 import { generateEnhancedGraphData } from '@/lib/generateEnhancedGraph';
+import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, DocNode, StudentNode, GraphData } from '@/data/docsData';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X } from 'lucide-react';
 
@@ -23,6 +24,19 @@ interface InteractiveGraphProps {
 type ExtendedNodeObject = NodeObject & GraphNode;
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
+// Optimization: Move constant outside component to prevent re-creation
+const NODE_TYPE_COLORS: Record<string, string> = {
+  student: '#9333EA',    // Purple
+  subject: '#3B82F6',    // Blue
+  chapter: '#06B6D4',    // Cyan
+  topic: '#6B7280',      // Gray
+  weakness: '#EF4444',   // Red
+  strength: '#10B981',   // Green
+  skill: '#F59E0B',      // Amber
+};
+
+const DEFAULT_NODE_COLOR = '#6d28d9';
+
 export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: externalGraphData }: InteractiveGraphProps) {
   const graphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
   const modalGraphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
@@ -36,22 +50,21 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
   const fullGraphData = useMemo(() => generateEnhancedGraphData(studentsData), []);
 
-  // Optimization: Pre-calculate adjacency map for O(1) lookups
-  // This avoids O(N) searching for connections on every interaction
+  // Optimization: Pre-calculate adjacency map for O(1) connection lookups
   const adjacencyMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
+    fullGraphData.links.forEach(l => {
+      // Handle both string and object cases (force-graph mutates links)
+      const source = l.source as unknown;
+      const target = l.target as unknown;
+      const sourceId = typeof source === 'object' && source && 'id' in source ? (source as { id: string }).id : String(source);
+      const targetId = typeof target === 'object' && target && 'id' in target ? (target as { id: string }).id : String(target);
 
-    // Use fullGraphData.links as the source of truth for connections
-    fullGraphData.links.forEach(link => {
-      const s = typeof link.source === 'object' ? (link.source as any).id : link.source;
-      const t = typeof link.target === 'object' ? (link.target as any).id : link.target;
+      if (!map.has(sourceId)) map.set(sourceId, new Set());
+      if (!map.has(targetId)) map.set(targetId, new Set());
 
-      if (s && t) {
-        if (!map.has(s)) map.set(s, new Set());
-        if (!map.has(t)) map.set(t, new Set());
-        map.get(s)!.add(t);
-        map.get(t)!.add(s);
-      }
+      map.get(sourceId)!.add(targetId);
+      map.get(targetId)!.add(sourceId);
     });
     return map;
   }, [fullGraphData]);
@@ -60,34 +73,14 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   const localGraphData = useMemo(() => {
     if (!highlightedNode || isGlobalView) return fullGraphData;
 
-    // Find all connected node IDs
+    // Find all connected node IDs using optimized adjacency map
     const connected = new Set<string>([highlightedNode]);
 
-    // Add immediate neighbors using the optimized adjacency map (O(1))
+    // Add direct connections (O(1) lookup vs previous O(N) traversal)
     const neighbors = adjacencyMap.get(highlightedNode);
     if (neighbors) {
-      neighbors.forEach(n => connected.add(n));
+      neighbors.forEach(id => connected.add(id));
     }
-
-    // Still need to find parent/children relationships if they aren't explicit in links
-    // But generateEnhancedGraphData creates links for parent-child, so adjacencyMap is sufficient
-    // We keep a small fallback for safety if specific hierarchical navigation is needed
-    // that isn't in links (though it should be).
-
-    // Add parent nodes (hierarchy fallback)
-    function findParent(nodes: DocNode[], targetId: string, parentId?: string): string | undefined {
-      for (const node of nodes) {
-        if (node.id === targetId) return parentId;
-        if (node.children) {
-          const found = findParent(node.children, targetId, node.id);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    }
-
-    const parentId = findParent(docsTree, highlightedNode);
-    if (parentId) connected.add(parentId);
 
     setConnectedNodes(connected);
 
@@ -157,36 +150,6 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     }
   };
 
-  const nodeColor = useCallback((node: ExtendedNodeObject) => {
-    // Use custom color if specified
-    if (node.color) {
-      return node.color;
-    }
-
-    // Highlighted node
-    if (node.id === highlightedNode) {
-      return '#a78bfa'; // Active node - lighter purple
-    }
-
-    // Hovered node
-    if (node.id === hoveredNode) {
-      return '#c4b5fd'; // Hovered node - even lighter
-    }
-
-    // Default colors by node type
-    const typeColors: Record<string, string> = {
-      student: '#9333EA',    // Purple
-      subject: '#3B82F6',    // Blue
-      chapter: '#06B6D4',    // Cyan
-      topic: '#6B7280',      // Gray
-      weakness: '#EF4444',   // Red
-      strength: '#10B981',   // Green
-      skill: '#F59E0B',      // Amber
-    };
-
-    return typeColors[node.type] || '#6d28d9'; // Fallback
-  }, [highlightedNode, hoveredNode]);
-
   const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.name;
     const baseSize = node.val || 8;
@@ -195,6 +158,23 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     const nodeSize = (isHighlighted || isHovered ? baseSize * 1.3 : baseSize) / globalScale;
 
     if (node.x === undefined || node.y === undefined) return;
+
+    // Optimization: Efficient color determination
+    let baseColor: string;
+    let lightColor: string;
+
+    if (isHighlighted) {
+      baseColor = '#a78bfa';
+      lightColor = '#c4b5fd';
+    } else if (isHovered) {
+      baseColor = '#c4b5fd';
+      lightColor = '#e9d5ff';
+    } else {
+      // Use pre-calculated or type-based colors
+      baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
+      // Use pre-calculated light color if available, otherwise calculate once (memoized)
+      lightColor = node.lightColor || lightenColor(baseColor, 20);
+    }
 
     // Glow effect for highlighted/hovered nodes
     if (isHighlighted || isHovered) {
@@ -215,9 +195,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
       node.x, node.y, nodeSize
     );
-    const baseColor = nodeColor(node);
-    // Use memoized color function to prevent expensive recalculation on every frame
-    nodeGradient.addColorStop(0, memoizedLightenColor(baseColor, 20));
+
+    nodeGradient.addColorStop(0, lightColor);
     nodeGradient.addColorStop(1, baseColor);
 
     ctx.beginPath();
@@ -247,7 +226,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fillStyle = isHighlighted ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#a1a1aa';
       ctx.fillText(label, node.x, node.y + nodeSize + 3);
     }
-  }, [highlightedNode, hoveredNode, nodeColor]);
+  }, [highlightedNode, hoveredNode]);
 
   const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const start = link.source;
@@ -469,24 +448,4 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       )}
     </>
   );
-}
-
-// Memoized helper function to lighten a hex color
-// Caches results to avoid expensive parsing and bitwise operations on every frame
-const colorCache = new Map<string, string>();
-
-function memoizedLightenColor(hex: string, percent: number): string {
-  const key = `${hex}-${percent}`;
-  if (colorCache.has(key)) return colorCache.get(key)!;
-
-  const num = parseInt(hex.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = Math.min(255, (num >> 16) + amt);
-  const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
-  const B = Math.min(255, (num & 0x0000ff) + amt);
-
-  const result = `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
-  colorCache.set(key, result);
-
-  return result;
 }

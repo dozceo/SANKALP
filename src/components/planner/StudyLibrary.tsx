@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useStudent } from "@/contexts/StudentContext";
+import { useStudent } from "@/hooks/useStudent";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

@@ -4,6 +4,7 @@ import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { generatePersonalGraph } from '@/lib/generatePersonalGraph';
+import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, StudentNode } from '@/data/docsData';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
@@ -85,15 +86,28 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
         if (node.x === undefined || node.y === undefined) return;
 
+        // Optimization: Use pre-calculated colors
+        let baseColor: string;
+        let lightColor: string;
+
+        if (isHovered) {
+            baseColor = '#c4b5fd';
+            lightColor = '#e9d5ff';
+        } else {
+            baseColor = node.color || '#6d28d9';
+            // Use pre-calculated light color if available, otherwise calculate once
+            lightColor = node.lightColor || lightenColor(baseColor, 20);
+        }
+
         // Glow effect for center/hovered nodes
         if (isCenter || isHovered) {
             const gradient = ctx.createRadialGradient(
                 node.x, node.y, 0,
                 node.x, node.y, nodeSize * 3
             );
-            const glowColor = node.color || '#9333EA';
-            gradient.addColorStop(0, `${glowColor}66`);
-            gradient.addColorStop(1, `${glowColor}00`);
+            // Use baseColor for glow, but transparent
+            gradient.addColorStop(0, `${baseColor}66`); // Hex opacity
+            gradient.addColorStop(1, `${baseColor}00`);
             ctx.beginPath();
             ctx.arc(node.x, node.y, nodeSize * 3, 0, 2 * Math.PI);
             ctx.fillStyle = gradient;
@@ -105,8 +119,8 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
             node.x, node.y, nodeSize
         );
-        const baseColor = nodeColor(node);
-        nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
+
+        nodeGradient.addColorStop(0, lightColor);
         nodeGradient.addColorStop(1, baseColor);
 
         ctx.beginPath();
@@ -136,7 +150,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             ctx.fillStyle = isCenter ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#d1d5db';
             ctx.fillText(label, node.x, node.y + nodeSize + 3);
         }
-    }, [student.id, hoveredNode, nodeColor]);
+    }, [student.id, hoveredNode]); // Removed nodeColor dependency
 
     const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
         const start = link.source;
@@ -189,31 +203,35 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
                 <button
                     onClick={() => handleZoom(1.5)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
                     title="Zoom in"
+                    aria-label="Zoom in"
                 >
-                    <ZoomIn className="w-4 h-4" />
+                    <ZoomIn className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <button
                     onClick={() => handleZoom(0.67)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
                     title="Zoom out"
+                    aria-label="Zoom out"
                 >
-                    <ZoomOut className="w-4 h-4" />
+                    <ZoomOut className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <button
                     onClick={handleReset}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
                     title="Reset view"
+                    aria-label="Reset view"
                 >
-                    <RotateCcw className="w-4 h-4" />
+                    <RotateCcw className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
                     title={isExpanded ? 'Collapse' : 'Expand'}
+                    aria-label={isExpanded ? 'Collapse graph' : 'Expand graph'}
                 >
-                    {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                    {isExpanded ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
                 </button>
             </div>
 
@@ -249,14 +267,4 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             />
         </div>
     );
-}
-
-// Helper function to lighten a hex color
-function lightenColor(hex: string, percent: number): string {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.min(255, (num >> 16) + amt);
-    const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
-    const B = Math.min(255, (num & 0x0000ff) + amt);
-    return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
 }

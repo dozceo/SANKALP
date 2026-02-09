@@ -40,6 +40,15 @@ export interface StudyMaterial {
     priority: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
+export interface Badge {
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    earnedAt: string;
+    color?: string;
+}
+
 // Type definitions
 export interface StudentNode {
     id: string;
@@ -55,6 +64,12 @@ export interface StudentNode {
     connections?: string[];
     lastActive?: string;
     masteryScores?: Record<string, number>;
+    badges?: Badge[];
+    streak?: number;
+    classId?: string;
+    className?: string;
+    classSubject?: string;
+    teacherName?: string;
 
     // New hierarchical study data
     subjects?: Subject[];
@@ -85,6 +100,7 @@ export interface GraphNode {
     parent?: string;        // For hierarchical relationships
     mastery?: number;       // For topics
     color?: string;         // Override default color
+    lightColor?: string;    // Pre-calculated light color for rendering
 }
 
 export interface GraphLink {

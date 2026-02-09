@@ -6,7 +6,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateFriendlyErrorMessage } from '@/app/actions/ai-error';
 
@@ -56,7 +58,7 @@ export default function OnboardingPage() {
 
     if (authLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-background">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         );
@@ -120,155 +122,174 @@ export default function OnboardingPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-6">
-            <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8">
-                {/* Progress Bar */}
-                <div className="mb-8">
-                    <div className="flex justify-between mb-2">
-                        {[1, 2, 3, 4].map(i => (
-                            <div
-                                key={i}
-                                className={`w-1/4 h-2 rounded-full mx-1 transition-all ${i <= step ? 'bg-primary' : 'bg-gray-200'
+        <div className="w-full max-w-2xl mx-auto">
+            <Card className="shadow-xl border-border/60 overflow-hidden">
+                <CardHeader className="bg-muted/30 pb-8">
+                    {/* Progress Bar */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between gap-2">
+                            {[1, 2, 3, 4].map(i => (
+                                <div
+                                    key={i}
+                                    className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                                        i <= step ? 'bg-primary' : 'bg-primary/20'
                                     }`}
-                            />
-                        ))}
-                    </div>
-                    <p className="text-sm text-muted-foreground text-center">
-                        Step {step} of 4
-                    </p>
-                </div>
-
-                {/* Step 1: Personal Info */}
-                {step === 1 && (
-                    <div className="space-y-6">
-                        <div>
-                            <h1 className="text-3xl font-bold mb-2 text-foreground">Welcome to Sankalp! 👋</h1>
-                            <p className="text-foreground/80">Let's set up your personalized learning journey</p>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Your Name</label>
-                            <Input
-                                placeholder="Enter your full name"
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Grade/Class</label>
-                            <div className="grid grid-cols-3 gap-3">
-                                {GRADES.map(grade => (
-                                    <button
-                                        key={grade}
-                                        onClick={() => setFormData({ ...formData, grade })}
-                                        className={`p-3 rounded-lg border-2 transition-all ${formData.grade === grade
-                                            ? 'border-primary bg-primary/10 font-semibold'
-                                            : 'border-gray-200 hover:border-gray-300'
-                                            }`}
-                                    >
-                                        {grade}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 2: Subjects */}
-                {step === 2 && (
-                    <div className="space-y-6">
-                        <div>
-                            <h2 className="text-2xl font-bold mb-2 text-foreground">What subjects are you studying?</h2>
-                            <p className="text-foreground/80">Select all that apply</p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            {SUBJECTS.map(subject => (
-                                <button
-                                    key={subject}
-                                    onClick={() => handleSubjectToggle(subject)}
-                                    className={`p-4 rounded-lg border-2 transition-all text-left ${formData.subjects.includes(subject)
-                                        ? 'border-primary bg-primary/10 font-semibold'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span>{subject}</span>
-                                        {formData.subjects.includes(subject) && (
-                                            <CheckCircle className="w-5 h-5 text-primary" />
-                                        )}
-                                    </div>
-                                </button>
+                                />
                             ))}
                         </div>
+                        <div className="flex justify-between items-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <span>Progress</span>
+                            <span>Step {step} of 4</span>
+                        </div>
                     </div>
-                )}
+                </CardHeader>
 
-                {/* Step 3: Goals & Study Time */}
-                {step === 3 && (
-                    <div className="space-y-6">
-                        <div>
-                            <h2 className="text-2xl font-bold mb-2 text-foreground">Tell us about your goals</h2>
-                            <p className="text-foreground/80">What do you want to achieve this year?</p>
-                        </div>
+                <CardContent className="pt-8">
+                    {/* Step 1: Personal Info */}
+                    {step === 1 && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="space-y-2">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2">
+                                    <Sparkles className="w-3 h-3" />
+                                    Welcome to Sankalp
+                                </div>
+                                <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">Let's get started 👋</h1>
+                                <p className="text-muted-foreground text-lg">Tell us a bit about yourself to personalize your experience.</p>
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Learning Goals</label>
-                            <Textarea
-                                placeholder="e.g., Score 95% in board exams, Master calculus, Improve problem-solving..."
-                                value={formData.goals}
-                                onChange={e => setFormData({ ...formData, goals: e.target.value })}
-                                rows={4}
-                            />
-                        </div>
+                            <div className="space-y-4">
+                                <Label htmlFor="name" className="text-base font-semibold">Your Full Name</Label>
+                                <Input
+                                    id="name"
+                                    placeholder="e.g. Alex Johnson"
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    className="h-12 text-lg"
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Daily Study Time</label>
-                            <div className="grid grid-cols-2 gap-3">
-                                {STUDY_TIMES.map(time => (
-                                    <button
-                                        key={time}
-                                        onClick={() => setFormData({ ...formData, dailyStudyTime: time })}
-                                        className={`p-3 rounded-lg border-2 transition-all ${formData.dailyStudyTime === time
-                                            ? 'border-primary bg-primary/10 font-semibold'
-                                            : 'border-gray-200 hover:border-gray-300'
+                            <div className="space-y-4">
+                                <Label className="text-base font-semibold">Grade / Level</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {GRADES.map(grade => (
+                                        <button
+                                            key={grade}
+                                            onClick={() => setFormData({ ...formData, grade })}
+                                            className={`p-4 rounded-xl border-2 transition-all text-center ${
+                                                formData.grade === grade
+                                                ? 'border-primary bg-primary/5 text-primary font-bold shadow-sm'
+                                                : 'border-border hover:border-primary/30 hover:bg-accent/50'
                                             }`}
+                                        >
+                                            {grade}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 2: Subjects */}
+                    {step === 2 && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="space-y-2">
+                                <h2 className="text-3xl font-headline font-bold text-foreground">What subjects are you studying?</h2>
+                                <p className="text-muted-foreground text-lg">Select the ones you want to focus on this year.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {SUBJECTS.map(subject => (
+                                    <button
+                                        key={subject}
+                                        onClick={() => handleSubjectToggle(subject)}
+                                        className={`p-4 rounded-xl border-2 transition-all text-left group ${
+                                            formData.subjects.includes(subject)
+                                            ? 'border-primary bg-primary/5 text-primary font-bold'
+                                            : 'border-border hover:border-primary/30 hover:bg-accent/50'
+                                        }`}
                                     >
-                                        {time}
+                                        <div className="flex items-center justify-between">
+                                            <span>{subject}</span>
+                                            {formData.subjects.includes(subject) ? (
+                                                <CheckCircle className="w-5 h-5 text-primary" />
+                                            ) : (
+                                                <div className="w-5 h-5 rounded-full border border-border group-hover:border-primary/30" />
+                                            )}
+                                        </div>
                                     </button>
                                 ))}
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Step 4: Class Code */}
-                {step === 4 && (
-                    <div className="space-y-6">
-                        <div>
-                            <h2 className="text-2xl font-bold mb-2 text-foreground">Join Your Class (Optional)</h2>
-                            <p className="text-foreground/80">
-                                If your teacher gave you a class code, enter it below
-                            </p>
+                    {/* Step 3: Goals & Study Time */}
+                    {step === 3 && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="space-y-2">
+                                <h2 className="text-3xl font-headline font-bold text-foreground">Tell us about your goals</h2>
+                                <p className="text-muted-foreground text-lg">What do you want to achieve with Sankalp?</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label htmlFor="goals" className="text-base font-semibold">Your Learning Goals</Label>
+                                <Textarea
+                                    id="goals"
+                                    placeholder="e.g., Score 95% in board exams, Master calculus, Improve problem-solving..."
+                                    value={formData.goals}
+                                    onChange={e => setFormData({ ...formData, goals: e.target.value })}
+                                    className="min-h-[120px] text-lg resize-none"
+                                />
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label className="text-base font-semibold">Daily Study Commitment</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {STUDY_TIMES.map(time => (
+                                        <button
+                                            key={time}
+                                            onClick={() => setFormData({ ...formData, dailyStudyTime: time })}
+                                            className={`p-4 rounded-xl border-2 transition-all text-center ${
+                                                formData.dailyStudyTime === time
+                                                ? 'border-primary bg-primary/5 text-primary font-bold'
+                                                : 'border-border hover:border-primary/30 hover:bg-accent/50'
+                                            }`}
+                                        >
+                                            {time}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
+                    )}
 
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Class Code</label>
-                            <Input
-                                placeholder="e.g., MATH2024-A"
-                                value={formData.classCode}
-                                onChange={e => setFormData({ ...formData, classCode: e.target.value.toUpperCase() })}
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                                You can skip this and add it later from settings
-                            </p>
+                    {/* Step 4: Class Code */}
+                    {step === 4 && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="space-y-2">
+                                <h2 className="text-3xl font-headline font-bold text-foreground">Join Your Class</h2>
+                                <p className="text-muted-foreground text-lg">
+                                    If your teacher provided a code, enter it here to sync with your class.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label htmlFor="classCode" className="text-base font-semibold">Class Code (Optional)</Label>
+                                <Input
+                                    id="classCode"
+                                    placeholder="e.g., MATH2024-A"
+                                    value={formData.classCode}
+                                    onChange={e => setFormData({ ...formData, classCode: e.target.value.toUpperCase() })}
+                                    className="h-14 text-2xl text-center font-mono tracking-widest uppercase"
+                                />
+                                <p className="text-sm text-center text-muted-foreground">
+                                    You can skip this and add it later from your settings.
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </CardContent>
 
-                {/* Navigation Buttons */}
-                <div className="flex justify-between mt-8 pt-6 border-t">
+                <CardFooter className="flex justify-between border-t p-8 bg-muted/10">
                     <Button
                         variant="outline"
                         onClick={() => setStep(step - 1)}
@@ -304,8 +325,8 @@ export default function OnboardingPage() {
                             )}
                         </Button>
                     )}
-                </div>
-            </div>
+                </CardFooter>
+            </Card>
         </div>
     );
 }
