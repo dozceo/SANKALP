@@ -1,6 +1,8 @@
 
 "use server";
 
+export const runtime = 'nodejs';
+
 import { explainConcept } from "@/ai/flows/multilingual-cognitive-chatbot";
 import { textToSpeech } from "@/ai/flows/text-to-speech";
 import { speechToSpeech } from "@/ai/flows/speech-to-speech";
@@ -23,8 +25,8 @@ export async function getExplanation(concept: string, language: string) {
             source: 'ai'
         };
     } catch(e) {
-        console.error('CHATBOT_FLOW_FAILED', {
-            message: e instanceof Error ? e.message : 'Unknown error',
+        console.error('[CHATBOT_ERROR] Flow execution failed:', {
+            error: e instanceof Error ? e.message : 'Unknown error',
             stack: e instanceof Error ? e.stack : undefined,
             concept,
             language

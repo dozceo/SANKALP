@@ -26,14 +26,12 @@ interface LearningStateCardProps {
 export function LearningStateCard({ intelligence }: LearningStateCardProps) {
     const overallMastery = useMemo(() => {
         const values = Object.values(intelligence.mastery);
-        const count = values.length;
-        if (count === 0) return 0;
-
+        if (values.length === 0) return 0;
         let sum = 0;
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < values.length; i++) {
             sum += values[i].score;
         }
-        return sum / count;
+        return sum / values.length;
     }, [intelligence.mastery]);
 
     return (

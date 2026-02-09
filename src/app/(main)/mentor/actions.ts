@@ -1,6 +1,8 @@
 
 "use server";
 
+export const runtime = 'nodejs';
+
 import { getMotivationalCounseling } from "@/ai/flows/mindful-mentor";
 import { getMentorFallback } from "@/lib/chat-fallback";
 
@@ -20,8 +22,8 @@ export async function getMotivationalAdvice(studentConcern: string) {
             source: 'ai'
         };
     } catch(e) {
-        console.error('MENTOR_FLOW_FAILED', {
-            message: e instanceof Error ? e.message : 'Unknown error',
+        console.error('[MENTOR_ERROR] Flow execution failed:', {
+            error: e instanceof Error ? e.message : 'Unknown error',
             stack: e instanceof Error ? e.stack : undefined,
             studentConcern
         });

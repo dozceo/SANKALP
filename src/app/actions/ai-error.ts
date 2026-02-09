@@ -2,7 +2,17 @@
 
 import { ai } from '@/ai/genkit';
 
+// Simple in-memory cache to prevent redundant AI calls for identical errors
+const errorCache = new Map<string, string>();
+const CACHE_LIMIT = 100;
+
 export async function generateFriendlyErrorMessage(errorMessage: string, context: string) {
+  const cacheKey = `${context}:${errorMessage}`;
+
+  if (errorCache.has(cacheKey)) {
+    return errorCache.get(cacheKey)!;
+  }
+
   try {
     const prompt = `
     You are a helpful AI assistant for a student learning platform called Sankalp.
@@ -15,6 +25,16 @@ export async function generateFriendlyErrorMessage(errorMessage: string, context
     `;
 
     const response = await ai.generate(prompt);
+
+    // Manage cache size (LRU-like eviction)
+    if (errorCache.size >= CACHE_LIMIT) {
+      const firstKey = errorCache.keys().next().value;
+      if (firstKey !== undefined) {
+        errorCache.delete(firstKey);
+      }
+    }
+
+    errorCache.set(cacheKey, response.text);
     return response.text;
   } catch (genError) {
     console.error('Failed to generate AI error message:', genError);

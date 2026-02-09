@@ -7,9 +7,13 @@ import type { StudentIntelligence, MasterySignal } from '@/types/intelligence';
  */
 export function generateStudentIntelligence(student: StudentNode): StudentIntelligence {
     const mastery: Record<string, MasterySignal> = {};
+    let totalScore = 0;
+    let topicCount = 0;
+    let highPriorityCount = 0;
 
     // Convert mastery scores to intelligence signals
     if (student.masteryScores) {
+        // Optimization: Single pass loop for aggregations
         Object.entries(student.masteryScores).forEach(([topic, score]) => {
             // Simulate days since revision (random for demo, should come from quiz history)
             const daysSinceRevision = Math.floor(Math.random() * 14);
@@ -37,24 +41,18 @@ export function generateStudentIntelligence(student: StudentNode): StudentIntell
                 priority: priority,
                 needsRevision: score < 0.7 || daysSinceRevision > 7,
             };
+
+            // Aggregate metrics in the same loop
+            totalScore += score;
+            topicCount++;
+            if (priority === 'HIGH') {
+                highPriorityCount++;
+            }
         });
     }
 
-    // Calculate average mastery and priority counts in one pass
-    let totalScore = 0;
-    let highPriorityCount = 0;
-    const masteryValues = Object.values(mastery);
-    const count = masteryValues.length;
-
-    if (count > 0) {
-        for (let i = 0; i < count; i++) {
-            const m = masteryValues[i];
-            totalScore += m.score;
-            if (m.priority === 'HIGH') highPriorityCount++;
-        }
-    }
-
-    const avgMastery = count > 0 ? totalScore / count : 0.5;
+    // Calculate average mastery
+    const avgMastery = topicCount > 0 ? totalScore / topicCount : 0.5;
 
     // Determine revision urgency
     let revisionUrgency: 'URGENT' | 'SCHEDULED' | 'NONE' = 'NONE';
