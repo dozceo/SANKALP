@@ -1,0 +1,30 @@
+
+> sankalp-hackathon@0.1.0 dev
+> next dev --turbopack -p 9002
+
+[@sentry/nextjs] WARNING: You are using the Sentry SDK with `next dev --turbo`. The Sentry SDK doesn't yet fully support Turbopack. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds without `--turbo` will still fully work. If you are just trying out Sentry or attempting to configure the SDK, we recommend temporarily removing the `--turbo` flag while you are developing locally. Follow this issue for progress on Sentry + Turbopack: https://github.com/getsentry/sentry-javascript/issues/8105. (You can suppress this warning by setting SENTRY_SUPPRESS_TURBOPACK_WARNING=1 as environment variable)
+[@sentry/nextjs] WARNING: You are using the Sentry SDK with `next dev --turbo`. The Sentry SDK doesn't yet fully support Turbopack. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds without `--turbo` will still fully work. If you are just trying out Sentry or attempting to configure the SDK, we recommend temporarily removing the `--turbo` flag while you are developing locally. Follow this issue for progress on Sentry + Turbopack: https://github.com/getsentry/sentry-javascript/issues/8105. (You can suppress this warning by setting SENTRY_SUPPRESS_TURBOPACK_WARNING=1 as environment variable)
+   ▲ Next.js 15.5.7 (Turbopack)
+   - Local:        http://localhost:9002
+   - Network:      http://192.168.0.2:9002
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · clientTraceMetadata
+
+ ✓ Starting...
+ ○ Compiling instrumentation Node.js ...
+ ✓ Compiled instrumentation Node.js in 2.7s
+ ○ Compiling instrumentation Edge ...
+ ✓ Compiled instrumentation Edge in 717ms
+ ✓ Ready in 5.9s
+ ⚠ Webpack is configured while Turbopack is not, which may cause problems.
+ ⚠ See instructions if you need to configure Turbopack:
+  https://nextjs.org/docs/app/api-reference/next-config-js/turbopack
+
+ ○ Compiling /verify-ux ...
+ ✓ Compiled /verify-ux in 8.6s
+⚠️ Firebase skipped (server-side rendering)
+ GET /verify-ux 200 in 9887ms
+ ✓ Compiled instrumentation Node.js in 4ms
+ ✓ Compiled instrumentation Edge in 2ms
+[?25h

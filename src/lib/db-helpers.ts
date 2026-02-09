@@ -74,6 +74,7 @@ export interface QuizResult {
     score: number; // 0.0 to 1.0
     timeSpent: number; // seconds
     questionsAttempted: number;
+    questionsCount?: number; // Total questions in quiz
     timestamp: Date;
 }
 

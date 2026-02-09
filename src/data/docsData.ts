@@ -100,6 +100,7 @@ export interface GraphNode {
     parent?: string;        // For hierarchical relationships
     mastery?: number;       // For topics
     color?: string;         // Override default color
+    lightColor?: string;    // Pre-calculated light color for rendering
 }
 
 export interface GraphLink {
