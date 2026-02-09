@@ -68,6 +68,7 @@ export interface StudentNode {
     streak?: number;
     classId?: string;
     className?: string;
+    classSubject?: string;
     teacherName?: string;
 
     // New hierarchical study data
@@ -99,6 +100,7 @@ export interface GraphNode {
     parent?: string;        // For hierarchical relationships
     mastery?: number;       // For topics
     color?: string;         // Override default color
+    lightColor?: string;    // Pre-calculated light color for rendering
 }
 
 export interface GraphLink {

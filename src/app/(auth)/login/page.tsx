@@ -108,11 +108,15 @@ export default function SignInPage() {
   };
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="text-center">
-        <BrainCircuit className="mx-auto h-10 w-10 text-primary" />
-        <CardTitle className="text-2xl font-headline mt-2">Welcome Back</CardTitle>
-        <CardDescription>Enter your credentials to access your account.</CardDescription>
+    <Card className="w-full max-w-sm shadow-md border-border/60">
+      <CardHeader className="text-center space-y-1">
+        <div className="flex justify-center mb-2">
+          <div className="p-3 rounded-full bg-primary/10">
+            <BrainCircuit className="h-10 w-10 text-primary" />
+          </div>
+        </div>
+        <CardTitle className="text-3xl font-headline tracking-tight">Welcome Back</CardTitle>
+        <CardDescription className="text-base">Enter your credentials to access your account.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -182,12 +186,12 @@ export default function SignInPage() {
             Sign In
           </Button>
 
-          <div className="relative">
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
 

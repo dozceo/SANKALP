@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function SyllabusPage() {
   const [query, setQuery] = useState("");
   const [syllabus, setSyllabus] = useState<SyllabusOutput | null>(null);
+  const [source, setSource] = useState<'ai' | 'fallback' | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,14 +62,17 @@ export default function SyllabusPage() {
     setLoading(true);
     setError(null);
     setSyllabus(null);
+    setSource(null);
     try {
       const result = await getSyllabus(query);
       if (result) {
-        setSyllabus(result);
+        setSyllabus(result.data);
+        setSource(result.source);
       } else {
         setError("Could not retrieve the syllabus. Please try a different query.");
       }
     } catch (e) {
+      console.error("[SyllabusUI] Search failed:", e);
       setError("An unexpected error occurred. Please try again later.");
     }
     setLoading(false);
@@ -137,10 +141,10 @@ export default function SyllabusPage() {
 
           {syllabus && (
             <Card className="mt-6">
-              {syllabus.isFallback && (
+              {source === 'fallback' && (
                 <div className="bg-amber-50 text-amber-700 px-4 py-2 text-xs border-b border-amber-100 flex items-center gap-2">
-                  <Loader2 className="h-3 w-3" />
-                  AI is currently offline. Serving a standard syllabus outline for {query}.
+                  <AlertTriangle className="h-3 w-3" />
+                  Note: Using standard syllabus template. AI generation is currently unavailable.
                 </div>
               )}
               <CardHeader>

@@ -23,44 +23,45 @@ export type Trend = "IMPROVING" | "STABLE" | "DECLINING";
  * @returns "IMPROVING" | "STABLE" | "DECLINING"
  */
 export function calculateTrend(results: TrendInput[], skipSort: boolean = false): Trend {
-    if (results.length < 2) return "STABLE";
+    const count = results.length;
+    if (count < 2) return "STABLE";
 
-    // Sort by timestamp descending (newest first)
+    // Sort by timestamp descending (newest first) only if needed
     const sorted = skipSort ? results : [...results].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-    const count = sorted.length;
-    let recentAvg: number;
-    let previousAvg: number;
+    let recentSum = 0;
+    let previousSum = 0;
+    let recentCount = 0;
+    let previousCount = 0;
 
     if (count >= 4) {
-        // Split into two halves
+        // Split into two halves: Recent (first half) vs Previous (second half)
+        // mid is the start index of the second half
         const mid = Math.floor(count / 2);
-        const compareCount = mid;
 
-        // Optimization: Use loops instead of slice/reduce to avoid array allocation
-        let recentSum = 0;
-        for (let i = 0; i < compareCount; i++) {
-            recentSum += sorted[i].score;
+        // Single pass loop for O(N) efficiency
+        for (let i = 0; i < count; i++) {
+            if (i < mid) {
+                recentSum += sorted[i].score;
+                recentCount++;
+            } else {
+                previousSum += sorted[i].score;
+                previousCount++;
+            }
         }
-        recentAvg = recentSum / compareCount;
-
-        let previousSum = 0;
-        for (let i = compareCount; i < compareCount * 2; i++) {
-            previousSum += sorted[i].score;
-        }
-        previousAvg = previousSum / compareCount;
     } else {
-        // 2 or 3 items
-        // Compare most recent (1) vs average of the rest (1 or 2)
-        recentAvg = sorted[0].score;
+        // 2 or 3 items: Compare most recent (1) vs average of the rest
+        recentSum = sorted[0].score;
+        recentCount = 1;
 
-        let othersSum = 0;
         for (let i = 1; i < count; i++) {
-            othersSum += sorted[i].score;
+            previousSum += sorted[i].score;
+            previousCount++;
         }
-        previousAvg = othersSum / (count - 1);
     }
 
+    const recentAvg = recentSum / recentCount;
+    const previousAvg = previousSum / previousCount;
     const diff = recentAvg - previousAvg;
     const THRESHOLD = 0.1; // 10% change is significant
 

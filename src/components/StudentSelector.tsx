@@ -1,6 +1,6 @@
 "use client";
 
-import { useStudent } from '@/contexts/StudentContext';
+import { useStudent } from '@/hooks/useStudent';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Skeleton } from "@/components/ui/skeleton";
