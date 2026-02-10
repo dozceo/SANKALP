@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
+import { useCallback, useRef, useEffect, useState, useMemo, type MutableRefObject } from 'react';
 import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { docsTree, studentsData, flatDocs } from '@/data/studentsDataStatic';
@@ -139,7 +139,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     }
   }, [highlightedNode]);
 
-  const handleNodeClick = useCallback((node: ExtendedNodeObject, ref: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
+  const handleNodeClick = useCallback((node: ExtendedNodeObject, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
     if (onNodeClick && typeof node.id === 'string') {
       onNodeClick(node.id);
     }
@@ -150,13 +150,13 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     }
   }, [onNodeClick]);
 
-  const handleZoom = (factor: number, ref: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
+  const handleZoom = (factor: number, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
     if (ref.current) {
       ref.current.zoom(ref.current.zoom() * factor, 300);
     }
   };
 
-  const handleReset = (ref: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
+  const handleReset = (ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
     if (ref.current) {
       ref.current.centerAt(0, 0, 500);
       ref.current.zoom(1, 500);
@@ -408,5 +408,98 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
         </div>
       )}
     </>
+  );
+}
+
+function GraphControls({
+  graphRefProp,
+  isGlobalView,
+  setIsGlobalView,
+  isExpanded,
+  setIsExpanded,
+  isModalOpen,
+  setIsModalOpen,
+  onZoom,
+  onReset,
+  showToggle = false
+}: {
+  graphRefProp: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>;
+  isGlobalView: boolean;
+  setIsGlobalView: (v: boolean) => void;
+  isExpanded: boolean;
+  setIsExpanded: (v: boolean) => void;
+  isModalOpen: boolean;
+  setIsModalOpen: (v: boolean) => void;
+  onZoom: (factor: number, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
+  onReset: (ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
+  showToggle?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-2 p-2 bg-card/80 backdrop-blur-sm rounded-lg border border-border shadow-sm absolute top-4 right-4 z-10">
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={() => onZoom(1.2, graphRefProp)}
+          className="p-1.5 hover:bg-secondary rounded-md transition-colors"
+          title="Zoom In"
+        >
+          <ZoomIn className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+        </button>
+        <button
+          onClick={() => onZoom(0.8, graphRefProp)}
+          className="p-1.5 hover:bg-secondary rounded-md transition-colors"
+          title="Zoom Out"
+        >
+          <ZoomOut className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+        </button>
+        <button
+          onClick={() => onReset(graphRefProp)}
+          className="p-1.5 hover:bg-secondary rounded-md transition-colors"
+          title="Reset View"
+        >
+          <RotateCcw className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+        </button>
+      </div>
+
+      <div className="h-px bg-border my-1" />
+
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={() => setIsGlobalView(!isGlobalView)}
+          className={`p-1.5 rounded-md transition-colors ${isGlobalView ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+          title={isGlobalView ? "Switch to Local View" : "Switch to Global View"}
+        >
+          {isGlobalView ? <Globe className="w-4 h-4" /> : <Target className="w-4 h-4" />}
+        </button>
+
+        {!isModalOpen && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`p-1.5 rounded-md transition-colors ${isExpanded ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+            title={isExpanded ? "Collapse" : "Expand"}
+          >
+            {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        )}
+
+        {!isModalOpen && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className={`p-1.5 rounded-md transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground`}
+              title="Fullscreen"
+            >
+                <Maximize2 className="w-4 h-4" />
+            </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GraphTitle({ title, nodeCount }: { title: string; nodeCount: number }) {
+  return (
+    <div className="absolute top-4 left-4 z-10 bg-card/80 backdrop-blur-sm p-3 rounded-lg border border-border shadow-sm pointer-events-none">
+      <h3 className="text-sm font-semibold mb-1 text-foreground">{title}</h3>
+      <p className="text-xs text-muted-foreground">{nodeCount} nodes</p>
+    </div>
   );
 }
