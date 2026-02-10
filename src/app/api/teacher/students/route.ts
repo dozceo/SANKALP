@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTeacherStudents, getTeacherClasses, getStudent, getBatchedQuizResults } from '@/lib/db-helpers';
-import { calculateStudentRisk } from '@/lib/generateStudentIntelligence';
+import { getTeacherStudents, getTeacherClasses, getBatchedQuizResults } from '@/lib/db-helpers';
 
 export async function GET(req: NextRequest) {
     try {
@@ -14,17 +13,19 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // Optimization: Fetch classes and students in parallel
-        const [classes, students] = await Promise.all([
-            getTeacherClasses(teacherId),
-            getTeacherStudents(teacherId, {
-                select: ['userId', 'name', 'email', 'className', 'grade', 'lastLoginDate']
-            })
-        ]);
+        // Optimization: Fetch classes and students in parallel, and start quiz results fetch as soon as students are known
+        const classesPromise = getTeacherClasses(teacherId);
+        const students = await getTeacherStudents(teacherId, {
+            select: ['userId', 'name', 'email', 'className', 'grade', 'lastLoginDate']
+        });
 
         // Batch fetch quiz results for all students (optimization)
         const studentIds = students.map(s => s.id);
-        const quizResultsMap = await getBatchedQuizResults(studentIds, 20);
+        const quizResultsPromise = getBatchedQuizResults(studentIds, 20, {
+            select: ['studentId', 'score', 'topic', 'timestamp']
+        });
+
+        const [classes, quizResultsMap] = await Promise.all([classesPromise, quizResultsPromise]);
 
         // Enrich student data with quiz results and risk assessment
         const enrichedStudents = students.map((student) => {

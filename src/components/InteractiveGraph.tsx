@@ -45,6 +45,18 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  // Optimization: Use refs for frequent updates to avoid re-creating canvas functions
+  const hoveredNodeRef = useRef<string | null>(null);
+  const highlightedNodeRef = useRef<string | undefined>(highlightedNode);
+
+  useEffect(() => {
+    hoveredNodeRef.current = hoveredNode;
+  }, [hoveredNode]);
+
+  useEffect(() => {
+    highlightedNodeRef.current = highlightedNode;
+  }, [highlightedNode]);
+
   const [isGlobalView, setIsGlobalView] = useState(false);
   const [connectedNodes, setConnectedNodes] = useState<Set<string>>(new Set());
 
@@ -150,24 +162,26 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     }
   }, [onNodeClick]);
 
-  const handleZoom = (factor: number, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
+  // Memoize handlers to prevent re-creation
+  const handleZoom = useCallback((factor: number, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
     if (ref.current) {
       ref.current.zoom(ref.current.zoom() * factor, 300);
     }
-  };
+  }, []);
 
-  const handleReset = (ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
+  const handleReset = useCallback((ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
     if (ref.current) {
       ref.current.centerAt(0, 0, 500);
       ref.current.zoom(1, 500);
     }
-  };
+  }, []);
 
   const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.name;
     const baseSize = node.val || 8;
-    const isHighlighted = node.id === highlightedNode;
-    const isHovered = node.id === hoveredNode;
+    // Use refs for stable access to changing state
+    const isHighlighted = node.id === highlightedNodeRef.current;
+    const isHovered = node.id === hoveredNodeRef.current;
     const nodeSize = (isHighlighted || isHovered ? baseSize * 1.3 : baseSize) / globalScale;
 
     if (node.x === undefined || node.y === undefined) return;
@@ -239,7 +253,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fillStyle = isHighlighted ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#a1a1aa';
       ctx.fillText(label, node.x, node.y + nodeSize + 3);
     }
-  }, [highlightedNode, hoveredNode]);
+  }, []); // Dependencies removed to keep function stable
 
   const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const start = link.source;
@@ -247,9 +261,10 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
     if (!start || !end || start.x === undefined || start.y === undefined || end.x === undefined || end.y === undefined) return;
 
+    // Use refs
     const isConnectedToHighlighted =
-      (start.id === highlightedNode || end.id === highlightedNode) ||
-      (start.id === hoveredNode || end.id === hoveredNode);
+      (start.id === highlightedNodeRef.current || end.id === highlightedNodeRef.current) ||
+      (start.id === hoveredNodeRef.current || end.id === hoveredNodeRef.current);
 
     // Calculate curved path
     const dx = end.x - start.x;
@@ -288,7 +303,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fillStyle = 'rgba(196, 181, 253, 0.8)';
       ctx.fill();
     }
-  }, [highlightedNode, hoveredNode]);
+  }, []); // Dependencies removed
 
   const handleNodeHover = useCallback((node: ExtendedNodeObject | null) => {
     if (node && typeof node.id === 'string') {

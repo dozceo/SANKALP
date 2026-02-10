@@ -31,6 +31,11 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
     const [dimensions, setDimensions] = useState({ width: 800, height });
     const [isExpanded, setIsExpanded] = useState(false);
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+    const hoveredNodeRef = useRef<string | null>(null);
+
+    useEffect(() => {
+        hoveredNodeRef.current = hoveredNode;
+    }, [hoveredNode]);
 
     // Generate graph data for this student
     const graphData = useMemo(() => generatePersonalGraph(student), [student]);
@@ -52,18 +57,18 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         return () => window.removeEventListener('resize', updateDimensions);
     }, [isExpanded, height]);
 
-    const handleZoom = (factor: number) => {
+    const handleZoom = useCallback((factor: number) => {
         if (graphRef.current) {
             graphRef.current.zoom(graphRef.current.zoom() * factor, 300);
         }
-    };
+    }, []);
 
-    const handleReset = () => {
+    const handleReset = useCallback(() => {
         if (graphRef.current) {
             graphRef.current.centerAt(0, 0, 500);
             graphRef.current.zoom(1, 500);
         }
-    };
+    }, []);
 
     const nodeColor = useCallback((node: ExtendedNodeObject) => {
         // Use custom color if specified
@@ -72,19 +77,19 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         }
 
         // Hovered node
-        if (node.id === hoveredNode) {
+        if (node.id === hoveredNodeRef.current) {
             return '#c4b5fd';
         }
 
         // Fallback
         return '#6d28d9';
-    }, [hoveredNode]);
+    }, []);
 
     const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
         const label = node.name;
         const baseSize = node.val || 8;
         const isCenter = node.id === student.id;
-        const isHovered = node.id === hoveredNode;
+        const isHovered = node.id === hoveredNodeRef.current;
         const nodeSize = (isCenter || isHovered ? baseSize * 1.3 : baseSize) / globalScale;
 
         if (node.x === undefined || node.y === undefined) return;
@@ -153,7 +158,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             ctx.fillStyle = isCenter ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#d1d5db';
             ctx.fillText(label, node.x, node.y + nodeSize + 3);
         }
-    }, [student.id, hoveredNode]); // Removed nodeColor dependency
+    }, [student.id]); // Removed hoveredNode dependency
 
     const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
         const start = link.source;
