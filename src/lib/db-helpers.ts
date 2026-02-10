@@ -386,15 +386,21 @@ export async function updateLastLogin(studentId: string): Promise<void> {
  */
 export async function getQuizResults(
     studentId: string,
-    limit: number = 100
+    limit: number = 100,
+    options?: { select?: string[] }
 ): Promise<QuizResult[]> {
     try {
-        const snapshot = await db
+        let query = db
             .collection('quizResults')
             .where('studentId', '==', studentId)
             .orderBy('timestamp', 'desc')
-            .limit(limit)
-            .get();
+            .limit(limit);
+
+        if (options?.select && options.select.length > 0) {
+            query = query.select(...options.select);
+        }
+
+        const snapshot = await query.get();
 
         return snapshot.docs.map((doc) => {
             const data = doc.data();
@@ -421,7 +427,8 @@ export async function getQuizResults(
  */
 export async function getBatchedQuizResults(
     studentIds: string[],
-    limitPerStudent?: number
+    limitPerStudent?: number,
+    options?: { select?: string[] }
 ): Promise<Map<string, QuizResult[]>> {
     if (!studentIds.length) {
         return new Map();
@@ -439,12 +446,17 @@ export async function getBatchedQuizResults(
 
         // Process chunks in parallel
         await Promise.all(chunks.map(async (chunk) => {
-            const snapshot = await db
+            let query = db
                 .collection('quizResults')
-                .where('studentId', 'in', chunk)
-                // We fetch all and sort in memory to be safe and avoid composite index requirements
-                // and to correctly apply per-student limits
-                .get();
+                .where('studentId', 'in', chunk);
+
+            if (options?.select && options.select.length > 0) {
+                query = query.select(...options.select);
+            }
+
+            // We fetch all and sort in memory to be safe and avoid composite index requirements
+            // and to correctly apply per-student limits
+            const snapshot = await query.get();
 
             snapshot.docs.forEach(doc => {
                 const data = doc.data();

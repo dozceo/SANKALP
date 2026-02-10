@@ -1,14 +1,17 @@
 import { getStudent, getQuizResults } from './db-helpers';
 
 export async function getStudentAnalytics(studentId: string) {
-    // Get student details
-    const student = await getStudent(studentId);
+    // Get student details and quiz results in parallel
+    const [student, quizResults] = await Promise.all([
+        getStudent(studentId),
+        getQuizResults(studentId, 50, {
+            select: ['topic', 'score', 'timestamp', 'questionsCount']
+        })
+    ]);
+
     if (!student) {
         return null;
     }
-
-    // Get quiz results (last 50)
-    const quizResults = await getQuizResults(studentId, 50);
 
     // Calculate metrics and topic stats in a single pass
     let totalScoreSum = 0;
