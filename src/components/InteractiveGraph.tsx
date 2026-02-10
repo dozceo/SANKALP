@@ -439,24 +439,27 @@ function GraphControls({
       <div className="flex flex-col gap-1">
         <button
           onClick={() => onZoom(1.2, graphRefProp)}
-          className="p-1.5 hover:bg-secondary rounded-md transition-colors"
+          className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
           title="Zoom In"
+          aria-label="Zoom In"
         >
-          <ZoomIn className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+          <ZoomIn className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
         </button>
         <button
           onClick={() => onZoom(0.8, graphRefProp)}
-          className="p-1.5 hover:bg-secondary rounded-md transition-colors"
+          className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
           title="Zoom Out"
+          aria-label="Zoom Out"
         >
-          <ZoomOut className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+          <ZoomOut className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
         </button>
         <button
           onClick={() => onReset(graphRefProp)}
-          className="p-1.5 hover:bg-secondary rounded-md transition-colors"
+          className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
           title="Reset View"
+          aria-label="Reset View"
         >
-          <RotateCcw className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+          <RotateCcw className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
         </button>
       </div>
 
@@ -465,29 +468,32 @@ function GraphControls({
       <div className="flex flex-col gap-1">
         <button
           onClick={() => setIsGlobalView(!isGlobalView)}
-          className={`p-1.5 rounded-md transition-colors ${isGlobalView ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+          className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isGlobalView ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
           title={isGlobalView ? "Switch to Local View" : "Switch to Global View"}
+          aria-label={isGlobalView ? "Switch to Local View" : "Switch to Global View"}
         >
-          {isGlobalView ? <Globe className="w-4 h-4" /> : <Target className="w-4 h-4" />}
+          {isGlobalView ? <Globe className="w-4 h-4" aria-hidden="true" /> : <Target className="w-4 h-4" aria-hidden="true" />}
         </button>
 
         {!isModalOpen && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className={`p-1.5 rounded-md transition-colors ${isExpanded ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+            className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isExpanded ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
             title={isExpanded ? "Collapse" : "Expand"}
+            aria-label={isExpanded ? "Collapse graph" : "Expand graph"}
           >
-            {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isExpanded ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
           </button>
         )}
 
         {!isModalOpen && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className={`p-1.5 rounded-md transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground`}
+              className={`p-1.5 rounded-md transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background`}
               title="Fullscreen"
+              aria-label="Enter fullscreen mode"
             >
-                <Maximize2 className="w-4 h-4" />
+                <Maximize2 className="w-4 h-4" aria-hidden="true" />
             </button>
         )}
       </div>
