@@ -30,12 +30,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 800, height });
     const [isExpanded, setIsExpanded] = useState(false);
-    const [hoveredNode, setHoveredNode] = useState<string | null>(null);
     const hoveredNodeRef = useRef<string | null>(null);
-
-    useEffect(() => {
-        hoveredNodeRef.current = hoveredNode;
-    }, [hoveredNode]);
 
     // Generate graph data for this student
     const graphData = useMemo(() => generatePersonalGraph(student), [student]);
@@ -197,10 +192,10 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
     const handleNodeHover = useCallback((node: ExtendedNodeObject | null) => {
         if (node && typeof node.id === 'string') {
-            setHoveredNode(node.id);
+            hoveredNodeRef.current = node.id;
             document.body.style.cursor = 'pointer';
         } else {
-            setHoveredNode(null);
+            hoveredNodeRef.current = null;
             document.body.style.cursor = 'default';
         }
     }, []);
