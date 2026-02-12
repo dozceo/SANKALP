@@ -212,20 +212,21 @@ export function generateGraphData(students: StudentNode[]): GraphData {
         });
     });
 
+    // Track existing links to prevent duplicates (O(1) lookup)
+    const linkKeys = new Set<string>();
+
     // Create links between students (peer connections)
     students.forEach(student => {
         student.connections?.forEach(connectionId => {
-            // Avoid duplicate links
-            const existingLink = links.find(
-                l =>
-                    (l.source === student.id && l.target === connectionId) ||
-                    (l.source === connectionId && l.target === student.id)
-            );
+            const s = student.id;
+            const t = connectionId;
+            const key = s < t ? `${s}-${t}` : `${t}-${s}`;
 
-            if (!existingLink) {
+            if (!linkKeys.has(key)) {
+                linkKeys.add(key);
                 links.push({
-                    source: student.id,
-                    target: connectionId,
+                    source: s,
+                    target: t,
                     type: 'peer',
                 });
             }
