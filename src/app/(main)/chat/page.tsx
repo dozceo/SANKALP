@@ -136,14 +136,17 @@ export default function ChatPage() {
                                             <Button
                                             size="icon"
                                             variant="ghost"
-                                            className="absolute -bottom-4 -right-4 h-8 w-8 rounded-full bg-background opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute -bottom-4 -right-4 h-8 w-8 rounded-full bg-background opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                                             onClick={() => handlePlayAudio(message)}
                                             disabled={audioLoading === message.id}
+                                            title={audioPlaying === message.id ? "Stop reading" : "Read aloud"}
                                             >
                                                 {audioLoading === message.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 
                                                  audioPlaying === message.id ? <CircleStop className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />
                                                 }
-                                                <span className="sr-only">Play audio</span>
+                                                <span className="sr-only">
+                                                    {audioPlaying === message.id ? "Stop reading" : "Read aloud"}
+                                                </span>
                                             </Button>
                                         )}
                                     </div>
@@ -174,8 +177,14 @@ export default function ChatPage() {
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Ask a question..."
                             disabled={isLoading}
+                            aria-label="Chat message"
                         />
-                        <Button type="submit" disabled={isLoading || !input.trim()}>
+                        <Button
+                            type="submit"
+                            disabled={isLoading || !input.trim()}
+                            aria-label="Send message"
+                            title="Send message"
+                        >
                             <Send className="h-4 w-4" />
                         </Button>
                     </form>
