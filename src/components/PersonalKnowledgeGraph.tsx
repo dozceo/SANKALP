@@ -98,8 +98,15 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             lightColor = '#e9d5ff';
         } else {
             baseColor = node.color || '#6d28d9';
-            // Use pre-calculated light color if available, otherwise calculate once
-            lightColor = node.lightColor || lightenColor(baseColor, 20);
+            // Use pre-calculated light color if available, otherwise calculate once and cache
+            if (node.lightColor) {
+                lightColor = node.lightColor;
+            } else {
+                if (!node._cachedLightColor) {
+                    node._cachedLightColor = lightenColor(baseColor, 20);
+                }
+                lightColor = node._cachedLightColor;
+            }
         }
 
         // Glow effect for center/hovered nodes

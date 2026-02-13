@@ -31,20 +31,20 @@ export async function GET(req: NextRequest) {
         const enrichedStudents = students.map((student) => {
             const quizResults = quizResultsMap.get(student.id) || [];
 
-            // Calculate basic metrics
-            const avgScore = quizResults.length > 0
-                ? quizResults.reduce((sum, r) => sum + r.score, 0) / quizResults.length
-                : 0;
-
+            // Calculate basic metrics and topic stats in a single pass
+            let totalScore = 0;
             const topicStats: Record<string, { sum: number; count: number }> = {};
 
             for (const r of quizResults) {
+                totalScore += r.score;
                 if (!topicStats[r.topic]) {
                     topicStats[r.topic] = { sum: 0, count: 0 };
                 }
                 topicStats[r.topic].sum += r.score;
                 topicStats[r.topic].count += 1;
             }
+
+            const avgScore = quizResults.length > 0 ? totalScore / quizResults.length : 0;
 
             const topicMastery: Record<string, number> = {};
             for (const topic in topicStats) {

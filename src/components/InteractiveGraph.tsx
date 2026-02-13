@@ -22,7 +22,7 @@ interface InteractiveGraphProps {
   graphData?: GraphData;
 }
 
-type ExtendedNodeObject = NodeObject & GraphNode & { __lightColor?: string };
+type ExtendedNodeObject = NodeObject & GraphNode & { _cachedLightColor?: string };
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
 // Optimization: Move constant outside component to prevent re-creation
@@ -197,8 +197,15 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     } else {
       // Use pre-calculated or type-based colors
       baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
-      // Use pre-calculated light color if available, otherwise calculate once (memoized)
-      lightColor = node.lightColor || lightenColor(baseColor, 20);
+      // Use pre-calculated light color if available, otherwise calculate once (memoized) and cache
+      if (node.lightColor) {
+        lightColor = node.lightColor;
+      } else {
+        if (!node._cachedLightColor) {
+          node._cachedLightColor = lightenColor(baseColor, 20);
+        }
+        lightColor = node._cachedLightColor;
+      }
     }
 
     // Glow effect for highlighted/hovered nodes
