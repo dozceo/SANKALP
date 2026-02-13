@@ -448,7 +448,8 @@ export async function getBatchedQuizResults(
         await Promise.all(chunks.map(async (chunk) => {
             let query = db
                 .collection('quizResults')
-                .where('studentId', 'in', chunk);
+                .where('studentId', 'in', chunk)
+                .orderBy('timestamp', 'desc');
 
             if (options?.select && options.select.length > 0) {
                 query = query.select(...options.select);
@@ -478,8 +479,7 @@ export async function getBatchedQuizResults(
 
         // Sort and slice per student
         resultsMap.forEach((results, studentId) => {
-            // Sort by timestamp desc
-            results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+            // Results are already sorted by timestamp due to orderBy in query and sequential processing
 
             // Apply limit if requested
             if (limitPerStudent && results.length > limitPerStudent) {
