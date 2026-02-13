@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useEffect, useState, useMemo, type MutableRefObject } from 'react';
+import { useCallback, useRef, useEffect, useState, useMemo, memo, type MutableRefObject } from 'react';
 import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { docsTree, studentsData, flatDocs } from '@/data/studentsDataStatic';
@@ -426,7 +426,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   );
 }
 
-function GraphControls({
+const GraphControls = memo(function GraphControls({
   graphRefProp,
   isGlobalView,
   setIsGlobalView,
@@ -514,7 +514,7 @@ function GraphControls({
       </div>
     </div>
   );
-}
+});
 
 function GraphTitle({ title, nodeCount }: { title: string; nodeCount: number }) {
   return (

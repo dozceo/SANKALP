@@ -8,6 +8,9 @@
 import { db } from './firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
+// Optimization: Shared comparator to avoid function re-creation during batch processing
+const sortByTimestampDesc = (a: { timestamp: Date }, b: { timestamp: Date }) => b.timestamp.getTime() - a.timestamp.getTime();
+
 // ============================================
 // Type Definitions
 // ============================================
@@ -479,7 +482,7 @@ export async function getBatchedQuizResults(
         // Sort and slice per student
         resultsMap.forEach((results, studentId) => {
             // Sort by timestamp desc
-            results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+            results.sort(sortByTimestampDesc);
 
             // Apply limit if requested
             if (limitPerStudent && results.length > limitPerStudent) {

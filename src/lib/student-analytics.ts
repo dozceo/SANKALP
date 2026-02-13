@@ -1,4 +1,5 @@
 import { getStudent, getQuizResults } from './db-helpers';
+import { calculateTrendFromScores } from '@/lib/trend-utils';
 
 export async function getStudentAnalytics(studentId: string) {
     // Get student details and quiz results in parallel
@@ -41,30 +42,13 @@ export async function getStudentAnalytics(studentId: string) {
         const avg = stats.sum / stats.count;
         const scores = stats.scores;
 
-        // Calculate trend (compare first half vs second half)
+        // Calculate trend using optimized utility
+        // Using 0.05 threshold to match previous sensitivity
+        const trendResult = calculateTrendFromScores(scores, 0.05);
         let trend: 'up' | 'down' | 'stable' = 'stable';
-        const len = scores.length;
 
-        if (len >= 4) {
-            const mid = Math.floor(len / 2);
-            let firstHalfSum = 0;
-            let secondHalfSum = 0;
-
-            // Single pass loop to avoid slice and reduce allocation
-            for (let i = 0; i < len; i++) {
-                if (i < mid) {
-                    firstHalfSum += scores[i];
-                } else {
-                    secondHalfSum += scores[i];
-                }
-            }
-
-            const firstHalfAvg = firstHalfSum / mid;
-            const secondHalfAvg = secondHalfSum / (len - mid);
-
-            if (secondHalfAvg > firstHalfAvg + 0.05) trend = 'up';
-            else if (secondHalfAvg < firstHalfAvg - 0.05) trend = 'down';
-        }
+        if (trendResult === 'IMPROVING') trend = 'up';
+        else if (trendResult === 'DECLINING') trend = 'down';
 
         const avgPercent = Math.round(avg * 100);
 

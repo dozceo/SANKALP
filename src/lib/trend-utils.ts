@@ -9,6 +9,9 @@ export interface TrendInput {
 
 export type Trend = "IMPROVING" | "STABLE" | "DECLINING";
 
+// Optimization: Shared comparator to avoid function re-creation
+const sortByDateDesc = (a: TrendInput, b: TrendInput) => b.timestamp.getTime() - a.timestamp.getTime();
+
 /**
  * Calculates the performance trend based on historical quiz results.
  *
@@ -20,14 +23,15 @@ export type Trend = "IMPROVING" | "STABLE" | "DECLINING";
  *
  * @param results List of quiz results containing score and timestamp
  * @param skipSort If true, assumes results are already sorted by timestamp descending
+ * @param threshold The difference threshold to determine trend (default 0.1)
  * @returns "IMPROVING" | "STABLE" | "DECLINING"
  */
-export function calculateTrend(results: TrendInput[], skipSort: boolean = false): Trend {
+export function calculateTrend(results: TrendInput[], skipSort: boolean = false, threshold: number = 0.1): Trend {
     const count = results.length;
     if (count < 2) return "STABLE";
 
     // Sort by timestamp descending (newest first) only if needed
-    const sorted = skipSort ? results : [...results].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    const sorted = skipSort ? results : [...results].sort(sortByDateDesc);
 
     let recentSum = 0;
     let previousSum = 0;
@@ -63,9 +67,54 @@ export function calculateTrend(results: TrendInput[], skipSort: boolean = false)
     const recentAvg = recentSum / recentCount;
     const previousAvg = previousSum / previousCount;
     const diff = recentAvg - previousAvg;
-    const THRESHOLD = 0.1; // 10% change is significant
 
-    if (diff > THRESHOLD) return "IMPROVING";
-    if (diff < -THRESHOLD) return "DECLINING";
+    if (diff > threshold) return "IMPROVING";
+    if (diff < -threshold) return "DECLINING";
+    return "STABLE";
+}
+
+/**
+ * Calculates trend from raw scores array (assumed sorted descending/newest first).
+ * Optimized for cases where scores are already extracted and sorted.
+ *
+ * @param scores Array of scores (0.0 to 1.0), newest first
+ * @param threshold The difference threshold to determine trend (default 0.1)
+ * @returns "IMPROVING" | "STABLE" | "DECLINING"
+ */
+export function calculateTrendFromScores(scores: number[], threshold: number = 0.1): Trend {
+    const count = scores.length;
+    if (count < 2) return "STABLE";
+
+    let recentSum = 0;
+    let previousSum = 0;
+    let recentCount = 0;
+    let previousCount = 0;
+
+    if (count >= 4) {
+        const mid = Math.floor(count / 2);
+        for (let i = 0; i < count; i++) {
+            if (i < mid) {
+                recentSum += scores[i];
+                recentCount++;
+            } else {
+                previousSum += scores[i];
+                previousCount++;
+            }
+        }
+    } else {
+        recentSum = scores[0];
+        recentCount = 1;
+        for (let i = 1; i < count; i++) {
+            previousSum += scores[i];
+            previousCount++;
+        }
+    }
+
+    const recentAvg = recentSum / recentCount;
+    const previousAvg = previousSum / previousCount;
+    const diff = recentAvg - previousAvg;
+
+    if (diff > threshold) return "IMPROVING";
+    if (diff < -threshold) return "DECLINING";
     return "STABLE";
 }
