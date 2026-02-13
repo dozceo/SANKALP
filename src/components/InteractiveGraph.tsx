@@ -7,7 +7,13 @@ import { docsTree, studentsData, flatDocs } from '@/data/studentsDataStatic';
 import { generateEnhancedGraphData } from '@/lib/generateEnhancedGraph';
 import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, DocNode, StudentNode, GraphData } from '@/data/docsData';
-import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X } from 'lucide-react';
+import { Maximize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Dynamically import ForceGraph2D with SSR disabled
 const ForceGraph2D = dynamic(
@@ -451,67 +457,95 @@ function GraphControls({
 }) {
   return (
     <div className="flex flex-col gap-2 p-2 bg-card/80 backdrop-blur-sm rounded-lg border border-border shadow-sm absolute top-4 right-4 z-10">
-      <div className="flex flex-col gap-1">
-        <button
-          onClick={() => onZoom(1.2, graphRefProp)}
-          className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-          title="Zoom In"
-          aria-label="Zoom In"
-        >
-          <ZoomIn className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
-        </button>
-        <button
-          onClick={() => onZoom(0.8, graphRefProp)}
-          className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-          title="Zoom Out"
-          aria-label="Zoom Out"
-        >
-          <ZoomOut className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
-        </button>
-        <button
-          onClick={() => onReset(graphRefProp)}
-          className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-          title="Reset View"
-          aria-label="Reset View"
-        >
-          <RotateCcw className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
-        </button>
-      </div>
+      <TooltipProvider>
+        <div className="flex flex-col gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onZoom(1.2, graphRefProp)}
+                className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                aria-label="Zoom In"
+              >
+                <ZoomIn className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Zoom In</TooltipContent>
+          </Tooltip>
 
-      <div className="h-px bg-border my-1" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onZoom(0.8, graphRefProp)}
+                className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                aria-label="Zoom Out"
+              >
+                <ZoomOut className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Zoom Out</TooltipContent>
+          </Tooltip>
 
-      <div className="flex flex-col gap-1">
-        <button
-          onClick={() => setIsGlobalView(!isGlobalView)}
-          className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isGlobalView ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
-          title={isGlobalView ? "Switch to Local View" : "Switch to Global View"}
-          aria-label={isGlobalView ? "Switch to Local View" : "Switch to Global View"}
-        >
-          {isGlobalView ? <Globe className="w-4 h-4" aria-hidden="true" /> : <Target className="w-4 h-4" aria-hidden="true" />}
-        </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onReset(graphRefProp)}
+                className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                aria-label="Reset View"
+              >
+                <RotateCcw className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Reset View</TooltipContent>
+          </Tooltip>
+        </div>
 
-        {!isModalOpen && (
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isExpanded ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
-            title={isExpanded ? "Collapse" : "Expand"}
-            aria-label={isExpanded ? "Collapse graph" : "Expand graph"}
-          >
-            {isExpanded ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
-          </button>
-        )}
+        <div className="h-px bg-border my-1" />
 
-        {!isModalOpen && (
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className={`p-1.5 rounded-md transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background`}
-              title="Fullscreen"
-              aria-label="Enter fullscreen mode"
-            >
-                <Maximize2 className="w-4 h-4" aria-hidden="true" />
-            </button>
-        )}
-      </div>
+        <div className="flex flex-col gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setIsGlobalView(!isGlobalView)}
+                className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isGlobalView ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+                aria-label={isGlobalView ? "Switch to Local View" : "Switch to Global View"}
+              >
+                {isGlobalView ? <Globe className="w-4 h-4" aria-hidden="true" /> : <Target className="w-4 h-4" aria-hidden="true" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left">{isGlobalView ? "Switch to Local View" : "Switch to Global View"}</TooltipContent>
+          </Tooltip>
+
+          {!isModalOpen && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isExpanded ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+                  aria-label={isExpanded ? "Collapse graph" : "Expand graph"}
+                >
+                  {isExpanded ? <ChevronUp className="w-4 h-4" aria-hidden="true" /> : <ChevronDown className="w-4 h-4" aria-hidden="true" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left">{isExpanded ? "Collapse" : "Expand"}</TooltipContent>
+            </Tooltip>
+          )}
+
+          {!isModalOpen && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className={`p-1.5 rounded-md transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background`}
+                  aria-label="Enter fullscreen mode"
+                >
+                  <Maximize2 className="w-4 h-4" aria-hidden="true" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Fullscreen</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </TooltipProvider>
     </div>
   );
 }

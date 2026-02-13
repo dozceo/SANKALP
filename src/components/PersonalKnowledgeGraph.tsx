@@ -6,7 +6,13 @@ import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-grap
 import { generatePersonalGraph } from '@/lib/generatePersonalGraph';
 import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, StudentNode } from '@/data/docsData';
-import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Dynamically import ForceGraph2D with SSR disabled
 const ForceGraph2D = dynamic(
@@ -209,38 +215,59 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         <div className="relative" ref={containerRef}>
             {/* Controls */}
             <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-                <button
-                    onClick={() => handleZoom(1.5)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-                    title="Zoom in"
-                    aria-label="Zoom in"
-                >
-                    <ZoomIn className="w-4 h-4" aria-hidden="true" />
-                </button>
-                <button
-                    onClick={() => handleZoom(0.67)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-                    title="Zoom out"
-                    aria-label="Zoom out"
-                >
-                    <ZoomOut className="w-4 h-4" aria-hidden="true" />
-                </button>
-                <button
-                    onClick={handleReset}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-                    title="Reset view"
-                    aria-label="Reset view"
-                >
-                    <RotateCcw className="w-4 h-4" aria-hidden="true" />
-                </button>
-                <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-                    title={isExpanded ? 'Collapse' : 'Expand'}
-                    aria-label={isExpanded ? 'Collapse graph' : 'Expand graph'}
-                >
-                    {isExpanded ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
-                </button>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={() => handleZoom(1.5)}
+                                className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                                aria-label="Zoom in"
+                            >
+                                <ZoomIn className="w-4 h-4" aria-hidden="true" />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Zoom in</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={() => handleZoom(0.67)}
+                                className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                                aria-label="Zoom out"
+                            >
+                                <ZoomOut className="w-4 h-4" aria-hidden="true" />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Zoom out</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={handleReset}
+                                className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                                aria-label="Reset view"
+                            >
+                                <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Reset view</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                                aria-label={isExpanded ? 'Collapse graph' : 'Expand graph'}
+                            >
+                                {isExpanded ? <ChevronUp className="w-4 h-4" aria-hidden="true" /> : <ChevronDown className="w-4 h-4" aria-hidden="true" />}
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>{isExpanded ? 'Collapse' : 'Expand'}</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </div>
 
             {/* Title */}
