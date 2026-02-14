@@ -42,8 +42,8 @@ export function LearningStateCard({ intelligence }: LearningStateCardProps) {
                     Learning State
                     <TooltipProvider>
                         <Tooltip>
-                            <TooltipTrigger>
-                                <Info className="h-4 w-4 text-muted-foreground" />
+                            <TooltipTrigger aria-label="More information about learning state">
+                                <Info className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
                                 <p className="text-sm">
