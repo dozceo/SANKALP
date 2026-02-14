@@ -51,12 +51,6 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
     };
 
     students.forEach(student => {
-        // Optimization: Calculate average mastery once
-        const masteryValues = student.masteryScores ? Object.values(student.masteryScores) : [];
-        const avgMastery = masteryValues.length > 0
-            ? masteryValues.reduce((a, b) => a + b, 0) / masteryValues.length
-            : 0.5;
-
         // Create student node
         addNode({
             id: student.id,
