@@ -92,38 +92,3 @@ export function generateStudentIntelligence(student: StudentNode): StudentIntell
     };
 }
 
-/**
- * Calculate student risk level for teacher dashboard
- */
-export function calculateStudentRisk(student: StudentNode): {
-    avgMastery: number;
-    riskLevel: 'Low' | 'Medium' | 'High';
-    topWeaknesses: string[];
-} {
-    const scores = student.masteryScores
-        ? Object.values(student.masteryScores)
-        : [];
-
-    // Optimization: Calculate average in a simple loop to avoid reduce() callback overhead
-    let totalScore = 0;
-    for (let i = 0; i < scores.length; i++) {
-        totalScore += scores[i];
-    }
-
-    const avgMastery = scores.length > 0
-        ? totalScore / scores.length
-        : 0.5;
-
-    let riskLevel: 'Low' | 'Medium' | 'High' = 'Low';
-    if (avgMastery < 0.5) {
-        riskLevel = 'High';
-    } else if (avgMastery < 0.7) {
-        riskLevel = 'Medium';
-    }
-
-    return {
-        avgMastery: Math.round(avgMastery * 100),
-        riskLevel,
-        topWeaknesses: student.weaknesses?.slice(0, 3) || [],
-    };
-}

@@ -6,7 +6,7 @@
  */
 
 import { db } from './firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, WriteBatch } from 'firebase-admin/firestore';
 
 // ============================================
 // Type Definitions
@@ -1039,12 +1039,15 @@ export async function addStudentToClass(studentId: string, classCode: string): P
             throw new Error('Class not found');
         }
 
+        const batch = db.batch();
+
         // Check if student is already in a class and remove them if so
         const student = await getStudent(studentId);
         if (student?.classId) {
             // Only remove if it's a different class
             if (student.classId !== classDoc.id) {
-                await removeStudentFromClass(studentId, student.classId);
+                // Pass the batch so removal is part of the atomic update
+                await removeStudentFromClass(studentId, student.classId, batch);
             } else {
                 // Already in this class, nothing to do
                 return;
@@ -1052,12 +1055,14 @@ export async function addStudentToClass(studentId: string, classCode: string): P
         }
 
         // Add student to new class
-        await db.collection('classes').doc(classDoc.id).update({
+        const classRef = db.collection('classes').doc(classDoc.id);
+        batch.update(classRef, {
             studentIds: FieldValue.arrayUnion(studentId),
         });
 
         // Update student document
-        await db.collection('students').doc(studentId).update({
+        const studentRef = db.collection('students').doc(studentId);
+        batch.update(studentRef, {
             classId: classDoc.id,
             className: classDoc.className,
             classSubject: classDoc.subject,
@@ -1066,6 +1071,9 @@ export async function addStudentToClass(studentId: string, classCode: string): P
             grade: classDoc.grade,
             joinedClassAt: FieldValue.serverTimestamp(),
         });
+
+        // Commit all changes atomically
+        await batch.commit();
     } catch (error) {
         console.error('Error adding student to class:', error);
         throw error;
@@ -1075,15 +1083,23 @@ export async function addStudentToClass(studentId: string, classCode: string): P
 /**
  * Remove student from class
  */
-export async function removeStudentFromClass(studentId: string, classId: string): Promise<void> {
+export async function removeStudentFromClass(
+    studentId: string,
+    classId: string,
+    batch?: WriteBatch
+): Promise<void> {
     try {
+        const writeBatch = batch || db.batch();
+
         // Remove student from class document
-        await db.collection('classes').doc(classId).update({
+        const classRef = db.collection('classes').doc(classId);
+        writeBatch.update(classRef, {
             studentIds: FieldValue.arrayRemove(studentId),
         });
 
         // Clear class info from student document
-        await db.collection('students').doc(studentId).update({
+        const studentRef = db.collection('students').doc(studentId);
+        writeBatch.update(studentRef, {
             classId: FieldValue.delete(),
             className: FieldValue.delete(),
             classSubject: FieldValue.delete(),
@@ -1092,6 +1108,11 @@ export async function removeStudentFromClass(studentId: string, classId: string)
             grade: FieldValue.delete(),
             joinedClassAt: FieldValue.delete(),
         });
+
+        // Only commit if we created the batch
+        if (!batch) {
+            await writeBatch.commit();
+        }
     } catch (error) {
         console.error('Error removing student from class:', error);
         throw error;

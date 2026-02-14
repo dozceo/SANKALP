@@ -39,15 +39,14 @@ export function calculateTrend(results: TrendInput[], skipSort: boolean = false)
         // mid is the start index of the second half
         const mid = Math.floor(count / 2);
 
-        // Single pass loop for O(N) efficiency
-        for (let i = 0; i < count; i++) {
-            if (i < mid) {
-                recentSum += sorted[i].score;
-                recentCount++;
-            } else {
-                previousSum += sorted[i].score;
-                previousCount++;
-            }
+        // Optimization: Split loop to remove conditional check inside iteration
+        for (let i = 0; i < mid; i++) {
+            recentSum += sorted[i].score;
+            recentCount++;
+        }
+        for (let i = mid; i < count; i++) {
+            previousSum += sorted[i].score;
+            previousCount++;
         }
     } else {
         // 2 or 3 items: Compare most recent (1) vs average of the rest

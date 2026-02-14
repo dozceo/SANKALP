@@ -62,9 +62,11 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
   const fullGraphData = useMemo(() => generateEnhancedGraphData(studentsData), []);
 
-  // Optimization: Pre-calculate adjacency map for O(1) connection lookups
-  const adjacencyMap = useMemo(() => {
-    const map = new Map<string, Set<string>>();
+  // Optimization: Pre-calculate adjacency map and link map for O(1) lookups
+  const { adjacencyMap, nodeLinksMap } = useMemo(() => {
+    const adjMap = new Map<string, Set<string>>();
+    const linkMap = new Map<string, ExtendedLinkObject[]>();
+
     fullGraphData.links.forEach(l => {
       // Handle both string and object cases (force-graph mutates links)
       const source = l.source as unknown;
@@ -72,13 +74,19 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       const sourceId = typeof source === 'object' && source && 'id' in source ? (source as { id: string }).id : String(source);
       const targetId = typeof target === 'object' && target && 'id' in target ? (target as { id: string }).id : String(target);
 
-      if (!map.has(sourceId)) map.set(sourceId, new Set());
-      if (!map.has(targetId)) map.set(targetId, new Set());
+      if (!adjMap.has(sourceId)) adjMap.set(sourceId, new Set());
+      if (!adjMap.has(targetId)) adjMap.set(targetId, new Set());
 
-      map.get(sourceId)!.add(targetId);
-      map.get(targetId)!.add(sourceId);
+      adjMap.get(sourceId)!.add(targetId);
+      adjMap.get(targetId)!.add(sourceId);
+
+      // Build link map
+      if (!linkMap.has(sourceId)) linkMap.set(sourceId, []);
+      if (!linkMap.has(targetId)) linkMap.set(targetId, []);
+      linkMap.get(sourceId)!.push(l as ExtendedLinkObject);
+      linkMap.get(targetId)!.push(l as ExtendedLinkObject);
     });
-    return map;
+    return { adjacencyMap: adjMap, nodeLinksMap: linkMap };
   }, [fullGraphData]);
 
   // Optimization: Pre-calculate node map for O(1) lookups
@@ -109,16 +117,31 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       if (node) filteredNodes.push(node);
     });
 
-    const filteredLinks = fullGraphData.links.filter(l => {
-      const source = l.source as unknown;
-      const target = l.target as unknown;
-      const sourceId = source && typeof source === 'object' && 'id' in source ? (source as { id: string }).id : source as string;
-      const targetId = target && typeof target === 'object' && 'id' in target ? (target as { id: string }).id : target as string;
-      return sourceId && targetId && connected.has(sourceId) && connected.has(targetId);
+    // Optimization: Use nodeLinksMap for O(1) lookup instead of O(N) filter
+    const filteredLinks: ExtendedLinkObject[] = [];
+    const processedLinkIds = new Set<ExtendedLinkObject>();
+
+    connected.forEach(id => {
+      const links = nodeLinksMap.get(id);
+      if (links) {
+        links.forEach(l => {
+          if (processedLinkIds.has(l)) return;
+
+          const source = l.source as unknown;
+          const target = l.target as unknown;
+          const sourceId = source && typeof source === 'object' && 'id' in source ? (source as { id: string }).id : source as string;
+          const targetId = target && typeof target === 'object' && 'id' in target ? (target as { id: string }).id : target as string;
+
+          if (sourceId && targetId && connected.has(sourceId) && connected.has(targetId)) {
+            filteredLinks.push(l);
+            processedLinkIds.add(l);
+          }
+        });
+      }
     });
 
     return { nodes: filteredNodes, links: filteredLinks };
-  }, [highlightedNode, isGlobalView, fullGraphData, adjacencyMap, nodeMap]);
+  }, [highlightedNode, isGlobalView, fullGraphData, adjacencyMap, nodeLinksMap, nodeMap]);
 
   // Use external data if provided, otherwise fallback to local/generated data
   const graphData = externalGraphData || (isGlobalView ? fullGraphData : localGraphData);
