@@ -44,3 +44,27 @@ This report identifies significant discrepancies (drift) between the feature ext
    - Update `generate_data.py` to include edge cases: 0 attempts, 0 time spent, and "never revised" scenarios.
    - Retrain the model on this more robust dataset.
    - Implement strict schema validation in the ML Bridge to reject inputs that violate training assumptions.
+
+## Automated Drift Detection
+
+A script `scripts/detect-drift.ts` has been added to programmatically verify these findings.
+
+### Run Instructions:
+```bash
+npx tsx scripts/detect-drift.ts
+```
+
+### Sample Output:
+```
+📊 DRIFT DETECTION REPORT
+===========================
+❌ Found 7 potential drifts:
+
+Scenario 1 (New Student) - [DRIFT] attempts_per_topic: Value 0 is outside training range [1, 10]
+Scenario 1 (New Student) - [DRIFT] days_since_last_revision: Value 999 is outside training range [0, 30]
+Scenario 1 (New Student) - [DRIFT] time_spent_per_question: Value 0 is outside training range [10, 120]
+Scenario 2 (Active Student) - [DRIFT] time_spent_per_question: Value 6 is outside training range [10, 120]
+Scenario 3 (Returning Student) - [DRIFT] days_since_last_revision: Value 60 is outside training range [0, 30]
+Scenario 3 (Returning Student) - [DRIFT] time_spent_per_question: Value 6 is outside training range [10, 120]
+Scenario 4 (Variance Check) - [DRIFT] quiz_score_variance: Value 0.5 suggests Standard Deviation is being returned, but Training Data expects Variance (max 0.3).
+```
