@@ -12,6 +12,18 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import joblib
 import os
+import hashlib
+from datetime import datetime
+import sklearn
+
+def get_file_hash(filepath):
+    """Calculate SHA256 hash of a file"""
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        # Read and update hash string value in blocks of 4K
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
 
 def train_model():
     """Train the Topic Mastery prediction model"""
@@ -22,6 +34,11 @@ def train_model():
         print("❌ Error: training_data.csv not found!")
         print("   Run generate_data.py first to create training data.")
         return
+
+    # Calculate hashes for provenance
+    script_path = __file__
+    script_hash = get_file_hash(script_path)
+    data_hash = get_file_hash(data_path)
     
     print("📊 Loading training data...")
     df = pd.read_csv(data_path)
@@ -82,9 +99,23 @@ def train_model():
     # Save model
     model_path = "../models/mastery_model.pkl"
     os.makedirs("../models", exist_ok=True)
-    joblib.dump(model, model_path)
+
+    # Create artifact with metadata
+    artifact = {
+        "model": model,
+        "metadata": {
+            "script_hash": script_hash,
+            "data_hash": data_hash,
+            "training_timestamp": datetime.now().isoformat(),
+            "sklearn_version": sklearn.__version__
+        }
+    }
+
+    joblib.dump(artifact, model_path)
     
     print(f"\n💾 Model saved to: {model_path}")
+    print(f"   Script Hash: {script_hash[:8]}...")
+    print(f"   Data Hash:   {data_hash[:8]}...")
     print("\n🎉 Training complete!")
     
     return model, accuracy
