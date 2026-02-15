@@ -156,8 +156,11 @@ export function SankalpSwitch() {
                             {isActive ? 'Session in progress' : 'Start a focused study session'}
                         </CardDescription>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    <div
+                        role="status"
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                         }`}>
+                        <span className="sr-only">Session status: </span>
                         {isActive ? 'Active' : 'Inactive'}
                     </div>
                 </div>
@@ -166,12 +169,12 @@ export function SankalpSwitch() {
                 {!isActive ? (
                     <>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Session Duration</label>
+                            <label htmlFor="session-duration" className="text-sm font-medium">Session Duration</label>
                             <Select
                                 value={duration.toString()}
                                 onValueChange={(val) => setDuration(parseInt(val))}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger id="session-duration" aria-label="Select session duration">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -196,7 +199,7 @@ export function SankalpSwitch() {
                     </>
                 ) : (
                     <>
-                        <div className="text-center py-6">
+                        <div className="text-center py-6" role="timer" aria-live="off">
                             <div className="text-5xl font-mono font-bold text-primary">
                                 {formatTime(timeRemaining)}
                             </div>
