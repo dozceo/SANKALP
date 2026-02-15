@@ -179,7 +179,9 @@ Your job is to explain WHY each topic needs revision in a motivating, student-fr
 
 Topics to explain: {{{topicsToExplain}}}
 
-For each topic, provide a clear, encouraging reason (1-2 sentences). Focus on:
+For each topic, provide a clear, encouraging reason (1-2 sentences).
+You MUST use the provided 'reason' field as the basis for your explanation.
+Focus on:
 - Spaced repetition benefits
 - Building confidence through practice
 - Addressing weak areas early
@@ -255,7 +257,7 @@ const smartRevisionPlannerFlow = ai.defineFlow(
       .slice(0, 5) // Limit to top 5
       .map(
         (d) =>
-          `${d.topic} (mastery: ${(d.masteryProbability * 100).toFixed(0)}%, priority: ${d.priority})`
+          `${d.topic} (mastery: ${(d.masteryProbability * 100).toFixed(0)}%, priority: ${d.priority}, reason: "${d.adkDecision?.reasoning || 'Routine check'}")`
       )
       .join(', ');
 
@@ -265,9 +267,12 @@ const smartRevisionPlannerFlow = ai.defineFlow(
     // Combine ML decisions with LLM explanations
     const revisionList = mlDecisions.slice(0, 5).map((decision, idx) => {
       const explanation = output?.explanations?.find((e) => e.topic === decision.topic);
+      // Fallback logic: Use LLM explanation if available, otherwise fallback to ADK reasoning
+      const finalReason = explanation?.reason || decision.adkDecision?.reasoning || 'Recommended for revision based on learning analytics.';
+
       return {
         topic: decision.topic,
-        reason: explanation?.reason || 'Recommended for revision based on learning analytics.',
+        reason: finalReason,
         priority: decision.priority,
         masteryScore: decision.masteryProbability,
       };
