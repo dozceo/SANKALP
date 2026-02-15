@@ -15,7 +15,6 @@ import type { StudentIntelligence } from "@/types/intelligence";
 import {
     Tooltip,
     TooltipContent,
-    TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -40,19 +39,17 @@ export function LearningStateCard({ intelligence }: LearningStateCardProps) {
                 <CardTitle className="flex items-center gap-2">
                     <Brain className="h-5 w-5" />
                     Learning State
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger aria-label="More information about learning state">
-                                <Info className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                                <p className="text-sm">
-                                    Based on your recent quiz performance, revision gaps, and ML predictions.
-                                    Updated: {new Date(intelligence.generatedAt).toLocaleString()}
-                                </p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger aria-label="More information about learning state">
+                            <Info className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                            <p className="text-sm">
+                                Based on your recent quiz performance, revision gaps, and ML predictions.
+                                Updated: {new Date(intelligence.generatedAt).toLocaleString()}
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">

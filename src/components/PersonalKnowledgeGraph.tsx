@@ -124,19 +124,28 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             ctx.fill();
         }
 
-        // Node circle with gradient
-        const nodeGradient = ctx.createRadialGradient(
-            node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
-            node.x, node.y, nodeSize
-        );
+        // Optimization: Skip expensive gradient for small nodes or when zoomed out
+        // Use simple flat color for better performance
+        if (globalScale < 1.5 && !isCenter && !isHovered) {
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+            ctx.fillStyle = baseColor;
+            ctx.fill();
+        } else {
+            // Node circle with gradient
+            const nodeGradient = ctx.createRadialGradient(
+                node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
+                node.x, node.y, nodeSize
+            );
 
-        nodeGradient.addColorStop(0, lightColor);
-        nodeGradient.addColorStop(1, baseColor);
+            nodeGradient.addColorStop(0, lightColor);
+            nodeGradient.addColorStop(1, baseColor);
 
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
-        ctx.fillStyle = nodeGradient;
-        ctx.fill();
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+            ctx.fillStyle = nodeGradient;
+            ctx.fill();
+        }
 
         // Border for center node
         if (isCenter) {
