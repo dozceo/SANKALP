@@ -1,0 +1,134 @@
+[
+  {
+    "flow": "syllabusGeneratorFlow",
+    "timestamp": "2025-05-20T10:00:00Z",
+    "response": {
+      "title": "AP Calculus BC",
+      "structure": "Unit 1: Limits\nUnit 2: Derivatives",
+      "strategy": "Practice daily",
+      "references": [
+        "https://apcentral.collegeboard.org",
+        "https://khanacademy.org"
+      ]
+    },
+    "expectedStatus": "valid"
+  },
+  {
+    "flow": "syllabusGeneratorFlow",
+    "timestamp": "2025-05-20T11:00:00Z",
+    "response": {
+      "title": "Introduction to Psychology",
+      "structure": "Chapter 1...",
+      "strategy": "Read the book",
+      "references": "https://psychology.org"
+    },
+    "expectedStatus": "invalid",
+    "description": "references should be an array, got string"
+  },
+  {
+    "flow": "syllabusGeneratorFlow",
+    "timestamp": "2025-05-20T12:00:00Z",
+    "response": {
+      "title": "Biology 101",
+      "structure": "Cells...",
+      "strategy": "Memorize terms",
+      "references": [],
+      "metadata": { "generatedBy": "model-v2" }
+    },
+    "expectedStatus": "drift",
+    "description": "extra field 'metadata'"
+  },
+  {
+    "flow": "adaptiveQuizFlow",
+    "timestamp": "2025-05-21T09:00:00Z",
+    "response": {
+      "quiz": [
+        {
+          "question": "What is 2+2?",
+          "options": ["1", "2", "3", "4"],
+          "correctAnswer": "4"
+        }
+      ]
+    },
+    "expectedStatus": "valid"
+  },
+  {
+    "flow": "adaptiveQuizFlow",
+    "timestamp": "2025-05-21T09:30:00Z",
+    "response": {
+      "quiz": [
+        {
+          "question": "Capital of France?",
+          "options": ["London", "Berlin", "Paris", "Madrid"]
+
+        }
+      ]
+    },
+    "expectedStatus": "invalid",
+    "description": "missing correctAnswer"
+  },
+  {
+    "flow": "smartRevisionPlannerFlow",
+    "timestamp": "2025-05-22T08:00:00Z",
+    "response": {
+      "revisionList": [
+        {
+          "topic": "Algebra",
+          "reason": "Low mastery",
+          "priority": "HIGH",
+          "masteryScore": 0.4
+        }
+      ]
+    },
+    "expectedStatus": "valid"
+  },
+  {
+    "flow": "smartRevisionPlannerFlow",
+    "timestamp": "2025-05-22T08:15:00Z",
+    "response": {
+      "revisionList": [
+        {
+          "topic": "Geometry",
+          "reason": "Upcoming exam",
+          "priority": "CRITICAL"
+        }
+      ]
+    },
+    "expectedStatus": "invalid",
+    "description": "priority 'CRITICAL' not in enum"
+  },
+  {
+    "flow": "mindfulMentorFlow",
+    "timestamp": "2025-05-23T14:00:00Z",
+    "response": {
+      "advice": "Take a deep breath."
+    },
+    "expectedStatus": "valid"
+  },
+  {
+    "flow": "mindfulMentorFlow",
+    "timestamp": "2025-05-23T14:30:00Z",
+    "response": {
+      "advice": { "text": "Take a deep breath." }
+    },
+    "expectedStatus": "invalid",
+    "description": "advice is object, expected string"
+  },
+  {
+    "flow": "explainConceptFlow",
+    "timestamp": "2025-05-24T16:00:00Z",
+    "response": {
+      "explanation": "Photosynthesis is..."
+    },
+    "expectedStatus": "valid"
+  },
+  {
+    "flow": "explainConceptFlow",
+    "timestamp": "2025-05-24T16:30:00Z",
+    "response": {
+      "text": "Photosynthesis is..."
+    },
+    "expectedStatus": "invalid",
+    "description": "missing explanation, has extra field text"
+  }
+]

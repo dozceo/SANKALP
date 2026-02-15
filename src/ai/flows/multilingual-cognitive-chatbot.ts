@@ -17,7 +17,7 @@ const ExplainConceptInputSchema = z.object({
 });
 export type ExplainConceptInput = z.infer<typeof ExplainConceptInputSchema>;
 
-const ExplainConceptOutputSchema = z.object({
+export const ExplainConceptOutputSchema = z.object({
   explanation: z.string().describe('The explanation of the concept in the target language.'),
 });
 export type ExplainConceptOutput = z.infer<typeof ExplainConceptOutputSchema>;

@@ -32,7 +32,7 @@ const SmartRevisionPlannerInputSchema = z.object({
 });
 export type SmartRevisionPlannerInput = z.infer<typeof SmartRevisionPlannerInputSchema>;
 
-const SmartRevisionPlannerOutputSchema = z.object({
+export const SmartRevisionPlannerOutputSchema = z.object({
   revisionList: z.array(
     z.object({
       topic: z.string().describe('The topic to revise.'),
