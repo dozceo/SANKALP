@@ -38,7 +38,11 @@ async def load_model():
         print(f"WARNING: Model not found at {MODEL_PATH}")
         print("Run train_mastery_model.py first!")
     else:
-        model = joblib.load(MODEL_PATH)
+        loaded = joblib.load(MODEL_PATH)
+        if isinstance(loaded, dict) and 'model' in loaded:
+            model = loaded['model']
+        else:
+            model = loaded
         print(f"✅ Model loaded from {MODEL_PATH}")
 
 class MasteryPredictionInput(BaseModel):
