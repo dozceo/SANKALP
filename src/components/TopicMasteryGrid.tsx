@@ -7,6 +7,7 @@
 
 "use client";
 
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,9 @@ interface TopicMasteryGridProps {
 }
 
 export function TopicMasteryGrid({ intelligence }: TopicMasteryGridProps) {
+    // Memoize entries to prevent array recreation on every render
+    const masteryEntries = useMemo(() => Object.entries(intelligence.mastery), [intelligence.mastery]);
+
     return (
         <Card className="md:col-span-2 lg:col-span-3">
             <CardHeader>
@@ -27,7 +31,7 @@ export function TopicMasteryGrid({ intelligence }: TopicMasteryGridProps) {
                 </p>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {Object.entries(intelligence.mastery).map(([topic, signal]) => {
+                {masteryEntries.map(([topic, signal]) => {
                     const masteryPercent = Math.round(signal.score * 100);
                     const isPriority = signal.priority === "HIGH";
                     const isStrong = signal.score >= 0.7;

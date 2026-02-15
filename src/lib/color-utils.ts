@@ -15,13 +15,19 @@ export function lightenColor(hex: string, percent: number): string {
     return colorCache.get(key)!;
   }
 
-  const num = parseInt(hex.replace('#', ''), 16);
+  // Optimization: Use slice instead of replace for faster string processing
+  const cleanHex = hex.startsWith('#') ? hex.slice(1) : hex;
+  const num = parseInt(cleanHex, 16);
+
   const amt = Math.round(2.55 * percent);
+
+  // Use bitwise operations for color component extraction
   const R = Math.min(255, (num >> 16) + amt);
   const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
   const B = Math.min(255, (num & 0x0000ff) + amt);
 
-  const result = `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+  // Bitwise composition with 0x1000000 to ensure zero-padding
+  const result = `#${(0x1000000 + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;
 
   // Cache the result
   // Limit cache size to prevent memory leaks in long running sessions

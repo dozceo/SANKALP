@@ -471,9 +471,13 @@ export async function getBatchedQuizResults(
                     timestamp: data.timestamp?.toDate() || new Date(),
                 };
 
-                const existing = resultsMap.get(result.studentId) || [];
+                // Optimization: Avoid redundant Map.set calls
+                let existing = resultsMap.get(result.studentId);
+                if (!existing) {
+                    existing = [];
+                    resultsMap.set(result.studentId, existing);
+                }
                 existing.push(result);
-                resultsMap.set(result.studentId, existing);
             });
         }));
 

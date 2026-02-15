@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const ptSans = PT_Sans({
   subsets: ["latin"],
@@ -42,8 +43,10 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <AuthProvider>
-              {children}
-              <Toaster />
+              <TooltipProvider>
+                {children}
+                <Toaster />
+              </TooltipProvider>
             </AuthProvider>
           </ThemeProvider>
         </ErrorBoundary>
