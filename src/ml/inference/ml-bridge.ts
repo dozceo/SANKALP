@@ -14,7 +14,7 @@ import type {
     MasteryPredictionOutput,
 } from "./types";
 
-const PYTHON_SCRIPT_PATH = path.join(
+const PYTHON_SCRIPT_PATH = process.env.ML_PYTHON_SCRIPT || path.join(
     process.cwd(),
     "src",
     "ml",
@@ -119,6 +119,9 @@ class PythonBridge {
             }
         } catch (e) {
             console.error("Error parsing Python output:", line, e);
+            // If the output is not valid JSON, it's a critical protocol error.
+            // Kill the process to fail fast and reset the state.
+            this.process?.kill();
         }
     }
 
