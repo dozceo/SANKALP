@@ -92,7 +92,8 @@ export function calculatePerformanceTrend(
  */
 export function extractMasteryFeatures(
     topic: string,
-    history: StudentHistory
+    history: StudentHistory,
+    referenceDate: Date = new Date()
 ): MasteryFeatures {
     const topicQuizzes = history.quizResults.filter((r) => r.topic === topic);
 
@@ -125,7 +126,7 @@ export function extractMasteryFeatures(
     }
 
     const days_since_last_revision = Math.floor(
-        (Date.now() - latestTimestamp) / (1000 * 60 * 60 * 24)
+        (referenceDate.getTime() - latestTimestamp) / (1000 * 60 * 60 * 24)
     );
 
     // Calculate quiz_score_variance
@@ -157,9 +158,10 @@ export function extractMasteryFeatures(
  * Extract Attention Risk features for a student
  */
 export function extractAttentionFeatures(
-    history: StudentHistory
+    history: StudentHistory,
+    referenceDate: Date = new Date()
 ): AttentionFeatures {
-    const now = Date.now();
+    const now = referenceDate.getTime();
     const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
     // Session frequency (quizzes taken in last week)
