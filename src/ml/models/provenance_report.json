@@ -1,0 +1,35 @@
+{
+  "model_name": "Topic Mastery Prediction Model",
+  "version": "1.0.0",
+  "training_timestamp": "2026-02-16T19:25:43.007279",
+  "provenance": {
+    "git_commit_hash": "00ceb116a844d4a1930cebee9118dcdd3f9803a1",
+    "script_hash": "f8507ce3711c40359955f4495132e798a76cb3f1671edbd8dc19343deed7381f",
+    "data_hash": "83fddbff3e7ff38dfb966846a4b97ff71546c13dc2bee04838263e2d302e613b",
+    "data_source": "training_data.csv"
+  },
+  "parameters": {
+    "model_type": "LogisticRegression",
+    "test_size": 0.2,
+    "random_state": 42,
+    "max_iter": 1000,
+    "class_weight": "balanced"
+  },
+  "metrics": {
+    "accuracy": 0.985,
+    "feature_importance": {
+      "avg_quiz_score": 3.5411906167747564,
+      "attempts_per_topic": 0.745436470639545,
+      "days_since_last_revision": -1.6486100510202657,
+      "quiz_score_variance": -1.014098195836163,
+      "time_spent_per_question": -0.034802724523896426
+    }
+  },
+  "environment": {
+    "python_version": "3.12.12 (main, Jan 18 2026, 06:09:15) [GCC 13.3.0]",
+    "sklearn_version": "1.8.0",
+    "pandas_version": "3.0.0",
+    "numpy_version": "2.4.2",
+    "joblib_version": "1.5.3"
+  }
+}
