@@ -104,7 +104,7 @@ export function AddStudyMaterial() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    plannerId: lastSavedId,
+                    plannerItemId: lastSavedId,
                 }),
             });
 

@@ -41,10 +41,16 @@ export async function fetchStudentGraphData(studentId: string): Promise<GraphDat
             });
         });
 
-        // 3. Generate Nodes from Topics
+        // Track IDs we've already added to avoid duplicates
+        const addedNodeIds = new Set<string>([studentId]);
+
+        // 3. Generate Nodes from Quiz Topics
         topicStats.forEach((stats, topic) => {
             const avgScore = stats.total / stats.count;
             const topicId = `topic-${topic.replace(/\s+/g, '-').toLowerCase()}`;
+
+            if (addedNodeIds.has(topicId)) return;
+            addedNodeIds.add(topicId);
 
             // Topic Node
             nodes.push({
@@ -74,6 +80,68 @@ export async function fetchStudentGraphData(studentId: string): Promise<GraphDat
                 links.push({ source: topicId, target: id, type: 'hierarchy' });
             }
         });
+
+        // 4. Fetch Brain Map Nodes (from study materials converted to brain map)
+        try {
+            const brainMapSnapshot = await db.collection('brainMapNodes')
+                .where('studentId', '==', studentId)
+                .get();
+
+            const subjectNodes = new Map<string, string>(); // subject -> node ID
+
+            brainMapSnapshot.docs.forEach((doc: any) => {
+                const data = doc.data();
+                const bmNodeId = `bm-${doc.id}`;
+
+                if (addedNodeIds.has(bmNodeId)) return;
+                addedNodeIds.add(bmNodeId);
+
+                // Subject root nodes
+                if (!data.parentNodeId && data.subject) {
+                    const subjectId = `subject-${data.subject.replace(/\s+/g, '-').toLowerCase()}`;
+                    if (!addedNodeIds.has(subjectId)) {
+                        addedNodeIds.add(subjectId);
+                        subjectNodes.set(data.subject, subjectId);
+                        nodes.push({
+                            id: subjectId,
+                            name: data.subject,
+                            val: 15,
+                            type: 'subject',
+                            color: colors.subject
+                        });
+                        links.push({
+                            source: studentId,
+                            target: subjectId,
+                            type: 'hierarchy'
+                        });
+                    }
+                }
+
+                // Topic nodes from brain map
+                if (data.topic && data.topic !== 'Root') {
+                    nodes.push({
+                        id: bmNodeId,
+                        name: data.title || data.topic,
+                        val: 8 + (data.masteryLevel || 0) * 4,
+                        type: 'topic',
+                        color: (data.masteryLevel || 0) > 0.8 ? colors.strength :
+                            (data.masteryLevel || 0) < 0.4 ? colors.weakness : colors.chapter,
+                        mastery: data.masteryLevel || 0
+                    });
+
+                    // Link to parent subject or student
+                    const parentSubjectId = subjectNodes.get(data.subject);
+                    links.push({
+                        source: parentSubjectId || studentId,
+                        target: bmNodeId,
+                        type: 'topic'
+                    });
+                }
+            });
+        } catch (bmError) {
+            console.warn('Could not fetch brain map nodes:', bmError);
+            // Non-fatal: graph still shows quiz-based nodes
+        }
 
         return { nodes, links };
     } catch (error) {
