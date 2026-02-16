@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useStudent } from "@/hooks/useStudent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,7 +57,7 @@ export function FocusTimer() {
 
     // Get all topics from study materials
     const studyMaterials = currentStudent?.studyMaterials || [];
-    const topics = studyMaterials.map(m => m.topic);
+    const topics = useMemo(() => studyMaterials.map(m => m.topic), [studyMaterials]);
 
     // Format time as MM:SS
     const formatTime = (seconds: number) => {

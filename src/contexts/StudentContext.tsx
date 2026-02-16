@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import type { StudentNode, StudyMaterial } from '@/data/docsData';
 import { useAuth } from './AuthContext';
 
@@ -28,7 +28,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     const [currentStudent, setCurrentStudent] = useState<StudentNode | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchStudent = async () => {
+    const fetchStudent = useCallback(async () => {
         // Wait for auth to finish loading before deciding what to fetch
         if (authLoading) return;
 
@@ -176,9 +176,9 @@ export function StudentProvider({ children }: { children: ReactNode }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, role, authLoading]);
 
-    const addStudyMaterial = async (material: StudyMaterialInput) => {
+    const addStudyMaterial = useCallback(async (material: StudyMaterialInput) => {
         if (!user?.uid) throw new Error("User not authenticated");
 
         try {
@@ -235,13 +235,13 @@ export function StudentProvider({ children }: { children: ReactNode }) {
             console.error('[StudentContext] Error adding study material:', error);
             throw error;
         }
-    };
+    }, [user?.uid, currentStudent]);
 
     useEffect(() => {
         fetchStudent();
-    }, [user?.uid, role, authLoading]);
+    }, [fetchStudent]);
 
-    const joinClass = async (classCode: string) => {
+    const joinClass = useCallback(async (classCode: string) => {
         if (!user) throw new Error("User not authenticated");
 
         try {
@@ -271,9 +271,9 @@ export function StudentProvider({ children }: { children: ReactNode }) {
             console.error('[StudentContext] Error joining class:', error);
             throw error;
         }
-    };
+    }, [user, fetchStudent]);
 
-    const leaveClass = async () => {
+    const leaveClass = useCallback(async () => {
         if (!user) throw new Error("User not authenticated");
 
         try {
@@ -302,17 +302,19 @@ export function StudentProvider({ children }: { children: ReactNode }) {
             console.error('[StudentContext] Error leaving class:', error);
             throw error;
         }
-    };
+    }, [user, fetchStudent]);
+
+    const value = useMemo(() => ({
+        currentStudent,
+        loading,
+        refetch: fetchStudent,
+        addStudyMaterial,
+        joinClass,
+        leaveClass
+    }), [currentStudent, loading, fetchStudent, addStudyMaterial, joinClass, leaveClass]);
 
     return (
-        <StudentContext.Provider value={{
-            currentStudent,
-            loading,
-            refetch: fetchStudent,
-            addStudyMaterial,
-            joinClass,
-            leaveClass
-        }}>
+        <StudentContext.Provider value={value}>
             {children}
         </StudentContext.Provider>
     );
