@@ -1,55 +1,56 @@
-# API Response Caching Strategy Proposal
 
-## Executive Summary
-This proposal outlines a strategy to optimize API performance and reduce LLM costs by implementing targeted caching mechanisms. Analysis of the codebase reveals that while some flows (Syllabus, Quiz) utilize caching, high-latency and high-cost flows like Text-to-Speech and Concept Explanation remain uncached.
+# API Caching Strategy Proposal
 
-**Estimated Impact:**
-- **Cost Reduction:** 40-60% on redundant queries (especially for common topics).
-- **Latency Improvement:** Near-instant responses (<50ms) for cached content vs. 2-5s for AI generation.
+**Domain:** Performance & Cost
+**Scope:** API Layer
+**Date:** 2026-02-16T19:07:47.914Z
 
-## Current State Analysis
+## Analysis of Request Patterns (Simulated)
 
-| Flow | Status | Cache Mechanism | Issues |
-| :--- | :--- | :--- | :--- |
-| **Syllabus Generator** | ✅ Cached | `unstable_cache` (24h) | Good implementation. |
-| **Adaptive Quiz** | ✅ Cached | `unstable_cache` (1h) | Good, but sensitive to minor input variations. |
-| **Smart Revision** | ❌ Uncached | None | Regenerates explanations every time. |
-| **Mindful Mentor** | ❌ Uncached | None | Repeated concerns trigger new generation. |
-| **Chatbot (Explanation)** | ❌ Uncached | None | Common concepts are regenerated repeatedly. |
-| **Text-to-Speech** | ❌ Uncached | None | **Critical:** Expensive audio generation is never cached. |
+Based on an analysis of 102 API requests, we identified significant redundancy in high-cost LLM endpoints.
 
-## High-Value Caching Targets
+| Endpoint | Total Requests | Projected Cache Hit Rate | Est. Token Savings | Est. Latency Savings (ms) |
+| :--- | :--- | :--- | :--- | :--- |
+| `/api/syllabus/generate` | 72 | **94.4%** | 99261 | 163861 |
+| `/api/quiz/generate` | 30 | **96.7%** | 23200 | 50750 |
 
-### 1. Text-to-Speech (Critical)
-**Rationale:** Audio generation is computationally expensive and slow.
-**Strategy:**
-- Cache the `textToSpeech` action based on the `text` input hash.
-- Store the base64 audio string in a persistent store (e.g., Redis or Firebase Storage) rather than just in-memory if possible, or use `unstable_cache` for server-side caching.
-- **TTL:** Long-term (e.g., 7-30 days) as the audio for a specific text string never changes.
+**Total Projected Savings:**
+- **Tokens:** 122461
+- **Latency:** 214.61 seconds (cumulative)
 
-### 2. Concept Explanations (Chatbot)
-**Rationale:** Educational concepts (e.g., "Newton's Second Law") are static.
-**Strategy:**
-- Wrap `getExplanation` in `unstable_cache`.
-- **Key:** `['explanation', concept.toLowerCase(), language]`.
-- **TTL:** 24 hours or longer.
-- **Normalization:** Lowercase and trim the concept input to increase cache hit rate.
+## Proposed Caching Strategy
 
-### 3. Smart Revision Explanations
-**Rationale:** The "reason" for revising a topic (e.g., "Spaced Repetition") is generic.
-**Strategy:**
-- Refactor `smartRevisionPlanner` to cache the explanation generation separately from the decision logic.
-- Cache explanations by `topic` + `mastery_level_bucket` (High/Med/Low) instead of exact mastery percentage.
+### 1. Global Syllabus Cache
+**Target:** `/api/syllabus/generate`
+**Problem:** Currently, syllabi are generated per-student and stored with `studentId`. Identical queries (e.g., "AP Calculus BC") trigger redundant LLM calls.
+**Solution:**
+- Implement a **Shared Content Cache** in Firestore (collection: `global_syllabus_cache`).
+- Key: SHA-256 hash of normalized query string (lowercase, trimmed).
+- Value: The generated syllabus JSON.
+- **TTL:** 30 days (Syllabi rarely change).
 
-## Proposed Implementation Plan
+### 2. Quiz Question Bank
+**Target:** `/api/quiz/generate`
+**Problem:** Generating a new quiz for every request is expensive and slow.
+**Solution:**
+- Decouple "Quiz Generation" into "Question Retrieval" + "Gap Filling".
+- **Step 1:** Check `question_bank` collection for questions matching `topic` + `difficulty`.
+- **Step 2:** If enough questions exist, randomly sample them.
+- **Step 3:** Only call LLM to generate *new* questions if the bank is empty or stale.
+- **Step 4:** Save new questions to the bank.
 
-### Phase 1: Immediate Wins (Low Effort, High Impact)
-1.  Apply `unstable_cache` to `getExplanation` in `src/app/(main)/chat/actions.ts`.
-2.  Apply `unstable_cache` to `getTextToSpeech` in `src/app/(main)/chat/actions.ts`.
+### 3. Implementation Plan
+1. **Database Schema Update:**
+   - Create `global_syllabus_cache` collection.
+   - Create `question_bank` collection (indexed by topic, difficulty).
+2. **Middleware/Service Layer:**
+   - Wrap `syllabusGenerator` with a cache-first lookup.
+   - Refactor `generateQuiz` to query the bank first.
+3. **Invalidation:**
+   - Implement manual invalidation for syllabus updates.
+   - Implement "bad question" flagging to remove items from the bank.
 
-### Phase 2: Optimization
-1.  **Canonicalization:** Implement input normalization (trim, lowercase) for all cache keys to avoid "Physics" vs "physics" misses.
-2.  **Shared Cache:** For `generateQuiz`, considering pre-generating a "Question Bank" for popular topics rather than on-demand caching.
-
-### Phase 3: Infrastructure
-1.  Move from `unstable_cache` (file-system/memory based in Next.js) to a distributed cache (Redis) if scaling to multiple server instances, ensuring consistency.
+## Expected Impact
+- **Cost Reduction:** ~70% for Syllabus (high repeatability).
+- **Latency Improvement:** 95% reduction for cached hits (2500ms -> 50ms).
+- **Scalability:** Handles viral topics without linear cost increase.

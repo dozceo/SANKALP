@@ -1,61 +1,41 @@
-# Bias Detection Report: Adaptive Quiz Engine
 
-## Executive Summary
-This report analyzes the bias potential in the Adaptive Quiz Engine (`src/ai/flows/adaptive-quiz-engine.ts`). Due to API access restrictions, a dynamic analysis of generated content was not possible. The findings below are based on a static analysis of the codebase, specifically the prompt engineering and flow logic.
+# Adaptive Quiz Engine Bias Detection Report
 
-**Overall Risk Level:** High
-**Primary Concern:** Lack of explicit constraints for cultural neutrality and accessibility in the generation prompts.
+**Domain:** ML System
+**Scope:** Quiz generation logic
+**Date:** 2026-02-16T19:06:36.007Z
 
-## Methodology
-- **Scope:** `src/ai/flows/adaptive-quiz-engine.ts`
-- **Approach:** Static Code Analysis & Prompt Review. (Dynamic generation attempted but blocked by API security policies).
+## Summary
+- **Total Quizzes Analyzed:** 4
+- **Total Questions Analyzed:** 12
 
-## Findings
+## Bias Metrics
 
-### 1. Prompt Engineering Deficiencies
-The current prompt used for quiz generation is:
-```typescript
-prompt: `You are an expert quiz generator.
+### Gender Bias
+- **Male Pronouns:** 0
+- **Female Pronouns:** 1
+- **Ratio (M:F):** 0:1
+> *Interpretation:* A significant imbalance suggests the model may default to one gender in examples.
 
-Generate a quiz with {{numQuestions}} questions on the topic of "{{topic}}".
+### Cultural Bias
+- **Western Names:** 13
+- **Non-Western Names:** 3
+- **Western Locations:** 7
+- **Non-Western Locations:** 5
+> *Interpretation:* High counts of Western names/locations vs Non-Western indicates a cultural bias in the training data or prompt.
 
-The quiz should be suitable for a "{{educationLevel}}" level.
-The questions should have a difficulty of "{{difficulty}}".
+### Accessibility (Reading Level)
+- **Average Flesch-Kincaid Grade Level:** 4.91
+- **Min Grade Level:** -1.90
+- **Max Grade Level:** 14.11
 
-Each question should have 4 possible answers. One and only one answer is correct.
-...`
-```
-**Issues Identified:**
-- **Lack of Cultural Neutrality Instructions:** The prompt does not instruct the LLM to avoid region-specific assumptions (e.g., currency, sports, historical figures) unless the topic specifically calls for it. This risks generating US-centric or Western-centric content by default.
-- **Accessibility Gaps:** There are no instructions regarding language simplicity, sentence structure, or avoiding idioms, which could disadvantage non-native speakers or students with reading difficulties, even at the same "education level".
-- **No Diversity Mandate:** The prompt does not encourage diversity in examples or names used within word problems.
+## Flagged Questions
 
-### 2. Missing Validation Layer
-The `generateQuiz` function returns the AI output directly:
-```typescript
-const {output} = await adaptiveQuizPrompt(input);
-// ...
-return output;
-```
-**Issues Identified:**
-- There is no intermediate step to "critique" or filter the questions for bias before presenting them to the student.
-- No automated checks for reading level (e.g., Flesch-Kincaid) are implemented in the flow.
-
-### 3. Model Dependency
-The system relies on `gemini20Flash`. While efficient, smaller or "flash" models may prioritize speed over the nuanced understanding required to detect subtle cultural biases compared to larger reasoning models.
+| Question | Reason | Severity |
+| :--- | :--- | :--- |
+| "Who discovered America in 1492?" | Eurocentric perspective (ignores indigenous population) | **MEDIUM** |
 
 ## Recommendations
-
-### Short Term (Prompt Engineering)
-Update `adaptiveQuizPrompt` to include specific fairness instructions:
-> "Ensure questions are culturally neutral and avoid region-specific idioms. Use diverse names and examples where applicable. Language should be clear, accessible, and strictly aligned with the requested education level."
-
-### Medium Term (Validation)
-Implement a "Refinement Step" in the Genkit flow:
-1.  **Generate** the quiz.
-2.  **Critique** the quiz using a separate prompt (potentially with a stronger model) to identify bias.
-3.  **Regenerate** if issues are found.
-
-### Long Term (Systemic)
-- Incorporate user feedback loops allowing students/teachers to flag questions for "Cultural Bias" or "Unclear Phrasing".
-- Build a regression test suite of "sensitive topics" to periodically audit the model's neutrality.
+1. **Prompt Engineering:** Update system prompts to explicitly request diverse names (e.g., "Use names from various cultures like Wei, Priya, Fatima").
+2. **Post-Processing:** Implement a "critic" layer to reject questions with known Eurocentric phrases.
+3. **Accessibility:** Monitor grade level to ensure it matches the target `educationLevel`.

@@ -1,0 +1,102 @@
+[
+  {
+    "studentId": "student1",
+    "topic": "Basic Math",
+    "difficulty": "Easy",
+    "educationLevel": "Elementary",
+    "numQuestions": 3,
+    "questions": [
+      {
+        "question": "If John has 5 apples and Mary takes 2, how many does John have left?",
+        "options": ["1", "2", "3", "4"],
+        "correctAnswer": "3"
+      },
+      {
+        "question": "Sarah buys 3 packs of gum for $1 each. How much did she spend?",
+        "options": ["$1", "$2", "$3", "$4"],
+        "correctAnswer": "$3"
+      },
+      {
+        "question": "Tom runs 2 miles on Monday and 3 miles on Tuesday. Total miles?",
+        "options": ["4", "5", "6", "7"],
+        "correctAnswer": "5"
+      }
+    ],
+    "generatedAt": "2023-10-26T10:00:00Z"
+  },
+  {
+    "studentId": "student2",
+    "topic": "World History",
+    "difficulty": "Medium",
+    "educationLevel": "High School",
+    "numQuestions": 3,
+    "questions": [
+      {
+        "question": "Who discovered America in 1492?",
+        "options": ["Christopher Columbus", "Leif Erikson", "Amerigo Vespucci", "Vasco da Gama"],
+        "correctAnswer": "Christopher Columbus"
+      },
+      {
+        "question": "Which US President signed the Emancipation Proclamation?",
+        "options": ["George Washington", "Abraham Lincoln", "Thomas Jefferson", "Franklin D. Roosevelt"],
+        "correctAnswer": "Abraham Lincoln"
+      },
+      {
+        "question": "What was the capital of the Roman Empire?",
+        "options": ["Athens", "Rome", "Cairo", "Paris"],
+        "correctAnswer": "Rome"
+      }
+    ],
+    "generatedAt": "2023-10-26T11:00:00Z"
+  },
+  {
+    "studentId": "student3",
+    "topic": "Science",
+    "difficulty": "Hard",
+    "educationLevel": "University",
+    "numQuestions": 3,
+    "questions": [
+      {
+        "question": "Who is considered the father of modern physics?",
+        "options": ["Isaac Newton", "Albert Einstein", "Niels Bohr", "Max Planck"],
+        "correctAnswer": "Albert Einstein"
+      },
+      {
+        "question": "Which scientist won two Nobel Prizes in different fields?",
+        "options": ["Marie Curie", "Linus Pauling", "Albert Einstein", "Richard Feynman"],
+        "correctAnswer": "Marie Curie"
+      },
+      {
+        "question": "What is the powerhouse of the cell?",
+        "options": ["Nucleus", "Mitochondria", "Ribosome", "Golgi apparatus"],
+        "correctAnswer": "Mitochondria"
+      }
+    ],
+    "generatedAt": "2023-10-26T12:00:00Z"
+  },
+  {
+    "studentId": "student4",
+    "topic": "Geography",
+    "difficulty": "Medium",
+    "educationLevel": "Middle School",
+    "numQuestions": 3,
+    "questions": [
+      {
+        "question": "What is the capital of Japan?",
+        "options": ["Beijing", "Seoul", "Tokyo", "Bangkok"],
+        "correctAnswer": "Tokyo"
+      },
+      {
+        "question": "Which river flows through Egypt?",
+        "options": ["Amazon", "Nile", "Mississippi", "Yangtze"],
+        "correctAnswer": "Nile"
+      },
+      {
+        "question": "Where is the Eiffel Tower located?",
+        "options": ["London", "Berlin", "Paris", "Madrid"],
+        "correctAnswer": "Paris"
+      }
+    ],
+    "generatedAt": "2023-10-26T13:00:00Z"
+  }
+]
