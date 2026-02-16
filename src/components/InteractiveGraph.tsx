@@ -7,8 +7,14 @@ import { docsTree, studentsData, flatDocs } from '@/data/studentsDataStatic';
 import { generateEnhancedGraphData } from '@/lib/generateEnhancedGraph';
 import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, DocNode, StudentNode, GraphData } from '@/data/docsData';
-import { Maximize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Maximize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Dynamically import ForceGraph2D with SSR disabled
 const ForceGraph2D = dynamic(
@@ -46,6 +52,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'high-risk' | 'topics'>('all');
+
   // Optimization: Use refs for frequent updates to avoid re-creating canvas functions
   const hoveredNodeRef = useRef<string | null>(null);
   const highlightedNodeRef = useRef<string | undefined>(highlightedNode);
@@ -144,7 +152,43 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   }, [highlightedNode, isGlobalView, fullGraphData, adjacencyMap, nodeLinksMap, nodeMap]);
 
   // Use external data if provided, otherwise fallback to local/generated data
-  const graphData = externalGraphData || (isGlobalView ? fullGraphData : localGraphData);
+  const baseGraphData = externalGraphData || (isGlobalView ? fullGraphData : localGraphData);
+
+  const graphData = useMemo(() => {
+    if (filter === 'all') return baseGraphData;
+
+    let filteredNodes = baseGraphData.nodes;
+
+    if (filter === 'high-risk') {
+      // Show high risk students and their connected topics
+      filteredNodes = baseGraphData.nodes.filter(n => {
+        if (n.type === 'student') {
+          return (n as any).risk?.toLowerCase() === 'high';
+        }
+        return true; // Keep topics/others for context, or filter?
+        // Let's filter to only high risk students and topics connected to them?
+        // For simplicity, just show high risk students and ALL topics,
+        // OR just high risk students.
+        // Audit says: "Show only High Risk Students".
+      });
+      // Refine: Only High Risk Students.
+       filteredNodes = baseGraphData.nodes.filter(n =>
+         (n.type === 'student' && (n as any).risk?.toLowerCase() === 'high') ||
+         n.type !== 'student' // Keep context nodes (topics) so it's not empty?
+       );
+    } else if (filter === 'topics') {
+      filteredNodes = baseGraphData.nodes.filter(n => n.type === 'topic');
+    }
+
+    const nodeIds = new Set(filteredNodes.map(n => n.id));
+    const filteredLinks = baseGraphData.links.filter(l => {
+      const s = typeof l.source === 'object' ? (l.source as any).id : l.source;
+      const t = typeof l.target === 'object' ? (l.target as any).id : l.target;
+      return nodeIds.has(s) && nodeIds.has(t);
+    });
+
+    return { nodes: filteredNodes, links: filteredLinks };
+  }, [baseGraphData, filter]);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -365,6 +409,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
           setIsModalOpen={setIsModalOpen}
           onZoom={handleZoom}
           onReset={handleReset}
+          filter={filter}
+          setFilter={setFilter}
         />
         <GraphTitle title={isGlobalView ? 'Global Graph' : 'Local Graph'} nodeCount={graphData.nodes.length} />
 
@@ -429,6 +475,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
                 setIsModalOpen={setIsModalOpen}
                 onZoom={handleZoom}
                 onReset={handleReset}
+                filter={filter}
+                setFilter={setFilter}
               />
             </div>
 
@@ -471,7 +519,9 @@ const GraphControls = memo(function GraphControls({
   isModalOpen,
   setIsModalOpen,
   onZoom,
-  onReset
+  onReset,
+  filter,
+  setFilter
 }: {
   graphRefProp: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>;
   isGlobalView: boolean;
@@ -482,10 +532,37 @@ const GraphControls = memo(function GraphControls({
   setIsModalOpen: (v: boolean) => void;
   onZoom: (factor: number, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
   onReset: (ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
+  filter: 'all' | 'high-risk' | 'topics';
+  setFilter: (f: 'all' | 'high-risk' | 'topics') => void;
 }) {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex flex-col gap-2 p-2 bg-card/80 backdrop-blur-sm rounded-lg border border-border shadow-sm absolute top-4 right-4 z-10">
+        {/* Filters */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${filter !== 'all' ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+              aria-label="Filter Graph"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setFilter('all')}>
+              Show All
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilter('high-risk')}>
+              High Risk Students
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilter('topics')}>
+              Topics Only
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="h-px bg-border my-1" />
+
         <div className="flex flex-col gap-1">
           <Tooltip>
             <TooltipTrigger asChild>

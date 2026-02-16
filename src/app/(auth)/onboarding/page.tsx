@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateFriendlyErrorMessage } from '@/app/actions/ai-error';
+import { useTranslations } from 'next-intl';
 
 const GRADES = ['9th', '10th', '11th', '12th', 'College'];
 const SUBJECTS = [
@@ -32,11 +33,21 @@ const STUDY_TIMES = [
     '4-6 hours',
     '> 6 hours'
 ];
+const GOAL_OPTIONS = [
+    "Improve Grades",
+    "Prepare for Exam",
+    "Learn a New Skill",
+    "Get Homework Help",
+    "Clarify Concepts"
+];
 
 export default function OnboardingPage() {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+    const t = useTranslations('Onboarding');
+    const tCommon = useTranslations('Common');
+
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
@@ -44,17 +55,47 @@ export default function OnboardingPage() {
         name: '',
         grade: '',
         subjects: [] as string[],
-        goals: '',
+        goals: [] as string[], // Changed to array
+        customGoal: '',
         dailyStudyTime: '',
         classCode: '',
     });
 
+    // Session Persistence
+    useEffect(() => {
+        const savedData = localStorage.getItem('onboarding_data');
+        const savedStep = localStorage.getItem('onboarding_step');
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                // Ensure backward compatibility if goals was string
+                if (typeof parsed.goals === 'string') {
+                    parsed.goals = [];
+                    parsed.customGoal = parsed.goals;
+                }
+                setFormData(prev => ({ ...prev, ...parsed }));
+            } catch (e) {
+                console.error("Failed to parse saved onboarding data", e);
+            }
+        }
+        if (savedStep) {
+            setStep(parseInt(savedStep, 10));
+        }
+    }, []);
+
+    useEffect(() => {
+        if (formData.name) { // Only save if we have some data
+            localStorage.setItem('onboarding_data', JSON.stringify(formData));
+        }
+        localStorage.setItem('onboarding_step', step.toString());
+    }, [formData, step]);
+
     // Update name when user loads
     useEffect(() => {
-        if (user?.displayName) {
+        if (user?.displayName && !formData.name) {
             setFormData(prev => ({ ...prev, name: user.displayName! }));
         }
-    }, [user]);
+    }, [user, formData.name]);
 
     if (authLoading) {
         return (
@@ -73,19 +114,40 @@ export default function OnboardingPage() {
         }));
     };
 
+    const handleGoalToggle = (goal: string) => {
+        setFormData(prev => ({
+            ...prev,
+            goals: prev.goals.includes(goal)
+                ? prev.goals.filter(g => g !== goal)
+                : [...prev.goals, goal]
+        }));
+    };
+
     const handleSubmit = async () => {
         setLoading(true);
+        // Combine predefined goals with custom goal
+        const finalGoals = [...formData.goals];
+        if (formData.customGoal.trim()) {
+            finalGoals.push(formData.customGoal.trim());
+        }
+        const goalsString = finalGoals.join(', ');
+
         try {
             const response = await fetch('/api/student/onboard', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     userId: user?.uid,
-                    ...formData
+                    ...formData,
+                    goals: goalsString, // Send as string to backend as per previous schema
                 }),
             });
 
             if (response.ok) {
+                // Clear storage
+                localStorage.removeItem('onboarding_data');
+                localStorage.removeItem('onboarding_step');
+
                 toast({
                     title: 'Onboarding complete!',
                     description: 'Your profile has been set up successfully.',
@@ -115,7 +177,7 @@ export default function OnboardingPage() {
         switch (step) {
             case 1: return formData.name && formData.grade;
             case 2: return formData.subjects.length > 0;
-            case 3: return formData.goals && formData.dailyStudyTime;
+            case 3: return (formData.goals.length > 0 || formData.customGoal.length > 0) && formData.dailyStudyTime;
             case 4: return true; // Class code is optional
             default: return false;
         }
@@ -151,14 +213,14 @@ export default function OnboardingPage() {
                             <div className="space-y-2">
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2">
                                     <Sparkles className="w-3 h-3" />
-                                    Welcome to Sankalp
+                                    {t('welcome')}
                                 </div>
-                                <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">Let's get started 👋</h1>
+                                <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">{t('getStarted')} 👋</h1>
                                 <p className="text-muted-foreground text-lg">Tell us a bit about yourself to personalize your experience.</p>
                             </div>
 
                             <div className="space-y-4">
-                                <Label htmlFor="name" className="text-base font-semibold">Your Full Name</Label>
+                                <Label htmlFor="name" className="text-base font-semibold">{t('nameLabel')}</Label>
                                 <Input
                                     id="name"
                                     placeholder="e.g. Alex Johnson"
@@ -169,7 +231,7 @@ export default function OnboardingPage() {
                             </div>
 
                             <div className="space-y-4">
-                                <Label className="text-base font-semibold">Grade / Level</Label>
+                                <Label className="text-base font-semibold">{t('gradeLabel')}</Label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                     {GRADES.map(grade => (
                                         <button
@@ -193,7 +255,7 @@ export default function OnboardingPage() {
                     {step === 2 && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="space-y-2">
-                                <h2 className="text-3xl font-headline font-bold text-foreground">What subjects are you studying?</h2>
+                                <h2 className="text-3xl font-headline font-bold text-foreground">{t('subjectsTitle')}</h2>
                                 <p className="text-muted-foreground text-lg">Select the ones you want to focus on this year.</p>
                             </div>
 
@@ -226,23 +288,37 @@ export default function OnboardingPage() {
                     {step === 3 && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="space-y-2">
-                                <h2 className="text-3xl font-headline font-bold text-foreground">Tell us about your goals</h2>
+                                <h2 className="text-3xl font-headline font-bold text-foreground">{t('goalsTitle')}</h2>
                                 <p className="text-muted-foreground text-lg">What do you want to achieve with Sankalp?</p>
                             </div>
 
                             <div className="space-y-4">
-                                <Label htmlFor="goals" className="text-base font-semibold">Your Learning Goals</Label>
-                                <Textarea
-                                    id="goals"
-                                    placeholder="e.g., Score 95% in board exams, Master calculus, Improve problem-solving..."
-                                    value={formData.goals}
-                                    onChange={e => setFormData({ ...formData, goals: e.target.value })}
-                                    className="min-h-[120px] text-lg resize-none"
+                                <Label className="text-base font-semibold">{t('goalsLabel')}</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {GOAL_OPTIONS.map(goal => (
+                                        <button
+                                            key={goal}
+                                            onClick={() => handleGoalToggle(goal)}
+                                            className={`px-4 py-2 rounded-full border transition-all text-sm font-medium ${
+                                                formData.goals.includes(goal)
+                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                : 'bg-background hover:bg-accent border-input'
+                                            }`}
+                                        >
+                                            {goal}
+                                        </button>
+                                    ))}
+                                </div>
+                                <Input
+                                    placeholder="Other goals..."
+                                    value={formData.customGoal}
+                                    onChange={(e) => setFormData({...formData, customGoal: e.target.value})}
+                                    className="mt-2"
                                 />
                             </div>
 
                             <div className="space-y-4">
-                                <Label className="text-base font-semibold">Daily Study Commitment</Label>
+                                <Label className="text-base font-semibold">{t('studyTimeLabel')}</Label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                     {STUDY_TIMES.map(time => (
                                         <button
@@ -266,14 +342,14 @@ export default function OnboardingPage() {
                     {step === 4 && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="space-y-2">
-                                <h2 className="text-3xl font-headline font-bold text-foreground">Join Your Class</h2>
+                                <h2 className="text-3xl font-headline font-bold text-foreground">{t('classCodeTitle')}</h2>
                                 <p className="text-muted-foreground text-lg">
                                     If your teacher provided a code, enter it here to sync with your class.
                                 </p>
                             </div>
 
                             <div className="space-y-4">
-                                <Label htmlFor="classCode" className="text-base font-semibold">Class Code (Optional)</Label>
+                                <Label htmlFor="classCode" className="text-base font-semibold">{t('classCodeLabel')}</Label>
                                 <Input
                                     id="classCode"
                                     placeholder="e.g., MATH2024-A"
@@ -281,9 +357,16 @@ export default function OnboardingPage() {
                                     onChange={e => setFormData({ ...formData, classCode: e.target.value.toUpperCase() })}
                                     className="h-14 text-2xl text-center font-mono tracking-widest uppercase"
                                 />
-                                <p className="text-sm text-center text-muted-foreground">
-                                    You can skip this and add it later from your settings.
-                                </p>
+                                <div className="flex justify-center">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={handleSubmit}
+                                        disabled={loading}
+                                        className="text-muted-foreground"
+                                    >
+                                        {t('skipClassCode')}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -296,7 +379,7 @@ export default function OnboardingPage() {
                         disabled={step === 1 || loading}
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back
+                        {t('backButton')}
                     </Button>
 
                     {step < 4 ? (
@@ -304,7 +387,7 @@ export default function OnboardingPage() {
                             onClick={() => setStep(step + 1)}
                             disabled={!canProceed() || loading}
                         >
-                            Next
+                            {t('nextButton')}
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                     ) : (
@@ -315,11 +398,11 @@ export default function OnboardingPage() {
                             {loading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Setting up...
+                                    {tCommon('loading')}
                                 </>
                             ) : (
                                 <>
-                                    Complete Setup
+                                    {t('completeButton')}
                                     <CheckCircle className="w-4 h-4 ml-2" />
                                 </>
                             )}
