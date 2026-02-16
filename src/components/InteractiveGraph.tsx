@@ -190,36 +190,40 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
     if (node.x === undefined || node.y === undefined) return;
 
+    ctx.save();
+    ctx.translate(node.x, node.y);
+
     // Glow effect for highlighted/hovered nodes
     if (isHighlighted || isHovered) {
-      const gradient = ctx.createRadialGradient(
-        node.x, node.y, 0,
-        node.x, node.y, nodeSize * 3
-      );
-      gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-      gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+      const glowScale = nodeSize * 3;
+      ctx.save();
+      ctx.scale(glowScale, glowScale);
+
+      const gradient = getGlowGradient(ctx);
       ctx.beginPath();
-      ctx.arc(node.x, node.y, nodeSize * 3, 0, 2 * Math.PI);
+      ctx.arc(0, 0, 1, 0, 2 * Math.PI);
       ctx.fillStyle = gradient;
       ctx.fill();
+      ctx.restore();
     }
 
     // Node circle with gradient
-    const nodeGradient = ctx.createRadialGradient(
-      node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
-      node.x, node.y, nodeSize
-    );
     const baseColor = nodeColor(node);
-    nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
-    nodeGradient.addColorStop(1, baseColor);
+    const lighterColor = memoizedLightenColor(baseColor, 20);
+    const gradient = getGradient(ctx, baseColor, lighterColor);
 
+    ctx.save();
+    ctx.scale(nodeSize, nodeSize);
     ctx.beginPath();
-    ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
-    ctx.fillStyle = nodeGradient;
+    ctx.arc(0, 0, 1, 0, 2 * Math.PI);
+    ctx.fillStyle = gradient;
     ctx.fill();
+    ctx.restore();
 
     // Border for highlighted node
     if (isHighlighted) {
+      ctx.beginPath();
+      ctx.arc(0, 0, nodeSize, 0, 2 * Math.PI);
       ctx.strokeStyle = '#e9d5ff';
       ctx.lineWidth = 2 / globalScale;
       ctx.stroke();
@@ -235,11 +239,14 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
       // Text shadow for better readability
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.fillText(label, node.x + 0.5, node.y + nodeSize + 3.5);
+      // Using local coordinates (translated)
+      ctx.fillText(label, 0.5, nodeSize + 3.5);
 
       ctx.fillStyle = isHighlighted ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#a1a1aa';
-      ctx.fillText(label, node.x, node.y + nodeSize + 3);
+      ctx.fillText(label, 0, nodeSize + 3);
     }
+
+    ctx.restore();
   }, [highlightedNode, hoveredNode, nodeColor]);
 
   const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
@@ -464,12 +471,49 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   );
 }
 
-// Helper function to lighten a hex color
-function lightenColor(hex: string, percent: number): string {
+// Caches for expensive canvas operations
+const colorCache = new Map<string, string>();
+const gradientCache = new Map<string, CanvasGradient>();
+const glowGradientCache = new Map<string, CanvasGradient>();
+
+function memoizedLightenColor(hex: string, percent: number): string {
+  const key = `${hex}-${percent}`;
+  if (colorCache.has(key)) return colorCache.get(key)!;
+
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
   const R = Math.min(255, (num >> 16) + amt);
   const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
   const B = Math.min(255, (num & 0x0000ff) + amt);
-  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+  const result = `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+
+  colorCache.set(key, result);
+  return result;
+}
+
+function getGradient(ctx: CanvasRenderingContext2D, color: string, lighterColor: string): CanvasGradient {
+  const key = `${color}-${lighterColor}`;
+  if (gradientCache.has(key)) return gradientCache.get(key)!;
+
+  // Gradient for a unit circle (radius 1) centered at (0,0) with offset highlight
+  // Maps to: (-0.3, -0.3, 0, 0, 0, 1) in local coords
+  const gradient = ctx.createRadialGradient(-0.3, -0.3, 0, 0, 0, 1);
+  gradient.addColorStop(0, lighterColor);
+  gradient.addColorStop(1, color);
+
+  gradientCache.set(key, gradient);
+  return gradient;
+}
+
+function getGlowGradient(ctx: CanvasRenderingContext2D): CanvasGradient {
+  const key = 'glow-purple';
+  if (glowGradientCache.has(key)) return glowGradientCache.get(key)!;
+
+  // Unit circle gradient for glow
+  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+  gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
+  gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+
+  glowGradientCache.set(key, gradient);
+  return gradient;
 }
