@@ -18,7 +18,7 @@ const SyllabusInputSchema = z.object({
 });
 export type SyllabusInput = z.infer<typeof SyllabusInputSchema>;
 
-const SyllabusOutputSchema = z.object({
+export const SyllabusOutputSchema = z.object({
   title: z.string().describe('The official title of the syllabus or subject.'),
   structure: z.string().describe('A detailed, well-formatted breakdown of the syllabus topics and sub-topics.'),
   strategy: z.string().describe('A recommended study strategy and timeline for covering the syllabus.'),
