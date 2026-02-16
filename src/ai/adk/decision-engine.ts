@@ -24,6 +24,25 @@ export function makeRevisionDecision(context: DecisionContext): ADKDecision {
     const { mlSignals, daysUntilExam } = context;
     const { mastery_probability, days_since_last_revision, attention_risk } = mlSignals;
 
+    // POLICY RULE 0: Exam Cramming Mode (< 3 days to exam) - HIGHEST PRIORITY
+    if (daysUntilExam && daysUntilExam <= 3 && mastery_probability < 0.6) {
+        return {
+            action: DecisionAction.URGENT_REVISION,
+            priority: "HIGH",
+            contentStrategy: ContentStrategy.SHORT_FORM,
+            reasoning: "Exam imminent - high-yield cramming strategy",
+            adkFlags: ["CRAMMING_MODE", "EXAM_IMMINENT"],
+            llmContext: {
+                strategy: ContentStrategy.SHORT_FORM,
+                targetDuration: "5-MIN",
+                tone: "SUPPORTIVE",
+                includeExamples: true,
+                includeVisuals: true,
+                difficulty: "BASIC",
+            },
+        };
+    }
+
     // POLICY RULE 1: Critical Mastery + Imminent Forgetting
     if (mastery_probability < 0.4 && (mlSignals.days_until_forget ?? 999) < 3) {
         return {
@@ -96,25 +115,6 @@ export function makeRevisionDecision(context: DecisionContext): ADKDecision {
                 includeExamples: false,
                 includeVisuals: false,
                 difficulty: "ADVANCED",
-            },
-        };
-    }
-
-    // POLICY RULE 5: Exam Cramming Mode (< 3 days to exam)
-    if (daysUntilExam && daysUntilExam <= 3 && mastery_probability < 0.6) {
-        return {
-            action: DecisionAction.URGENT_REVISION,
-            priority: "HIGH",
-            contentStrategy: ContentStrategy.SHORT_FORM,
-            reasoning: "Exam imminent - high-yield cramming strategy",
-            adkFlags: ["CRAMMING_MODE", "EXAM_IMMINENT"],
-            llmContext: {
-                strategy: ContentStrategy.SHORT_FORM,
-                targetDuration: "5-MIN",
-                tone: "SUPPORTIVE",
-                includeExamples: true,
-                includeVisuals: true,
-                difficulty: "BASIC",
             },
         };
     }
