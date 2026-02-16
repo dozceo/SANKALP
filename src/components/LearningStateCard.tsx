@@ -33,6 +33,12 @@ export function LearningStateCard({ intelligence }: LearningStateCardProps) {
         return sum / values.length;
     }, [intelligence.mastery]);
 
+    const tooltipText = useMemo(() => {
+        if (intelligence.attentionRisk === 'HIGH') return "High attention risk detected. Consider taking shorter, more frequent sessions.";
+        if (overallMastery < 0.6) return "Mastery levels are below optimal. Prioritize reviewing weak topics.";
+        return "Based on your recent quiz performance, revision gaps, and ML predictions.";
+    }, [intelligence.attentionRisk, overallMastery]);
+
     return (
         <Card>
             <CardHeader>
@@ -45,7 +51,9 @@ export function LearningStateCard({ intelligence }: LearningStateCardProps) {
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                             <p className="text-sm">
-                                Based on your recent quiz performance, revision gaps, and ML predictions.
+                                {tooltipText}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
                                 Updated: {new Date(intelligence.generatedAt).toLocaleString()}
                             </p>
                         </TooltipContent>

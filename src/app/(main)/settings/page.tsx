@@ -45,7 +45,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="language">Language</Label>
                   <Select defaultValue="en">
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
