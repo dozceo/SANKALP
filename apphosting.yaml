@@ -57,8 +57,6 @@ env:
       - BUILD
       - RUNTIME
 
-  # ---- Gemini / Google GenAI ----
+secrets:
   - variable: GOOGLE_GENAI_API_KEY
-    value: AIzaSyAlxLxX8OaiKkWTIq5Nq57YnJHgYORSoP4
-    availability:
-      - RUNTIME
+    reference: GOOGLE_GENAI_API_KEY
