@@ -1,55 +1,70 @@
-# ML Prediction Rate Limit Proposal
+# Rate Limit & Cost Control Proposal
 
-## Current Architecture Analysis
-The current ML inference architecture uses a persistent Python subprocess (`predict_mastery.py`) managed by a Node.js bridge (`ml-bridge.ts`).
-*   **Communication:** Stdin/Stdout over a pipe.
-*   **Concurrency:** The Python script is single-threaded and processes requests sequentially.
-*   **Queueing:** `ml-bridge.ts` pushes requests to the Python process's stdin immediately and tracks them in an unbounded `pendingRequests` Map.
-*   **Timeout:** There is a hard 5-second timeout in Node.js for each request.
+**Date:** 2024-05-23
+**Domain:** Performance & Cost
+**Scope:** `src/ml/inference/ml-bridge.ts`, `src/app/api/intelligence/student`
 
-## Risks
-1.  **Request Queue Saturation:** If the arrival rate of prediction requests exceeds the Python processing rate, the operating system's pipe buffer will fill up, and the `pendingRequests` Map will grow indefinitely, leading to memory leaks in Node.js.
-2.  **Timeout Cascades:** If the queue length causes the wait time to exceed 5 seconds, requests will fail in Node.js, but the Python process will still process them (wasted compute), delaying valid subsequent requests.
-3.  **No Backpressure:** The bridge accepts an infinite number of requests.
+## Executive Summary
+A simulation of the ML inference bridge revealed a throughput bottleneck of approximately 41 requests/second. The current architecture allows unbounded concurrency on the Node.js side, which serializes requests to a single Python subprocess. Under high load (e.g., a teacher dashboard loading 30 students × 10 topics = 300 requests), the 5-second timeout in `ml-bridge.ts` will be exceeded, causing failure for ~33% of requests.
 
-## Rate Limit Proposal
+## Simulation Results
+*   **Script:** `scripts/simulate_ml_load.js`
+*   **Load:** 100 concurrent requests
+*   **Total Time:** 2405ms
+*   **Throughput:** ~41.58 req/sec
+*   **Latency per Request:** ~24ms (sequential average)
+*   **Risk:** A burst of >200 requests will cause the 5000ms timeout to trigger for queued requests.
 
-### 1. Implement Concurrency Limiting (Semaphore)
-Instead of an unbounded queue, limit the number of concurrent "in-flight" requests to the Python bridge.
+## Issues Identified
 
-**Recommended Limit:** `50` concurrent requests.
-**Implementation:**
-Use a library like `p-limit` or a custom semaphore in `ml-bridge.ts`.
+### 1. Unbounded Concurrency in `ml-bridge.ts`
+The `batchPredictMastery` function uses `Promise.all` to send all topic predictions to the bridge simultaneously.
+```typescript
+// src/ml/inference/ml-bridge.ts
+const promises = topicFeatures.map(async ({ topic, features }) => {
+    return bridge.predict(features); // Pushes to queue immediately
+});
+```
+This floods the internal `pendingRequests` map and the stdin pipe.
 
+### 2. Strict Timeout
+The 5-second hard timeout in `bridge.predict` is too short for batch processing large cohorts.
+
+### 3. API Route Exposure
+The `/api/intelligence/student` route has no rate limiting. A malicious actor or a bug in the frontend could DoS the python bridge.
+
+## Proposed Solutions
+
+### 1. Implement Concurrency Limiting (Node.js Side)
+Use `p-limit` to restrict the number of concurrent "in-flight" requests to the bridge, or simpler, process topics in chunks.
+
+**Recommended Change in `ml-bridge.ts`:**
 ```typescript
 import pLimit from 'p-limit';
-const limit = pLimit(50);
+const limit = pLimit(50); // Allow 50 concurrent inputs to buffer
 
-public predict(features: MasteryPredictionInput): Promise<MasteryPredictionOutput> {
-  return limit(() => this._predictInternal(features));
+export async function batchPredictMastery(topicFeatures) {
+    const promises = topicFeatures.map(({ topic, features }) => {
+        return limit(() => bridge.predict(features));
+    });
+    return Promise.all(promises);
 }
 ```
+*Note: Since the Python process is single-threaded, `p-limit` mainly helps manages the `pendingRequests` map size and prevents memory pressure, but the real fix for the timeout is increasing it or batching on the Python side.*
 
-### 2. Implement Request Timeout in Python
-The Python script currently processes everything it receives. It should check if a request is "stale" (timestamp logic) or the bridge should support cancellation (complex). A simpler approach is for the Node bridge to drop the promise but managing the Python side is harder.
-**Better approach:** The Node timeout is already 5s. We should lower the concurrency limit so that 50 requests *can* be processed within 5s.
+**Better Fix:** Send the *entire batch* to Python in one JSON object, process it in Python (vectorized), and return the batch. This avoids JSON serialization overhead for every single topic.
 
-### 3. Per-User Rate Limiting
-To prevent a single user from monopolizing the inference engine (e.g., refreshing the dashboard spamming 50 requests):
-**Limit:** 100 predictions per minute per user.
-**Implementation:** Redis-based sliding window or simple in-memory token bucket if single instance.
+### 2. Rate Limiting Middleware
+Implement a Token Bucket rate limiter for `/api/intelligence/student`.
 
-### 4. Batch Processing Optimization
-The current `batchPredictMastery` sends N individual lines to Python.
-**Optimization:** Modify `predict_mastery.py` to accept a *batch* JSON array `[{}, {}, ...]` on a single line.
-*   Reduces IPC overhead (1 write vs N writes).
-*   Allows Python to use vectorized operations (e.g., `model.predict_proba(batch_features)` instead of loop).
+**Policy:**
+*   **Student:** 20 requests / minute
+*   **Teacher:** 500 requests / minute (to allow dashboard loading)
 
-## Proposed Configuration
+### 3. Caching Strategy
+Improve `getCachedPrediction` usage. Ensure that valid cache hits strictly bypass the ML bridge.
 
-| Setting | Value | Rationale |
-| :--- | :--- | :--- |
-| **Max Concurrent Requests** | 50 | Prevents pipe buffer overflow and keeps latency under 5s. |
-| **Request Timeout** | 3000ms | 5s is too long for UI. Fail fast if overloaded. |
-| **Per-User Rate Limit** | 60 req/min | Sufficient for typical dashboard usage (10-20 topics). |
-| **Batch Size** | 20 | For `batchPredictMastery`, split into chunks of 20. |
+## Cost Exposure (Genkit)
+For `generateQuiz` (LLM), we must implement strict rate limits as each call costs money.
+*   **Limit:** 5 quizzes / hour / student.
+*   **Action:** Add a database counter check in `generateQuiz` before calling `ai.generate`.

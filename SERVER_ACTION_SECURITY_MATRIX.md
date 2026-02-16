@@ -1,48 +1,43 @@
 # Server Action Security Matrix
 
+**Date:** 2024-05-23
+**Domain:** Security
+**Scope:** `src/app/`, `src/ai/flows/` Server Actions
+
 ## Executive Summary
-A security audit of 7 Server Action files was conducted. **100% of the audited actions lack authentication and authorization checks.** This means any user (authenticated or anonymous) can invoke these functions, leading to:
-1.  **Unauthorized AI Resource Consumption:** Attackers can drain the API quota (Gemini, TTS, STT).
-2.  **Data Integrity Risks:** One action (`saveChatbotConfiguration`) allows modifying student data without ownership verification (IDOR).
-3.  **Financial Exposure:** High-cost operations (Audio generation, Image analysis) are exposed publicly.
+A static analysis of Server Actions revealed critical authentication and authorization gaps. Several actions that trigger costly AI operations or modify student data lack any session validation or role-based access control (RBAC).
 
 ## Security Matrix
 
-| File Path | Action Name | Auth Status | Risk Level | Threat Vector |
-| :--- | :--- | :--- | :--- | :--- |
-| `src/app/actions/ai-error.ts` | `generateFriendlyErrorMessage` | ❌ Unprotected | High | **Resource Exhaustion**. Publicly accessible LLM endpoint. |
-| `src/app/actions/student-configuration.ts` | `saveChatbotConfiguration` | ❌ Unprotected | **Critical** | **IDOR / Data Tampering**. Arbitrary modification of any student's config. |
-| `src/app/(main)/planner/actions.ts` | `getRevisionPlan` | ❌ Unprotected | Medium | **Resource Exhaustion**. Calls `smartRevisionPlanner`. |
-| `src/app/(main)/mentor/actions.ts` | `getMotivationalAdvice` | ❌ Unprotected | High | **Resource Exhaustion**. Calls `getMotivationalCounseling`. |
-| `src/app/(main)/chat/actions.ts` | `getExplanation` | ❌ Unprotected | High | **Resource Exhaustion**. Calls `explainConcept`. |
-| `src/app/(main)/chat/actions.ts` | `getTextToSpeech` | ❌ Unprotected | **Critical** | **Cost / Resource**. TTS is expensive and easily abuseable. |
-| `src/app/(main)/chat/actions.ts` | `audioConversation` | ❌ Unprotected | **Critical** | **Cost / Resource**. Speech-to-Speech is very expensive. |
-| `src/app/(main)/quiz/actions.ts` | `createQuiz` | ❌ Unprotected | Medium | **Resource Exhaustion**. Caching exists but unique inputs bypass it. |
-| `src/app/(main)/syllabus/actions.ts` | `getSyllabus` | ❌ Unprotected | Medium | **Resource Exhaustion**. Caching exists but unique inputs bypass it. |
+| File Path | Function Name | Auth Check? | Role Check? | Risk Level | Description |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| `src/ai/flows/adaptive-quiz-engine.ts` | `generateQuiz` | ❌ No | ❌ No | **High** | Directly calls `ai.generate`. Unauthenticated users can trigger LLM usage (DoS/Cost Attack). |
+| `src/app/(main)/planner/actions.ts` | `getRevisionPlan` | ❌ No | ❌ No | **High** | Hardcoded `studentId: "user-123"`. Exposure of specific user's revision data. No session context used. |
+| `src/app/actions/student-configuration.ts` | `saveChatbotConfiguration` | ❌ No | ❌ No | **Critical** | IDOR Vulnerability. Accepts `studentId` as argument without verifying it matches the authenticated user. Allows unauthorized modification of student profiles. |
 
-## Remediation Plan
+## Detailed Analysis
 
-1.  **Implement Authentication Middleware:**
-    All Server Actions must verify the user's session at the start of the function.
+### 1. `src/ai/flows/adaptive-quiz-engine.ts`
+*   **Issue:** The `generateQuiz` function is a Server Action that invokes the Genkit AI flow. It does not import or use any authentication helpers (e.g., `getAuth`, `currentUser`).
+*   **Impact:** An attacker could script calls to this endpoint to exhaust the project's AI quota or inflate costs.
+*   **Remediation:**
     ```typescript
-    import { auth } from '@/auth'; // or your auth provider
+    import { getAuth } from "firebase-admin/auth";
     // ...
-    const session = await auth();
-    if (!session || !session.user) {
-      throw new Error("Unauthorized");
-    }
+    const session = await getAuth().verifyIdToken(token);
+    if (!session) throw new Error("Unauthorized");
     ```
 
-2.  **Implement Authorization (RBAC):**
-    For `saveChatbotConfiguration`, ensure the `studentId` matches the authenticated user's ID or that the user is a Teacher/Admin.
-    ```typescript
-    if (session.user.id !== studentId && session.user.role !== 'teacher') {
-      throw new Error("Forbidden");
-    }
-    ```
+### 2. `src/app/(main)/planner/actions.ts`
+*   **Issue:** The `getRevisionPlan` function hardcodes `studentId` to `"user-123"`.
+*   **Impact:** This exposes the learning data of "user-123" to anyone who calls the action. It also prevents the feature from working for real users.
+*   **Remediation:** Remove the hardcoded ID. Retrieve the `uid` from the authenticated session context.
 
-3.  **Rate Limiting:**
-    Implement per-user rate limiting (e.g., using Upstash Redis or a simple database counter) for AI-heavy actions like `audioConversation` and `createQuiz`.
+### 3. `src/app/actions/student-configuration.ts`
+*   **Issue:** The `saveChatbotConfiguration` function accepts `studentId` as a parameter and updates the database.
+*   **Impact:** Insecure Direct Object Reference (IDOR). A malicious actor can modify the chatbot personality for *any* student by guessing their ID.
+*   **Remediation:** Ignore the `studentId` parameter (or validate it). Use the `uid` from the verified session token to identify the document to update.
 
-4.  **CSRF Protection:**
-    Next.js Server Actions have built-in CSRF protection for form submissions, but when called via client-side JavaScript (e.g., `onClick`), ensure headers are respected. Authentication is the primary defense here.
+## General Recommendations
+1.  **Middleware:** Implement a higher-order function or middleware for Server Actions to enforce authentication globally.
+2.  **Context:** Always derive `studentId` from the authenticated session, never trust client-provided IDs for self-modification actions.
