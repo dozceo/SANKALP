@@ -5,3 +5,7 @@
 ## 2025-05-23 - Dynamic Content & Screen Readers
 **Learning:** Dynamic updates like countdown timers can spam screen readers if not controlled with `aria-live="off"` or "polite", and status changes need explicit `role="status"` to be announced.
 **Action:** Always check `aria-live` settings for components that update frequently (every second) versus those that update on user action.
+
+## 2026-02-15 - Missing Focus Styles in Dynamic Lists
+**Learning:** Iterative rendering of native HTML elements (like `<a>` inside `.map()`) often bypasses design system defaults, leading to missing focus indicators in critical navigation areas.
+**Action:** Always verify keyboard navigation on dynamically generated lists, especially those using raw HTML tags instead of design system components.
