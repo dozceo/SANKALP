@@ -13,6 +13,7 @@ import type {
     MasteryPredictionInput,
     MasteryPredictionOutput,
 } from "./types";
+import { chaos } from "@/lib/chaos-config";
 
 const PYTHON_SCRIPT_PATH = process.env.ML_PYTHON_SCRIPT || path.join(
     process.cwd(),
@@ -175,6 +176,9 @@ const API_URL = process.env.ML_API_URL || "http://localhost:8000/predict/mastery
 export async function predictMastery(
     features: MasteryPredictionInput
 ): Promise<MasteryPredictionOutput> {
+    // Chaos Injection
+    await chaos.checkChaos('ml');
+
     // Optimization: Try to call the API first (persistent server is much faster)
     try {
         const controller = new AbortController();
@@ -209,6 +213,9 @@ export async function predictMastery(
 export async function batchPredictMastery(
     topicFeatures: Array<{ topic: string; features: MasteryPredictionInput }>
 ): Promise<Array<{ topic: string; prediction: MasteryPredictionOutput }>> {
+    // Chaos Injection
+    await chaos.checkChaos('ml');
+
     if (topicFeatures.length === 0) {
         return [];
     }
