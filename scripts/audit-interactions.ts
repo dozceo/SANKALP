@@ -3,91 +3,127 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const INTERACTIVE_ELEMENTS = ['button', 'a', 'input', 'select', 'textarea'];
-const INTERACTIVE_COMPONENTS = ['Button', 'Link', 'Input', 'Select', 'Textarea'];
 
 interface InteractionIssue {
   file: string;
-  line: number;
   element: string;
-  missingStates: string[];
+  issue: string;
 }
 
 const issues: InteractionIssue[] = [];
 
 function scanFile(filePath: string) {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
 
-  lines.forEach((line, index) => {
-    // Check for interactive elements
-    // Regex: <(button|a|input|...) ... className="...">
-    // This is simple and might miss multiline, but good enough for a start.
-    const elementRegex = /<([a-zA-Z0-9]+)(\s+[^>]*?)className=["']([^"']+)["']/;
-    const match = line.match(elementRegex);
+  // 1. Check for interactive elements and missing states
+  // Regex to match opening tag of interactive elements
+  // This is a rough approximation.
+  const tagRegex = /<(button|a|input|select|textarea)\b([^>]*)>/g;
+  let match;
+  while ((match = tagRegex.exec(content)) !== null) {
+    const element = match[1];
+    const attributes = match[2];
 
-    if (match) {
-      const element = match[1];
-      const classes = match[3];
+    // Find className inside attributes
+    const classMatch = attributes.match(/className=["']([^"']+)["']/);
+    if (classMatch) {
+      const classes = classMatch[1];
+      const missing: string[] = [];
 
-      if (INTERACTIVE_ELEMENTS.includes(element) || INTERACTIVE_COMPONENTS.includes(element)) {
-        const missing: string[] = [];
-
-        // Check for states
-        // If it's a custom component like Button, it might have default styles.
-        // But if it's a raw element, it needs classes.
-
-        if (INTERACTIVE_ELEMENTS.includes(element)) {
-             if (!classes.includes('hover:') && !classes.includes('group-hover:')) missing.push('hover');
-             if (!classes.includes('focus:') && !classes.includes('focus-visible:') && !classes.includes('ring-')) missing.push('focus');
-             if (!classes.includes('active:')) missing.push('active');
-             if ((element === 'button' || element === 'input') && !classes.includes('disabled:')) missing.push('disabled');
-        } else {
-            // For components, we assume they have defaults unless overridden.
-            // But if className is provided, we might want to check if it breaks things?
-            // Actually, let's just log if they are used without obvious feedback classes IF they are raw elements.
-            // If they are components, we assume they are safe unless we see something suspicious.
-            // The prompt asks to "Verify that all interactive components provide visual feedback".
-            // So I will focus on raw elements which are the most likely offenders.
-        }
-
-        if (missing.length > 0) {
-            // If it's 'a' tag, maybe it's just a link.
-            if (element === 'a' && missing.includes('disabled')) {
-                // Links don't usually have disabled state in the same way
-                const dIndex = missing.indexOf('disabled');
-                if (dIndex > -1) missing.splice(dIndex, 1);
-            }
-             if (element === 'a' && missing.includes('active')) {
-                // Links don't always need active
-                const aIndex = missing.indexOf('active');
-                if (aIndex > -1) missing.splice(aIndex, 1);
-            }
-
-            if (missing.length > 0) {
-              issues.push({
-                file: filePath,
-                line: index + 1,
-                element,
-                missingStates: missing
-              });
-            }
-        }
+      // Check for hover
+      if (!classes.includes('hover:') && !classes.includes('group-hover:')) {
+          // If it's a button, it should have hover.
+          // If it uses a variant (e.g. valid shadcn classes like 'ghost'), it might handle it?
+          // But here we see raw classes.
+          missing.push('hover');
       }
-    }
 
-    // Check for div with onClick (accessibility issue + interaction feedback)
-    if (line.includes('onClick=') && line.includes('<div')) {
+      // Check for focus
+      if (!classes.includes('focus:') && !classes.includes('focus-visible:') && !classes.includes('ring-')) {
+          missing.push('focus');
+      }
+
+      // Check for active (only for button really critical)
+      if (element === 'button' && !classes.includes('active:')) {
+          missing.push('active');
+      }
+
+      // Check for disabled (button, input, etc)
+      if ((element === 'button' || element === 'input') && !classes.includes('disabled:')) {
+          // Check if 'disabled' attribute is present as a prop?
+          // But visual feedback needs a class usually, unless default browser styles are relied upon.
+          // Tailwind requires disabled: modifiers.
+          missing.push('disabled');
+      }
+
+      // Filter out false positives for 'a' tag
+      if (element === 'a') {
+         // remove active/disabled
+         const aIndex = missing.indexOf('active');
+         if (aIndex > -1) missing.splice(aIndex, 1);
+         const dIndex = missing.indexOf('disabled');
+         if (dIndex > -1) missing.splice(dIndex, 1);
+      }
+
+      if (missing.length > 0) {
         issues.push({
-            file: filePath,
-            line: index + 1,
-            element: 'div with onClick',
-            missingStates: ['semantic-button', 'keyboard-interaction', 'visual-feedback']
+          file: filePath,
+          element,
+          issue: `Missing states: ${missing.join(', ')}`
         });
+      }
+    } else {
+        // No className? using default styles? or style prop?
+        // If no className, we can't check for utility classes.
+        // Assuming it might be unstyled or using global styles.
+        // Warn if it's a raw button.
+        if (element === 'button') {
+            issues.push({
+                file: filePath,
+                element,
+                issue: 'Raw button without className (missing visual feedback check)'
+            });
+        }
     }
-  });
+  }
+
+  // 2. Check for non-interactive elements with onClick
+  const clickRegex = /<(div|span|p|li|section|article)\b([^>]*)onClick/g;
+  while ((match = clickRegex.exec(content)) !== null) {
+      const element = match[1];
+      const attributes = match[2];
+
+      // Check for role="button" and tabIndex
+      const hasRole = attributes.includes('role="button"');
+      const hasTabIndex = attributes.includes('tabIndex');
+
+      if (!hasRole || !hasTabIndex) {
+          issues.push({
+              file: filePath,
+              element,
+              issue: `Non-interactive element with onClick missing role="button" or tabIndex`
+          });
+      }
+
+      // Also check visual feedback
+      if (attributes.includes('className')) {
+           const classMatch = attributes.match(/className=["']([^"']+)["']/);
+           if (classMatch) {
+               const classes = classMatch[1];
+               if (!classes.includes('hover:') && !classes.includes('cursor-pointer')) {
+                   issues.push({
+                       file: filePath,
+                       element,
+                       issue: `Clickable ${element} missing hover state or cursor-pointer`
+                   });
+               }
+           }
+      }
+  }
 }
 
 function traverseDir(dir: string) {
+  if (!fs.existsSync(dir)) return;
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const fullPath = path.join(dir, file);
@@ -108,11 +144,11 @@ let report = '# Interaction Feedback Gap Report\n\n';
 if (issues.length === 0) {
   report += 'No interaction feedback gaps found.\n';
 } else {
-  report += '| File | Line | Element | Missing States |\n|---|---|---|---|\n';
+  report += '| File | Element | Issue |\n|---|---|---|\n';
   issues.forEach(i => {
-    report += `| ${i.file} | ${i.line} | ${i.element} | ${i.missingStates.join(', ')} |\n`;
+    report += `| ${i.file} | ${i.element} | ${i.issue} |\n`;
   });
 }
 
-fs.writeFileSync('interaction-gap-report.md', report);
-console.log('Interaction Audit Complete. Report saved to interaction-gap-report.md');
+fs.writeFileSync('interaction-feedback-gap-report.md', report);
+console.log('Interaction Audit Complete. Report saved to interaction-feedback-gap-report.md');
