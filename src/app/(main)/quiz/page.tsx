@@ -23,8 +23,10 @@ type QuizQuestion = AdaptiveQuizOutput["quiz"][0];
 const quizFormSchema = z.object({
   topic: z.string().min(2, { message: "Topic must be at least 2 characters." }),
   numQuestions: z.coerce.number().min(1, "Please enter at least 1 question.").max(10, "You can generate a maximum of 10 questions."),
-  educationLevel: z.string().min(3, { message: "Please specify an educational level." }),
-  difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+  educationLevel: z.string().min(3, { message: "Educational level must be at least 3 characters." }),
+  difficulty: z.enum(['Easy', 'Medium', 'Hard'], {
+    errorMap: () => ({ message: "Please select a valid difficulty level." }),
+  }),
 });
 
 
@@ -251,7 +253,7 @@ export default function QuizPage() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="numQuestions"

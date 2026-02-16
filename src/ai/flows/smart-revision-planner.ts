@@ -32,7 +32,7 @@ const SmartRevisionPlannerInputSchema = z.object({
 });
 export type SmartRevisionPlannerInput = z.infer<typeof SmartRevisionPlannerInputSchema>;
 
-const SmartRevisionPlannerOutputSchema = z.object({
+export const SmartRevisionPlannerOutputSchema = z.object({
   revisionList: z.array(
     z.object({
       topic: z.string().describe('The topic to revise.'),
@@ -179,10 +179,10 @@ Your job is to explain WHY each topic needs revision in a motivating, student-fr
 
 Topics to explain: {{{topicsToExplain}}}
 
-For each topic, provide a clear, encouraging reason (1-2 sentences). Focus on:
-- Spaced repetition benefits
-- Building confidence through practice
-- Addressing weak areas early
+For each topic, use the provided reason_code (URGENT_REVISION, SCHEDULED_REVISION, FALLBACK) to tailor the explanation (1-2 sentences):
+- URGENT_REVISION: Emphasize that mastery is slipping and quick review will fix it.
+- SCHEDULED_REVISION: Focus on spaced repetition and memory retention.
+- FALLBACK: Mention it's been a while since they practiced.
 
 Output a JSON object with an "explanations" array.`,
 });
@@ -255,19 +255,37 @@ const smartRevisionPlannerFlow = ai.defineFlow(
       .slice(0, 5) // Limit to top 5
       .map(
         (d) =>
-          `${d.topic} (mastery: ${(d.masteryProbability * 100).toFixed(0)}%, priority: ${d.priority})`
+          `${d.topic} (mastery: ${(d.masteryProbability * 100).toFixed(0)}%, priority: ${d.priority}, reason_code: ${d.adkDecision?.action || 'FALLBACK'})`
       )
       .join(', ');
 
-    // LLM GENERATES EXPLANATIONS
-    const { output } = await explanationPrompt({ topicsToExplain });
+    let llmExplanations: { topic: string; reason: string }[] = [];
+    try {
+      // LLM GENERATES EXPLANATIONS
+      const { output } = await explanationPrompt({ topicsToExplain });
+      llmExplanations = output?.explanations || [];
+    } catch (error) {
+      console.error("LLM Explanation Failed:", error);
+      // Fallback logic continues below
+    }
 
     // Combine ML decisions with LLM explanations
     const revisionList = mlDecisions.slice(0, 5).map((decision, idx) => {
-      const explanation = output?.explanations?.find((e) => e.topic === decision.topic);
+      const explanation = llmExplanations.find((e) => e.topic === decision.topic);
+
+      // Robust fallback reason if LLM fails or explanation missing
+      let fallbackReason = 'Recommended for revision based on your learning history.';
+      if (!decision.adkDecision) {
+         fallbackReason = 'It has been a while since you practiced this topic.';
+      } else if (decision.adkDecision.action === 'URGENT_REVISION') {
+         fallbackReason = 'Urgent: Your mastery is critically low.';
+      } else if (decision.adkDecision.action === 'SCHEDULED_REVISION') {
+         fallbackReason = 'Spaced repetition: Time to review this to prevent forgetting.';
+      }
+
       return {
         topic: decision.topic,
-        reason: explanation?.reason || 'Recommended for revision based on learning analytics.',
+        reason: explanation?.reason || fallbackReason,
         priority: decision.priority,
         masteryScore: decision.masteryProbability,
       };

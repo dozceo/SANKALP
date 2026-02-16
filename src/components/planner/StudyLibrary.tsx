@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useStudent } from "@/hooks/useStudent";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,15 +24,15 @@ export function StudyLibrary() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get unique subjects
-    const subjects = Array.from(new Set(studyMaterials.map(m => m.subject)));
+    const subjects = useMemo(() => Array.from(new Set(studyMaterials.map(m => m.subject))), [studyMaterials]);
 
     // Filter materials
-    const filteredMaterials = studyMaterials.filter(material => {
+    const filteredMaterials = useMemo(() => studyMaterials.filter(material => {
         const matchesSearch = material.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
             material.subject.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
         return matchesSearch && matchesFilter;
-    });
+    }), [studyMaterials, searchTerm, filterSubject]);
 
     // Status badge styles
     const getStatusVariant = (status: string) => {
@@ -62,7 +62,7 @@ export function StudyLibrary() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -73,7 +73,7 @@ export function StudyLibrary() {
                             />
                         </div>
                         <Select value={filterSubject} onValueChange={setFilterSubject}>
-                            <SelectTrigger className="w-[200px]">
+                            <SelectTrigger className="w-full sm:w-[200px]">
                                 <Filter className="h-4 w-4 mr-2" />
                                 <SelectValue placeholder="Filter by subject" />
                             </SelectTrigger>

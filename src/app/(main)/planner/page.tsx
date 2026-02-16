@@ -17,7 +17,7 @@ export default function PlannerPage() {
       </div>
 
       <Tabs defaultValue="organize" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
           <TabsTrigger value="add">Add Data</TabsTrigger>
           <TabsTrigger value="organize">Organize</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>

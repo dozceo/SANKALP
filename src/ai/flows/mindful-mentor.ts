@@ -17,7 +17,7 @@ const MotivationalCounselingInputSchema = z.object({
 });
 export type MotivationalCounselingInput = z.infer<typeof MotivationalCounselingInputSchema>;
 
-const MotivationalCounselingOutputSchema = z.object({
+export const MotivationalCounselingOutputSchema = z.object({
   advice: z.string().describe('Empathetic and actionable advice for the student.'),
 });
 export type MotivationalCounselingOutput = z.infer<typeof MotivationalCounselingOutputSchema>;

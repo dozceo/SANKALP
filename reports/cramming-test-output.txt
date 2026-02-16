@@ -1,0 +1,56 @@
+--- Cramming Helper Activation Logic Tests ---
+
+Test: Standard 2 Days Before
+  Today: 2023-10-01T10:00:00.000Z
+  Exam:  2023-10-03T10:00:00.000Z
+  Diff (days): 2
+  Active: true
+--------------------------------------------------
+Test: Boundary 3 Days Before
+  Today: 2023-10-01T10:00:00.000Z
+  Exam:  2023-10-04T10:00:00.000Z
+  Diff (days): 3
+  Active: true
+--------------------------------------------------
+Test: Boundary Just Over 3 Days
+  Today: 2023-10-01T09:59:59.000Z
+  Exam:  2023-10-04T10:00:00.000Z
+  Diff (days): 4
+  Active: false
+--------------------------------------------------
+Test: Boundary 1 Day Before
+  Today: 2023-10-02T10:00:00.000Z
+  Exam:  2023-10-03T10:00:00.000Z
+  Diff (days): 1
+  Active: true
+--------------------------------------------------
+Test: Less than 1 Day Before (23h)
+  Today: 2023-10-02T11:00:00.000Z
+  Exam:  2023-10-03T10:00:00.000Z
+  Diff (days): 1
+  Active: true
+--------------------------------------------------
+Test: Same Day
+  Today: 2023-10-03T08:00:00.000Z
+  Exam:  2023-10-03T10:00:00.000Z
+  Diff (days): 1
+  Active: true
+--------------------------------------------------
+Test: Exam Passed
+  Today: 2023-10-04T10:00:00.000Z
+  Exam:  2023-10-03T10:00:00.000Z
+  Diff (days): -1
+  Active: false
+--------------------------------------------------
+Test: Late Night / Early Morning
+  Today: 2023-10-02T23:00:00.000Z
+  Exam:  2023-10-03T08:00:00.000Z
+  Diff (days): 1
+  Active: true
+--------------------------------------------------
+Test: Strict Time Check (3d 2h)
+  Today: 2023-10-01T08:00:00.000Z
+  Exam:  2023-10-04T10:00:00.000Z
+  Diff (days): 4
+  Active: false
+--------------------------------------------------

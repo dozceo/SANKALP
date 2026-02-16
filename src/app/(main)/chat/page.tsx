@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AudioConversation } from "@/components/app/audio-conversation";
+import { useTranslations } from 'next-intl';
 
 
 type Message = {
@@ -22,6 +23,7 @@ type Message = {
 };
 
 export default function ChatPage() {
+    const t = useTranslations('Chat');
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [language, setLanguage] = useState("English");
@@ -33,6 +35,24 @@ export default function ChatPage() {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
+    // Load chat history
+    useEffect(() => {
+        const savedMessages = localStorage.getItem('chat_messages');
+        if (savedMessages) {
+            try {
+                setMessages(JSON.parse(savedMessages));
+            } catch (e) {
+                console.error("Failed to parse chat history", e);
+            }
+        }
+    }, []);
+
+    // Save chat history
+    useEffect(() => {
+        if (messages.length > 0) {
+            localStorage.setItem('chat_messages', JSON.stringify(messages));
+        }
+    }, [messages]);
 
     useEffect(() => {
         if (scrollAreaRef.current) {
@@ -84,26 +104,26 @@ export default function ChatPage() {
     return (
         <div className="flex flex-col h-full max-h-[calc(100vh-8rem)]">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold font-headline">Multilingual Cognitive Chatbot</h1>
+                <h1 className="text-3xl font-bold font-headline">{t('title')}</h1>
                 <p className="text-muted-foreground">
-                    Ask for an explanation of any concept from your syllabus.
+                    {t('description')}
                 </p>
             </div>
             <Card className="flex flex-col flex-1">
-                <CardHeader className="flex flex-row justify-between items-center">
+                <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
                     <div className="flex items-center gap-2">
                          <Button variant="ghost" size="icon" onClick={() => setIsAudioChatOpen(true)}>
                             <Mic className="h-6 w-6 text-primary" />
                             <span className="sr-only">Start Audio Conversation</span>
                         </Button>
                         <div>
-                            <CardTitle>CognitoBot</CardTitle>
-                            <CardDescription>Your personal AI learning assistant.</CardDescription>
+                            <CardTitle>{t('botName')}</CardTitle>
+                            <CardDescription>{t('botDescription')}</CardDescription>
                         </div>
                     </div>
                      <Select defaultValue={language} onValueChange={setLanguage}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select Language" />
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                            <SelectValue placeholder={t('selectLanguage')} />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="English">English</SelectItem>
@@ -118,7 +138,7 @@ export default function ChatPage() {
                         <div className="space-y-4">
                             {messages.length === 0 && (
                                 <div className="text-center text-muted-foreground">
-                                    <p>Ask me something like "Explain photosynthesis" or "What is a quadratic equation?"</p>
+                                    <p>{t('emptyState')}</p>
                                 </div>
                             )}
                             {messages.map((message) => (
@@ -175,7 +195,7 @@ export default function ChatPage() {
                         <Input 
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Ask a question..."
+                            placeholder={t('placeholder')}
                             disabled={isLoading}
                             aria-label="Chat message"
                         />
@@ -194,7 +214,7 @@ export default function ChatPage() {
             <Dialog open={isAudioChatOpen} onOpenChange={setIsAudioChatOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Real-time Audio Conversation</DialogTitle>
+                        <DialogTitle>{t('audioTitle')}</DialogTitle>
                     </DialogHeader>
                     <AudioConversation />
                 </DialogContent>

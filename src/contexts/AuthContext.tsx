@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 import {
     User,
     Auth,
@@ -83,13 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return unsubscribe;
     }, []);
 
-    const signIn = async (email: string, password: string) => {
+    const signIn = useCallback(async (email: string, password: string) => {
         if (!auth) throw new Error('Auth not initialized'); // Added guard
         const userCredential = await signInWithEmailAndPassword(auth as Auth, email, password); // Cast auth to Auth
         return userCredential.user;
-    };
+    }, []);
 
-    const signUp = async (
+    const signUp = useCallback(async (
         email: string,
         password: string,
         name: string,
@@ -142,22 +142,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Cache the role on signup
         localStorage.setItem(`sankalp_role_${userCredential.user.uid}`, userRole);
         return userCredential.user;
-    };
+    }, []);
 
-    const signInWithGoogle = async () => {
+    const signInWithGoogle = useCallback(async () => {
         if (!auth) throw new Error('Auth not initialized');
         const provider = new GoogleAuthProvider();
         const userCredential = await signInWithPopup(auth as Auth, provider);
         return userCredential.user;
-    };
+    }, []);
 
-    const signOut = async () => {
+    const signOut = useCallback(async () => {
         await firebaseSignOut(auth);
         setUser(null);
         setRole(null);
-    };
+    }, []);
 
-    const value = {
+    const value = useMemo(() => ({
         user,
         role,
         onboardingCompleted,
@@ -166,7 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signInWithGoogle,
         signOut,
-    };
+    }), [user, role, onboardingCompleted, loading, signIn, signUp, signInWithGoogle, signOut]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -21,7 +21,7 @@ const AdaptiveQuizInputSchema = z.object({
 
 export type AdaptiveQuizInput = z.infer<typeof AdaptiveQuizInputSchema>;
 
-const AdaptiveQuizOutputSchema = z.object({
+export const AdaptiveQuizOutputSchema = z.object({
   quiz: z.array(
     z.object({
       question: z.string().describe('The quiz question.'),
