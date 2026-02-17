@@ -1,75 +1,94 @@
-import { exec } from 'child_process';
+import { execSync } from 'child_process';
 import fs from 'fs';
+import path from 'path';
 
-const REPORT_FILE = 'BUNDLE_SIZE_REPORT.md';
+const REPORT_PATH = 'BUNDLE_SIZE_REPORT.md';
+const APP_DIR = 'src/app';
 
-console.log('Starting build for bundle analysis...');
+function analyzeBundleSize() {
+  console.log('📦 Starting Bundle Size Analysis...');
 
-// Mock env vars potentially needed for build to avoid crashes due to missing keys
-const env = {
-  ...process.env,
-  GOOGLE_GENAI_API_KEY: 'mock_key_for_build',
-  NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'mock_project_id',
-  GEMINI_API_KEY: 'mock_key'
-};
+  let buildOutput = '';
+  let buildSuccess = false;
 
-const buildProcess = exec('npm run build', { env, maxBuffer: 1024 * 1024 * 20 }, (error, stdout, stderr) => {
-  let output = stdout + '\n' + stderr;
-
-  if (error) {
-    console.error('Build failed:', error);
-    fs.writeFileSync(REPORT_FILE, `# Bundle Size Analysis Failed\n\nBuild failed with error:\n\`\`\`\n${stderr}\n\`\`\``);
-    return;
+  try {
+    // Attempt to run Next.js build.
+    // We redirect stderr to stdout to capture everything.
+    // We set NODE_ENV=production to ensure correct build size.
+    console.log('   Running `next build`... (this may take a minute)');
+    buildOutput = execSync('npx next build', {
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, NODE_ENV: 'production', NEXT_TELEMETRY_DISABLED: '1' }
+    });
+    buildSuccess = true;
+    console.log('✅ Build successful.');
+  } catch (error: any) {
+    console.warn('⚠️ Build failed. Falling back to static file analysis.');
+    if (error.stdout) buildOutput += `\nStdout:\n${error.stdout.toString()}`;
+    if (error.stderr) buildOutput += `\nStderr:\n${error.stderr.toString()}`;
   }
 
-  // Parse stdout for the table
-  // Look for "Route (app)" header
-  const lines = output.split('\n');
-  let tableLines = [];
-  let capturing = false;
+  let reportContent = `# Bundle Size Analysis Report\n\n**Date:** ${new Date().toISOString()}\n\n`;
 
-  for (const line of lines) {
-    // Next.js build output table usually starts with headers like "Route (app)" or just "Page"
-    if (line.includes('Route (app)') || line.includes('First Load JS')) {
-      capturing = true;
+  if (buildSuccess) {
+    // Extract the table from build output
+    const lines = buildOutput.split('\n');
+    let tableStarted = false;
+    let tableContent = '';
+
+    for (const line of lines) {
+      if (line.includes('Route (app)') || line.includes('Size') || line.includes('First Load JS')) {
+        tableStarted = true;
+      }
+      if (tableStarted) {
+        tableContent += line + '\n';
+        // Stop capturing if we hit empty lines after table (heuristic)
+        if (line.trim() === '' && tableContent.length > 500) break;
+      }
     }
 
-    if (capturing) {
-      // Stop capturing if we hit typical end messages
-      if (line.includes('Build finished')) break;
-      tableLines.push(line);
+    if (tableContent) {
+        reportContent += `## Build Output Summary\n\n\`\`\`\n${tableContent}\n\`\`\`\n`;
+    } else {
+        reportContent += `## Build Output\n\n\`\`\`\n${buildOutput}\n\`\`\`\n`;
     }
-  }
 
-  // If no table found, dump the last 50 lines
-  let content = '';
-  if (tableLines.length > 0) {
-    content = tableLines.join('\n');
   } else {
-    content = lines.slice(-50).join('\n');
+    reportContent += `## Build Failed\n\nThe build could not complete, likely due to missing environment variables or dependencies. Below is a static analysis of file sizes in \`src/app\`.\n\n### Static File Analysis\n\n| File Path | Size (KB) |\n|---|---|\n`;
+
+    const files = getAllFiles(APP_DIR);
+    const largeFiles = files
+        .map(f => ({ path: f, size: fs.statSync(f).size / 1024 }))
+        .sort((a, b) => b.size - a.size)
+        .slice(0, 20); // Top 20 largest files
+
+    largeFiles.forEach(f => {
+        reportContent += `| \`${f.path}\` | ${f.size.toFixed(2)} |\n`;
+    });
+
+    reportContent += `\n### Build Error Log\n\n\`\`\`\n${buildOutput.slice(0, 2000)}...\n\`\`\`\n`;
   }
 
-  // Format report
-  const report = `# Bundle Size Analysis
+  // Recommendations
+  reportContent += `\n## Recommendations\n- **Code Splitting:** Ensure heavy components are imported dynamically using \`next/dynamic\`.\n- **Dependencies:** Analyze \`package.json\` for unused or large libraries.\n- **Images:** Use \`next/image\` for automatic optimization.\n`;
 
-**Date:** ${new Date().toISOString()}
+  fs.writeFileSync(REPORT_PATH, reportContent);
+  console.log(`✅ Report generated: ${REPORT_PATH}`);
+}
 
-## Build Output Summary
+function getAllFiles(dirPath: string, arrayOfFiles: string[] = []) {
+  const files = fs.readdirSync(dirPath);
 
-\`\`\`
-${content}
-\`\`\`
+  files.forEach(file => {
+    if (fs.statSync(dirPath + "/" + file).isDirectory()) {
+      arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles);
+    } else {
+      arrayOfFiles.push(path.join(dirPath, file));
+    }
+  });
 
-## Recommendations
-- Analyze large pages (>150kB First Load JS).
-- Use dynamic imports (\`next/dynamic\`) for heavy components.
-- Check \`package.json\` for unused large dependencies.
-`;
+  return arrayOfFiles;
+}
 
-  fs.writeFileSync(REPORT_FILE, report);
-  console.log(`Report saved to ${REPORT_FILE}`);
-});
-
-// Stream output to console so we can see progress
-buildProcess.stdout?.pipe(process.stdout);
-buildProcess.stderr?.pipe(process.stderr);
+analyzeBundleSize();
