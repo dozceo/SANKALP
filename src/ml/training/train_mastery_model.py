@@ -19,6 +19,12 @@ import subprocess
 import json
 import sys
 
+def get_repo_root():
+    """Get the repository root path"""
+    # Assuming this script is at src/ml/training/train_mastery_model.py
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.abspath(os.path.join(script_dir, "../../../"))
+
 def get_git_hash():
     """Get the current git commit hash"""
     try:
@@ -39,21 +45,30 @@ def get_file_hash(filepath):
 def train_model():
     """Train the Topic Mastery prediction model"""
     
-    # Load training data
-    data_path = "training_data.csv"
-    if not os.path.exists(data_path):
-        print("❌ Error: training_data.csv not found!")
+    # Setup paths
+    script_path_abs = os.path.abspath(__file__)
+    script_dir = os.path.dirname(script_path_abs)
+    repo_root = get_repo_root()
+
+    # Calculate relative paths for metadata
+    script_rel_path = os.path.relpath(script_path_abs, repo_root)
+
+    # Data path relative to script location
+    data_path_abs = os.path.join(script_dir, "training_data.csv")
+    data_rel_path = os.path.relpath(data_path_abs, repo_root)
+
+    if not os.path.exists(data_path_abs):
+        print(f"❌ Error: {data_path_abs} not found!")
         print("   Run generate_data.py first to create training data.")
         return
 
     # Calculate hashes for provenance
-    script_path = __file__
-    script_hash = get_file_hash(script_path)
-    data_hash = get_file_hash(data_path)
+    script_hash = get_file_hash(script_path_abs)
+    data_hash = get_file_hash(data_path_abs)
     git_hash = get_git_hash()
     
     print("📊 Loading training data...")
-    df = pd.read_csv(data_path)
+    df = pd.read_csv(data_path_abs)
     
     # Separate features and target
     feature_columns = [
@@ -109,13 +124,8 @@ def train_model():
         print(f"   {feature}: {abs(coef):.3f} ({direction} mastery)")
     
     # Save model
-    # Use path relative to repo root if running from root, or script dir
-    if os.path.exists("src/ml/models"):
-        model_dir = "src/ml/models"
-    else:
-        # Fallback to relative to script if running from script dir
-        model_dir = "../models"
-
+    # Use absolute path based on script location to be safe
+    model_dir = os.path.join(script_dir, "../models")
     os.makedirs(model_dir, exist_ok=True)
     model_path = os.path.join(model_dir, "mastery_model.pkl")
 
@@ -126,6 +136,8 @@ def train_model():
         "metadata": {
             "script_hash": script_hash,
             "data_hash": data_hash,
+            "script_path": script_rel_path,
+            "data_path": data_rel_path,
             "git_hash": git_hash,
             "training_timestamp": timestamp,
             "sklearn_version": sklearn.__version__
@@ -143,7 +155,9 @@ def train_model():
             "git_commit_hash": git_hash,
             "script_hash": script_hash,
             "data_hash": data_hash,
-            "data_source": data_path
+            "script_path": script_rel_path,
+            "data_path": data_rel_path,
+            "data_source": data_path_abs
         },
         "parameters": {
             "model_type": "LogisticRegression",
