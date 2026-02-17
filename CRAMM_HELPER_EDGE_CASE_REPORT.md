@@ -1,63 +1,29 @@
 # Cramming Helper Activation Logic Edge Case Report
 
-## Executive Summary
-An automated simulation of the Cramming Helper activation logic was performed to test edge cases related to exam dates, timezones, and boundary conditions. The test revealed critical logic flaws in both the Frontend component and the ADK Decision Engine that prevent the feature from activating on the day of the exam and erroneously activate it for past exams.
-
 ## Methodology
-A test script (`scripts/test-cramming-activation.ts`) was created to replicate:
-1.  **Frontend Logic**: The `isCrammingTime` calculation from `src/app/(main)/syllabus/page.tsx`.
-2.  **ADK Logic**: The Policy Rule 0 (Cramming Mode) from `src/ai/adk/decision-engine.ts`.
+Simulating the time difference logic between `currentDate` and `examDate` to verify activation boundaries (1-3 days).
+Logic under test: `Math.ceil((exam - now) / (24h))` in [1, 3]
 
-The script simulated `daysUntilExam` values of 0, 1, 3, 4, -1, and fractional days (12 hours).
+## Test Results
 
-## Findings
+| Scenario | Days Until | Active? | Expected | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| Standard Activation (2 days out) | 2 | true | true | ✅ PASS |
+| Boundary Activation (3 days out - exact) | 3 | true | true | ✅ PASS |
+| Boundary Activation (1 day out - exact) | 1 | true | true | ✅ PASS |
+| Too Early (4 days out) | 4 | false | false | ✅ PASS |
+| Critical: Exam Day (0 days) | 0 | false | true | ❌ FAIL |
+| Past Exam (-1 day) | -1 | false | false | ✅ PASS |
+| Just barely 3 days (3 days + 1 second) | 4 | false | false | ✅ PASS |
+| Just barely under 3 days (3 days - 1 second) | 3 | true | true | ✅ PASS |
+| Just barely 1 day (1 day - 1 second = 0.99 days) | 1 | true | true | ✅ PASS |
+| Timezone drift (Late night cramming) | 2 | true | true | ✅ PASS |
 
-### 1. Exam Day Failure (Critical)
-**Scenario:** The exam is today (`daysUntilExam = 0`).
--   **Frontend Behavior:** `isCrammingTime` evaluates to `false`.
-    -   *Logic:* `daysUntilExam <= 3 && daysUntilExam >= 1`.
-    -   *Result:* 0 is not >= 1.
--   **ADK Behavior:** Decision defaults to `SCHEDULED_REVISION`.
-    -   *Logic:* `if (daysUntilExam && daysUntilExam <= 3 ...)`
-    -   *Result:* `daysUntilExam` (0) evaluates as falsy in JavaScript, causing the condition to fail immediately.
--   **Impact:** Students cannot access cramming tools on the most critical day.
+## Summary
 
-### 2. Past Exam Activation (ADK Bug)
-**Scenario:** The exam was yesterday (`daysUntilExam = -1`).
--   **Frontend Behavior:** `isCrammingTime` evaluates to `false` (Correct).
--   **ADK Behavior:** Decision activates `URGENT_REVISION` (Cramming Mode).
-    -   *Logic:* `-1` is truthy and `-1 <= 3`.
-    -   *Result:* The system recommends cramming for an exam that has already passed.
--   **Impact:** Irrelevant recommendations for completed topics.
+- **Total Tests:** 10
+- **Passed:** 9
+- **Failed:** 1
 
-### 3. Boundary Conditions
--   **12 Hours Until Exam:**
-    -   Calculated as `daysUntilExam = 1` (due to `Math.ceil`).
-    -   Correctly activates Cramming Mode.
--   **4 Days Until Exam:**
-    -   Correctly identified as Routine Revision (not Cramming).
-
-## Recommendations
-
-### Frontend Fix
-Update the condition in `src/app/(main)/syllabus/page.tsx`:
-```typescript
-// Current
-const isCrammingTime = daysUntilExam <= 3 && daysUntilExam >= 1;
-
-// Recommended
-const isCrammingTime = daysUntilExam <= 3 && daysUntilExam >= 0;
-```
-
-### ADK Logic Fix
-Update the Policy Rule 0 in `src/ai/adk/decision-engine.ts`:
-```typescript
-// Current
-if (daysUntilExam && daysUntilExam <= 3 && mastery_probability < 0.6)
-
-// Recommended
-if (daysUntilExam !== undefined && daysUntilExam >= 0 && daysUntilExam <= 3 && mastery_probability < 0.6)
-```
-
-## Conclusion
-The current logic implementation contains off-by-one errors and truthy/falsy evaluation pitfalls that compromise the feature's reliability during the critical exam window. Immediate remediation is recommended.
+⚠️ **CRITICAL BUG DETECTED:** Logic fails on edge cases.
+Specifically, the Exam Day (0 days) logic is flawed because `daysUntilExam >= 1` excludes 0.

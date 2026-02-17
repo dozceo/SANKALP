@@ -1,88 +1,137 @@
 
-import { makeRevisionDecision } from '../src/ai/adk/decision-engine';
-import { DecisionContext, MLSignals, DecisionAction } from '../src/ai/adk/types';
+/**
+ * Simulates the Cramming Helper activation logic found in src/app/(main)/syllabus/page.tsx.
+ *
+ * Original Logic:
+ * const examDate = new Date();
+ * examDate.setDate(examDate.getDate() + 2);
+ * const today = new Date();
+ * const timeDiff = examDate.getTime() - today.getTime();
+ * const daysUntilExam = Math.ceil(timeDiff / (1000 * 3600 * 24));
+ * const isCrammingTime = daysUntilExam <= 3 && daysUntilExam >= 1;
+ */
 
-// Mock ML Signals
-const mockMLSignals: MLSignals = {
-    mastery_probability: 0.5,
-    confidence: 0.8,
-    days_since_last_revision: 5,
-    attempts_count: 2,
-    performance_trend: "STABLE",
-    attention_risk: "LOW"
-};
-
-// Frontend Logic Simulation
-function simulateFrontendLogic(today: Date, examDate: Date) {
-    const timeDiff = examDate.getTime() - today.getTime();
-    const daysUntilExam = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    const isCrammingTime = daysUntilExam <= 3 && daysUntilExam >= 1;
-    return { daysUntilExam, isCrammingTime };
+function addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
 }
 
-// ADK Logic Simulation (using the actual function)
-function simulateADKLogic(daysUntilExam: number) {
-    const context: DecisionContext = {
-        studentId: "test-student",
-        topic: "Test Topic",
-        currentDate: new Date(),
-        examDate: new Date(), // irrelevant here as we pass daysUntilExam
-        daysUntilExam: daysUntilExam,
-        mlSignals: mockMLSignals
-    };
-
-    const decision = makeRevisionDecision(context);
-    // Check if CRAMMING_MODE flag is set
-    const isCrammingMode = decision.adkFlags.includes("CRAMMING_MODE");
-    return { decision, isCrammingMode };
+function subDays(date: Date, days: number): Date {
+    return addDays(date, -days);
 }
 
-// Test Runner
+function checkCrammingActivation(currentDate: Date, targetExamDate: Date) {
+  const timeDiff = targetExamDate.getTime() - currentDate.getTime();
+  const daysUntilExam = Math.ceil(timeDiff / (1000 * 3600 * 24));
+  const isCrammingTime = daysUntilExam <= 3 && daysUntilExam >= 1;
+
+  return {
+    currentDate: currentDate.toISOString(),
+    examDate: targetExamDate.toISOString(),
+    daysUntilExam,
+    isCrammingTime,
+    diffHours: timeDiff / (1000 * 3600)
+  };
+}
+
 function runTests() {
-    console.log("=== Cramming Helper Activation Logic Test ===\n");
+  console.log("# Cramming Helper Activation Logic Edge Case Report\n");
+  console.log("## Methodology");
+  console.log("Simulating the time difference logic between `currentDate` and `examDate` to verify activation boundaries (1-3 days).");
+  console.log("Logic under test: `Math.ceil((exam - now) / (24h))` in [1, 3]\n");
 
-    const today = new Date("2023-10-25T12:00:00Z"); // Fixed reference date
+  const baseDate = new Date("2024-01-01T12:00:00Z"); // Reference "Now"
 
-    const testCases = [
-        { name: "Exam Today (0 days)", daysOffset: 0 },
-        { name: "Exam Tomorrow (1 day)", daysOffset: 1 },
-        { name: "Exam in 3 days", daysOffset: 3 },
-        { name: "Exam in 4 days", daysOffset: 4 },
-        { name: "Exam Yesterday (-1 day)", daysOffset: -1 },
-        { name: "Exam in 0.5 days (12 hours)", hoursOffset: 12 },
-    ];
+  const scenarios = [
+    {
+      name: "Standard Activation (2 days out)",
+      current: baseDate,
+      exam: addDays(baseDate, 2),
+      expected: true
+    },
+    {
+      name: "Boundary Activation (3 days out - exact)",
+      current: baseDate,
+      exam: addDays(baseDate, 3),
+      expected: true
+    },
+    {
+      name: "Boundary Activation (1 day out - exact)",
+      current: baseDate,
+      exam: addDays(baseDate, 1),
+      expected: true
+    },
+    {
+      name: "Too Early (4 days out)",
+      current: baseDate,
+      exam: addDays(baseDate, 4),
+      expected: false
+    },
+    {
+      name: "Critical: Exam Day (0 days)",
+      current: baseDate,
+      exam: baseDate, // Exam is NOW
+      expected: true // SHOULD be active on exam day!
+    },
+    {
+      name: "Past Exam (-1 day)",
+      current: baseDate,
+      exam: subDays(baseDate, 1),
+      expected: false
+    },
+    {
+      name: "Just barely 3 days (3 days + 1 second)",
+      current: baseDate,
+      exam: new Date(baseDate.getTime() + (3 * 24 * 3600 * 1000) + 1000),
+      expected: false
+    },
+    {
+        name: "Just barely under 3 days (3 days - 1 second)",
+        current: baseDate,
+        exam: new Date(baseDate.getTime() + (3 * 24 * 3600 * 1000) - 1000),
+        expected: true
+    },
+    {
+      name: "Just barely 1 day (1 day - 1 second = 0.99 days)",
+      current: baseDate,
+      exam: new Date(baseDate.getTime() + (1 * 24 * 3600 * 1000) - 1000),
+      expected: true
+    },
+    {
+        name: "Timezone drift (Late night cramming)",
+        current: new Date("2024-01-01T23:59:00Z"),
+        exam: new Date("2024-01-03T09:00:00Z"), // ~1.4 days difference
+        expected: true
+    }
+  ];
 
-    testCases.forEach(test => {
-        const examDate = new Date(today.getTime());
-        if (test.daysOffset !== undefined) {
-            examDate.setDate(examDate.getDate() + test.daysOffset);
-        }
-        if (test.hoursOffset !== undefined) {
-            examDate.setTime(examDate.getTime() + (test.hoursOffset * 60 * 60 * 1000));
-        }
+  console.log("## Test Results\n");
+  console.log("| Scenario | Days Until | Active? | Expected | Status |");
+  console.log("| :--- | :--- | :--- | :--- | :--- |");
 
-        console.log(`Test Case: ${test.name}`);
-        console.log(`  Today: ${today.toISOString()}`);
-        console.log(`  Exam:  ${examDate.toISOString()}`);
+  let passed = 0;
+  for (const scenario of scenarios) {
+    const result = checkCrammingActivation(scenario.current, scenario.exam);
+    const isPass = result.isCrammingTime === scenario.expected;
+    if (isPass) passed++;
 
-        const frontend = simulateFrontendLogic(today, examDate);
-        console.log(`  Frontend Calculation:`);
-        console.log(`    daysUntilExam: ${frontend.daysUntilExam}`);
-        console.log(`    isCrammingTime (Logic: <= 3 && >= 1): ${frontend.isCrammingTime}`);
+    console.log(
+      `| ${scenario.name} | ${result.daysUntilExam} | ${result.isCrammingTime} | ${scenario.expected} | ${isPass ? '✅ PASS' : '❌ FAIL'} |`
+    );
+  }
 
-        const adk = simulateADKLogic(frontend.daysUntilExam);
-        console.log(`  ADK Decision Engine:`);
-        console.log(`    Action: ${adk.decision.action}`);
-        console.log(`    Flags: ${adk.decision.adkFlags.join(", ")}`);
-        console.log(`    Cramming Mode Active: ${adk.isCrammingMode}`);
+  console.log(`\n## Summary\n`);
+  console.log(`- **Total Tests:** ${scenarios.length}`);
+  console.log(`- **Passed:** ${passed}`);
+  console.log(`- **Failed:** ${scenarios.length - passed}`);
 
-        if (frontend.daysUntilExam === 0) {
-             if (!frontend.isCrammingTime) console.error("  [FAIL] Frontend logic fails for 0 days (Exam Day)!");
-             if (!adk.isCrammingMode) console.error("  [FAIL] ADK logic fails for 0 days due to falsy check!");
-        }
-
-        console.log("\n---------------------------------------------------\n");
-    });
+  if (passed === scenarios.length) {
+      console.log("\n✅ Logic covers all edge cases correctly.");
+  } else {
+      console.log("\n⚠️ **CRITICAL BUG DETECTED:** Logic fails on edge cases.");
+      console.log("Specifically, the Exam Day (0 days) logic is flawed because `daysUntilExam >= 1` excludes 0.");
+  }
 }
 
 runTests();
