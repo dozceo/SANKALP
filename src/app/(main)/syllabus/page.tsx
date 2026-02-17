@@ -131,20 +131,25 @@ export default function SyllabusPage() {
               <CardDescription>Enter your exam or subject to get the latest official syllabus, strategy, and materials.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex w-full max-w-lg items-center space-x-2">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearch();
+                }}
+                className="flex w-full max-w-lg items-center space-x-2"
+              >
                 <Input
                   type="text"
                   placeholder="e.g., 'AP Calculus BC', 'NEET Biology'"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   disabled={loading}
                 />
-                <Button onClick={handleSearch} disabled={loading}>
+                <Button type="submit" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   <span className="sr-only sm:not-sr-only sm:ml-2">{t('generateButton')}</span>
                 </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
 
@@ -187,7 +192,12 @@ export default function SyllabusPage() {
                   <ul className="space-y-2">
                     {syllabus.references.map((link, index) => (
                       <li key={index}>
-                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                        >
                           {link}
                         </a>
                       </li>
