@@ -25,7 +25,7 @@ export function makeRevisionDecision(context: DecisionContext): ADKDecision {
     const { mastery_probability, days_since_last_revision, attention_risk } = mlSignals;
 
     // POLICY RULE 0: Exam Cramming Mode (< 3 days to exam) - HIGHEST PRIORITY
-    if (daysUntilExam && daysUntilExam <= 3 && mastery_probability < 0.6) {
+    if (typeof daysUntilExam === "number" && daysUntilExam <= 3 && mastery_probability < 0.6) {
         return {
             action: DecisionAction.URGENT_REVISION,
             priority: "HIGH",
