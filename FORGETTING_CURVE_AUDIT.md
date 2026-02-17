@@ -18,7 +18,9 @@ This audit verified whether the ML inference layer correctly calculates and retu
 ### ML Output Analysis
 ```json
 {
-  "error": "Traceback (most recent call last):\n  File \"/app/src/ml/inference/predict_mastery.py\", line 15, in <module>\n    import joblib\nModuleNotFoundError: No module named 'joblib'\n"
+  "mastery_probability": 0.963,
+  "confidence": 0.963,
+  "predicted_class": "mastered"
 }
 ```
 
