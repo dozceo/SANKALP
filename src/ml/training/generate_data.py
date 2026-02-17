@@ -7,9 +7,33 @@ This allows us to train and demonstrate the ML system before real user data is a
 
 import pandas as pd
 import numpy as np
+import hashlib
+import json
+import subprocess
+import os
 
 # Set random seed for reproducibility
-np.random.seed(42)
+SEED = 42
+np.random.seed(SEED)
+
+def get_git_hash():
+    """Get the current git commit hash"""
+    try:
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+    except Exception as e:
+        print(f"⚠️ Warning: Could not get git hash: {e}")
+        return "unknown"
+
+def get_file_hash(filepath):
+    """Calculate SHA256 hash of a file"""
+    if not os.path.exists(filepath):
+        return None
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        # Read and update hash string value in blocks of 4K
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
 
 def generate_training_data(n_samples=1000):
     """
@@ -95,10 +119,12 @@ def generate_training_data(n_samples=1000):
 if __name__ == "__main__":
     # Generate data
     print("Generating synthetic training data...")
-    df = generate_training_data(n_samples=2000) # Increased sample size
+    n_samples = 2000
+    df = generate_training_data(n_samples=n_samples) # Increased sample size
     
     # Save to CSV
-    output_path = "training_data.csv"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_path = os.path.join(script_dir, "training_data.csv")
     df.to_csv(output_path, index=False)
     
     # Print statistics
@@ -109,3 +135,22 @@ if __name__ == "__main__":
     print(f"   Not Mastered: {(1-df['mastered']).sum()} ({(1-df['mastered']).mean()*100:.1f}%)")
     print(f"\n📈 Feature Ranges:")
     print(df.describe())
+
+    # Generate Metadata
+    script_hash = get_file_hash(__file__)
+    git_hash = get_git_hash()
+
+    metadata = {
+        "script_hash": script_hash,
+        "git_hash": git_hash,
+        "random_seed": SEED,
+        "n_samples": n_samples,
+        "columns": list(df.columns),
+        "generated_at": pd.Timestamp.now().isoformat()
+    }
+
+    metadata_path = os.path.join(script_dir, "training_data_metadata.json")
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+
+    print(f"📄 Metadata saved to: {metadata_path}")
