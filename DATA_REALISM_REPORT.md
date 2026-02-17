@@ -1,40 +1,53 @@
 # Synthetic Data Realism Audit
 
+**Date:** 2024-05-23
+**Domain:** Data & APIs
+**Scope:** `src/ml/training/generate_data.py`
+
+## Executive Summary
+An audit of the synthetic data generation logic reveals that while the data provides basic separation for training, it lacks the complexity and noise inherent in real student behavior. The strict conditional generation based on the binary `mastered` label creates artificial clusters that may lead to model overfitting and poor generalization to real-world edge cases.
+
 ## Methodology
-An audit script (`src/ml/training/audit_data.py`) was executed to generate 1000 synthetic student records using `generate_data.py`. The resulting distributions were analyzed for statistical realism and edge case coverage.
+*   **Script:** `scripts/audit_data_realism.py`
+*   **Sample Size:** 1000 generated records
+*   **Analysis:** Statistical distribution comparison, outlier detection, and overlap analysis.
 
-## Findings
+## Key Findings
 
-### 1. Unrealistic Feature Separation (Data Leakage)
-*   **Observation:** The separation between "Mastered" and "Not Mastered" classes is too clean, particularly for `avg_quiz_score`.
-*   **Data:**
-    *   Mean Score (Mastered): ~0.80
-    *   Mean Score (Not Mastered): ~0.29
-    *   Overlap: There were **0 students** with >80% score who were not mastered.
-*   **Impact:** The ML model will likely learn a simple linear threshold on `avg_quiz_score` (e.g., `if score > 0.5 then mastered`) and ignore complex features like time spent or consistency. This defeats the purpose of a multi-feature ML model.
+### 1. Simplistic Bimodal Distributions
+The generator uses a strict `if/else` block based on the ground truth label to sample features.
+*   **Mastered:** High scores, low variance, fast answers.
+*   **Not Mastered:** Low scores, high variance, slow answers.
+*   **Impact:** The model learns to separate these two clean clusters easily but may fail on "mixed" profiles (e.g., a student who knows the material but answers slowly due to reading difficulties).
 
-### 2. Time Distribution Issues
-*   **Observation:** "Not Mastered" students follow a uniform distribution from 10s to 120s.
-*   **Critique:** Real-world struggling students typically fall into two modes:
-    1.  **Fast Guessers:** Very low time (<15s).
-    2.  **Strugglers:** Very high time (>90s).
-    A uniform distribution averages this out to ~66s, which misleadingly suggests they spend *more* time than masters (who average ~40s).
+### 2. Lack of Behavioral Nuance
+*   **Guessing:** Only 0.8% of samples resembled "guessers" (Low Score + Low Time). In reality, this behavior is common.
+*   **Cramming:** Only 2.2% of samples resembled "crammers" (High Attempts + Low Interval).
+*   **Score Overlap:** While there is a 40% overlap range in scores, the correlation between `time_spent` and `score` is likely artificially high because they are sampled from distinct distributions conditional on `mastered`.
 
-### 3. Lack of Feature Correlation
-*   **Observation:** `attempts_per_topic` and `avg_quiz_score` are generated independently based on the class label.
-*   **Critique:** In reality, these are correlated *within* the class. A struggling student who attempts 10 times should see some score improvement compared to one who attempts once. The current generator does not model this causal link.
+### 3. Missing Temporal Dynamics
+The `days_since_last_revision` feature is sampled from `0-7` (mastered) vs `5-30` (not mastered).
+*   **Issue:** This implies that *any* student who hasn't revised in >7 days is likely "not mastered", which enforces a steep forgetting curve assumption that might not hold for all topics.
 
 ## Recommendations
 
-### 1. Introduce Noise and Overlap
-*   Allow some "Not Mastered" students to have high scores (lucky guessers).
-*   Allow some "Mastered" students to have low scores (anxiety/silly mistakes).
-*   **Action:** Increase the variance of the Beta distributions and mix the parameters slightly.
+### 1. Introduce Noise and Mixed Profiles
+Modify the generator to include probabilistic mixing.
+```python
+# Instead of strict if/else:
+is_fast_learner = np.random.random() < 0.2
+if is_fast_learner:
+    time_spent = np.random.uniform(10, 30) # Fast regardless of mastery
+```
 
-### 2. Implement Bimodal Time Distribution
-*   For "Not Mastered", generate time from a mixture of two distributions (e.g., 20% fast, 80% slow) rather than a single uniform range.
+### 2. Simulate User Personas
+Explicitly model distinct behaviors:
+*   **The Guesser:** Low Time, High Variance, Random Score.
+*   **The Perfectionist:** High Time, High Score, Low Variance.
+*   **The Struggling Student:** High Time, Low Score.
 
-### 3. Causal Generation Logic
-*   Generate features first, then derive the label (or use a latent variable model).
-*   Example: `Mastery_Score = (0.7 * Quiz_Score) + (0.3 * Consistency) + Noise`.
-*   Threshold `Mastery_Score` to get the binary label. This ensures the label is a complex function of the features, forcing the ML model to actually learn the relationship.
+### 3. Continuous Mastery Latent Variable
+Instead of binary `mastered` driving generation, sample a continuous `competence` (0.0 to 1.0) and generate features and the binary label from that. This creates realistic "borderline" cases.
+
+### 4. Improve `days_since_last_revision`
+Allow "Mastered" students to have long gaps (retention) to train the model to recognize long-term mastery.
