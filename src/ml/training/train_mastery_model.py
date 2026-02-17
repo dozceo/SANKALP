@@ -15,6 +15,17 @@ import os
 import hashlib
 from datetime import datetime
 import sklearn
+import subprocess
+import json
+import sys
+
+def get_git_hash():
+    """Get the current git commit hash"""
+    try:
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+    except Exception as e:
+        print(f"⚠️ Warning: Could not get git hash: {e}")
+        return "unknown"
 
 def get_file_hash(filepath):
     """Calculate SHA256 hash of a file"""
@@ -39,6 +50,7 @@ def train_model():
     script_path = __file__
     script_hash = get_file_hash(script_path)
     data_hash = get_file_hash(data_path)
+    git_hash = get_git_hash()
     
     print("📊 Loading training data...")
     df = pd.read_csv(data_path)
@@ -97,25 +109,71 @@ def train_model():
         print(f"   {feature}: {abs(coef):.3f} ({direction} mastery)")
     
     # Save model
-    model_path = "../models/mastery_model.pkl"
-    os.makedirs("../models", exist_ok=True)
+    # Use path relative to repo root if running from root, or script dir
+    if os.path.exists("src/ml/models"):
+        model_dir = "src/ml/models"
+    else:
+        # Fallback to relative to script if running from script dir
+        model_dir = "../models"
+
+    os.makedirs(model_dir, exist_ok=True)
+    model_path = os.path.join(model_dir, "mastery_model.pkl")
 
     # Create artifact with metadata
+    timestamp = datetime.now().isoformat()
     artifact = {
         "model": model,
         "metadata": {
             "script_hash": script_hash,
             "data_hash": data_hash,
-            "training_timestamp": datetime.now().isoformat(),
+            "git_hash": git_hash,
+            "training_timestamp": timestamp,
             "sklearn_version": sklearn.__version__
         }
     }
 
     joblib.dump(artifact, model_path)
     
+    # Generate detailed provenance report
+    provenance = {
+        "model_name": "Topic Mastery Prediction Model",
+        "version": "1.0.0",
+        "training_timestamp": timestamp,
+        "provenance": {
+            "git_commit_hash": git_hash,
+            "script_hash": script_hash,
+            "data_hash": data_hash,
+            "data_source": data_path
+        },
+        "parameters": {
+            "model_type": "LogisticRegression",
+            "test_size": 0.2,
+            "random_state": 42,
+            "max_iter": 1000,
+            "class_weight": "balanced"
+        },
+        "metrics": {
+            "accuracy": float(accuracy),
+            "feature_importance": {feature: float(coef) for feature, coef in zip(feature_columns, model.coef_[0])}
+        },
+        "environment": {
+            "python_version": sys.version,
+            "sklearn_version": sklearn.__version__,
+            "pandas_version": pd.__version__,
+            "numpy_version": np.__version__,
+            "joblib_version": joblib.__version__
+        }
+    }
+
+    provenance_path = os.path.join(model_dir, "provenance_report.json")
+    with open(provenance_path, "w") as f:
+        json.dump(provenance, f, indent=2, default=str)
+
     print(f"\n💾 Model saved to: {model_path}")
+    print(f"📄 Provenance report saved to: {provenance_path}")
     print(f"   Script Hash: {script_hash[:8]}...")
     print(f"   Data Hash:   {data_hash[:8]}...")
+    print(f"   Git Hash:    {git_hash[:8]}...")
     print("\n🎉 Training complete!")
     
     return model, accuracy
