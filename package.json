@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "seed-db": "tsx scripts/seed-database.ts",
+    "detect-drift": "tsx scripts/detect-schema-drift.ts",
     "deploy:firestore": "firebase deploy --only firestore:rules,firestore:indexes"
   },
   "dependencies": {
