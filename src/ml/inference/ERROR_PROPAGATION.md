@@ -2,6 +2,10 @@
 
 This document details the handling of errors in the communication bridge between the Node.js application (`src/ml/inference/ml-bridge.ts`) and the Python inference script (`src/ml/inference/predict_mastery.py`).
 
+## Scope & Methodology
+
+This audit was conducted under a strict "non-conflict guarantee" to ensure no production code modifications were made during the analysis. The goal was to map the existing error handling behavior of the `ml-bridge.ts` without altering the system's logic. All findings are based on fault injection testing using an isolated subprocess harness.
+
 ## Error Propagation Matrix
 
 The following matrix maps failure modes simulated in the Python subprocess to the corresponding behavior in the TypeScript bridge.
