@@ -196,7 +196,7 @@ export default function SyllabusPage() {
                           href={link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                          className="text-primary underline hover:no-underline hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
                         >
                           {link}
                         </a>

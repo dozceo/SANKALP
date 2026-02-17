@@ -1,70 +1,60 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { BrainCircuit, Loader2, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { BrainCircuit, Loader2, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
-export default function SignInPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [loading, setLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, googleSignIn } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
-
     try {
-      const user = await signIn(email, password);
-
-      // Fetch user data to get actual role and onboarding status
-      const userResponse = await fetch(`/api/users/${user.uid}`);
-      let userData = null;
-      if (userResponse.ok) {
-          userData = await userResponse.json();
-      }
-
+      const user = await signIn(data.email, data.password);
       toast({
-        title: 'Welcome back!',
-        description: 'Successfully signed in.',
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
       });
-
-      // Check onboarding status
-      if (userData && !userData.onboardingCompleted) {
-          const targetRole = userData.role || role;
-          if (targetRole === 'teacher') {
-              router.push('/teacher-onboarding');
-          } else {
-              router.push('/onboarding');
-          }
-          return;
-      }
-
-      // Simple redirect based on selected role
-      // In production, verify role matches
-      if (role === 'teacher') {
-        router.push('/teacher');
+      // Route based on role
+      if (user.role === "teacher") {
+        router.push("/teacher");
       } else {
-        // Check if student has joined a class
-        router.push('/home');
+        router.push("/home");
       }
     } catch (error: any) {
       toast({
-        title: 'Sign in failed',
-        description: error.message || 'Invalid email or password',
-        variant: 'destructive',
+        title: "Sign in failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -73,36 +63,13 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const user = await signInWithGoogle();
-
-      // Fetch user data to get actual role and onboarding status
-      const userResponse = await fetch(`/api/users/${user.uid}`);
-      let userData = null;
-      if (userResponse.ok) {
-          userData = await userResponse.json();
-      }
-
-      // Check onboarding status
-      if (userData && !userData.onboardingCompleted) {
-          const targetRole = userData.role || role;
-          if (targetRole === 'teacher') {
-              router.push('/teacher-onboarding');
-          } else {
-              router.push('/onboarding');
-          }
-          return;
-      }
-
-      if (role === 'teacher') {
-        router.push('/teacher');
-      } else {
-        router.push('/home');
-      }
+      await googleSignIn();
+      router.push("/home"); // Google sign-in usually defaults to student/home, role check handles redirects
     } catch (error: any) {
       toast({
-        title: 'Sign in failed',
+        title: "Google Sign In Failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     }
   };
@@ -119,49 +86,33 @@ export default function SignInPage() {
         <CardDescription className="text-base">Enter your credentials to access your account.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Role Selection */}
-          <div className="space-y-2">
-            <Label>I am a</Label>
-            <RadioGroup value={role} onValueChange={(val) => setRole(val as 'student' | 'teacher')}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="student" id="student" />
-                <Label htmlFor="student" className="font-normal cursor-pointer">Student</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="teacher" id="teacher" />
-                <Label htmlFor="teacher" className="font-normal cursor-pointer">Teacher</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="m@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              {...register("email")}
+              aria-invalid={!!errors.email}
             />
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center">
+            <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Link href="#" className="ml-auto inline-block text-sm underline">
-                Forgot your password?
+              <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                Forgot password?
               </Link>
             </div>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 className="pr-10"
-                required
+                {...register("password")}
+                aria-invalid={!!errors.password}
               />
               <Button
                 type="button"
@@ -169,8 +120,8 @@ export default function SignInPage() {
                 size="sm"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
-                onMouseDown={(e) => e.preventDefault()}
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -179,40 +130,33 @@ export default function SignInPage() {
                 )}
               </Button>
             </div>
+            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
-
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignIn}
-          >
-            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            Google
-          </Button>
         </form>
 
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+          </div>
+        </div>
+
+        <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn}>
+          <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+            <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+          </svg>
+          Google
+        </Button>
+
         <div className="mt-4 text-center text-sm">
-          Don&apos;t have an account?{' '}
+          Don&apos;t have an account?{" "}
           <Link href="/sign-up" className="underline">
             Sign up
           </Link>

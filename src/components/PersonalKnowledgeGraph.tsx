@@ -7,6 +7,7 @@ import { generatePersonalGraph } from '@/lib/generatePersonalGraph';
 import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, StudentNode } from '@/data/docsData';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
 
 // Dynamically import ForceGraph2D with SSR disabled
 const ForceGraph2D = dynamic(
@@ -73,11 +74,11 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
         // Hovered node
         if (node.id === hoveredNodeRef.current) {
-            return '#c4b5fd';
+            return GRAPH_COLORS_HEX.hover;
         }
 
         // Fallback
-        return '#6d28d9';
+        return GRAPH_COLORS_HEX.default;
     }, []);
 
     const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
@@ -94,10 +95,10 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         let lightColor: string;
 
         if (isHovered) {
-            baseColor = '#c4b5fd';
-            lightColor = '#e9d5ff';
+            baseColor = GRAPH_COLORS_HEX.hover;
+            lightColor = GRAPH_COLORS_HEX.hoverLight;
         } else {
-            baseColor = node.color || '#6d28d9';
+            baseColor = node.color || GRAPH_COLORS_HEX.default;
             // Use pre-calculated light color if available, otherwise calculate once and cache
             if (node.lightColor) {
                 lightColor = node.lightColor;
@@ -149,7 +150,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
         // Border for center node
         if (isCenter) {
-            ctx.strokeStyle = '#e9d5ff';
+            ctx.strokeStyle = GRAPH_COLORS_HEX.hoverLight;
             ctx.lineWidth = 2.5 / globalScale;
             ctx.stroke();
         }
@@ -166,7 +167,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             ctx.fillText(label, node.x + 0.5, node.y + nodeSize + 3.5);
 
-            ctx.fillStyle = isCenter ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#d1d5db';
+            ctx.fillStyle = isCenter ? '#ffffff' : isHovered ? GRAPH_COLORS_HEX.hoverLight : '#d1d5db';
             ctx.fillText(label, node.x, node.y + nodeSize + 3);
         }
     }, [student.id]); // Removed hoveredNode dependency
@@ -200,7 +201,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         ctx.quadraticCurveTo(cpX, cpY, end.x, end.y);
 
         const alpha = isFromCenter ? 0.5 : 0.2;
-        const color = start.color || '#9333EA';
+        const color = start.color || GRAPH_COLORS_HEX.student;
         ctx.strokeStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
         ctx.lineWidth = isFromCenter ? 1.5 / globalScale : 0.8 / globalScale;
         ctx.stroke();

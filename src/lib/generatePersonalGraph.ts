@@ -17,14 +17,16 @@ function getStudentById(id: string): StudentNode | undefined {
 }
 
 // Node colors by type (Moved outside to avoid re-creation)
+import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
+
 const NODE_COLORS = {
-    student: '#9333EA',      // Purple
-    subject: '#3B82F6',      // Blue
-    chapter: '#06B6D4',      // Cyan
-    topic: '#6B7280',        // Gray
-    weakness: '#EF4444',     // Red
-    strength: '#10B981',     // Green
-    peer: '#8B5CF6',         // Light Purple
+    student: GRAPH_COLORS_HEX.student,
+    subject: GRAPH_COLORS_HEX.subject,
+    chapter: GRAPH_COLORS_HEX.chapter,
+    topic: GRAPH_COLORS_HEX.topic,
+    weakness: GRAPH_COLORS_HEX.weakness,
+    strength: GRAPH_COLORS_HEX.strength,
+    peer: GRAPH_COLORS_HEX.peer,
 };
 
 /**
