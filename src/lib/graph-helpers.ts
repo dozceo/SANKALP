@@ -1,6 +1,7 @@
 import { db } from './firebase-admin';
 import { GraphData, GraphNode, GraphLink, NodeType } from '@/data/docsData';
 import { getQuizResults, getTeacherStudents, getBatchedQuizResults } from './db-helpers';
+import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
 
 /**
  * Fetch and generate personal graph data for a student
@@ -9,9 +10,14 @@ export async function fetchStudentGraphData(studentId: string): Promise<GraphDat
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
     const colors: Record<NodeType, string> = {
-        student: '#9333EA', subject: '#3B82F6', chapter: '#06B6D4',
-        topic: '#6B7280', weakness: '#EF4444', strength: '#10B981',
-        skill: '#F59E0B', peer: '#8B5CF6'
+        student: GRAPH_COLORS_HEX.student,
+        subject: GRAPH_COLORS_HEX.subject,
+        chapter: GRAPH_COLORS_HEX.chapter,
+        topic: GRAPH_COLORS_HEX.topic,
+        weakness: GRAPH_COLORS_HEX.weakness,
+        strength: GRAPH_COLORS_HEX.strength,
+        skill: GRAPH_COLORS_HEX.skill,
+        peer: GRAPH_COLORS_HEX.peer,
     };
 
     try {
@@ -157,9 +163,14 @@ export async function fetchTeacherGraphData(teacherId: string): Promise<GraphDat
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
     const colors: Record<NodeType, string> = {
-        student: '#9333EA', subject: '#3B82F6', chapter: '#06B6D4',
-        topic: '#6B7280', weakness: '#EF4444', strength: '#10B981',
-        skill: '#F59E0B', peer: '#8B5CF6'
+        student: GRAPH_COLORS_HEX.student,
+        subject: GRAPH_COLORS_HEX.subject,
+        chapter: GRAPH_COLORS_HEX.chapter,
+        topic: GRAPH_COLORS_HEX.topic,
+        weakness: GRAPH_COLORS_HEX.weakness,
+        strength: GRAPH_COLORS_HEX.strength,
+        skill: GRAPH_COLORS_HEX.skill,
+        peer: GRAPH_COLORS_HEX.peer,
     };
 
     try {

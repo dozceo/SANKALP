@@ -32,17 +32,19 @@ type ExtendedNodeObject = NodeObject & GraphNode & { _cachedLightColor?: string 
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
 // Optimization: Move constant outside component to prevent re-creation
+import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
+
 const NODE_TYPE_COLORS: Record<string, string> = {
-  student: '#9333EA',    // Purple
-  subject: '#3B82F6',    // Blue
-  chapter: '#06B6D4',    // Cyan
-  topic: '#6B7280',      // Gray
-  weakness: '#EF4444',   // Red
-  strength: '#10B981',   // Green
-  skill: '#F59E0B',      // Amber
+  student: GRAPH_COLORS_HEX.student,
+  subject: GRAPH_COLORS_HEX.subject,
+  chapter: GRAPH_COLORS_HEX.chapter,
+  topic: GRAPH_COLORS_HEX.topic,
+  weakness: GRAPH_COLORS_HEX.weakness,
+  strength: GRAPH_COLORS_HEX.strength,
+  skill: GRAPH_COLORS_HEX.skill,
 };
 
-const DEFAULT_NODE_COLOR = '#6d28d9';
+const DEFAULT_NODE_COLOR = GRAPH_COLORS_HEX.default;
 
 export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: externalGraphData }: InteractiveGraphProps) {
   const graphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
@@ -256,11 +258,11 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     let lightColor: string;
 
     if (isHighlighted) {
-      baseColor = '#a78bfa';
-      lightColor = '#c4b5fd';
+      baseColor = GRAPH_COLORS_HEX.highlight;
+      lightColor = GRAPH_COLORS_HEX.highlightLight;
     } else if (isHovered) {
-      baseColor = '#c4b5fd';
-      lightColor = '#e9d5ff';
+      baseColor = GRAPH_COLORS_HEX.hover;
+      lightColor = GRAPH_COLORS_HEX.hoverLight;
     } else {
       // Use pre-calculated or type-based colors
       baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
@@ -314,7 +316,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
     // Border for highlighted node
     if (isHighlighted) {
-      ctx.strokeStyle = '#e9d5ff';
+      ctx.strokeStyle = GRAPH_COLORS_HEX.highlightLight;
       ctx.lineWidth = 2 / globalScale;
       ctx.stroke();
     }
@@ -331,7 +333,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       ctx.fillText(label, node.x + 0.5, node.y + nodeSize + 3.5);
 
-      ctx.fillStyle = isHighlighted ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#a1a1aa';
+      ctx.fillStyle = isHighlighted ? '#ffffff' : isHovered ? GRAPH_COLORS_HEX.hoverLight : '#a1a1aa';
       ctx.fillText(label, node.x, node.y + nodeSize + 3);
     }
   }, []); // Dependencies removed to keep function stable

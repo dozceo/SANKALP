@@ -15,14 +15,14 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
 
     // Node colors by type
     const colors: Record<NodeType, string> = {
-        student: '#9333EA',      // Purple
-        subject: '#3B82F6',      // Blue
-        chapter: '#06B6D4',      // Cyan
-        topic: '#6B7280',        // Gray
-        weakness: '#EF4444',     // Red
-        strength: '#10B981',     // Green
-        skill: '#F59E0B',        // Amber
-        peer: '#8B5CF6',         // Light Purple (fallback)
+        student: GRAPH_COLORS_HEX.student,
+        subject: GRAPH_COLORS_HEX.subject,
+        chapter: GRAPH_COLORS_HEX.chapter,
+        topic: GRAPH_COLORS_HEX.topic,
+        weakness: GRAPH_COLORS_HEX.weakness,
+        strength: GRAPH_COLORS_HEX.strength,
+        skill: GRAPH_COLORS_HEX.skill,
+        peer: GRAPH_COLORS_HEX.peer,
     };
 
     const addNode = (node: GraphNode) => {
