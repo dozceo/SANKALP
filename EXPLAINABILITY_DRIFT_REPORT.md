@@ -1,6 +1,6 @@
 # Explainability Drift Analysis Report
 
-**Generated:** 2/16/2026, 7:19:16 PM
+**Generated:** 2/17/2026, 7:20:33 PM
 
 ## Summary
 - **ADK Decision Rules:** 6 distinct reasoning paths found.
@@ -12,7 +12,7 @@
 ### ADK Decision Logic (Source of Truth)
 | Condition (Simplified) | Reasoning |
 |---|---|
-| `daysUntilExam && daysUntilExam <= 3 && mastery_pro...` | Exam imminent - high-yield cramming strategy |
+| `typeof daysUntilExam === "number" && daysUntilExam...` | Exam imminent - high-yield cramming strategy |
 | `mastery_probability < 0.4 && (mlSignals.days_until...` | Low mastery with imminent forgetting risk |
 | `mastery_probability < 0.4 && attention_risk === "H...` | Low mastery with attention challenges - needs engaging format |
 | `mastery_probability >= 0.4 && mastery_probability ...` | Moderate mastery but needs refreshing (spaced repetition) |
