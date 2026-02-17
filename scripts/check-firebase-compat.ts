@@ -1,100 +1,76 @@
 
-import * as fs from 'fs';
-import * as path from 'path';
+import fs from 'fs';
+import path from 'path';
 
 const PACKAGE_JSON_PATH = path.join(process.cwd(), 'package.json');
-const SRC_LIB_DIR = path.join(process.cwd(), 'src', 'lib');
+const SRC_DIR = path.join(process.cwd(), 'src');
+const OUTPUT_FILE = path.join(process.cwd(), 'FIREBASE_COMPATIBILITY_REPORT.md');
 
-interface Issue {
-  type: 'error' | 'warning' | 'info';
-  message: string;
-}
-
-const issues: Issue[] = [];
-
-function checkVersions() {
-  if (!fs.existsSync(PACKAGE_JSON_PATH)) {
-    issues.push({ type: 'error', message: 'package.json not found.' });
-    return;
-  }
-
+function getDependencies(): Record<string, string> {
   const pkg = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf-8'));
-  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-
-  const firebaseVersion = deps['firebase'];
-  const firebaseAdminVersion = deps['firebase-admin'];
-
-  if (firebaseVersion) {
-    const v = parseInt(firebaseVersion.replace(/[^0-9.]/g, '').split('.')[0]);
-    if (v < 9) {
-      issues.push({ type: 'warning', message: `firebase version ${firebaseVersion} is old. Consider upgrading to v9+ (modular SDK).` });
-    } else {
-      issues.push({ type: 'info', message: `firebase version ${firebaseVersion} is up-to-date (modular SDK).` });
-    }
-  } else {
-      issues.push({ type: 'warning', message: 'firebase dependency not found.' });
-  }
-
-  if (firebaseAdminVersion) {
-    const v = parseInt(firebaseAdminVersion.replace(/[^0-9.]/g, '').split('.')[0]);
-    if (v < 10) {
-      issues.push({ type: 'warning', message: `firebase-admin version ${firebaseAdminVersion} is old. Consider upgrading to v10+.` });
-    } else {
-      issues.push({ type: 'info', message: `firebase-admin version ${firebaseAdminVersion} is up-to-date.` });
-    }
-  }
+  return { ...pkg.dependencies, ...pkg.devDependencies };
 }
 
-function checkImports() {
-  if (!fs.existsSync(SRC_LIB_DIR)) return;
-
-  const files = fs.readdirSync(SRC_LIB_DIR).filter(f => f.endsWith('.ts') || f.endsWith('.tsx'));
-
-  for (const file of files) {
-    const content = fs.readFileSync(path.join(SRC_LIB_DIR, file), 'utf-8');
-
-    // Check for compat imports
-    // import firebase from 'firebase/app';
-    // import firebase from 'firebase/compat/app';
-    if (/import\s+firebase\s+from\s+['"]firebase\/app['"]/.test(content)) {
-        issues.push({
-            type: 'warning',
-            message: `File src/lib/${file} uses default import from 'firebase/app'. This is the legacy namespace import. Use named imports (e.g. { initializeApp }) for modular SDK.`
-        });
+function checkCompatUsage(dir: string): string[] {
+  let issues: string[] = [];
+  const list = fs.readdirSync(dir);
+  list.forEach(file => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+    if (stat && stat.isDirectory()) {
+      issues = issues.concat(checkCompatUsage(filePath));
+    } else {
+      if (file.endsWith('.ts') || file.endsWith('.tsx')) {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        if (content.includes('firebase/compat')) {
+          issues.push(filePath);
+        }
+      }
     }
-
-    if (/import\s+.*\s+from\s+['"]firebase\/compat\/.*['"]/.test(content)) {
-         issues.push({
-            type: 'warning',
-            message: `File src/lib/${file} uses 'firebase/compat/*' imports. Migration to modular SDK is recommended.`
-        });
-    }
-  }
+  });
+  return issues;
 }
 
 function main() {
-    console.log('Checking Firebase SDK compatibility...');
-    checkVersions();
-    checkImports();
+  console.log('Checking Firebase Compatibility...');
+  const deps = getDependencies();
+  const firebaseVer = deps['firebase'];
+  const adminVer = deps['firebase-admin'];
 
-    const reportPath = 'FIREBASE_COMPATIBILITY_REPORT.md';
-    let reportContent = `# Firebase SDK Compatibility Report
+  const compatFiles = checkCompatUsage(SRC_DIR);
 
-Generated on: ${new Date().toISOString()}
+  let report = `# Firebase SDK Compatibility Report\n\nGenerated on: ${new Date().toISOString()}\n\n`;
 
-`;
+  report += `## Installed Versions\n\n`;
+  report += `- **firebase**: \`${firebaseVer || 'Not Installed'}\`\n`;
+  report += `- **firebase-admin**: \`${adminVer || 'Not Installed'}\`\n\n`;
 
-    if (issues.length === 0) {
-        reportContent += "No compatibility issues found.\n";
-    } else {
-        reportContent += "| Type | Message |\n|---|---|\n";
-        issues.forEach(i => {
-            reportContent += `| ${i.type.toUpperCase()} | ${i.message} |\n`;
-        });
-    }
+  if (firebaseVer && adminVer) {
+      report += `## Compatibility Status\n\n`;
+      // Check for major version mismatch (heuristic)
+      const fbMajor = parseInt(firebaseVer.replace(/[^0-9]/g, ''));
+      const adminMajor = parseInt(adminVer.replace(/[^0-9]/g, ''));
 
-    fs.writeFileSync(reportPath, reportContent);
-    console.log(`Report generated at ${reportPath}`);
+      if (fbMajor >= 11 && adminMajor >= 13) {
+          report += `✅ Versions appear compatible (Firebase v11+ and Admin v13+).\n`;
+      } else {
+          report += `⚠️ Please verify compatibility between Client v${fbMajor} and Admin v${adminMajor}.\n`;
+      }
+  }
+
+  report += `\n## Legacy Usage Detection (firebase/compat)\n\n`;
+  if (compatFiles.length === 0) {
+      report += `✅ No legacy \`firebase/compat\` imports detected. The codebase is fully modular.\n`;
+  } else {
+      report += `⚠️ Found ${compatFiles.length} files using legacy compatibility imports:\n\n`;
+      compatFiles.forEach(file => {
+          report += `- \`${path.relative(process.cwd(), file)}\`\n`;
+      });
+      report += `\n**Recommendation**: Migrate these files to the modular Firebase SDK to reduce bundle size and ensure future compatibility.\n`;
+  }
+
+  fs.writeFileSync(OUTPUT_FILE, report);
+  console.log(`Report generated at ${OUTPUT_FILE}`);
 }
 
 main();

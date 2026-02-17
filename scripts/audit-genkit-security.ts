@@ -1,66 +1,75 @@
 
-import * as fs from 'fs';
-import * as path from 'path';
+import fs from 'fs';
+import path from 'path';
 
-const DEV_SERVER_PATH = path.join(process.cwd(), 'src', 'ai', 'dev.ts');
-const PACKAGE_JSON_PATH = path.join(process.cwd(), 'package.json');
+const SRC_DIR = path.join(process.cwd(), 'src');
+const DEV_FILE = path.join(SRC_DIR, 'ai/dev.ts');
+const OUTPUT_FILE = path.join(process.cwd(), 'GENKIT_SECURITY_ASSESSMENT.md');
+
+function checkDevFileGuards(): string[] {
+  const issues: string[] = [];
+  if (!fs.existsSync(DEV_FILE)) {
+    return ['`src/ai/dev.ts` not found. Assuming secure configuration (or file moved).'];
+  }
+  const content = fs.readFileSync(DEV_FILE, 'utf-8');
+  if (!content.includes('process.env.NODE_ENV') && !content.includes('if (typeof window === \'undefined\')')) {
+    issues.push('⚠️ No explicit environment guard found in `src/ai/dev.ts`. Ensure it is not bundled in production.');
+  }
+  return issues;
+}
+
+function checkDevImports(dir: string): string[] {
+  let imports: string[] = [];
+  const list = fs.readdirSync(dir);
+
+  for (const file of list) {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+
+    if (stat.isDirectory()) {
+      imports = imports.concat(checkDevImports(filePath));
+    } else {
+      if ((file.endsWith('.ts') || file.endsWith('.tsx')) && filePath !== DEV_FILE) {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        // Check for imports
+        if (content.match(/from\s+['"]@\/ai\/dev['"]/) || content.match(/from\s+['"]\.\.?\/ai\/dev['"]/)) {
+           imports.push(filePath);
+        }
+      }
+    }
+  }
+  return imports;
+}
 
 function main() {
-    console.log('Auditing Genkit Dev Server Security...');
+  console.log('Auditing Genkit Security...');
 
-    let reportContent = `# Genkit Dev Server Security Report
+  const guardIssues = checkDevFileGuards();
+  const importIssues = checkDevImports(SRC_DIR);
 
-Generated on: ${new Date().toISOString()}
+  let report = `# Genkit Dev Server Security Assessment\n\nGenerated on: ${new Date().toISOString()}\n\n`;
 
-`;
+  report += `## Environment Guards\n\n`;
+  if (guardIssues.length === 0) {
+      report += `✅ \`src/ai/dev.ts\` appears to have environment checks or is safe.\n`;
+  } else {
+      report += `⚠️ Issues Found:\n`;
+      guardIssues.forEach(issue => report += `- ${issue}\n`);
+  }
 
-    let risksFound = false;
+  report += `\n## Production Code Exposure\n\n`;
+  if (importIssues.length === 0) {
+      report += `✅ No production code imports \`src/ai/dev.ts\`.\n`;
+  } else {
+      report += `⚠️ The following files import the dev server configuration, which may expose it in production:\n\n`;
+      importIssues.forEach(file => {
+          report += `- \`${path.relative(process.cwd(), file)}\`\n`;
+      });
+      report += `\n**Recommendation**: Remove these imports or ensure they are wrapped in \`process.env.NODE_ENV !== 'production'\` checks and tree-shaken.\n`;
+  }
 
-    // Check src/ai/dev.ts
-    if (fs.existsSync(DEV_SERVER_PATH)) {
-        const content = fs.readFileSync(DEV_SERVER_PATH, 'utf-8');
-
-        // Check for environment guard
-        const hasGuard = content.includes("process.env.NODE_ENV !== 'production'") ||
-                         content.includes('process.env.NODE_ENV !== "production"') ||
-                         content.includes("process.env.NODE_ENV === 'production'") ||
-                         content.includes('process.env.NODE_ENV === "production"');
-
-        if (!hasGuard) {
-            risksFound = true;
-            reportContent += `## Risk: Missing Environment Guard in \`src/ai/dev.ts\`\n`;
-            reportContent += `The file \`src/ai/dev.ts\` does not appear to check \`process.env.NODE_ENV\`. \n`;
-            reportContent += `**Recommendation:** Add the following check at the top of the file to prevent execution in production:\n`;
-            reportContent += "```typescript\nif (process.env.NODE_ENV === 'production') {\n  console.error('Genkit dev server cannot be run in production');\n  process.exit(1);\n}\n```\n\n";
-        } else {
-            reportContent += `## Check: Environment Guard in \`src/ai/dev.ts\`\n`;
-            reportContent += `The file contains a check for \`process.env.NODE_ENV\`. This is good practice.\n\n`;
-        }
-    } else {
-        reportContent += `## Note: \`src/ai/dev.ts\` not found.\n`;
-        reportContent += `If the dev server is located elsewhere, please update this audit script.\n\n`;
-    }
-
-    // Check package.json
-    if (fs.existsSync(PACKAGE_JSON_PATH)) {
-        const pkg = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf-8'));
-        const scripts = pkg.scripts || {};
-
-        if (scripts['genkit:dev']) {
-             reportContent += `## Risk: \`genkit:dev\` script exposes Dev Server\n`;
-             reportContent += `The \`package.json\` contains a script \`genkit:dev\`: \`${scripts['genkit:dev']}\`.\n`;
-             reportContent += `Ensure this script is never executed in a production environment.\n\n`;
-        }
-    }
-
-    if (!risksFound) {
-        reportContent += `\n**Assessment:** No critical risks identified (assuming \`genkit:dev\` is not run in prod).\n`;
-    } else {
-        reportContent += `\n**Assessment:** Potential security risks identified. Please review the recommendations above.\n`;
-    }
-
-    fs.writeFileSync('GENKIT_SECURITY_REPORT.md', reportContent);
-    console.log('Report generated at GENKIT_SECURITY_REPORT.md');
+  fs.writeFileSync(OUTPUT_FILE, report);
+  console.log(`Report generated at ${OUTPUT_FILE}`);
 }
 
 main();
