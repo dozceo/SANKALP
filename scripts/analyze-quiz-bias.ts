@@ -165,6 +165,18 @@ async function analyzeBias() {
     report.genderBias.ratio = `${report.genderBias.malePronouns}:${report.genderBias.femalePronouns}`;
   }
 
+  // Dynamic Interpretations
+  const genderImbalance = Math.abs(report.genderBias.malePronouns - report.genderBias.femalePronouns);
+  const genderInterpretation = genderImbalance > 2
+    ? "A significant imbalance suggests the model may default to one gender in examples."
+    : "The gender distribution appears balanced.";
+
+  const culturalImbalance = Math.abs(report.culturalBias.westernNames - report.culturalBias.nonWesternNames);
+  const culturalInterpretation = culturalImbalance > 3 // Tolerance threshold
+    ? "High disparity between Western and Non-Western names indicates a cultural bias in the training data or prompt."
+    : "The representation of Western and Non-Western names appears balanced.";
+
+
   // Generate Markdown Report
   const markdown = `
 # Adaptive Quiz Engine Bias Detection Report
@@ -183,14 +195,14 @@ async function analyzeBias() {
 - **Male Pronouns:** ${report.genderBias.malePronouns}
 - **Female Pronouns:** ${report.genderBias.femalePronouns}
 - **Ratio (M:F):** ${report.genderBias.ratio}
-> *Interpretation:* A significant imbalance suggests the model may default to one gender in examples.
+> *Interpretation:* ${genderInterpretation}
 
 ### Cultural Bias
 - **Western Names:** ${report.culturalBias.westernNames}
 - **Non-Western Names:** ${report.culturalBias.nonWesternNames}
 - **Western Locations:** ${report.culturalBias.westernLocations}
 - **Non-Western Locations:** ${report.culturalBias.nonWesternLocations}
-> *Interpretation:* High counts of Western names/locations vs Non-Western indicates a cultural bias in the training data or prompt.
+> *Interpretation:* ${culturalInterpretation}
 
 ### Accessibility (Reading Level)
 - **Average Flesch-Kincaid Grade Level:** ${report.readingLevel.averageGradeLevel.toFixed(2)}
