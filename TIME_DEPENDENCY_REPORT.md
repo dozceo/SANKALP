@@ -12,10 +12,10 @@ The application currently relies on direct system time access (`Date.now()`, `ne
 
 ### 2. Direct System Time Usage
 *   **Locations:**
-    *   `src/ml/features/student_features.ts`: `const now = Date.now();` used for `days_since_last_revision` calculation.
+    *   `src/ml/features/student_features.ts`: `const now = referenceDate.getTime();` where `referenceDate` defaults to `new Date()`. This allows for dependency injection during testing, but the *default* behavior is still tied to system time.
     *   `src/components/planner/ScheduleView.tsx`: `new Date()` used for sorting and review due status.
     *   `src/lib/db-helpers-extended.ts`: `nextReviewDate.setDate(...)` calculations.
-*   **Impact:** Unit tests for these components cannot reliably simulate "past" or "future" states without complex mocking of the global `Date` object, leading to flaky tests or limited test coverage.
+*   **Impact:** Unit tests for these components cannot reliably simulate "past" or "future" states without mocking the global `Date` object or explicitly passing the reference date.
 
 ### 3. Lack of Simulation Capabilities
 *   **Issue:** The system cannot run "faster than real-time" simulations or "time travel" to debug historical data issues because time is fetched directly from the system clock.
@@ -50,4 +50,9 @@ class SimulatedTimeProvider implements ITimeProvider {
 *   Allow users (or admins/devs) to set this date via UI or API.
 
 ### 3. Refactor Time-Sensitive Logic
-*   Update `student_features.ts` and `ScheduleView.tsx` to accept a `referenceDate` parameter or inject the `TimeProvider`, enabling deterministic testing of time-based logic.
+*   Ensure callers of `extractMasteryFeatures` and `extractAttentionFeatures` utilize the `referenceDate` parameter for testing scenarios.
+*   Refactor `ScheduleView.tsx` and other UI components to accept `Date` props or use the `TimeProvider` instead of `new Date()`.
+
+## Verification
+*   **Timestamp:** 2024-05-24
+*   **Auditor:** Jules (AI Assistant)
