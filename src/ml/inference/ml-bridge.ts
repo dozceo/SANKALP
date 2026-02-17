@@ -23,6 +23,10 @@ const PYTHON_SCRIPT_PATH = process.env.ML_PYTHON_SCRIPT || path.join(
     "predict_mastery.py"
 );
 
+// Circuit Breaker State
+let lastApiFailureTime = 0;
+const CIRCUIT_OPEN_DURATION = 60000; // 60 seconds
+
 interface PendingRequest {
     resolve: (value: MasteryPredictionOutput) => void;
     reject: (reason?: any) => void;
@@ -179,26 +183,34 @@ export async function predictMastery(
     // Chaos Injection
     await chaos.checkChaos('ml');
 
-    // Optimization: Try to call the API first (persistent server is much faster)
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1000); // 1s timeout for API
+    // Optimization: Circuit Breaker Pattern
+    // If the API failed recently, skip the fetch attempt to avoid latency penalty.
+    if (Date.now() - lastApiFailureTime > CIRCUIT_OPEN_DURATION) {
+        // Optimization: Try to call the API first (persistent server is much faster)
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1000); // 1s timeout for API
 
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(features),
-            signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(features),
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
 
-        if (response.ok) {
-            return (await response.json()) as MasteryPredictionOutput;
+            if (response.ok) {
+                return (await response.json()) as MasteryPredictionOutput;
+            } else {
+                // If response is not OK (eg. 500), consider it a failure for circuit breaker
+                lastApiFailureTime = Date.now();
+            }
+        } catch (error) {
+            // API not available or timeout, fall back to subprocess
+            lastApiFailureTime = Date.now();
         }
-    } catch (error) {
-        // API not available or timeout, fall back to subprocess
     }
 
     return bridge.predict(features);

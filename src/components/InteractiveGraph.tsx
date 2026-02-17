@@ -59,6 +59,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   // Optimization: Use refs for frequent updates to avoid re-creating canvas functions
   const hoveredNodeRef = useRef<string | null>(null);
   const highlightedNodeRef = useRef<string | undefined>(highlightedNode);
+  const gradientCache = useRef(new Map<string, CanvasGradient>());
 
   useEffect(() => {
     hoveredNodeRef.current = hoveredNode;
@@ -279,16 +280,26 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
     // Glow effect for highlighted/hovered nodes
     if (isHighlighted || isHovered) {
-      const gradient = ctx.createRadialGradient(
-        node.x, node.y, 0,
-        node.x, node.y, nodeSize * 3
-      );
-      gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-      gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+      let glowGradient: CanvasGradient;
+      const glowKey = 'glow-highlight';
+
+      if (gradientCache.current.has(glowKey)) {
+        glowGradient = gradientCache.current.get(glowKey)!;
+      } else {
+        glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+        glowGradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
+        glowGradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+        gradientCache.current.set(glowKey, glowGradient);
+      }
+
+      ctx.save();
+      ctx.translate(node.x, node.y);
+      ctx.scale(nodeSize * 3, nodeSize * 3);
       ctx.beginPath();
-      ctx.arc(node.x, node.y, nodeSize * 3, 0, 2 * Math.PI);
-      ctx.fillStyle = gradient;
+      ctx.arc(0, 0, 1, 0, 2 * Math.PI);
+      ctx.fillStyle = glowGradient;
       ctx.fill();
+      ctx.restore();
     }
 
     // Optimization: Skip expensive gradient for small nodes or when zoomed out
@@ -299,19 +310,28 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fillStyle = baseColor;
       ctx.fill();
     } else {
-      // Node circle with gradient
-      const nodeGradient = ctx.createRadialGradient(
-        node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
-        node.x, node.y, nodeSize
-      );
+      // Node circle with gradient using caching
+      let nodeGradient: CanvasGradient;
+      const gradientKey = `${lightColor}-${baseColor}`;
 
-      nodeGradient.addColorStop(0, lightColor);
-      nodeGradient.addColorStop(1, baseColor);
+      if (gradientCache.current.has(gradientKey)) {
+        nodeGradient = gradientCache.current.get(gradientKey)!;
+      } else {
+        // Create unit gradient with offset center (-0.3, -0.3)
+        nodeGradient = ctx.createRadialGradient(-0.3, -0.3, 0, 0, 0, 1);
+        nodeGradient.addColorStop(0, lightColor);
+        nodeGradient.addColorStop(1, baseColor);
+        gradientCache.current.set(gradientKey, nodeGradient);
+      }
 
+      ctx.save();
+      ctx.translate(node.x, node.y);
+      ctx.scale(nodeSize, nodeSize);
       ctx.beginPath();
-      ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+      ctx.arc(0, 0, 1, 0, 2 * Math.PI);
       ctx.fillStyle = nodeGradient;
       ctx.fill();
+      ctx.restore();
     }
 
     // Border for highlighted node

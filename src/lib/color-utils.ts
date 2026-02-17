@@ -16,18 +16,26 @@ export function lightenColor(hex: string, percent: number): string {
   }
 
   // Optimization: Use slice instead of replace for faster string processing
-  const cleanHex = hex.startsWith('#') ? hex.slice(1) : hex;
-  const num = parseInt(cleanHex, 16);
+  let cleanHex = hex.startsWith('#') ? hex.slice(1) : hex;
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex[0] + cleanHex[0] + cleanHex[1] + cleanHex[1] + cleanHex[2] + cleanHex[2];
+  }
 
+  const num = parseInt(cleanHex, 16);
   const amt = Math.round(2.55 * percent);
 
-  // Use bitwise operations for color component extraction
-  const R = Math.min(255, (num >> 16) + amt);
-  const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
-  const B = Math.min(255, (num & 0x0000ff) + amt);
+  // Extract components
+  const R = (num >> 16) + amt;
+  const G = ((num >> 8) & 0x00ff) + amt;
+  const B = (num & 0x0000ff) + amt;
+
+  // Clamp values between 0 and 255
+  const newR = R < 255 ? (R < 0 ? 0 : R) : 255;
+  const newG = G < 255 ? (G < 0 ? 0 : G) : 255;
+  const newB = B < 255 ? (B < 0 ? 0 : B) : 255;
 
   // Bitwise composition with 0x1000000 to ensure zero-padding
-  const result = `#${(0x1000000 + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;
+  const result = `#${(0x1000000 + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
 
   // Cache the result
   // Limit cache size to prevent memory leaks in long running sessions
