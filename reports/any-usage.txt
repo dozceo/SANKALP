@@ -1,0 +1,53 @@
+src/ml/inference/ml-bridge.ts:    reject: (reason?: any) => void;
+src/components/SankalpSwitch.tsx:        } catch (error: any) {
+src/components/SankalpSwitch.tsx:        } catch (error: any) {
+src/components/planner/AddStudyMaterial.tsx:        } catch (error: any) {
+src/components/planner/AddStudyMaterial.tsx:        } catch (error: any) {
+src/components/LogoutButton.tsx:        } catch (error: any) {
+src/contexts/StudentContext.tsx:                    const materials: StudyMaterial[] = plannerData.items.map((item: any) => {
+src/contexts/AuthContext.tsx:    signUp: (email: string, password: string, name: string, role: 'student' | 'teacher', additionalData?: any) => Promise<User>;
+src/contexts/AuthContext.tsx:        additionalData?: any
+src/ai/detect_drift.ts:  response: any;
+src/ai/detect_drift.ts:      const printErrors = (errObj: any, prefix = '') => {
+src/ai/flows/text-to-speech.ts:    let bufs: any[] = [];
+src/ai/flows/speech-to-speech.ts:    let bufs: any[] = [];
+src/ai/flows/smart-revision-planner.ts:async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentHistory) {
+src/lib/graph-helpers.ts:            brainMapSnapshot.docs.forEach((doc: any) => {
+src/lib/db-helpers.ts:    structure: any;
+src/lib/db-helpers.ts:    questions: any[];
+src/lib/eventTracker.ts:    private log(...args: any[]): void {
+src/lib/db-helpers-extended.ts:                reviewDates: (data.reviewDates || []).map((d: any) => d.toDate()),
+src/lib/db-helpers-extended.ts:                reviewDates: (data.reviewDates || []).map((d: any) => d.toDate()),
+src/lib/storage.ts:    } catch (error: any) {
+src/lib/storage.ts:            } catch (error: any) {
+src/lib/storage.ts:    } catch (error: any) {
+src/lib/storage.ts:    } catch (error: any) {
+src/lib/storage.ts:    } catch (error: any) {
+src/lib/firestore.ts:    } catch (error: any) {
+src/lib/firestore.ts:    } catch (error: any) {
+src/lib/firestore.ts:    } catch (error: any) {
+src/lib/firestore.ts:    } catch (error: any) {
+src/lib/firestore.ts:    } catch (error: any) {
+src/lib/firestore.ts:    } catch (error: any) {
+src/lib/auth.ts:    } catch (error: any) {
+src/lib/auth.ts:    } catch (error: any) {
+src/lib/auth.ts:    } catch (error: any) {
+src/lib/auth.ts:    } catch (error: any) {
+src/lib/auth.ts:    } catch (error: any) {
+src/lib/auth.ts:    } catch (error: any) {
+src/lib/middleware/auth.ts:    } catch (error: any) {
+src/app/(auth)/sign-up/page.tsx:    } catch (error: any) {
+src/app/(auth)/login/page.tsx:    } catch (error: any) {
+src/app/(auth)/login/page.tsx:    } catch (error: any) {
+src/app/(auth)/join-class/page.tsx:        } catch (error: any) {
+src/app/(auth)/onboarding/page.tsx:        } catch (error: any) {
+src/app/(auth)/teacher-onboarding/page.tsx:        } catch (error: any) {
+src/app/(main)/teacher/student/[studentId]/StudentAnalyticsClient.tsx:    recentQuizzes: any[];
+src/app/(main)/teacher/page.tsx:    const newNodes = graphData.nodes.map((node: any) => {
+src/app/(main)/brain-map/page.tsx:                        const studentNode = data.nodes.find((n: any) => n.type === 'student');
+src/app/(main)/classes/page.tsx:        } catch (error: any) {
+src/app/(main)/classes/page.tsx:        } catch (error: any) {
+src/app/api/planner/convert-to-node/route.ts:    } catch (error: any) {
+src/app/api/student/onboard/route.ts:        const studentData: any = {
+src/app/api/activity/log/route.ts:                const updates: any = {};
+src/app/actions/student-configuration.ts:  } catch (error: any) {
