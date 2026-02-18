@@ -1,245 +1,156 @@
-import { makeRevisionDecision, makeInterventionDecision } from '../src/ai/adk/decision-engine';
-import { DecisionContext, MLSignals, DecisionAction, ContentStrategy, TeacherInterventionSignal } from '../src/ai/adk/types';
 
-// Define ranges for exhaustive testing
-const INPUT_DOMAINS = {
-    daysUntilExam: [undefined, 0, 1, 2, 3, 4, 10],
-    mastery_probability: [0.0, 0.2, 0.3, 0.39, 0.4, 0.5, 0.59, 0.6, 0.69, 0.7, 0.8, 1.0],
-    days_since_last_revision: [0, 5, 7, 8, 10, 14, 15, 20],
-    attention_risk: [undefined, 'LOW', 'MEDIUM', 'HIGH'] as const,
-    days_until_forget: [undefined, 0, 2, 3, 5],
-    dropout_probability: [undefined, 0.0, 0.5, 0.6, 0.7, 1.0],
-    attempts_count: [0, 5, 6, 10]
+import { DecisionContext, MLSignals, ADKDecision, DecisionAction, TeacherInterventionSignal } from "../src/ai/adk/types";
+import { makeRevisionDecision, makeInterventionDecision } from "../src/ai/adk/decision-engine";
+
+// --- Mock Domain ---
+const DOMAIN = {
+    daysUntilExam: [undefined, 0, 1, 3, 5, 10, 30], // Added 0
+    mastery_probability: [0.2, 0.35, 0.45, 0.55, 0.65, 0.75, 0.9],
+    days_until_forget: [undefined, 2, 3, 5, 999],
+    attention_risk: ["LOW", "HIGH"] as const,
+    days_since_last_revision: [5, 8, 14, 15, 30],
+    attempts_count: [3, 6],
+    dropout_probability: [undefined, 0.5, 0.7],
 };
 
-// Expected Rules Logic (to detect shadowing/unreachable)
-// This mirrors the structure of the decision engine to identify expected behavior.
+type Scenario = {
+    daysUntilExam?: number;
+    mastery_probability: number;
+    days_until_forget?: number;
+    attention_risk: "LOW" | "HIGH";
+    days_since_last_revision: number;
+    attempts_count: number;
+    dropout_probability?: number;
+};
+
+// --- Rule Definitions ---
+// These replicate the logic in src/ai/adk/decision-engine.ts
+// We add expectedAction to verify against the actual implementation.
+
 const REVISION_RULES = [
     {
-        id: "RULE_0_CRAMMING",
-        condition: (ctx: DecisionContext) => {
-            const { mlSignals, daysUntilExam } = ctx;
-            const { mastery_probability } = mlSignals;
-            // Original code: if (daysUntilExam && daysUntilExam <= 3 && mastery_probability < 0.6)
-            // We replicate exactly to detect if logic matches code.
-            // Fixed: Now allows 0.
-            return (typeof daysUntilExam === 'number' && daysUntilExam <= 3 && mastery_probability < 0.6);
-        },
-        flags: ["CRAMMING_MODE", "EXAM_IMMINENT"]
+        id: "R0_EXAM_CRAMMING",
+        priority: 0,
+        condition: (s: Scenario) => (s.daysUntilExam !== undefined && s.daysUntilExam <= 3) && s.mastery_probability < 0.6,
+        description: "Exam imminent (<3 days) & low mastery (<0.6)",
+        expectedAction: DecisionAction.URGENT_REVISION
     },
     {
-        id: "RULE_1_CRITICAL_FORGETTING",
-        condition: (ctx: DecisionContext) => {
-            const { mlSignals } = ctx;
-            const { mastery_probability } = mlSignals;
-            return (mastery_probability < 0.4 && (mlSignals.days_until_forget ?? 999) < 3);
-        },
-        flags: ["URGENT_REVISION", "FORGETTING_RISK"]
+        id: "R1_FORGETTING_RISK",
+        priority: 1,
+        condition: (s: Scenario) => s.mastery_probability < 0.4 && (s.days_until_forget ?? 999) < 3,
+        description: "Low mastery (<0.4) & imminent forgetting (<3 days)",
+        expectedAction: DecisionAction.URGENT_REVISION
     },
     {
-        id: "RULE_2_ATTENTION_RISK",
-        condition: (ctx: DecisionContext) => {
-            const { mlSignals } = ctx;
-            const { mastery_probability, attention_risk } = mlSignals;
-            return (mastery_probability < 0.4 && attention_risk === "HIGH");
-        },
-        flags: ["ADAPTIVE_TEACHING", "ATTENTION_RISK"]
+        id: "R2_ATTENTION_RISK",
+        priority: 2,
+        condition: (s: Scenario) => s.mastery_probability < 0.4 && s.attention_risk === "HIGH",
+        description: "Low mastery (<0.4) & high attention risk",
+        expectedAction: DecisionAction.ADAPTIVE_TEACHING
     },
     {
-        id: "RULE_3_STALE_KNOWLEDGE",
-        condition: (ctx: DecisionContext) => {
-            const { mlSignals } = ctx;
-            const { mastery_probability, days_since_last_revision } = mlSignals;
-            return (mastery_probability >= 0.4 && mastery_probability < 0.6 && days_since_last_revision > 7);
-        },
-        flags: ["SPACED_REPETITION"]
+        id: "R3_SPACED_REPETITION",
+        priority: 3,
+        condition: (s: Scenario) => s.mastery_probability >= 0.4 && s.mastery_probability < 0.6 && s.days_since_last_revision > 7,
+        description: "Moderate mastery (0.4-0.6) & stale (>7 days)",
+        expectedAction: DecisionAction.SCHEDULED_REVISION
     },
     {
-        id: "RULE_4_MASTERY",
-        condition: (ctx: DecisionContext) => {
-            const { mlSignals } = ctx;
-            const { mastery_probability, days_since_last_revision } = mlSignals;
-            return (mastery_probability >= 0.7 && days_since_last_revision <= 14);
-        },
-        flags: ["MASTERY_ACHIEVED"]
+        id: "R4_MASTERY_PROGRESS",
+        priority: 4,
+        condition: (s: Scenario) => s.mastery_probability >= 0.7 && s.days_since_last_revision <= 14,
+        description: "High mastery (>=0.7) & recent (<14 days)",
+        expectedAction: DecisionAction.PROGRESS_ALLOWED
     },
-    {
-        id: "DEFAULT",
-        condition: () => true, // Fallback
-        flags: ["ROUTINE_REVISION"]
-    }
+    // Default is implicit: SCHEDULED_REVISION
 ];
 
 const INTERVENTION_RULES = [
     {
-        id: "INTERVENTION_1_CRITICAL",
-        condition: (ctx: DecisionContext) => {
-            const { mlSignals } = ctx;
-            const { mastery_probability, attention_risk, days_since_last_revision } = mlSignals;
-            return (mastery_probability < 0.3 && attention_risk === "HIGH" && days_since_last_revision > 10);
-        },
-        severity: "CRITICAL"
+        id: "I1_CRITICAL_RISK",
+        priority: 0,
+        condition: (s: Scenario) => s.mastery_probability < 0.3 && s.attention_risk === "HIGH" && s.days_since_last_revision > 10,
+        description: "Very low mastery (<0.3) & high attention & inactive (>10 days)"
     },
     {
-        id: "INTERVENTION_2_HIGH_RISK",
-        condition: (ctx: DecisionContext) => {
-            const { mlSignals } = ctx;
-            const { attention_risk, dropout_probability } = mlSignals;
-            return (attention_risk === "HIGH" && (dropout_probability ?? 0) > 0.6);
-        },
-        severity: "HIGH"
+        id: "I2_DROPOUT_RISK",
+        priority: 1,
+        condition: (s: Scenario) => s.attention_risk === "HIGH" && (s.dropout_probability ?? 0) > 0.6,
+        description: "High attention risk & high dropout (>0.6)"
     },
     {
-        id: "INTERVENTION_3_PERSISTENT_LOW",
-        condition: (ctx: DecisionContext) => {
-            const { mlSignals } = ctx;
-            const { mastery_probability, attempts_count } = mlSignals;
-            return (mastery_probability < 0.4 && attempts_count > 5);
-        },
-        severity: "MEDIUM"
+        id: "I3_PERSISTENT_FAILURE",
+        priority: 2,
+        condition: (s: Scenario) => s.mastery_probability < 0.4 && s.attempts_count > 5,
+        description: "Low mastery (<0.4) & many attempts (>5)"
     },
-    {
-        id: "NO_INTERVENTION",
-        condition: () => true,
-        severity: null
-    }
+    // Default is null
 ];
 
+// --- Analysis Logic ---
 
-// Statistics
-const stats = {
-    revision: {
-        total: 0,
-        byRule: {} as Record<string, number>,
-        shadowed: {} as Record<string, number>, // Rule X matched but wasn't chosen
-        bug_daysUntilExamZero: 0
-    },
-    intervention: {
-        total: 0,
-        byRule: {} as Record<string, number>,
-        shadowed: {} as Record<string, number>
-    }
-};
+function analyze() {
+    let scenarioCount = 0;
+    const revisionStats = {
+        triggered: {} as Record<string, number>,
+        shadowed: {} as Record<string, Record<string, number>>,
+        overlaps: {} as Record<string, Record<string, number>>,
+        gaps: 0,
+        mismatches: 0
+    };
+    const interventionStats = {
+        triggered: {} as Record<string, number>,
+        shadowed: {} as Record<string, Record<string, number>>,
+        overlaps: {} as Record<string, Record<string, number>>,
+        gaps: 0,
+        mismatches: 0
+    };
 
-// Initialize counters
-REVISION_RULES.forEach(r => {
-    stats.revision.byRule[r.id] = 0;
-    stats.revision.shadowed[r.id] = 0;
-});
-INTERVENTION_RULES.forEach(r => {
-    stats.intervention.byRule[r.id] = 0;
-    stats.intervention.shadowed[r.id] = 0;
-});
+    // Initialize counters
+    REVISION_RULES.forEach(r => {
+        revisionStats.triggered[r.id] = 0;
+        revisionStats.shadowed[r.id] = {};
+        revisionStats.overlaps[r.id] = {};
+        REVISION_RULES.forEach(other => {
+            if (r.id !== other.id) {
+                revisionStats.shadowed[r.id][other.id] = 0;
+                revisionStats.overlaps[r.id][other.id] = 0;
+            }
+        });
+    });
 
+    INTERVENTION_RULES.forEach(r => {
+        interventionStats.triggered[r.id] = 0;
+        interventionStats.shadowed[r.id] = {};
+        interventionStats.overlaps[r.id] = {};
+        INTERVENTION_RULES.forEach(other => {
+            if (r.id !== other.id) {
+                interventionStats.shadowed[r.id][other.id] = 0;
+                interventionStats.overlaps[r.id][other.id] = 0;
+            }
+        });
+    });
 
-function run() {
-    console.log("# ADK Decision Engine Logic Validation");
-    console.log("Running exhaustive validation on decision rules...\n");
+    // Cartesian Product Iteration
+    const scenarios: Scenario[] = [];
 
-    // Iterate combinations
-    // Nest loops (could be recursive but explicit is fine for known depth)
-    for (const daysUntilExam of INPUT_DOMAINS.daysUntilExam) {
-        for (const mastery of INPUT_DOMAINS.mastery_probability) {
-            for (const daysSinceRev of INPUT_DOMAINS.days_since_last_revision) {
-                for (const attention of INPUT_DOMAINS.attention_risk) {
-                    for (const daysUntilForget of INPUT_DOMAINS.days_until_forget) {
-                        for (const dropout of INPUT_DOMAINS.dropout_probability) {
-                            for (const attempts of INPUT_DOMAINS.attempts_count) {
-
-                                const mlSignals: MLSignals = {
+    for (const dExam of DOMAIN.daysUntilExam) {
+        for (const mastery of DOMAIN.mastery_probability) {
+            for (const dForget of DOMAIN.days_until_forget) {
+                for (const att of DOMAIN.attention_risk) {
+                    for (const dRev of DOMAIN.days_since_last_revision) {
+                        for (const attCount of DOMAIN.attempts_count) {
+                            for (const drop of DOMAIN.dropout_probability) {
+                                scenarios.push({
+                                    daysUntilExam: dExam,
                                     mastery_probability: mastery,
-                                    days_since_last_revision: daysSinceRev,
-                                    attention_risk: attention as any,
-                                    days_until_forget: daysUntilForget,
-                                    dropout_probability: dropout,
-                                    attempts_count: attempts,
-                                    confidence: 0.8 // dummy
-                                };
-
-                                const context: DecisionContext = {
-                                    studentId: "test-student",
-                                    topic: "test-topic",
-                                    currentDate: new Date(),
-                                    daysUntilExam,
-                                    mlSignals
-                                };
-
-                                // 1. Validate Revision Logic
-                                const decision = makeRevisionDecision(context);
-
-                                // Determine which rule executed
-                                let executedRuleId = "UNKNOWN";
-                                // Identify by flags (most reliable)
-                                if (decision.adkFlags && decision.adkFlags.length > 0) {
-                                    const flag = decision.adkFlags[0]; // Usually enough
-                                    if (flag === "CRAMMING_MODE") executedRuleId = "RULE_0_CRAMMING";
-                                    else if (flag === "URGENT_REVISION") executedRuleId = "RULE_1_CRITICAL_FORGETTING";
-                                    else if (flag === "ADAPTIVE_TEACHING") executedRuleId = "RULE_2_ATTENTION_RISK";
-                                    else if (flag === "SPACED_REPETITION") executedRuleId = "RULE_3_STALE_KNOWLEDGE";
-                                    else if (flag === "MASTERY_ACHIEVED") executedRuleId = "RULE_4_MASTERY";
-                                    else if (flag === "ROUTINE_REVISION") executedRuleId = "DEFAULT";
-                                }
-
-                                stats.revision.total++;
-                                stats.revision.byRule[executedRuleId]++;
-
-                                // Check shadowing & correctness
-                                // Find ALL rules that matched conditions
-                                const matchingRules = REVISION_RULES.filter(r => {
-                                    // For Rule 0, we use a fixed condition in the loop below to check for the bug specifically.
-                                    // But here we want to know what the ENGINE logic did.
-                                    // The `condition` function above REPLICATES the engine logic (including the bug).
-                                    return r.condition(context);
+                                    days_until_forget: dForget,
+                                    attention_risk: att as any,
+                                    days_since_last_revision: dRev,
+                                    attempts_count: attCount,
+                                    dropout_probability: drop,
                                 });
-
-                                // The first matching rule should be the one executed
-                                if (matchingRules.length > 0) {
-                                    const expectedRule = matchingRules[0];
-                                    if (expectedRule.id !== executedRuleId) {
-                                        // Mismatch!
-                                        // This implies my replicated condition differs from actual code, OR I identified the rule wrong.
-                                        // Or maybe the input domain triggered an edge case.
-                                        // For now, assume my replica is correct-ish.
-                                    }
-
-                                    // Shadowing: any matching rule that is NOT the first one is shadowed
-                                    for (let i = 1; i < matchingRules.length; i++) {
-                                        stats.revision.shadowed[matchingRules[i].id]++;
-                                    }
-                                }
-
-                                // Check specific bug: daysUntilExam === 0
-                                if (daysUntilExam === 0 && mastery < 0.6) {
-                                    // Should be CRAMMING_MODE if logic was correct (daysUntilExam <= 3)
-                                    // But current code fails.
-                                    if (executedRuleId !== "RULE_0_CRAMMING") {
-                                        stats.revision.bug_daysUntilExamZero++;
-                                    }
-                                }
-
-
-                                // 2. Validate Intervention Logic
-                                const intervention = makeInterventionDecision(context);
-                                let executedInterventionId = "NO_INTERVENTION";
-                                if (intervention) {
-                                    if (intervention.severity === "CRITICAL") executedInterventionId = "INTERVENTION_1_CRITICAL";
-                                    else if (intervention.severity === "HIGH") executedInterventionId = "INTERVENTION_2_HIGH_RISK";
-                                    else if (intervention.severity === "MEDIUM") executedInterventionId = "INTERVENTION_3_PERSISTENT_LOW";
-                                } else {
-                                    executedInterventionId = "NO_INTERVENTION";
-                                }
-
-                                stats.intervention.total++;
-                                stats.intervention.byRule[executedInterventionId]++;
-
-                                const matchingInterventions = INTERVENTION_RULES.filter(r => r.condition(context));
-                                // Shadowing
-                                if (matchingInterventions.length > 0) {
-                                    // First one matches
-                                    for (let i = 1; i < matchingInterventions.length; i++) {
-                                        stats.intervention.shadowed[matchingInterventions[i].id]++;
-                                    }
-                                }
                             }
                         }
                     }
@@ -248,44 +159,195 @@ function run() {
         }
     }
 
-    // Output Report
-    console.log("## Revision Decision Coverage");
-    console.log("| Rule ID | Triggers | % Coverage | Shadowed (Preempted) |");
-    console.log("|---|---|---|---|");
-    for (const rule of REVISION_RULES) {
-        const count = stats.revision.byRule[rule.id] || 0;
-        const pct = ((count / stats.revision.total) * 100).toFixed(2);
-        const shadowed = stats.revision.shadowed[rule.id] || 0;
-        console.log(`| ${rule.id} | ${count} | ${pct}% | ${shadowed} |`);
+    scenarioCount = scenarios.length;
+
+    for (const s of scenarios) {
+        // Construct DecisionContext for Actual Code
+        const context: DecisionContext = {
+            studentId: "test-student",
+            topic: "test-topic",
+            currentDate: new Date(),
+            daysUntilExam: s.daysUntilExam,
+            mlSignals: {
+                mastery_probability: s.mastery_probability,
+                confidence: 0.8, // Default
+                days_until_forget: s.days_until_forget,
+                attention_risk: s.attention_risk,
+                dropout_probability: s.dropout_probability,
+                days_since_last_revision: s.days_since_last_revision,
+                attempts_count: s.attempts_count,
+            }
+        };
+
+        // --- Revision Analysis ---
+        let triggeredRule: any = null;
+        const matchingRules: string[] = [];
+
+        for (const rule of REVISION_RULES) {
+            if (rule.condition(s)) {
+                matchingRules.push(rule.id);
+                if (!triggeredRule) {
+                    triggeredRule = rule;
+                }
+            }
+        }
+
+        // Run Actual Code
+        const actualDecision = makeRevisionDecision(context);
+
+        if (triggeredRule) {
+            revisionStats.triggered[triggeredRule.id]++;
+
+            // Validate Model vs Code
+            if (actualDecision.action !== triggeredRule.expectedAction) {
+                console.warn(`MISMATCH [Revision]: Scenario matches ${triggeredRule.id} (Expected ${triggeredRule.expectedAction}) but code returned ${actualDecision.action}`);
+                revisionStats.mismatches++;
+            }
+
+            // Check for shadowing
+            for (const matchId of matchingRules) {
+                if (matchId !== triggeredRule.id) {
+                    revisionStats.shadowed[matchId][triggeredRule.id]++;
+                }
+            }
+            // Check for overlaps
+            for (const m1 of matchingRules) {
+                for (const m2 of matchingRules) {
+                    if (m1 !== m2) {
+                        revisionStats.overlaps[m1][m2]++;
+                    }
+                }
+            }
+        } else {
+            revisionStats.gaps++;
+            // Default case check
+            if (actualDecision.action !== DecisionAction.SCHEDULED_REVISION) {
+                 console.warn(`MISMATCH [Revision Default]: Scenario matches no rule (Expected SCHEDULED_REVISION) but code returned ${actualDecision.action}`);
+                 revisionStats.mismatches++;
+            }
+        }
+
+        // --- Intervention Analysis ---
+        let triggeredInterventionRule: any = null;
+        const matchingInterventions: string[] = [];
+
+        for (const rule of INTERVENTION_RULES) {
+            if (rule.condition(s)) {
+                matchingInterventions.push(rule.id);
+                if (!triggeredInterventionRule) {
+                    triggeredInterventionRule = rule;
+                }
+            }
+        }
+
+        // Run Actual Code
+        const actualIntervention = makeInterventionDecision(context);
+
+        if (triggeredInterventionRule) {
+            interventionStats.triggered[triggeredInterventionRule.id]++;
+
+            // Validate Model vs Code
+            if (actualIntervention === null) {
+                console.warn(`MISMATCH [Intervention]: Scenario matches ${triggeredInterventionRule.id} but code returned null`);
+                interventionStats.mismatches++;
+            }
+
+             for (const matchId of matchingInterventions) {
+                if (matchId !== triggeredInterventionRule.id) {
+                    interventionStats.shadowed[matchId][triggeredInterventionRule.id]++;
+                }
+            }
+            for (const m1 of matchingInterventions) {
+                for (const m2 of matchingInterventions) {
+                    if (m1 !== m2) {
+                        interventionStats.overlaps[m1][m2]++;
+                    }
+                }
+            }
+        } else {
+            interventionStats.gaps++;
+            if (actualIntervention !== null) {
+                 console.warn(`MISMATCH [Intervention Default]: Scenario matches no rule (Expected null) but code returned intervention`);
+                 interventionStats.mismatches++;
+            }
+        }
     }
 
-    console.log("\n## Intervention Decision Coverage");
-    console.log("| Rule ID | Triggers | % Coverage | Shadowed (Preempted) |");
-    console.log("|---|---|---|---|");
-    for (const rule of INTERVENTION_RULES) {
-        const count = stats.intervention.byRule[rule.id] || 0;
-        const pct = ((count / stats.intervention.total) * 100).toFixed(2);
-        const shadowed = stats.intervention.shadowed[rule.id] || 0;
-        console.log(`| ${rule.id} | ${count} | ${pct}% | ${shadowed} |`);
-    }
+    // Output Generation
+    console.log("# ADK Decision Logic Validation Report");
+    console.log(`\n**Total Scenarios Tested:** ${scenarioCount}`);
 
-    console.log("\n## Edge Case Analysis");
-    console.log(`- **daysUntilExam: 0 Bug**: Failed to trigger CRAMMING_MODE in ${stats.revision.bug_daysUntilExamZero} cases where it should have.`);
-
-    // Check for unreachable rules
-    const unreachableRevision = REVISION_RULES.filter(r => (stats.revision.byRule[r.id] || 0) === 0);
-    if (unreachableRevision.length > 0) {
-        console.log(`- **Unreachable Revision Rules**: ${unreachableRevision.map(r => r.id).join(", ")}`);
+    console.log("\n## Revision Decision Logic");
+    if (revisionStats.mismatches > 0) {
+        console.log(`\n⚠️ **WARNING: ${revisionStats.mismatches} Mismatches detected between Model and Implementation!**\n`);
     } else {
-        console.log("- All Revision rules are reachable.");
+        console.log(`\n✅ **Model matches Implementation perfectly.**\n`);
     }
 
-    const unreachableIntervention = INTERVENTION_RULES.filter(r => (stats.intervention.byRule[r.id] || 0) === 0);
-    if (unreachableIntervention.length > 0) {
-        console.log(`- **Unreachable Intervention Rules**: ${unreachableIntervention.map(r => r.id).join(", ")}`);
+    console.log("| Rule ID | Description | Triggered Count | Coverage % |");
+    console.log("|---|---|---|---|");
+    REVISION_RULES.forEach(r => {
+        const count = revisionStats.triggered[r.id];
+        const pct = ((count / scenarioCount) * 100).toFixed(2);
+        console.log(`| ${r.id} | ${r.description} | ${count} | ${pct}% |`);
+    });
+    console.log(`| DEFAULT | Routine Revision | ${revisionStats.gaps} | ${((revisionStats.gaps / scenarioCount) * 100).toFixed(2)}% |`);
+
+    console.log("\n### Overlap Analysis (Potential Contradictions)");
+    console.log("These pairs of rules are satisfied simultaneously. The higher priority (earlier) rule wins.");
+    console.log("| Winner Rule | Shadowed Rule | Count |");
+    console.log("|---|---|---|");
+    let hasOverlap = false;
+    for (const [ruleId, counts] of Object.entries(revisionStats.shadowed)) {
+        for (const [shadowingId, count] of Object.entries(counts)) {
+            if (count > 0) {
+                console.log(`| ${shadowingId} | ${ruleId} | ${count} |`);
+                hasOverlap = true;
+            }
+        }
+    }
+    if (!hasOverlap) console.log("| None | None | 0 |");
+
+    console.log("\n## Intervention Decision Logic");
+    if (interventionStats.mismatches > 0) {
+        console.log(`\n⚠️ **WARNING: ${interventionStats.mismatches} Mismatches detected between Model and Implementation!**\n`);
     } else {
-        console.log("- All Intervention rules are reachable.");
+        console.log(`\n✅ **Model matches Implementation perfectly.**\n`);
+    }
+
+    console.log("| Rule ID | Description | Triggered Count | Coverage % |");
+    console.log("|---|---|---|---|");
+    INTERVENTION_RULES.forEach(r => {
+        const count = interventionStats.triggered[r.id];
+        const pct = ((count / scenarioCount) * 100).toFixed(2);
+        console.log(`| ${r.id} | ${r.description} | ${count} | ${pct}% |`);
+    });
+    console.log(`| NO_INTERVENTION | - | ${interventionStats.gaps} | ${((interventionStats.gaps / scenarioCount) * 100).toFixed(2)}% |`);
+
+    console.log("\n### Overlap Analysis (Intervention)");
+    console.log("| Winner Rule | Shadowed Rule | Count |");
+    console.log("|---|---|---|");
+    hasOverlap = false;
+    for (const [ruleId, counts] of Object.entries(interventionStats.shadowed)) {
+        for (const [shadowingId, count] of Object.entries(counts)) {
+            if (count > 0) {
+                console.log(`| ${shadowingId} | ${ruleId} | ${count} |`);
+                hasOverlap = true;
+            }
+        }
+    }
+    if (!hasOverlap) console.log("| None | None | 0 |");
+
+    // Unreachable Code Check
+    console.log("\n## Unreachable/Dead Rules");
+    const deadRules = [...REVISION_RULES.filter(r => revisionStats.triggered[r.id] === 0).map(r => r.id),
+                       ...INTERVENTION_RULES.filter(r => interventionStats.triggered[r.id] === 0).map(r => r.id)];
+
+    if (deadRules.length > 0) {
+        deadRules.forEach(id => console.log(`- ${id}`));
+    } else {
+        console.log("- None (All rules are reachable)");
     }
 }
 
-run();
+analyze();
