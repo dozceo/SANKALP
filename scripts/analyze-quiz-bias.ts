@@ -2,7 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 
-// Types
+// --- TYPES ---
 interface Question {
   question: string;
   options: string[];
@@ -45,7 +45,7 @@ interface BiasReport {
   }[];
 }
 
-// Constants for detection
+// --- CONSTANTS ---
 const MALE_PRONOUNS = /\b(he|him|his|himself)\b/gi;
 const FEMALE_PRONOUNS = /\b(she|her|hers|herself)\b/gi;
 
@@ -63,7 +63,7 @@ const EUROCENTRIC_PHRASES = [
   { phrase: 'Middle East', reason: 'Eurocentric geographical term' }
 ];
 
-// Helper functions
+// --- HELPER FUNCTIONS ---
 function countMatches(text: string, regex: RegExp): number {
   return (text.match(regex) || []).length;
 }
@@ -96,17 +96,36 @@ function countSyllables(text: string): number {
     .match(/[aeiouy]{1,2}/g)?.length || 1;
 }
 
-// Main analysis logic
+// --- MAIN ANALYSIS ---
 async function analyzeBias() {
-  const mockDataPath = path.join(process.cwd(), 'src/data/mock_quiz_generations.json');
+  const defaultInputPath = path.join(process.cwd(), 'src/data/mock_quiz_generations.json');
+  const inputPath = process.argv[2] || defaultInputPath;
+  const defaultOutputPath = 'BIAS_DETECTION_REPORT.md';
+  const outputPath = process.argv[3] || defaultOutputPath;
 
-  if (!fs.existsSync(mockDataPath)) {
-    console.error('Mock data file not found:', mockDataPath);
+  console.log(`[INFO] Analyzing bias from data: ${inputPath}`);
+
+  if (!fs.existsSync(inputPath)) {
+    console.error(`[ERROR] Input file not found: ${inputPath}`);
     process.exit(1);
   }
 
-  const rawData = fs.readFileSync(mockDataPath, 'utf-8');
-  const quizGenerations: QuizGeneration[] = JSON.parse(rawData);
+  let rawData: string;
+  try {
+      rawData = fs.readFileSync(inputPath, 'utf-8');
+  } catch (error: any) {
+      console.error(`[ERROR] Failed to read input file: ${error.message}`);
+      process.exit(1);
+  }
+
+  let quizGenerations: QuizGeneration[];
+  try {
+      quizGenerations = JSON.parse(rawData);
+  } catch (error: any) {
+      console.error(`[ERROR] Failed to parse JSON data: ${error.message}`);
+      process.exit(1);
+  }
+
 
   const report: BiasReport = {
     totalQuizzes: quizGenerations.length,
@@ -221,8 +240,16 @@ ${report.flaggedQuestions.map(f => `| "${f.question}" | ${f.reason} | **${f.seve
 3. **Accessibility:** Monitor grade level to ensure it matches the target \`educationLevel\`.
 `;
 
-  fs.writeFileSync('BIAS_DETECTION_REPORT.md', markdown);
-  console.log('Bias detection report generated: BIAS_DETECTION_REPORT.md');
+  try {
+      fs.writeFileSync(outputPath, markdown);
+      console.log(`[SUCCESS] Bias detection report generated: ${outputPath}`);
+  } catch (error: any) {
+      console.error(`[ERROR] Failed to write report: ${error.message}`);
+      process.exit(1);
+  }
 }
 
-analyzeBias().catch(console.error);
+analyzeBias().catch(error => {
+    console.error(`[CRITICAL] Uncaught error: ${error}`);
+    process.exit(1);
+});

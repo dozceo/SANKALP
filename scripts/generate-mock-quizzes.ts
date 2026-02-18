@@ -3,9 +3,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
-// Handle ESM __dirname
+// --- CONFIGURATION ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const DEFAULT_OUTPUT_PATH = path.join(__dirname, '../src/data/mock_quiz_generations.json');
+
+// --- TYPES ---
 
 interface Question {
   question: string;
@@ -22,6 +25,8 @@ interface QuizGeneration {
   questions: Question[];
   generatedAt: string;
 }
+
+// --- DATA ---
 
 const MOCK_QUIZZES: QuizGeneration[] = [
     // Original Student 1
@@ -211,16 +216,37 @@ const MOCK_QUIZZES: QuizGeneration[] = [
   }
 ];
 
-function generateMockData() {
-    const outputPath = path.join(__dirname, '../src/data/mock_quiz_generations.json');
-    // Ensure directory exists
-    const dir = path.dirname(outputPath);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
+// --- MAIN EXECUTION ---
 
-    fs.writeFileSync(outputPath, JSON.stringify(MOCK_QUIZZES, null, 2));
-    console.log(`Successfully generated ${MOCK_QUIZZES.length} mock quizzes to ${outputPath}`);
+/**
+ * Main function to generate mock data.
+ * Can be configured via CLI arguments in a real production environment.
+ */
+function generateMockData() {
+    const outputPath = process.argv[2] || DEFAULT_OUTPUT_PATH;
+
+    try {
+        console.log(`[INFO] Generating mock quiz data...`);
+
+        // Ensure directory exists
+        const dir = path.dirname(outputPath);
+        if (!fs.existsSync(dir)) {
+            console.log(`[INFO] Creating directory: ${dir}`);
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        fs.writeFileSync(outputPath, JSON.stringify(MOCK_QUIZZES, null, 2));
+        console.log(`[SUCCESS] Successfully generated ${MOCK_QUIZZES.length} mock quizzes to ${outputPath}`);
+    } catch (error: any) {
+        console.error(`[ERROR] Failed to generate mock data: ${error.message}`);
+        process.exit(1);
+    }
 }
 
-generateMockData();
+// Execute if run directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+    generateMockData();
+} else {
+    // Also run if executed via tsx directly on the file
+    generateMockData();
+}

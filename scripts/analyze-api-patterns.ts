@@ -1,7 +1,9 @@
 
 import fs from 'fs';
+import path from 'path';
 
-// Simulated Request Log
+// --- TYPES ---
+
 interface RequestLog {
   endpoint: string;
   method: string;
@@ -10,6 +12,15 @@ interface RequestLog {
   latency: number; // ms
   cost: number; // estimated tokens
 }
+
+interface EndpointStats {
+  count: number;
+  totalCost: number;
+  totalLatency: number;
+  duplicateParams: Record<string, number>;
+}
+
+// --- DATA SIMULATION ---
 
 const SIMULATED_LOGS: RequestLog[] = [
   // Burst of syllabus requests for popular exam
@@ -44,23 +55,32 @@ const SIMULATED_LOGS: RequestLog[] = [
   { endpoint: '/api/syllabus/generate', method: 'POST', params: { query: 'Custom Topic 2' }, timestamp: new Date().toISOString(), latency: 2100, cost: 1100 },
 ];
 
+// --- MAIN ANALYSIS ---
+
 function analyzePatterns() {
-  console.log('Analyzing API request patterns...');
+  const outputPath = process.argv[2] || 'CACHING_STRATEGY_PROPOSAL.md';
 
-  const endpointStats: Record<string, { count: number, totalCost: number, totalLatency: number, duplicateParams: Record<string, number> }> = {};
+  console.log('[INFO] Analyzing API request patterns...');
 
-  SIMULATED_LOGS.forEach(log => {
-    if (!endpointStats[log.endpoint]) {
-      endpointStats[log.endpoint] = { count: 0, totalCost: 0, totalLatency: 0, duplicateParams: {} };
-    }
-    const stats = endpointStats[log.endpoint];
-    stats.count++;
-    stats.totalCost += log.cost;
-    stats.totalLatency += log.latency;
+  const endpointStats: Record<string, EndpointStats> = {};
 
-    const paramKey = JSON.stringify(log.params);
-    stats.duplicateParams[paramKey] = (stats.duplicateParams[paramKey] || 0) + 1;
-  });
+  try {
+      SIMULATED_LOGS.forEach(log => {
+        if (!endpointStats[log.endpoint]) {
+          endpointStats[log.endpoint] = { count: 0, totalCost: 0, totalLatency: 0, duplicateParams: {} };
+        }
+        const stats = endpointStats[log.endpoint];
+        stats.count++;
+        stats.totalCost += log.cost;
+        stats.totalLatency += log.latency;
+
+        const paramKey = JSON.stringify(log.params);
+        stats.duplicateParams[paramKey] = (stats.duplicateParams[paramKey] || 0) + 1;
+      });
+  } catch (error: any) {
+      console.error(`[ERROR] Failed to process logs: ${error.message}`);
+      process.exit(1);
+  }
 
   // Calculate Savings
   let totalPotentialSavings = 0;
@@ -155,8 +175,19 @@ ${cacheAnalysis.map(a => `| \`${a.endpoint}\` | ${a.totalRequests} | **${a.cache
 - **Scalability:** Handles viral topics without linear cost increase.
 `;
 
-  fs.writeFileSync('CACHING_STRATEGY_PROPOSAL.md', markdown);
-  console.log('Caching strategy proposal generated: CACHING_STRATEGY_PROPOSAL.md');
+  try {
+      fs.writeFileSync(outputPath, markdown);
+      console.log(`[SUCCESS] Caching strategy proposal generated: ${outputPath}`);
+  } catch (error: any) {
+      console.error(`[ERROR] Failed to write proposal: ${error.message}`);
+      process.exit(1);
+  }
 }
 
-analyzePatterns();
+// Execute
+try {
+    analyzePatterns();
+} catch (error: any) {
+    console.error(`[CRITICAL] Script execution failed: ${error.message}`);
+    process.exit(1);
+}
