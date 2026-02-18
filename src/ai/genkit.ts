@@ -44,6 +44,28 @@ export const ai = new Proxy(realAi, {
         const promptFn = (value as Function).apply(target, args);
         // Return a wrapped function that checks chaos before executing
         const wrappedPrompt = async (...pArgs: any[]) => {
+          if (process.env.ADVERSARIAL_TEST === 'true') {
+            const logEntry = {
+              promptName: args[0]?.name || 'unknown',
+              input: pArgs[0],
+              timestamp: Date.now()
+            };
+            // Use a global variable to store logs, accessible by the test script
+            const g = global as any;
+            g.__ADVERSARIAL_LOGS__ = g.__ADVERSARIAL_LOGS__ || [];
+            g.__ADVERSARIAL_LOGS__.push(logEntry);
+
+            console.log(`[AdversarialTest] Captured prompt input for ${logEntry.promptName}`);
+
+            // If a mock response provider is set, use it
+            if (g.__ADVERSARIAL_MOCK_RESOLVER__) {
+               return { output: g.__ADVERSARIAL_MOCK_RESOLVER__(args[0]?.name, pArgs[0]) };
+            }
+
+            // Fallback: return empty object cast as any, hoping it doesn't crash immediately
+            return { output: {} as any };
+          }
+
           await chaos.checkChaos('genkit');
           return promptFn(...pArgs);
         };
