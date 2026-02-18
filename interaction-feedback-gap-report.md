@@ -1,19 +1,19 @@
 # Interaction Feedback Gap Report
 
-**Status:** ✅ RESOLVED
+Audit of interactive components for missing visual feedback states (hover, focus, disabled).
 
-| File | Element | Issue | Status | Fix Details |
-|---|---|---|---|---|
-| src/app/(auth)/onboarding/page.tsx | button | Raw button without className (missing visual feedback check) | RESOLVED | Added `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` to all selection buttons (grades, subjects, goals, study times). |
-| src/app/(auth)/teacher-onboarding/page.tsx | button | Raw button without className (missing visual feedback check) | RESOLVED | Added `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` to all selection buttons (subjects, grades, class sizes). |
-| src/app/(main)/syllabus/page.tsx | a | Missing states: focus | RESOLVED | Added `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:text-primary/80` to reference links. |
-| src/components/InteractiveGraph.tsx | button | Raw button without className (missing visual feedback check) | RESOLVED | Updated control buttons to use `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-secondary`. |
-| src/components/InteractiveGraph.tsx | div | Non-interactive element with onClick missing role="button" or tabIndex | RESOLVED | Graph interactions (click/hover) now handled via ForceGraph2D event handlers with improved cursor states (`cursor: pointer` on hover). |
-| src/components/PersonalKnowledgeGraph.tsx | button | Raw button without className (missing visual feedback check) | RESOLVED | Updated control buttons to use standard accessible focus styles (`focus-visible:ring-2`). |
-| src/components/ui/chart.tsx | button | Missing states: active, disabled | RESOLVED | Shadcn chart components updated with proper design tokens in `chart.tsx`. |
+Total gaps found: 2
 
-## Summary
-The reported interaction feedback gaps have been systematically addressed.
-- **Forms:** Focus states added to all custom selection buttons in onboarding flows.
-- **Links:** Hover and focus states added to syllabus reference links.
-- **Graphs:** Control buttons (Zoom In/Out, Reset) now have clear focus rings and hover states. Canvas elements provide cursor feedback on hover.
+| File | Element | Line | Missing States |
+| :--- | :--- | :--- | :--- |
+| `src/components/PersonalKnowledgeGraph.tsx` | `<button>` | 240 | disabled |
+| `src/components/planner/StudyLibrary.tsx` | `<a>` | 218 | focus |
+
+## Notes
+- **UI Library (`src/components/ui/`)**: Checked for presence of state modifiers in the file definition.
+- **Component Usage**: Checked for raw HTML tags (`<button>`, `<a>`, `<input>`) usage with inline Tailwind classes.
+- **States Checked**:
+  - Button: `hover`, `focus`, `disabled`
+  - Link: `hover`, `focus`
+  - Input/Textarea/Select: `focus`, `disabled`
+  - Checkbox/Switch: `focus`, `disabled`, `checked`
