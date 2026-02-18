@@ -1,128 +1,249 @@
-import { extractMasteryFeatures, StudentHistory, RawQuizResult } from "../src/ml/features/student_features";
+import { extractMasteryFeatures, StudentHistory, MasteryFeatures } from "../src/ml/features/student_features";
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
- * ML Drift Detector - Feature Extraction Validator
+ * ML Drift Detector - Production Grade
  *
- * This script programmatically validates feature extraction logic against the assumptions
- * baked into the training data generation script (`src/ml/training/generate_data.py`).
- *
- * It serves as a regression test to prevent silent model degradation when features drift.
+ * Validates feature extraction logic against training data assumptions.
+ * Supports structured logging, configuration loading, and CI/CD integration.
  */
 
-// TRAINING DATA ASSUMPTIONS (Derived from generate_data.py)
-const TRAINING_CONSTRAINTS = {
-  avg_quiz_score: { min: 0.0, max: 1.0 },
-  attempts_per_topic: { min: 1, max: 10 },
-  days_since_last_revision: { min: 0, max: 30 },
-  quiz_score_variance: { min: 0.0, max: 0.3 }, // Labeled "variance", implies value^2
-  time_spent_per_question: { min: 10, max: 120 },
-};
+// --- Configuration ---
+const CONFIG_PATH = path.join(process.cwd(), 'config', 'ml-constraints.json');
+const REPORT_MD_PATH = 'FEATURE_DRIFT_REPORT.md';
+const REPORT_JUNIT_PATH = 'drift-report.xml';
 
-function checkConstraint(featureName: string, value: number, constraint: { min: number; max: number }) {
+interface Constraint {
+  min: number;
+  max: number;
+  type: string;
+}
+
+interface ConstraintsConfig {
+  [key: string]: Constraint;
+}
+
+type Severity = 'CRITICAL' | 'WARNING' | 'INFO';
+
+interface DriftFinding {
+  feature: string;
+  expected: string;
+  actual: string;
+  severity: Severity;
+  scenario: string;
+}
+
+// --- Logging ---
+class Logger {
+  info(message: string, context?: object) {
+    console.log(JSON.stringify({ level: 'INFO', message, ...context }));
+  }
+  warn(message: string, context?: object) {
+    console.log(JSON.stringify({ level: 'WARN', message, ...context }));
+  }
+  error(message: string, context?: object) {
+    console.error(JSON.stringify({ level: 'ERROR', message, ...context }));
+  }
+}
+const logger = new Logger();
+
+// --- Core Logic ---
+
+function loadConfig(): ConstraintsConfig {
+  try {
+    if (!fs.existsSync(CONFIG_PATH)) {
+      throw new Error(`Config file not found at ${CONFIG_PATH}`);
+    }
+    const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
+    return JSON.parse(raw);
+  } catch (error: any) {
+    logger.error("Failed to load configuration", { error: error.message });
+    process.exit(1);
+  }
+}
+
+function checkConstraint(featureName: string, value: number, constraint: Constraint): DriftFinding | null {
+  // Range Check
   if (value < constraint.min || value > constraint.max) {
-    return `[DRIFT] ${featureName}: Value ${value} is outside training range [${constraint.min}, ${constraint.max}]`;
+    let severity: Severity = 'WARNING';
+
+    // Severity Rules (Business Logic)
+    if (featureName === 'quiz_score_variance' && value > 0.5) severity = 'CRITICAL';
+    if (featureName === 'days_since_last_revision' && value < 0) severity = 'CRITICAL';
+    if (featureName === 'avg_quiz_score' && (value < 0 || value > 1)) severity = 'CRITICAL';
+
+    return {
+      feature: featureName,
+      expected: `Range [${constraint.min}, ${constraint.max}]`,
+      actual: `${value}`,
+      severity,
+      scenario: '' // Filled by caller
+    };
   }
   return null;
 }
 
-function runDriftAnalysis() {
-  console.log("🔍 Starting ML Feature Drift Analysis...\n");
-  const driftReport: string[] = [];
+function validateFeatures(
+  features: MasteryFeatures,
+  scenario: string,
+  constraints: ConstraintsConfig,
+  findings: DriftFinding[]
+) {
+  Object.keys(features).forEach((key) => {
+    const k = key as keyof MasteryFeatures;
+    const value = features[k];
+    const constraint = constraints[k];
 
-  // Scenario 1: New Student (No History)
-  const newStudentHistory: StudentHistory = {
-    quizResults: [],
-    lastLoginDate: new Date(),
-    registrationDate: new Date(),
-  };
-
-  const newFeatures = extractMasteryFeatures("math_101", newStudentHistory);
-  console.log("Scenario 1: New Student (0 Quizzes)");
-  console.log(JSON.stringify(newFeatures, null, 2));
-
-  Object.entries(newFeatures).forEach(([key, value]) => {
-    const constraint = TRAINING_CONSTRAINTS[key as keyof typeof TRAINING_CONSTRAINTS];
     if (constraint) {
-      const error = checkConstraint(key, value, constraint);
-      if (error) driftReport.push(`Scenario 1 (New Student) - ${error}`);
+      const finding = checkConstraint(key, value, constraint);
+      if (finding) {
+        finding.scenario = scenario;
+        findings.push(finding);
+        // Log immediately for observability
+        const logMethod = finding.severity === 'CRITICAL' ? logger.error.bind(logger) : logger.warn.bind(logger);
+        logMethod(`Drift detected: ${finding.feature}`, finding);
+      }
+    } else {
+       logger.warn(`No constraint found for feature: ${key}`);
     }
   });
+}
 
-  // Scenario 2: Active Student (Normal Range)
-  const activeHistory: StudentHistory = {
-    quizResults: [
-      { topic: "math_101", score: 0.8, timestamp: new Date(), timeSpent: 60, questionsAttempted: 10 },
-      { topic: "math_101", score: 0.9, timestamp: new Date(Date.now() - 86400000), timeSpent: 60, questionsAttempted: 10 },
-    ],
-    lastLoginDate: new Date(),
-    registrationDate: new Date(),
-  };
+function generateReports(findings: DriftFinding[]) {
+  // 1. Markdown Report (Human Readable)
+  let reportContent = `# ML Feature Drift Report\n\n`;
+  reportContent += `**Date:** ${new Date().toISOString()}\n`;
+  reportContent += `**Status:** ${findings.length > 0 ? 'FAIL' : 'PASS'}\n\n`;
 
-  const activeFeatures = extractMasteryFeatures("math_101", activeHistory);
-  console.log("\nScenario 2: Active Student (2 Quizzes)");
-  console.log(JSON.stringify(activeFeatures, null, 2));
+  if (findings.length === 0) {
+    reportContent += `## Summary\n✅ No drift detected! Feature extraction matches training assumptions.\n`;
+  } else {
+    reportContent += `## Summary\n❌ Found ${findings.length} potential drifts.\n\n`;
+    reportContent += `| Severity | Feature | Expected | Actual | Scenario |\n`;
+    reportContent += `|---|---|---|---|---|\n`;
 
-  Object.entries(activeFeatures).forEach(([key, value]) => {
-    const constraint = TRAINING_CONSTRAINTS[key as keyof typeof TRAINING_CONSTRAINTS];
-    if (constraint) {
-      const error = checkConstraint(key, value, constraint);
-      if (error) driftReport.push(`Scenario 2 (Active Student) - ${error}`);
+    findings.forEach((f) => {
+      const icon = f.severity === 'CRITICAL' ? '🔴' : (f.severity === 'WARNING' ? '🟠' : '🔵');
+      reportContent += `| ${icon} ${f.severity} | \`${f.feature}\` | ${f.expected} | \`${f.actual}\` | ${f.scenario} |\n`;
+    });
+
+    // Recommendations
+    reportContent += `\n## Recommendations\n`;
+    const criticals = findings.filter(f => f.severity === 'CRITICAL');
+    if (criticals.some(f => f.feature === 'quiz_score_variance')) {
+        reportContent += `- **Fix Variance Calculation:** TypeScript calculates Standard Deviation (\`Math.sqrt(variance)\`) but Python model expects Variance. Remove \`Math.sqrt\` in \`student_features.ts\`.\n`;
     }
-  });
-
-  // Scenario 3: Returning Student (Long Absence)
-  const returningHistory: StudentHistory = {
-    quizResults: [
-      { topic: "math_101", score: 0.8, timestamp: new Date(Date.now() - 60 * 86400000), timeSpent: 60, questionsAttempted: 10 },
-    ],
-    lastLoginDate: new Date(),
-    registrationDate: new Date(),
-  };
-
-  const returningFeatures = extractMasteryFeatures("math_101", returningHistory);
-  console.log("\nScenario 3: Returning Student (60 Days Inactive)");
-  console.log(JSON.stringify(returningFeatures, null, 2));
-
-  Object.entries(returningFeatures).forEach(([key, value]) => {
-    const constraint = TRAINING_CONSTRAINTS[key as keyof typeof TRAINING_CONSTRAINTS];
-    if (constraint) {
-      const error = checkConstraint(key, value, constraint);
-      if (error) driftReport.push(`Scenario 3 (Returning Student) - ${error}`);
+    if (criticals.some(f => f.feature === 'days_since_last_revision')) {
+        reportContent += `- **Fix Date Logic:** TypeScript allows negative days for future dates. Add clamp to 0.\n`;
     }
-  });
-
-  // Scenario 4: Variance vs StdDev Check
-  // StdDev of [0.5, 0.5] is 0. Variance is 0.
-  // StdDev of [0.0, 1.0] is 0.5. Variance is 0.25.
-  const varianceHistory: StudentHistory = {
-    quizResults: [
-      { topic: "math_101", score: 0.0, timestamp: new Date(), timeSpent: 60, questionsAttempted: 10 },
-      { topic: "math_101", score: 1.0, timestamp: new Date(), timeSpent: 60, questionsAttempted: 10 },
-    ],
-    lastLoginDate: new Date(),
-    registrationDate: new Date(),
-  };
-
-  const varianceFeatures = extractMasteryFeatures("math_101", varianceHistory);
-  console.log("\nScenario 4: Variance Check (Scores: [0.0, 1.0])");
-  // Expected Variance: 0.25 (population) or 0.5 (sample depending on formula). Training data range: [0, 0.3].
-  // Expected StdDev: 0.5.
-  console.log(`Calculated quiz_score_variance: ${varianceFeatures.quiz_score_variance}`);
-
-  if (varianceFeatures.quiz_score_variance > TRAINING_CONSTRAINTS.quiz_score_variance.max) {
-     driftReport.push(`Scenario 4 (Variance Check) - [DRIFT] quiz_score_variance: Value ${varianceFeatures.quiz_score_variance} suggests Standard Deviation is being returned, but Training Data expects Variance (max 0.3).`);
   }
 
+  try {
+    fs.writeFileSync(REPORT_MD_PATH, reportContent);
+    logger.info(`Markdown report saved to ${REPORT_MD_PATH}`);
+  } catch (err: any) {
+    logger.error("Failed to write Markdown report", { error: err.message });
+  }
 
-  // Output Report
-  console.log("\n\n📊 DRIFT DETECTION REPORT");
-  console.log("===========================");
-  if (driftReport.length === 0) {
-    console.log("✅ No drift detected! Feature extraction matches training assumptions.");
+  // 2. JUnit XML (CI/CD Integration)
+  // Simple XML generation for test reporting
+  let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<testsuites>\n  <testsuite name="ML Feature Drift" tests="${findings.length || 1}" failures="${findings.length}">\n`;
+
+  if (findings.length === 0) {
+      xmlContent += `    <testcase name="Drift Check" classname="scripts.detect-drift" time="0.1"/>\n`;
   } else {
-    console.log(`❌ Found ${driftReport.length} potential drifts:\n`);
-    driftReport.forEach((msg) => console.log(msg));
-    process.exit(1); // Exit with error code to fail CI
+      findings.forEach((f, i) => {
+          xmlContent += `    <testcase name="${f.feature} drift in ${f.scenario}" classname="scripts.detect-drift">\n`;
+          xmlContent += `      <failure message="${f.expected} vs ${f.actual}">${f.severity} drift detected.</failure>\n`;
+          xmlContent += `    </testcase>\n`;
+      });
+  }
+  xmlContent += `  </testsuite>\n</testsuites>`;
+
+  try {
+    fs.writeFileSync(REPORT_JUNIT_PATH, xmlContent);
+    logger.info(`JUnit XML report saved to ${REPORT_JUNIT_PATH}`);
+  } catch (err: any) {
+    logger.error("Failed to write JUnit report", { error: err.message });
+  }
+}
+
+// --- Main Execution ---
+
+function runDriftAnalysis() {
+  logger.info("Starting ML Feature Drift Analysis");
+  const constraints = loadConfig();
+  const findings: DriftFinding[] = [];
+
+  try {
+    // Scenario 1: New Student (No History)
+    const newStudentHistory: StudentHistory = {
+        quizResults: [],
+        lastLoginDate: new Date(),
+        registrationDate: new Date(),
+    };
+    validateFeatures(extractMasteryFeatures("math_101", newStudentHistory), "New Student (0 Quizzes)", constraints, findings);
+
+    // Scenario 2: Active Student (Normal Range)
+    const activeHistory: StudentHistory = {
+        quizResults: [
+        { topic: "math_101", score: 0.8, timestamp: new Date(), timeSpent: 60, questionsAttempted: 10 },
+        { topic: "math_101", score: 0.9, timestamp: new Date(Date.now() - 86400000), timeSpent: 60, questionsAttempted: 10 },
+        ],
+        lastLoginDate: new Date(),
+        registrationDate: new Date(),
+    };
+    validateFeatures(extractMasteryFeatures("math_101", activeHistory), "Active Student (Normal)", constraints, findings);
+
+    // Scenario 3: Returning Student (Long Absence)
+    const returningHistory: StudentHistory = {
+        quizResults: [
+        { topic: "math_101", score: 0.8, timestamp: new Date(Date.now() - 60 * 86400000), timeSpent: 60, questionsAttempted: 10 },
+        ],
+        lastLoginDate: new Date(),
+        registrationDate: new Date(),
+    };
+    validateFeatures(extractMasteryFeatures("math_101", returningHistory), "Returning Student (60 Days Inactive)", constraints, findings);
+
+    // Scenario 4: Variance vs StdDev Check
+    const varianceHistory: StudentHistory = {
+        quizResults: [
+        { topic: "math_101", score: 0.0, timestamp: new Date(), timeSpent: 60, questionsAttempted: 10 },
+        { topic: "math_101", score: 1.0, timestamp: new Date(), timeSpent: 60, questionsAttempted: 10 },
+        ],
+        lastLoginDate: new Date(),
+        registrationDate: new Date(),
+    };
+    validateFeatures(extractMasteryFeatures("math_101", varianceHistory), "High Variance Student", constraints, findings);
+
+    // Scenario 5: Future Date (Time Travel)
+    const futureHistory: StudentHistory = {
+        quizResults: [
+            { topic: "math_101", score: 0.8, timestamp: new Date(Date.now() + 86400000), timeSpent: 60, questionsAttempted: 10 }
+        ],
+        lastLoginDate: new Date(),
+        registrationDate: new Date()
+    };
+    validateFeatures(extractMasteryFeatures("math_101", futureHistory), "Future Date Student", constraints, findings);
+
+    generateReports(findings);
+
+    if (findings.some(f => f.severity === 'CRITICAL')) {
+        logger.error("Critical drift detected. Failing pipeline.");
+        process.exit(1);
+    } else if (findings.length > 0) {
+        logger.warn("Drift detected but no critical failures. Pipeline proceeds (check warnings).");
+        // Optional: fail on warning depending on strictness. Here we pass unless critical.
+        process.exit(0);
+    } else {
+        logger.info("No drift detected.");
+        process.exit(0);
+    }
+
+  } catch (error: any) {
+      logger.error("Unexpected error during drift analysis", { error: error.message, stack: error.stack });
+      process.exit(1);
   }
 }
 

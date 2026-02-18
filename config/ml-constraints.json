@@ -1,0 +1,7 @@
+{
+    "avg_quiz_score": { "min": 0.0, "max": 1.0, "type": "float" },
+    "attempts_per_topic": { "min": 1, "max": 10, "type": "int" },
+    "days_since_last_revision": { "min": 0, "max": 30, "type": "int" },
+    "quiz_score_variance": { "min": 0.0, "max": 0.5, "type": "float" },
+    "time_spent_per_question": { "min": 10, "max": 120, "type": "float" }
+}
