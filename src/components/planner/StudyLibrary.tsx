@@ -20,7 +20,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { BookOpen, Search, Filter, ExternalLink } from "lucide-react";
+import { BookOpen, Search, Filter, ExternalLink, X } from "lucide-react";
 import type { StudyMaterial } from "@/data/docsData";
 
 export function StudyLibrary() {
@@ -79,10 +79,11 @@ export function StudyLibrary() {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-10"
+                                aria-label="Search study materials"
                             />
                         </div>
                         <Select value={filterSubject} onValueChange={setFilterSubject}>
-                            <SelectTrigger className="w-full sm:w-[200px]">
+                            <SelectTrigger className="w-full sm:w-[200px]" aria-label="Filter by subject">
                                 <Filter className="h-4 w-4 mr-2" />
                                 <SelectValue placeholder="Filter by subject" />
                             </SelectTrigger>
@@ -106,6 +107,19 @@ export function StudyLibrary() {
                                     ? "Try adjusting your filters"
                                     : "Add your first study material to get started"}
                             </p>
+                            {(searchTerm || filterSubject !== "all") && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setSearchTerm("");
+                                        setFilterSubject("all");
+                                    }}
+                                    className="mt-4"
+                                >
+                                    <X className="mr-2 h-4 w-4" />
+                                    Clear Filters
+                                </Button>
+                            )}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -220,7 +234,7 @@ export function StudyLibrary() {
                                                     href={link}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                                                    className="flex items-center gap-2 text-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
                                                 >
                                                     <ExternalLink className="h-3 w-3" />
                                                     {link}
