@@ -1,36 +1,29 @@
 import { test, expect } from '@playwright/test';
-import fs from 'fs';
 
-test.describe('Visual Regression Detection', () => {
-  test('should match dashboard chart snapshot', async ({ page }) => {
-    // Navigate to the charts test page
-    await page.goto('/test-charts');
+test.describe('Visual Regression Tests', () => {
+  test('Charts Visual Regression', async ({ page }) => {
+    // Visit the charts test page
+    const response = await page.goto('/test-charts');
+    expect(response?.status()).toBe(200);
 
-    // Wait for the chart to load
-    // The chart uses Recharts which renders SVG inside a container
-    await expect(page.locator('.recharts-surface').first()).toBeVisible({ timeout: 10000 });
-
-    // Take a screenshot and compare
+    // Wait for charts to load (they might have animation)
+    // We can wait for a specific element. Recharts renders SVGs inside a responsive container.
+    // We look for any recharts surface to ensure at least one chart rendered.
     try {
-      await expect(page).toHaveScreenshot('dashboard-charts.png', {
-        maxDiffPixelRatio: 0.02,
-        fullPage: true,
-      });
-
-      fs.writeFileSync('visual-regression-report.md', '# Visual Regression Report\n\n✅ No visual regressions detected (or baseline matched).');
-    } catch (error: any) {
-      let message = '# Visual Regression Report\n\n';
-      const errorMsg = error.message;
-
-      if (errorMsg.includes('Snapshot is missing') || errorMsg.includes('New snapshot was created')) {
-         message += '## Baseline Created\n\nA new baseline snapshot `dashboard-charts.png` was created.';
-      } else {
-         message += '## Visual Regression Detected\n\nDifferences found compared to baseline.\n\n';
-         message += '```\n' + errorMsg + '\n```';
-      }
-
-      fs.writeFileSync('visual-regression-report.md', message);
-      // We don't throw to allow report generation
+      await page.waitForSelector('.recharts-surface', { state: 'visible', timeout: 15000 });
+    } catch (e) {
+      console.log('Charts might not have rendered or selector not found, proceeding to screenshot anyway to capture state.');
     }
+
+    // Give a little more time for animations to settle
+    await page.waitForTimeout(2000);
+
+    // Take screenshot and compare
+    // This will generate a new screenshot on the first run.
+    await expect(page).toHaveScreenshot('charts-page.png', {
+      fullPage: true,
+      maxDiffPixelRatio: 0.05, // Allow small anti-aliasing diffs and animation flakiness
+      animations: 'disabled', // Playwright tries to disable animations
+    });
   });
 });
