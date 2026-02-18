@@ -1,24 +1,31 @@
 # Form Validation Error Message Clarity Audit
 
-| Schema | Field | Input | Error Message | Clarity Score (1-5) | Recommendation |
-|---|---|---|---|---|---|
-| Sign Up Schema | name | `""` | "Name must be at least 2 characters" | 5 | Good |
-| Sign Up Schema | email | `""` | "Please enter a valid email address" | 5 | Good |
-| Sign Up Schema | password | `""` | "Password must be at least 6 characters" | 5 | Good |
-| Sign Up Schema | role | `""` | "Invalid enum value. Expected 'student' | 'teacher', received ''" | 5 | Good |
-| Sign Up Schema | name | `"A"` | "Name must be at least 2 characters" | 5 | Good |
-| Sign Up Schema | email | `"invalid-email"` | "Please enter a valid email address" | 5 | Good |
-| Sign Up Schema | password | `"123"` | "Password must be at least 6 characters" | 5 | Good |
-| Sign Up Schema | role | `"invalid"` | "Invalid enum value. Expected 'student' | 'teacher', received 'invalid'" | 5 | Good |
-| Sign Up Schema | role | `""` | "Invalid enum value. Expected 'student' | 'teacher', received ''" | 5 | Good |
-| Login Schema | email | `""` | "Please enter a valid email address" | 5 | Good |
-| Login Schema | password | `""` | "Password must be at least 6 characters" | 5 | Good |
-| Login Schema | email | `"bad-email"` | "Please enter a valid email address" | 5 | Good |
-| Login Schema | password | `"short"` | "Password must be at least 6 characters" | 5 | Good |
-| Join Class Schema | classCode | `""` | "Class code must be exactly 6 characters" | 5 | Good |
-| Join Class Schema | classCode | `""` | "Class code must contain only uppercase letters and numbers" | 5 | Good |
-| Join Class Schema | classCode | `"abc"` | "Class code must be exactly 6 characters" | 5 | Good |
-| Join Class Schema | classCode | `"abc"` | "Class code must contain only uppercase letters and numbers" | 5 | Good |
-| Join Class Schema | classCode | `"abcdefg"` | "Class code must be exactly 6 characters" | 5 | Good |
-| Join Class Schema | classCode | `"abcdefg"` | "Class code must contain only uppercase letters and numbers" | 5 | Good |
-| Join Class Schema | classCode | `"ABC@#$"` | "Class code must contain only uppercase letters and numbers" | 5 | Good |
+**Scope:** `/app/src/lib/validations`
+**Date:** 2026-02-18
+
+## File: `src/lib/validations/auth.ts`
+
+| Message | Score | Issues | Recommendation |
+|---|---|---|---|
+| "Please enter a valid email address" | **9/10** | Vague 'valid' used | Rewrite for clarity |
+| "Password must be at least 6 characters" | **10/10** | ✅ OK | - |
+| "Name must be at least 2 characters" | **10/10** | ✅ OK | - |
+| "Class code must be exactly 6 characters" | **10/10** | ✅ OK | - |
+| "Class code must contain only uppercase letters and numbers" | **10/10** | ✅ OK | - |
+| "Please select at least one subject" | **10/10** | ✅ OK | - |
+| "Please select or enter at least one goal" | **10/10** | ✅ OK | - |
+| "Please select at least one subject" | **10/10** | ✅ OK | - |
+| "Please select at least one grade level" | **10/10** | ✅ OK | - |
+| "Please enter your school name" | **10/10** | ✅ OK | - |
+| "Please select a role" | **10/10** | ✅ OK | - |
+| "Please select your grade" | **10/10** | ✅ OK | - |
+| "Please select your study time" | **10/10** | ✅ OK | - |
+| "Please select your expected class size" | **10/10** | ✅ OK | - |
+| "Please select your grade" | **10/10** | ✅ OK | - |
+| "Please select your study time" | **10/10** | ✅ OK | - |
+| "Please select your expected class size" | **10/10** | ✅ OK | - |
+
+
+## Summary
+- **Total Messages Audited:** 17
+- **Average Clarity Score:** 9.9/10
