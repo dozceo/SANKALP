@@ -1,24 +1,27 @@
 # ML Model Performance Report
 
-**Date:** 2026-02-17T19:06:17.391321
-**Status:** ✅ PASS
+**Date:** 2026-02-18 19:08:35.990593
+**Model:** /app/scripts/../src/ml/models/mastery_model.pkl
+**Test Set:** /app/scripts/../src/ml/training/test_set.csv
+**Test Samples:** 500
 
-## Summary
-The model was evaluated on a fixed holdout test set (`src/ml/training/test_set.csv`).
+## Metrics
+- **Accuracy:** 92.60%
+- **F1 Score:** 0.6476
+- **Threshold:** 60.00%
 
-| Metric | Value | Threshold | Status |
-|---|---|---|---|
-| **Accuracy** | **92.60%** | 80% | ✅ PASS |
-| Precision | 49.28% | - | - |
-| Recall | 94.44% | - | - |
-| F1 Score | 64.76% | - | - |
+## Status
+✅ **PASS**: Model performance is within acceptable range.
 
-## Confusion Matrix
-| | Predicted Negative | Predicted Positive |
-|---|---|---|
-| **Actual Negative** | 429 (TN) | 35 (FP) |
-| **Actual Positive** | 2 (FN) | 34 (TP) |
+## Classification Report
+```
+              precision    recall  f1-score   support
 
-## Regression Analysis
+           0       1.00      0.92      0.96       464
+           1       0.49      0.94      0.65        36
 
-✅ Model performance is stable and meets the required accuracy threshold.
+    accuracy                           0.93       500
+   macro avg       0.74      0.93      0.80       500
+weighted avg       0.96      0.93      0.94       500
+
+```

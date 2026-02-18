@@ -1,7 +1,7 @@
 """
 ML Model Performance Regression Detection
 
-Loads the trained mastery model and evaluates it against a freshly generated synthetic test set.
+Loads the trained mastery model and evaluates it against a fixed holdout test set.
 Detects significant drops in accuracy or F1 score.
 """
 
@@ -23,6 +23,7 @@ except ImportError:
 
 # Configuration
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "../src/ml/models/mastery_model.pkl")
+TEST_SET_PATH = os.path.join(os.path.dirname(__file__), "../src/ml/training/test_set.csv")
 REPORT_PATH = "ML_PERFORMANCE_REPORT.md"
 TEST_SAMPLES = 500
 ACCURACY_THRESHOLD = 0.60  # Alert if below 60%
@@ -35,6 +36,19 @@ def load_model():
         return loaded['model']
     return loaded
 
+def load_or_generate_test_data():
+    if os.path.exists(TEST_SET_PATH):
+        print(f"Loading existing test set from {TEST_SET_PATH}...")
+        return pd.read_csv(TEST_SET_PATH)
+    else:
+        print(f"Generating new fixed test set ({TEST_SAMPLES} samples)...")
+        # Fixed seed for test set generation to ensure consistency across runs if file is deleted
+        np.random.seed(999)
+        test_data = generate_training_data(n_samples=TEST_SAMPLES)
+        test_data.to_csv(TEST_SET_PATH, index=False)
+        print(f"Saved test set to {TEST_SET_PATH}")
+        return test_data
+
 def evaluate_model():
     print(f"Loading model from {MODEL_PATH}...")
     try:
@@ -43,15 +57,7 @@ def evaluate_model():
         print(f"Failed to load model: {e}")
         return
 
-    print(f"Generating {TEST_SAMPLES} test samples...")
-    # Generate test data (using a different seed implicitly or explicitly if needed,
-    # but generate_data sets a seed. We might want to reset it or just run it.)
-    # The generate_data function sets np.random.seed(42).
-    # To get different data than training (if training used 42), we might want to change it.
-    # However, for regression testing, a consistent set is also good.
-    # Let's re-seed to ensure we are testing generalization or at least consistency.
-    np.random.seed(999)
-    test_data = generate_training_data(n_samples=TEST_SAMPLES)
+    test_data = load_or_generate_test_data()
 
     # Prepare features
     feature_cols = [
@@ -62,15 +68,24 @@ def evaluate_model():
         'time_spent_per_question'
     ]
 
+    # Ensure columns exist
+    missing_cols = set(feature_cols) - set(test_data.columns)
+    if missing_cols:
+        print(f"Error: Test data missing columns: {missing_cols}")
+        return
+
     X_test = test_data[feature_cols].values
     y_true = test_data['mastered'].values
 
     print("Running predictions...")
-    # Predict
-    # The model might expect a 2D array.
-    y_pred_proba = model.predict_proba(X_test)
-    # Class 1 is mastered
-    y_pred = (y_pred_proba[:, 1] >= 0.5).astype(int)
+    try:
+        # Predict
+        y_pred_proba = model.predict_proba(X_test)
+        # Class 1 is mastered
+        y_pred = (y_pred_proba[:, 1] >= 0.5).astype(int)
+    except Exception as e:
+        print(f"Prediction failed: {e}")
+        return
 
     # Calculate metrics
     accuracy = accuracy_score(y_true, y_pred)
@@ -84,7 +99,8 @@ def evaluate_model():
 
 **Date:** {pd.Timestamp.now()}
 **Model:** {MODEL_PATH}
-**Test Samples:** {TEST_SAMPLES}
+**Test Set:** {TEST_SET_PATH}
+**Test Samples:** {len(test_data)}
 
 ## Metrics
 - **Accuracy:** {accuracy:.2%}

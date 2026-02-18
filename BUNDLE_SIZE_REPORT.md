@@ -1,6 +1,6 @@
 # Bundle Size Analysis Report
 
-**Date:** 2026-02-17T19:09:45.705Z
+**Date:** 2026-02-18T19:10:39.176Z
 
 ## Build Failed
 
@@ -22,7 +22,7 @@ The build could not complete, likely due to missing environment variables or dep
 | `src/app/(main)/quiz/page.tsx` | 11.48 |
 | `src/app/(main)/chat/page.tsx` | 10.47 |
 | `src/app/(main)/home/page.tsx` | 10.20 |
-| `src/app/api/intelligence/student/route.ts` | 10.08 |
+| `src/app/api/intelligence/student/route.ts` | 10.01 |
 | `src/app/(main)/syllabus/page.tsx` | 9.70 |
 | `src/app/(main)/teacher/page.tsx` | 8.31 |
 | `src/app/(main)/rewards/page.tsx` | 8.00 |
@@ -50,33 +50,32 @@ Progress: resolved 0, reused 0, downloaded 1, added 0
    │                                          │
    ╰──────────────────────────────────────────╯
 
-Progress: resolved 17, reused 0, downloaded 15, added 0
-Progress: resolved 33, reused 0, downloaded 30, added 0
-Progress: resolved 45, reused 0, downloaded 42, added 0
-Progress: resolved 48, reused 0, downloaded 45, added 0
-Progress: resolved 50, reused 0, downloaded 47, added 0
-Progress: resolved 55, reused 0, downloaded 52, added 0
-Progress: resolved 61, reused 0, downloaded 60, added 0
-Progress: resolved 62, reused 0, downloaded 62, added 0
-Progress: resolved 63, reused 0, downloaded 63, added 0
-Progress: resolved 63, reused 0, downloaded 64, added 0
-Progress: resolved 74, reused 0, downloaded 65, added 0
-Progress: resolved 87, reused 0, downloaded 72, added 0
-Progress: resolved 172, reused 0, downloaded 157, added 0
-Progress: resolved 214, reused 0, downloaded 199, added 0
-Progress: resolved 271, reused 0, downloaded 269, added 0
-Progress: resolved 350, reused 0, downloaded 349, added 0
-Progress: resolved 402, reused 0, downloaded 393, added 0
-Progress: resolved 426, reused 0, downloaded 413, added 0
-Progress: resolved 447, reused 0, downloaded 431, added 0
-Progress: resolved 455, reused 0, downloaded 437, added 0
-Progress: resolved 472, reused 0, downloaded 442, added 0
-Progress: resolved 476, reused 0, downloaded 442, added 0
-Progress: resolved 494, reused 0, downloaded 442, added 0
-Progress: resolved 510, reused 0, downloaded 442, added 0
- WARN  Request took 10165ms: https://registry.npmjs.org/@typescript-eslint%2Fparser
-Progress: resolved 526, reused 0, downloaded 443, added 0
- WARN  Request took 11444ms: https://re...
+Progress: resolved 44, reused 0, downloaded 44, added 0
+Progress: resolved 53, reused 0, downloaded 53, added 0
+Progress: resolved 54, reused 0, downloaded 54, added 0
+Progress: resolved 64, reused 0, downloaded 64, added 0
+Progress: resolved 64, reused 0, downloaded 65, added 0
+Progress: resolved 150, reused 0, downloaded 138, added 0
+Progress: resolved 283, reused 0, downloaded 273, added 0
+Progress: resolved 354, reused 0, downloaded 344, added 0
+Progress: resolved 445, reused 0, downloaded 435, added 0
+Progress: resolved 504, reused 0, downloaded 480, added 0
+Progress: resolved 584, reused 0, downloaded 484, added 0
+Progress: resolved 603, reused 0, downloaded 498, added 0
+Progress: resolved 699, reused 0, downloaded 604, added 0
+Progress: resolved 869, reused 0, downloaded 778, added 0
+Progress: resolved 1086, reused 0, downloaded 997, added 0
+Progress: resolved 1195, reused 0, downloaded 1105, added 0
+Progress: resolved 1294, reused 0, downloaded 1198, added 0
+Progress: resolved 1295, reused 0, downloaded 1200, added 0
+Progress: resolved 1299, reused 0, downloaded 1203, added 0
+Progress: resolved 1343, reused 0, downloaded 1248, added 0
+ WARN  4 deprecated subdependencies found: @opentelemetry/exporter-jaeger@1.30.1, glob@10.5.0, glob@9.3.5, node-domexception@1.0.0
+Packages: +1243
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1343, reused 0, downloaded 1248, added 763
+Progress: resolved 1343, reused 0, downloaded 1248, added 1243, done
+ WARN  Issues with peer depen...
 ```
 
 ## Recommendations
