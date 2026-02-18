@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ interface TopicMasteryGridProps {
     intelligence: StudentIntelligence;
 }
 
-export function TopicMasteryGrid({ intelligence }: TopicMasteryGridProps) {
+export const TopicMasteryGrid = memo(function TopicMasteryGrid({ intelligence }: TopicMasteryGridProps) {
     // Memoize entries to prevent array recreation on every render
     const masteryEntries = useMemo(() => Object.entries(intelligence.mastery), [intelligence.mastery]);
 
@@ -82,4 +82,4 @@ export function TopicMasteryGrid({ intelligence }: TopicMasteryGridProps) {
             </CardContent>
         </Card>
     );
-}
+}, (prev, next) => prev.intelligence.generatedAt === next.intelligence.generatedAt);
