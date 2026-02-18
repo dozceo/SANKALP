@@ -1,14 +1,14 @@
 # Commit Message Quality Report
 
-Generated on: 2026-02-17T19:25:13.925Z
+Generated on: 2026-02-18T19:28:14.637Z
 
 Analyzed the last 1 commits.
 
 | Hash | Message | Issues | Status |
 |---|---|---|---|
-| 8a332c3 | Merge pull request #149 from dozceo/audit-fixes-ml-ui-forms-11104853835843794480 | Non-conventional format (expected "type: description") | FAIL |
+| b8168d6 | fix: update pnpm-lock.yaml to sync with package.json | - | PASS |
 
 **Summary:**
 - Total Commits: 1
-- Violations: 1
-- Compliance Rate: 0.0%
+- Violations: 0
+- Compliance Rate: 100.0%

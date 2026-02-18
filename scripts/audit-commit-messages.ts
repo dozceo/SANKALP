@@ -14,8 +14,13 @@ function getCommits(): Commit[] {
   try {
     const output = execSync('git log --pretty=format:"%h - %s" -n 50', { encoding: 'utf-8' });
     return output.split('\n').filter(Boolean).map(line => {
-      const parts = line.split(' - ');
-      return { hash: parts[0], message: parts.slice(1).join(' - ') };
+      // Split by first occurrence of " - " to separate hash from message
+      const firstSeparatorIndex = line.indexOf(' - ');
+      if (firstSeparatorIndex === -1) return { hash: line, message: '' };
+
+      const hash = line.substring(0, firstSeparatorIndex);
+      const message = line.substring(firstSeparatorIndex + 3);
+      return { hash, message };
     });
   } catch (error) {
     console.error('Error fetching git log:', error);

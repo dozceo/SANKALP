@@ -8,35 +8,35 @@ const OUTPUT_REPORT = 'DOC_DRIFT_REPORT.md';
 const FEATURE_CHECKS = [
   {
     feature: 'Mindful Mentor',
-    claim: 'Implements AI tutor functionality',
+    claim: 'Mindful Mentor',
     evidenceFile: 'src/ai/flows/mindful-mentor.ts',
     expectedContent: 'mindfulMentorFlow',
     type: 'existence',
   },
   {
     feature: 'Teacher Dashboard',
-    claim: 'Provides teacher analytics and class management',
+    claim: 'Teacher Analytics',
     evidenceFile: 'src/app/(main)/teacher',
     expectedContent: '', // Directory check
     type: 'directory',
   },
   {
     feature: 'Syllabus Generator',
-    claim: 'Generates structured syllabi based on exam names',
+    claim: 'Syllabus Generator',
     evidenceFile: 'src/ai/flows/syllabus-generator.ts',
     expectedContent: 'syllabusGeneratorFlow',
     type: 'existence',
   },
   {
     feature: 'Adaptive Quiz Engine',
-    claim: 'Generates quizzes adapted to student weak areas',
+    claim: 'Adaptive Quiz Engine',
     evidenceFile: 'src/ai/flows/adaptive-quiz-engine.ts',
     expectedContent: 'adaptiveQuizFlow',
     type: 'existence',
   },
   {
     feature: 'Database Integration',
-    claim: 'Firebase integration for data persistence',
+    claim: 'Connected to Firebase Firestore',
     evidenceFile: 'src/lib/firebase.ts',
     expectedContent: 'getFirestore',
     type: 'existence',
@@ -75,31 +75,38 @@ function analyzeFileContent(filepath: string, pattern: string): { valid: boolean
   }
 }
 
+function verifyReadmeClaim(readmeContent: string, claim: string): boolean {
+    return readmeContent.includes(claim);
+}
+
 function generateReport(results: any[]) {
   let report = `# Documentation Drift Report\n\nGenerated on: ${new Date().toISOString()}\n\n`;
   report += `This report identifies discrepancies between documentation claims (README.md) and the actual codebase state.\n\n`;
 
-  report += `| Feature | Doc Claim | Code Reality | Status |\n`;
+  report += `| Feature | Doc Claim Status | Code Reality | Overall Status |\n`;
   report += `|---|---|---|---|\n`;
 
   let driftCount = 0;
 
   results.forEach(res => {
-    if (res.status === 'DRIFT DETECTED') driftCount++;
-    report += `| ${res.feature} | ${res.claim} | ${res.reality} | ${res.status} |\n`;
+    if (res.status === 'DRIFT DETECTED' || res.docStatus === 'MISSING' || res.status === 'UNDOCUMENTED FEATURE') driftCount++;
+    report += `| ${res.feature} | ${res.docStatus} | ${res.reality} | ${res.status} |\n`;
   });
 
   report += `\n## Detailed Findings\n\n`;
   results.forEach(res => {
-    if (res.status === 'DRIFT DETECTED') {
+    if (res.status === 'DRIFT DETECTED' || res.docStatus === 'MISSING' || res.status === 'UNDOCUMENTED FEATURE') {
       report += `### ${res.feature}\n`;
-      report += `- **Claim**: ${res.claim}\n`;
-      report += `- **Reality**: ${res.reality}\n`;
-      report += `- **Evidence**: Checked \`${res.evidenceFile}\`\n\n`;
+      report += `- **Claim Check**: Searched for "${res.claim}" in README. Result: ${res.docStatus}\n`;
+      report += `- **Code Check**: Checked \`${res.evidenceFile}\`. Result: ${res.reality}\n`;
+      if (res.reason) {
+          report += `- **Details**: ${res.reason}\n`;
+      }
+      report += `\n`;
     }
   });
 
-  report += `\n**Summary:**\n- Features Checked: ${results.length}\n- Drifts Detected: ${driftCount}\n`;
+  report += `\n**Summary:**\n- Features Checked: ${results.length}\n- Issues Detected: ${driftCount}\n`;
 
   fs.writeFileSync(OUTPUT_REPORT, report);
   console.log(`Report generated at ${OUTPUT_REPORT}`);
@@ -110,12 +117,28 @@ function generateReport(results: any[]) {
 function main() {
   console.log('Starting Documentation Drift Audit...');
 
+  if (!fs.existsSync(README_PATH)) {
+      console.error('README.md not found!');
+      process.exit(1);
+  }
+
+  const readmeContent = fs.readFileSync(README_PATH, 'utf-8');
   const results = [];
 
   for (const check of FEATURE_CHECKS) {
     let reality = '';
     let status = 'VERIFIED';
+    let docStatus = 'FOUND';
+    let reason = '';
 
+    // 1. Verify Doc Claim
+    if (!verifyReadmeClaim(readmeContent, check.claim)) {
+        docStatus = 'MISSING';
+        status = 'DRIFT DETECTED';
+        reason = `Claim "${check.claim}" not found in README.`;
+    }
+
+    // 2. Verify Code
     const exists = checkFileExists(check.evidenceFile);
 
     if (check.type === 'existence') {
@@ -129,34 +152,42 @@ function main() {
             } else {
                 reality = `File exists but content missing pattern: '${check.expectedContent}'`;
                 status = 'DRIFT DETECTED';
+                reason = analysis.reason;
             }
         } else {
             reality = 'File missing';
             status = 'DRIFT DETECTED';
+            reason = `File ${check.evidenceFile} does not exist.`;
         }
     } else if (check.type === 'directory') {
          if (exists) {
-             // For directory, we just check existence for now.
-             // Could verify it's not empty.
              const files = fs.readdirSync(check.evidenceFile);
              if (files.length > 0) {
                  reality = `Implemented (Directory with ${files.length} files)`;
              } else {
                  reality = 'Directory empty';
                  status = 'DRIFT DETECTED';
+                 reason = `Directory ${check.evidenceFile} is empty.`;
              }
          } else {
              reality = 'Directory missing';
              status = 'DRIFT DETECTED';
+             reason = `Directory ${check.evidenceFile} does not exist.`;
          }
+    }
+
+    if (docStatus === 'MISSING' && !reality.includes('missing') && !reality.includes('Directory missing')) {
+        status = 'UNDOCUMENTED FEATURE';
     }
 
     results.push({
       feature: check.feature,
       claim: check.claim,
+      docStatus: docStatus,
       reality: reality,
       status: status,
-      evidenceFile: check.evidenceFile
+      evidenceFile: check.evidenceFile,
+      reason: reason
     });
   }
 
