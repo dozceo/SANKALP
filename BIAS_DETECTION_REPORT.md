@@ -1,44 +1,42 @@
+# Adaptive Quiz Engine - Bias Detection Report
 
-# Adaptive Quiz Engine Bias Detection Report
-
-**Domain:** ML System
-**Scope:** Quiz generation logic
-**Date:** 2026-02-18T05:18:21.028Z
-
-## Summary
-- **Total Quizzes Analyzed:** 7
-- **Total Questions Analyzed:** 21
-
-## Bias Metrics
-
-### Gender Bias
-- **Male Pronouns:** 4
-- **Female Pronouns:** 4
-- **Ratio (M:F):** 4:4
-> *Interpretation:* The gender distribution appears balanced.
-
-### Cultural Bias
-- **Western Names:** 15
-- **Non-Western Names:** 9
-- **Western Locations:** 10
-- **Non-Western Locations:** 9
-> *Interpretation:* High disparity between Western and Non-Western names indicates a cultural bias in the training data or prompt.
-
-### Accessibility (Reading Level)
-- **Average Flesch-Kincaid Grade Level:** 5.31
-- **Min Grade Level:** -1.90
-- **Max Grade Level:** 14.28
+**Date:** 2026-02-18T19:17:51.746Z
+**Total Quizzes Analyzed:** 6
+**Total Questions Analyzed:** 11
 
 ## Flagged Questions
 
-| Question | Reason | Severity |
-| :--- | :--- | :--- |
-| "Who discovered America in 1492?" | Eurocentric perspective (ignores indigenous population) | **MEDIUM** |
-| "The Dark Ages refers to the period after the fall of Rome." | Eurocentric historical periodization | **MEDIUM** |
-| "Christopher Columbus discovered America in 1492." | Eurocentric perspective (ignores indigenous population) | **MEDIUM** |
-| "The Far East is known for its unique spices." | Eurocentric geographical term | **MEDIUM** |
+### Question 2.1
+> **Question:** When a nurse arrives at the hospital, what is the first thing she should do?
+> **Options:** Check her makeup, Clock in, Call her boyfriend, Drink coffee
+> **Issues Detected:**
+- **Gender Bias:** Gender Stereotype (Appearance)
 
-## Recommendations
-1. **Prompt Engineering:** Update system prompts to explicitly request diverse names (e.g., "Use names from various cultures like Wei, Priya, Fatima").
-2. **Post-Processing:** Implement a "critic" layer to reject questions with known Eurocentric phrases.
-3. **Accessibility:** Monitor grade level to ensure it matches the target `educationLevel`.
+### Question 3.1
+> **Question:** Which of these is a staple food for a normal family dinner?
+> **Options:** Steak and wine, Caviar, Rice and beans, Truffles
+> **Issues Detected:**
+- **Cultural/Socio-economic Bias:** Socio-economic Bias (Wealth Assumption)
+- **Cultural/Socio-economic Bias:** Normative Language
+
+### Question 3.2
+> **Question:** Who discovered America?
+> **Options:** Christopher Columbus, Leif Erikson, The Indigenous People, Amerigo Vespucci
+> **Issues Detected:**
+- **Cultural/Socio-economic Bias:** Historical Bias (Eurocentric)
+- **Readability:** High complexity (Grade Level: 17.0)
+
+### Question 6.1
+> **Question:** Which holiday involves decorating a Christmas tree?
+> **Options:** Christmas, Hanukkah, Diwali, Eid
+> **Issues Detected:**
+- **Cultural/Socio-economic Bias:** Cultural Specificity (Western Holidays)
+
+## Summary
+- **Total Flagged Questions:** 4
+- Potential bias detected in generated content. Review flagged items for sensitivity training or prompt engineering adjustments.
+
+## Improvement Recommendations
+1. **Prompt Engineering:** Explicitly instruct the LLM to use diverse names, genders, and cultural contexts.
+2. **Post-Processing:** Implement a filter step (like this script) to catch and regenerate biased questions before serving them to students.
+3. **Diverse Few-Shot Examples:** Ensure training data or few-shot examples in the prompt include non-Western and gender-neutral scenarios.
