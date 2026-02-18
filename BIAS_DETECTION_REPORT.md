@@ -3,37 +3,40 @@
 
 **Domain:** ML System
 **Scope:** Quiz generation logic
-**Date:** 2026-02-16T19:06:36.007Z
+**Date:** 2026-02-18T05:18:21.028Z
 
 ## Summary
-- **Total Quizzes Analyzed:** 4
-- **Total Questions Analyzed:** 12
+- **Total Quizzes Analyzed:** 7
+- **Total Questions Analyzed:** 21
 
 ## Bias Metrics
 
 ### Gender Bias
-- **Male Pronouns:** 0
-- **Female Pronouns:** 1
-- **Ratio (M:F):** 0:1
-> *Interpretation:* A significant imbalance suggests the model may default to one gender in examples.
+- **Male Pronouns:** 4
+- **Female Pronouns:** 4
+- **Ratio (M:F):** 4:4
+> *Interpretation:* The gender distribution appears balanced.
 
 ### Cultural Bias
-- **Western Names:** 13
-- **Non-Western Names:** 3
-- **Western Locations:** 7
-- **Non-Western Locations:** 5
-> *Interpretation:* High counts of Western names/locations vs Non-Western indicates a cultural bias in the training data or prompt.
+- **Western Names:** 15
+- **Non-Western Names:** 9
+- **Western Locations:** 10
+- **Non-Western Locations:** 9
+> *Interpretation:* High disparity between Western and Non-Western names indicates a cultural bias in the training data or prompt.
 
 ### Accessibility (Reading Level)
-- **Average Flesch-Kincaid Grade Level:** 4.91
+- **Average Flesch-Kincaid Grade Level:** 5.31
 - **Min Grade Level:** -1.90
-- **Max Grade Level:** 14.11
+- **Max Grade Level:** 14.28
 
 ## Flagged Questions
 
 | Question | Reason | Severity |
 | :--- | :--- | :--- |
 | "Who discovered America in 1492?" | Eurocentric perspective (ignores indigenous population) | **MEDIUM** |
+| "The Dark Ages refers to the period after the fall of Rome." | Eurocentric historical periodization | **MEDIUM** |
+| "Christopher Columbus discovered America in 1492." | Eurocentric perspective (ignores indigenous population) | **MEDIUM** |
+| "The Far East is known for its unique spices." | Eurocentric geographical term | **MEDIUM** |
 
 ## Recommendations
 1. **Prompt Engineering:** Update system prompts to explicitly request diverse names (e.g., "Use names from various cultures like Wei, Priya, Fatima").
