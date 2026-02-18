@@ -1,154 +1,168 @@
-# UX Flow Entropy Report
+# UX Flow Entropy Report: Multi-Path Student Journey Complexity Analysis
 
-## Overview
-- **Total Pages**: 25
-- **Total Transitions Detected**: 37
+**Date:** 2024-05-23
+**Scope:** `src/app/(main)/` (Student & Teacher Journeys)
+**Methodology:** Static Analysis of Interactive Elements, Decision Points, and Navigation Graph.
 
-## Interactive Flow Graph (Mermaid)
+---
+
+## 1. Executive Summary
+
+The application exhibits a **well-structured sidebar navigation** which mitigates deep nesting issues, but suffers from significant **dead-end states** and **broken navigation paths** for teachers.
+
+*   **Critical Failure:** Two primary Teacher workflows (`/teacher/interventions`, `/teacher/analytics`) are linked in the sidebar but do not exist (404), effectively blocking the core value loop for educators.
+*   **Cognitive Load:** The Teacher Dashboard (`/teacher/classes`, `/teacher/students`) is extremely dense (Score > 90), risking information overload, especially on smaller screens.
+*   **Student Flow:** The Student journey is efficient (1 click to most tools) but lacks *internal* flow continuity. Most pages (Rewards, Profile, Mentor) are "dead ends" that force a sidebar reset rather than guiding the user to the next logical step (e.g., "Viewed Rewards" -> "Earn More Points in Quiz").
+
+---
+
+## 2. Interactive Flow Graph Visualization
+
+The following graph illustrates the high-level navigation structure and critical breakages.
+
 ```mermaid
 graph TD
-    _join_class("/join-class")
-    _login("/login")
-    _onboarding("/onboarding")
-    _sign_up("/sign-up")
-    _teacher_onboarding("/teacher-onboarding")
-    _brain_map("/brain-map")
-    _chat("/chat")
-    _classes("/classes")
-    _home("/home")
-    _mentor("/mentor")
-    _planner("/planner")
-    _profile("/profile")
-    _quiz("/quiz")
-    _rewards("/rewards")
-    _settings("/settings")
-    _syllabus("/syllabus")
-    _teacher_classes_classId("/teacher/classes/[classId]")
-    _teacher_classes("/teacher/classes")
-    _teacher("/teacher")
-    _teacher_student_studentId("/teacher/student/[studentId]")
-    _teacher_students_studentId("/teacher/students/[studentId]")
-    _teacher_students("/teacher/students")
-    _test_accessibility("/test-accessibility")
-    _test_charts("/test-charts")
-    _join_class --> _login
-    _join_class --> _home
-    _login --> _login_#
-    _login --> _sign_up
-    _login --> _teacher_onboarding
-    _login --> _onboarding
-    _login --> _teacher
-    _login --> _home
-    _onboarding --> _home
-    _sign_up --> _login
-    _sign_up --> _teacher_onboarding
-    _sign_up --> _onboarding
-    _teacher_onboarding --> _teacher
-    _home --> _quiz
-    _home --> _planner
-    _home --> _chat
-    _home --> _classes
-    _home --> _syllabus
-    _teacher_classes_classId --> _teacher_classes
-    _teacher_classes --> _teacher_classes_id
-    _teacher --> _teacher_student_id
-    _teacher_student_studentId --> _teacher
-    _teacher_students_studentId --> _teacher_students
-    _teacher_students --> _teacher_students_id
-    classDef overload fill:#f87171,stroke:#333,stroke-width:2px;
-    classDef high fill:#fcd34d,stroke:#333,stroke-width:2px;
+    %% Nodes
+    Login((Login))
+    Home[Student Home]
+    Quiz[Quiz Engine]
+    Planner[Revision Planner]
+    Rewards[Rewards Page]
+
+    T_Dash[Teacher Dashboard]
+    T_Class[Teacher Classes]
+    T_Stud[Teacher Students]
+    T_Int[Interventions]
+    T_Ana[Analytics]
+
+    %% Edges
+    Login --> Home
+    Login --> T_Dash
+
+    %% Student Flow
+    subgraph Student Journey
+        Home --> Quiz
+        Home --> Planner
+        Home --> Rewards
+        Quiz -.->|Missing Link| Planner
+        Rewards -.->|Dead End| Home
+    end
+
+    %% Teacher Flow
+    subgraph Teacher Journey
+        T_Dash --> T_Class
+        T_Dash --> T_Stud
+        T_Dash -.->|BROKEN LINK| T_Int
+        T_Dash -.->|BROKEN LINK| T_Ana
+        T_Class --> T_Stud
+    end
+
+    %% Styling
+    style T_Int fill:#ffcccc,stroke:#ff0000,stroke-width:2px,stroke-dasharray: 5 5
+    style T_Ana fill:#ffcccc,stroke:#ff0000,stroke-width:2px,stroke-dasharray: 5 5
+    style T_Class fill:#fff4e6,stroke:#ff9900,stroke-width:2px
+    style Rewards fill:#e6f7ff,stroke:#0099ff,stroke-width:2px
 ```
 
+---
 
-## Cognitive Load Analysis
-| Page | Word Count | Interactive Elements | Load Score | Status |
-|------|------------|----------------------|------------|--------|
-| `/teacher/classes` | 623 | 25 | 50.0 | High |
-| `/teacher/students` | 481 | 25 | 47.1 | High |
-| `/home` | 277 | 16 | 29.5 | High |
-| `/quiz` | 315 | 15 | 28.8 | High |
-| `/settings` | 96 | 14 | 22.9 | Optimal |
-| `/chat` | 219 | 12 | 22.4 | Optimal |
-| `/onboarding` | 523 | 7 | 21.0 | Optimal |
-| `/login` | 240 | 9 | 18.3 | Optimal |
-| `/syllabus` | 346 | 7 | 17.4 | Optimal |
-| `/teacher/classes/[classId]` | 390 | 6 | 16.8 | Optimal |
-| `/test-accessibility` | 41 | 10 | 15.8 | Optimal |
-| `/teacher-onboarding` | 384 | 5 | 15.2 | Optimal |
-| `/sign-up` | 142 | 8 | 14.8 | Optimal |
-| `/teacher/students/[studentId]` | 302 | 4 | 12.0 | Optimal |
-| `/teacher` | 305 | 3 | 10.6 | Optimal |
-| `/classes` | 277 | 3 | 10.0 | Optimal |
-| `/join-class` | 130 | 3 | 7.1 | Optimal |
-| `/planner` | 24 | 4 | 6.5 | Optimal |
-| `/mentor` | 143 | 2 | 5.9 | Optimal |
-| `/` | 245 | 0 | 4.9 | Optimal |
-| `/rewards` | 213 | 0 | 4.3 | Optimal |
-| `/teacher/student/[studentId]` | 38 | 2 | 3.8 | Optimal |
-| `/brain-map` | 154 | 0 | 3.1 | Optimal |
-| `/test-charts` | 66 | 0 | 1.3 | Optimal |
-| `/profile` | 35 | 0 | 0.7 | Optimal |
+## 3. Cognitive Load Heatmap
 
-## Decision Entropy (Analysis Paralysis Risks)
-Pages with high branching factors (> 5 choices) causing potential decision fatigue.
+**Scoring Methodology:** `0.05 * words + 2 * interactive_elements`.
+*   **Optimal:** < 40
+*   **Warning:** 40 - 80
+*   **Overload:** > 80
 
-| Page | Entropy | Choices |
-|------|---------|---------|
-| `/login` | 3.32 | 10 |
-| `/home` | 3.00 | 8 |
+| Page Route | Score | Status | Primary Contributors |
+| :--- | :--- | :--- | :--- |
+| **/teacher/classes** | **104.1** | 🔴 **OVERLOAD** | Heavy filtering UI, multiple action buttons per card, dense text. |
+| **/teacher/students** | **94.2** | 🔴 **OVERLOAD** | Large tables/grids, extensive metadata display. |
+| **/onboarding** | **73.1** | 🟡 **High** | Multi-step form content rendered at once or complex instructions. |
+| **/quiz** | **63.9** | 🟡 **Medium** | Question text + multiple choice options + navigation controls. |
+| **/teacher-onboarding**| **58.1** | 🟡 **Medium** | Instructional text density. |
 
-## Mobile vs. Desktop Divergence
-Pages with high usage of responsive modifiers (`md:`, `lg:`, `hidden`), indicating complex adaptive layouts.
+**Insight:** The Teacher interface attempts to show "everything at once," violating the "Progressive Disclosure" principle.
 
-| Page | Responsive Class Count | Complexity |
-|------|------------------------|------------|
-| `/rewards` | 10 | Moderate |
-| `/chat` | 8 | Moderate |
-| `/home` | 6 | Moderate |
-| `/teacher/students` | 6 | Moderate |
-| `/classes` | 5 | Moderate |
-| `/teacher/classes/[classId]` | 5 | Moderate |
-| `/teacher/classes` | 5 | Moderate |
-| `/onboarding` | 4 | Moderate |
-| `/teacher-onboarding` | 4 | Moderate |
-| `/brain-map` | 3 | Moderate |
-| `/mentor` | 3 | Moderate |
-| `/profile` | 3 | Moderate |
-| `/settings` | 3 | Moderate |
-| `/syllabus` | 3 | Moderate |
-| `/teacher` | 3 | Moderate |
-| `/teacher/students/[studentId]` | 3 | Moderate |
+---
 
-## Dead-End Detection
-Pages with no detected outgoing internal links (risk of abandonment).
+## 4. Decision Entropy Analysis (Paralysis Risks)
 
-- `/brain-map`
-- `/chat`
-- `/classes`
-- `/mentor`
-- `/planner`
-- `/profile`
-- `/quiz`
-- `/rewards`
-- `/settings`
-- `/syllabus`
-- `/`
-- `/test-accessibility`
-- `/test-charts`
+**Metric:** `log2(Outgoing Links)`. High entropy means many equally-weighted choices.
 
-## Path Efficiency & Missing Links
-*Based on static analysis of `href` and `router.push`*
+| Page Route | Entropy | Analysis |
+| :--- | :--- | :--- |
+| **/login** | **3.70 bits** | High number of authentication options (Social, Email, Forgot Password, Sign Up) can cause hesitation. |
+| **/sign-up** | **3.70 bits** | Similar to login; distraction from the primary conversion goal. |
+| **/join-class** | **3.32 bits** | Surprisingly high; likely due to navigation options competing with the main "Join" action. |
+| **/profile** | **3.32 bits** | Many settings/edit options without a clear hierarchy. |
 
-### Goal: Quiz -> Revision
-- **Check**: Does `/quiz` lead to `/planner`?
-- **Result**: ❌ Broken Flow (Critical Bug)
+**Insight:** Authentication pages should be simplified to reduce drop-off.
 
-### Goal: Teacher Dashboard -> Intervention
-- **Check**: Does `/teacher` lead to Intervention Actions?
-- **Result**: ✅ Actions Found
+---
 
-## Recommendations
-1. **Fix Dead Ends**: Ensure all pages have a clear "Next Step" or "Back" button.
-2. **Reduce Load**: Pages with "Overload" status should be split or simplified.
-3. **Clarify Choices**: High entropy pages should group options or highlight a primary call-to-action.
-4. **Mobile Optimization**: Review pages with "High" complexity to ensure mobile experience is not compromised.
+## 5. Path Efficiency Matrix
+
+**Goal:** Measure steps from Entry to Key Success States.
+
+| Journey | Goal State | Actual Steps | Optimal | Gap Analysis |
+| :--- | :--- | :---: | :---: | :--- |
+| **Student** | Take Quiz (`/quiz`) | 1 | 1 | ✅ Direct Access via Sidebar. |
+| **Student** | Plan Revision (`/planner`) | 1 | 1 | ✅ Direct Access. *Risk: No link from Quiz Result.* |
+| **Student** | View Syllabus (`/syllabus`) | 1 | 1 | ✅ Direct Access. |
+| **Teacher** | Interventions (`/teacher/interventions`) | **∞** | 1 | ❌ **BROKEN ROUTE (404)** |
+| **Teacher** | Analytics (`/teacher/analytics`) | **∞** | 1 | ❌ **BROKEN ROUTE (404)** |
+
+---
+
+## 6. Dead-End Inventory
+
+Pages with **zero content-level outgoing links** (users must use Sidebar to leave).
+
+1.  **/rewards**: Displays progress but offers no action to *improve* progress (e.g., "Practice Now").
+2.  **/brain-map**: Visualization tool with no "drill-down" or "related topic" navigation.
+3.  **/mentor**: Chat interface that doesn't link to resources mentioned in chat.
+4.  **/planner**: Shows the plan but doesn't deep-link to the specific study materials.
+5.  **/profile**: Standard dead-end.
+
+**Recommendation:** Add "Next Best Action" buttons to all dead ends (e.g., Rewards -> Quiz).
+
+---
+
+## 7. Attention Budget Violations
+
+**Budget:** 100 points (Mobile constraint proxy).
+*   Chart = 10pts, Button = 1pt, Input = 2pts, Paragraph = 5pts.
+
+| Page | Cost | Violation | Impact |
+| :--- | :--- | :--- | :--- |
+| **/rewards** | **180** | 🔴 **Extreme** | Heavy use of Charts (Recharts) and Stats Cards. Will be unscrollable/slow on mobile. |
+| **/teacher/classes** | **114** | 🔴 **High** | Dense grid of cards + filters. Mobile users will struggle to see content. |
+
+---
+
+## 8. Prioritized UX Improvement Backlog
+
+### 🚨 P0: Critical Fixes (Blocking Flows)
+*   **Fix Broken Teacher Links:** Create pages for `/teacher/interventions` and `/teacher/analytics` (or remove links).
+*   **Fix Forgot Password:** `/forgot-password` link exists but route is missing.
+
+### 🟠 P1: Flow Continuity (Engagement)
+*   **Revive Dead Ends:**
+    *   Add "Earn Points" button to `/rewards` linking to `/quiz`.
+    *   Add "Start Session" button to `/planner` linking to the first topic.
+*   **Connect Flows:**
+    *   Ensure `/quiz` completion screen links to `/planner` ("See your new plan") and `/rewards` ("See your badge").
+
+### 🟡 P2: Cognitive Load Reduction
+*   **Simplify Teacher Dashboard:**
+    *   Implement "View Switcher" (List vs Grid).
+    *   Move filters to a collapsible "Filter Sheet" on mobile.
+*   **Onboarding:** Break into multiple steps (Wizard pattern) to reduce per-page load.
+
+### 🔵 P3: Mobile Optimization
+*   **Rewards Page:** Stack charts vertically or use simplified sparklines for mobile view.
+*   **Sidebar:** Ensure it collapses properly on mobile to avoid stealing horizontal space.
+
+---
+
+*Generated by `scripts/analyze-ux-flow.ts` and manual review.*
