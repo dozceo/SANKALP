@@ -7,10 +7,10 @@
 
 ## 1. Executive Summary
 
-Sankalp's current architecture has critical scalability bottlenecks that will lead to exponential cost growth and severe latency issues as user base expands. The primary cost drivers are:
-1.  **ML Inference Latency & Compute**: The `smartRevisionPlanner` flow spawns a new Python subprocess *sequentially* for every topic in a student's brain map. For a student with 20 topics, this means 20 separate Python startup events, leading to 40s+ latency and massive serverless compute bills.
+Sankalp's current architecture has critical scalability bottlenecks that will lead to exponential cost growth and severe latency issues as the user base expands. The primary cost drivers are:
+1.  **ML Inference Latency & Compute**: The `smartRevisionPlanner` flow spawns a Python subprocess *sequentially* for every topic in a student's brain map. For a student with 20 topics, this means 20 separate inference calls, leading to 2s+ latency and massive serverless compute bills if not properly batched.
 2.  **Uncached LLM Calls**: High-frequency flows like Chatbot (`getExplanation`) and Text-to-Speech (`getTextToSpeech`) lack caching, leading to redundant token usage for common questions.
-3.  **Verbose Prompts**: `adaptive-quiz-engine` and `syllabus-generator` use large prompts with extensive JSON schema definitions, consuming input tokens rapidly.
+3.  **Database Read Amplification**: The Teacher Dashboard (`/api/teacher/students`) performs an O(N) read operation, fetching every student's quiz history individually on every page load.
 
 **Projected Cost Risk**: At 10K users, monthly costs could exceed **$15,000/month** due to ML compute inefficiency alone, rendering the platform economically unviable without immediate remediation.
 
@@ -33,17 +33,17 @@ Sankalp's current architecture has critical scalability bottlenecks that will le
 *   **Trigger**: User opens planner or requests revision.
 *   **Process**:
     1.  Fetches Student History (DB Read).
-    2.  Iterates through `N` topics (e.g., 20).
-    3.  **For each topic**: Spawns `python predict_mastery.py` (overhead: ~2s startup + ~100ms inference).
-    4.  **Total Time**: `N * 2.1s` ≈ 42 seconds for 20 topics.
-    5.  **Compute Cost**: 42s of GB-sec execution per user per day.
-*   **Optimization Potential**: **99% reduction** by using `batchPredictMastery` or a persistent model service.
+    2.  Iterates through `N` topics (e.g., 20) in a `for` loop.
+    3.  **For each topic**: Awaits `predictMastery` (overhead: ~100ms inference via Python bridge).
+    4.  **Total Time**: `N * 100ms` ≈ 2 seconds for 20 topics (plus network latency).
+    5.  **Compute Cost**: 2s of GB-sec execution per user per day.
+*   **Optimization Potential**: **90% reduction** by using `batchPredictMastery` (parallel inference).
 
 ### B. Adaptive Quiz Generation
 *   **Trigger**: User requests a quiz.
 *   **LLM Cost**:
     *   Input: System Prompt + JSON Schema (~800 tokens) + Topic Context.
-    *   Output: 5-10 Questions JSON (~1000 tokens).
+    *   Output: 10 Questions JSON (~1000 tokens).
     *   Total: ~2000 tokens ($0.001 - $0.003 per quiz).
 *   **Cache**: Implemented (`unstable_cache` 1 hr). **Good**.
 
@@ -56,6 +56,14 @@ Sankalp's current architecture has critical scalability bottlenecks that will le
 *   **Cache**: **NONE**.
 *   **Risk**: Viral topics or common questions generate 1000s of identical calls.
 
+### D. Teacher Dashboard
+*   **Trigger**: Teacher loads `/teacher/students`.
+*   **Process**:
+    1.  Fetches `M` students (DB Read).
+    2.  Fetches `K` quiz results for *each* student (Batched DB Read).
+    3.  Computes stats in memory.
+*   **Cost**: O(M * K) reads. For 100 students taking 10 quizzes each, this is 1000+ reads per dashboard load.
+
 ---
 
 ## 4. Cost-at-Scale Projections
@@ -67,7 +75,7 @@ Assuming:
 
 | Metric | 100 Users | 1K Users | 10K Users | 100K Users | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **ML Compute (Planner)** | $5/mo | $50/mo | **$500/mo** | **$5,000/mo** | Linear growth, but base unit cost is dangerously high due to spawn overhead. |
+| **ML Compute (Planner)** | $5/mo | $50/mo | **$500/mo** | **$5,000/mo** | Linear growth, but base unit cost is dangerously high due to loop overhead. |
 | **LLM (Chat/Quiz)** | $10/mo | $100/mo | $1,000/mo | $10,000/mo | Scales linearly with usage. Caching essential. |
 | **DB Reads** | Free Tier | $5/mo | $50/mo | $500/mo | Manageable with indexes. |
 | **Total Est. Cost** | **$15/mo** | **$155/mo** | **$1,550/mo** | **$15,500/mo** | *Does not include potential timeout retries which double costs.* |
@@ -78,18 +86,18 @@ Assuming:
 
 ## 5. Waste Inventory
 
-1.  **Sequential ML Spawning**: `smart-revision-planner.ts` iterates topics and calls `predictMastery` sequentially.
-    *   *Waste*: ~2s overhead per topic per student.
+1.  **Sequential ML Loop**: `smart-revision-planner.ts` iterates topics and calls `predictMastery` sequentially.
+    *   *Waste*: ~2s overhead per user per day.
     *   *Fix*: Use `batchPredictMastery` (parallel/batch processing).
 2.  **Uncached Chatbot**: `getExplanation` in `chat/actions.ts` is raw generation.
     *   *Waste*: 100% redundant tokens for "What is photosynthesis?".
     *   *Fix*: Wrap in `unstable_cache`.
-3.  **Uncached TTS**: `getTextToSpeech` in `chat/actions.ts` generates audio every time.
-    *   *Waste*: High API costs for audio generation.
-    *   *Fix*: Upload to Cloud Storage, hash text as filename, return public URL.
+3.  **Teacher Dashboard Read Amplification**: `src/app/api/teacher/students/route.ts` fetches raw quiz data every time.
+    *   *Waste*: Re-reading immutable history.
+    *   *Fix*: Store aggregated stats in `studentProfile` (e.g., `avgScore`, `quizzesTaken`) and update on quiz submission.
 4.  **Redundant Syllabus Generation**: `syllabus-generator.ts` references prompt is huge.
     *   *Waste*: Asking for "5 references" consumes output tokens.
-    *   *Fix*: Reduce to "top 3" or use a search tool instead of generation.
+    *   *Fix*: Reduce to "top 3" or use a search tool instead of generation. Cache by `query`.
 
 ---
 
@@ -98,7 +106,7 @@ Assuming:
 ### Phase 1: Critical Fixes (Immediate)
 1.  **Refactor `smart-revision-planner.ts`**:
     *   Replace the `for (const topic of ...)` loop with a single call to `batchPredictMastery`.
-    *   Update `ml-bridge.ts` to ensure `batchPredictMastery` efficiently reuses the process or batches the input to the python script if possible (currently it does `Promise.all` which might still spawn N processes if the bridge isn't persistent. **Better**: Modify python script to accept a list of inputs).
+    *   Update `ml-bridge.ts` to ensure `batchPredictMastery` efficiently reuses the process.
 2.  **Implement Chat Caching**:
     *   Add `unstable_cache` to `getExplanation` with a TTL of 24h.
 
@@ -106,9 +114,10 @@ Assuming:
 1.  **Persistent ML Service**:
     *   Move `predict_mastery.py` to a standalone FastAPI service (e.g., Cloud Run or a separate container).
     *   Update `ml-bridge.ts` to call this HTTP endpoint.
-    *   *Benefit*: Removes 2s startup overhead completely. Latency drops to <100ms.
+    *   *Benefit*: Removes startup overhead completely. Latency drops to <100ms.
 2.  **Database Indexing**:
     *   Ensure `sankalpSessions` has composite index `studentId + status`.
+    *   Add aggregated fields to `students` collection to eliminate N+1 reads in dashboard.
 
 ### Phase 3: Long-term Efficiency
 1.  **Edge ML**:
@@ -128,6 +137,7 @@ Assuming:
 | **Adaptive Quiz** | ~1500 | ~1500 | $0.003 | Med | Med |
 | **Chatbot Explanation** | ~500 | ~300 | $0.0005 | **High** | **High** (Cache it!) |
 | **Revision Explainer** | ~800 | ~200 | $0.001 | Low | Low |
+| **Mindful Mentor** | ~2000+ | ~150 | $0.001+ | Low | **High** (Context size risk) |
 
 ---
 
@@ -135,8 +145,8 @@ Assuming:
 
 1.  **Session Start**: `sankalpSessions` query (`where studentId == X and status == active`).
     *   *Optimization*: Composite index.
-2.  **Quiz History**: `getQuizResults` fetches last 100 results.
-    *   *Optimization*: Reduce limit to 20 for trend analysis, or calculate trend incrementally and store it in `StudentProfile`.
+2.  **Teacher Dashboard**: `getTeacherStudents` + `getBatchedQuizResults`.
+    *   *Optimization*: Denormalize stats onto `student` document.
 
 ---
 
