@@ -1,46 +1,590 @@
-# ADK Decision Logic Validation Report
+# ADK Decision Logic Coverage Report
+Generated on: 2026-02-18T19:30:40.757Z
 
-**Total Scenarios Tested:** 14700
+## 1. Summary
+- Total State Combinations Tested: 1728
+- Unique Decision Paths Activated: 6
+- Contradictions Found: 112
 
-## Revision Decision Logic
-
-✅ **Model matches Implementation perfectly.**
-
-| Rule ID | Description | Triggered Count | Coverage % |
-|---|---|---|---|
-| R0_EXAM_CRAMMING | Exam imminent (<3 days) & low mastery (<0.6) | 3600 | 24.49% |
-| R1_FORGETTING_RISK | Low mastery (<0.4) & imminent forgetting (<3 days) | 480 | 3.27% |
-| R2_ATTENTION_RISK | Low mastery (<0.4) & high attention risk | 960 | 6.53% |
-| R3_SPACED_REPETITION | Moderate mastery (0.4-0.6) & stale (>7 days) | 1920 | 13.06% |
-| R4_MASTERY_PROGRESS | High mastery (>=0.7) & recent (<14 days) | 2520 | 17.14% |
-| DEFAULT | Routine Revision | 5220 | 35.51% |
-
-### Overlap Analysis (Potential Contradictions)
-These pairs of rules are satisfied simultaneously. The higher priority (earlier) rule wins.
-| Winner Rule | Shadowed Rule | Count |
+## 2. Rule Activation Frequency
+| Rule (Flags) | Count | Share |
 |---|---|---|
-| R0_EXAM_CRAMMING | R1_FORGETTING_RISK | 360 |
-| R0_EXAM_CRAMMING | R2_ATTENTION_RISK | 900 |
-| R1_FORGETTING_RISK | R2_ATTENTION_RISK | 240 |
-| R0_EXAM_CRAMMING | R3_SPACED_REPETITION | 1440 |
+| `ROUTINE_REVISION` | 752 | 43.5% |
+| `CRAMMING_MODE+EXAM_IMMINENT` | 288 | 16.7% |
+| `MASTERY_ACHIEVED` | 288 | 16.7% |
+| `SPACED_REPETITION` | 144 | 8.3% |
+| `URGENT_REVISION+FORGETTING_RISK` | 128 | 7.4% |
+| `ADAPTIVE_TEACHING+ATTENTION_RISK` | 128 | 7.4% |
 
-## Intervention Decision Logic
+## 3. Contradictions & Logical Conflicts
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
 
-✅ **Model matches Implementation perfectly.**
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
 
-| Rule ID | Description | Triggered Count | Coverage % |
-|---|---|---|---|
-| I1_CRITICAL_RISK | Very low mastery (<0.3) & high attention & inactive (>10 days) | 630 | 4.29% |
-| I2_DROPOUT_RISK | High attention risk & high dropout (>0.6) | 2240 | 15.24% |
-| I3_PERSISTENT_FAILURE | Low mastery (<0.4) & many attempts (>5) | 1540 | 10.48% |
-| NO_INTERVENTION | - | 10290 | 70.00% |
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
 
-### Overlap Analysis (Intervention)
-| Winner Rule | Shadowed Rule | Count |
-|---|---|---|
-| I1_CRITICAL_RISK | I2_DROPOUT_RISK | 210 |
-| I1_CRITICAL_RISK | I3_PERSISTENT_FAILURE | 315 |
-| I2_DROPOUT_RISK | I3_PERSISTENT_FAILURE | 245 |
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
 
-## Unreachable/Dead Rules
-- None (All rules are reachable)
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:15 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:2 | Mastery:0.20 | RevDays:30 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.75 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:2 | Mastery:0.90 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:5 | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:5 | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:5 | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:5 | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:5 | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:5 | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:5 | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:5 | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.75 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:5 | Mastery:0.90 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:None | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:None | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:None | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:None | Mastery:0.20 | RevDays:15 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:None | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:None | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:None | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.5`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Strategy Conflict: Quick fix (Short Form) suggested for Critical failure case
+- **State**: `Exam:None | Mastery:0.20 | RevDays:30 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: SHORT_FORM
+- **Intervention**: CRITICAL
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.75 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:5 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:5 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:5 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:10 | Forget:2 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:10 | Forget:5 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:3 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+### Risk Mismatch: Progress allowed despite high intervention risk
+- **State**: `Exam:None | Mastery:0.90 | RevDays:10 | Forget:999 | Attn:HIGH | Attempts:6 | Dropout:0.7`
+- **Revision**: PROGRESS_ALLOWED
+- **Intervention**: HIGH
+
+
+## 4. Unreachable States / Missing Handlers
+Determined by analyzing which expected flags were NEVER seen.
+
+Expected Flags vs Observed:
+- `CRAMMING_MODE`: ✅ Covered
+- `URGENT_REVISION`: ✅ Covered
+- `ADAPTIVE_TEACHING`: ✅ Covered
+- `SPACED_REPETITION`: ✅ Covered
+- `MASTERY_ACHIEVED`: ✅ Covered
+- `ROUTINE_REVISION`: ✅ Covered
