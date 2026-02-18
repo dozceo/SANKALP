@@ -1,6 +1,6 @@
 # Mobile Responsive Breakpoint Coverage Audit Report
 
-**Generated:** 2/16/2026, 7:21:53 PM
+**Generated:** 2/17/2026, 7:20:50 PM
 
 **Scope:** `src/app`, `src/components`
 
@@ -9,94 +9,98 @@
 ### `src/app/(auth)/join-class/page.tsx`
 | Line | Class | Category | Suggestion |
 |---|---|---|---|
-| 73 | `h-10` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 73 | `w-10` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 100 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 100 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 98 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 98 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 117 | `h-16` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 128 | `h-12` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 133 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 133 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 138 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 138 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
 
 ### `src/app/(auth)/login/page.tsx`
 | Line | Class | Category | Suggestion |
 |---|---|---|---|
-| 115 | `h-10` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 115 | `w-10` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 176 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 176 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 178 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 178 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 185 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 185 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 204 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 204 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 82 | `h-10` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 82 | `w-10` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 127 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 127 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 129 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 129 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 137 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 137 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 152 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 152 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
 
 ### `src/app/(auth)/onboarding/page.tsx`
 | Line | Class | Category | Suggestion |
 |---|---|---|---|
-| 103 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 103 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 215 | `w-3` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 215 | `h-3` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 229 | `h-12` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 276 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 276 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 278 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 278 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 358 | `h-14` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 375 | `p-8` | Large Padding | Add `sm:`, `md:`, or `lg:` variant |
-| 381 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 381 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 391 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 391 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 400 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 400 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 406 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 406 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 94 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 94 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 207 | `w-3` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 207 | `h-3` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 226 | `h-12` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 282 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 282 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 284 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 284 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 379 | `h-14` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 398 | `p-8` | Large Padding | Add `sm:`, `md:`, or `lg:` variant |
+| 404 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 404 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 411 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 411 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 417 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 417 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 423 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 423 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
 
 ### `src/app/(auth)/sign-up/page.tsx`
 | Line | Class | Category | Suggestion |
 |---|---|---|---|
-| 61 | `h-10` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 61 | `w-10` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 128 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 128 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 130 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 130 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 137 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 137 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 86 | `h-10` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 86 | `w-10` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 161 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 161 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 163 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 163 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 171 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 171 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
 
 ### `src/app/(auth)/teacher-onboarding/page.tsx`
 | Line | Class | Category | Suggestion |
 |---|---|---|---|
-| 56 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 56 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 154 | `w-16` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 154 | `h-16` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 168 | `h-12` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 178 | `w-16` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 178 | `h-16` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 179 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 179 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 201 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 201 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 203 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 203 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 236 | `w-16` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 236 | `h-16` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 237 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 237 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 246 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 246 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 252 | `h-12` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 270 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 270 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 281 | `p-8` | Large Padding | Add `sm:`, `md:`, or `lg:` variant |
-| 287 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 287 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 298 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 298 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 308 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 308 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 314 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 314 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 74 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 74 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 174 | `w-16` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 174 | `h-16` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 187 | `h-12` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 199 | `w-16` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 199 | `h-16` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 200 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 200 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 223 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 223 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 225 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 225 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 261 | `w-16` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 261 | `h-16` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 262 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 262 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 271 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 271 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 276 | `h-12` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 297 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 297 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 310 | `p-8` | Large Padding | Add `sm:`, `md:`, or `lg:` variant |
+| 316 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 316 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 327 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 327 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 337 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 337 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 343 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 343 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
 
 ### `src/app/(main)/brain-map/page.tsx`
 | Line | Class | Category | Suggestion |
@@ -278,21 +282,21 @@
 |---|---|---|---|
 | 122 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
 | 122 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 144 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 144 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 153 | `flex-row` | Flex Row | Add `sm:`, `md:`, or `lg:` variant |
-| 154 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 154 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 167 | `h-3` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 167 | `w-3` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 182 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 182 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 186 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 186 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 199 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 199 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 200 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 200 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 149 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 149 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 158 | `flex-row` | Flex Row | Add `sm:`, `md:`, or `lg:` variant |
+| 159 | `h-8` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 159 | `w-8` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 172 | `h-3` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 172 | `w-3` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 187 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 187 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 191 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 191 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 209 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 209 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 210 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 210 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
 
 ### `src/app/(main)/teacher/classes/[classId]/page.tsx`
 | Line | Class | Category | Suggestion |
@@ -512,25 +516,25 @@
 ### `src/components/InteractiveGraph.tsx`
 | Line | Class | Category | Suggestion |
 |---|---|---|---|
-| 446 | `w-[90vw]` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 446 | `h-[85vh]` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 448 | `h-12` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 462 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 462 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 548 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 548 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 574 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 574 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 589 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 589 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 604 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 604 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 623 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 623 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 639 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 639 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 656 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 656 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 448 | `w-[90vw]` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 448 | `h-[85vh]` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 450 | `h-12` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 464 | `w-5` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 464 | `h-5` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 550 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 550 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 576 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 576 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 591 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 591 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 606 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 606 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 625 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 625 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 641 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 641 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 658 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 658 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
 
 ### `src/components/LearningStateCard.tsx`
 | Line | Class | Category | Suggestion |
@@ -555,14 +559,14 @@
 ### `src/components/PersonalKnowledgeGraph.tsx`
 | Line | Class | Category | Suggestion |
 |---|---|---|---|
-| 229 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 229 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 237 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 237 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 245 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 245 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
-| 253 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
-| 253 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 230 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 230 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 238 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 238 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 246 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 246 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
+| 254 | `w-4` | Fixed Width | Add `sm:`, `md:`, or `lg:` variant |
+| 254 | `h-4` | Fixed Height | Add `sm:`, `md:`, or `lg:` variant |
 
 ### `src/components/SankalpSwitch.tsx`
 | Line | Class | Category | Suggestion |
@@ -928,6 +932,6 @@
 ## Summary
 - **Files Scanned:** 88
 - **Files with Issues:** 59
-- **Total Potential Issues:** 683
+- **Total Potential Issues:** 687
 
 **Status:** ⚠️ RESPONSIVE GAPS DETECTED
