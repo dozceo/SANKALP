@@ -1,62 +1,79 @@
 # FastAPI Microservice Migration Readiness Assessment
 
 ## Executive Summary
-This report assesses the readiness of the current ML inference layer (`src/ml/inference/`) for migration to a scalable FastAPI microservice architecture. The current implementation relies on a Node.js subprocess bridge (`ml-bridge.ts`) communicating with a Python script (`predict_mastery.py`) via standard I/O streams. While functional for low loads, this architecture lacks the scalability, observability, and robustness required for production.
+This report assesses the readiness of the current Python inference layer (`src/ml/inference/predict_mastery.py`) for migration to a standalone FastAPI microservice. The current architecture uses a Node.js-managed subprocess with stdin/stdout communication, which is suitable for development but limits scalability and observability in production.
 
 ## Current Architecture
--   **Bridge:** `src/ml/inference/ml-bridge.ts` spawns a persistent Python process.
--   **Communication:** JSON payloads over `stdin`/`stdout`.
--   **Model Loading:** Global variable `model` in `predict_mastery.py`, loaded on script start.
--   **Concurrency:** Synchronous processing loop; single request at a time per process.
+-   **Transport:** Standard Input/Output (JSON Lines).
+-   **Orchestrator:** `src/ml/inference/ml-bridge.ts` (Node.js).
+-   **Runtime:** Single persistent Python process.
+-   **Serialization:** Manual `json.loads` / `json.dumps`.
 
-## Migration Gaps & Blockers
+## Migration Gap Analysis
 
-### 1. Request Schema Definition (Critical)
--   **Current:** Raw `json.loads(line)` with manual key access.
--   **Gap:** FastAPI requires Pydantic models (`BaseModel`) for strict request/response validation and automatic documentation (Swagger UI).
--   **Action:** Define `MasteryPredictionInput` and `MasteryPredictionOutput` using Pydantic.
+### 1. Transport Layer (Protocol Shift)
+-   **Current:** `ml-bridge.ts` writes newline-delimited JSON to the Python process `stdin`.
+-   **Target:** HTTP/1.1 or HTTP/2 over REST.
+-   **Gap:** Need to replace the `while sys.stdin:` loop with FastAPI route handlers.
+-   **Action:**
+    -   Install `fastapi` and `uvicorn`.
+    -   Define `app = FastAPI()`.
+    -   Create `@app.post("/predict/mastery")` endpoint.
 
-### 2. Application Structure
--   **Current:** A simple script with a `while` loop reading `sys.stdin`.
--   **Gap:** No ASGI application instance (`app = FastAPI()`).
--   **Action:** Refactor `predict_mastery.py` to expose an API endpoint (e.g., `@app.post("/predict/mastery")`).
+### 2. Data Serialization & Validation
+-   **Current:** Manual dictionary access (e.g., `features['avg_quiz_score']`). No strict type checking on the Python side (relies on Typescript safety upstream).
+-   **Target:** Pydantic models.
+-   **Gap:** Missing schema definitions in Python.
+-   **Action:** Define Pydantic models:
+    ```python
+    class MasteryFeatures(BaseModel):
+        avg_quiz_score: float
+        attempts_per_topic: int
+        days_since_last_revision: int
+        quiz_score_variance: float
+        time_spent_per_question: float
 
-### 3. Model Lifecycle Management
--   **Current:** Model is loaded at the module level when the script runs.
--   **Gap:** FastAPI best practices suggest using Lifespan Events (`@asynccontextmanager`) to load models during startup and handle cleanup.
--   **Action:** Implement a lifespan context manager to load `mastery_model.pkl`.
+    class MasteryResponse(BaseModel):
+        mastery_probability: float
+        confidence: float
+        predicted_class: str
+    ```
 
-### 4. Concurrency & Performance
--   **Current:** Blocking synchronous execution.
--   **Gap:** While `scikit-learn`'s `predict` is CPU-bound and synchronous, the API handler should be defined as `def` (not `async def`) to run in a threadpool, preventing the event loop from blocking, OR use `async def` if the model call is wrapped in `run_in_threadpool`.
--   **Action:** Configure the endpoint for optimal concurrency.
+### 3. Concurrency & Performance
+-   **Current:** Single-threaded, blocking processing of each line.
+-   **Target:** Asynchronous request handling.
+-   **Gap:** The `predict_proba` method of Scikit-Learn is CPU-bound and blocking.
+-   **Action:**
+    -   Use `async def` for route handlers.
+    -   Run blocking inference in a threadpool (FastAPI does this automatically for `def` endpoints, but explicit `run_in_executor` is better for control).
+    -   Configure Uvicorn workers for parallelism.
 
-### 5. Error Handling & Logging
--   **Current:** `sys.stderr` for errors, custom JSON error fields.
--   **Gap:** HTTP standard error responses (400, 500) are missing.
--   **Action:** Implement `HTTPException` handling and structured logging.
+### 4. Lifecycle Management
+-   **Current:** `if __name__ == "__main__": load_model()` loads the model on script start.
+-   **Target:** Lifespan events.
+-   **Gap:** Need to ensure model is loaded once during application startup, not per request.
+-   **Action:** Use FastAPI lifespan context manager:
+    ```python
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        global model
+        model = load_model()
+        yield
+        # cleanup
+    ```
 
-### 6. Client-Side Update
--   **Current:** `ml-bridge.ts` has a fallback to `fetch(API_URL)`, but defaults to subprocess if it fails.
--   **Gap:** The primary logic is still heavily coupled to the subprocess lifecycle.
--   **Action:** Update `ml-bridge.ts` to treat the HTTP service as the primary source and potentially remove the subprocess logic entirely once the service is reliable.
+### 5. Security & Authentication
+-   **Current:** Implicit trust (subprocess of the main application).
+-   **Target:** Network boundary security.
+-   **Gap:** No authentication mechanism.
+-   **Action:** Implement API Key validation or JWT middleware if the service is deployed separately from the Next.js backend.
 
-## Migration Plan
+### 6. Dependency Management
+-   **Current:** Relies on global environment or `venv`.
+-   **Target:** Containerized environment.
+-   **Gap:** Need `Dockerfile` and `requirements.txt` specific to the service.
 
-1.  **Phase 1: API Implementation**
-    -   Create `src/ml/api.py` (or modify `inference/api.py` if it exists).
-    -   Define Pydantic models.
-    -   Implement the FastAPI app and `/predict` endpoint.
-    -   Add Dockerfile for the ML service.
+## Recommendation
+The migration is Low Risk / High Reward. The core inference logic (`predict_mastery` function) is already isolated and pure. The main effort is wrapping it in the FastAPI boilerplate and updating the `ml-bridge.ts` to call an HTTP URL instead of spawning a process.
 
-2.  **Phase 2: Testing & Validation**
-    -   Unit tests for the API using `TestClient`.
-    -   Load testing to compare throughput vs. subprocess.
-
-3.  **Phase 3: Integration**
-    -   Deploy the FastAPI service.
-    -   Update `ML_API_URL` environment variable.
-    -   Deprecate the subprocess logic in `ml-bridge.ts`.
-
-## Readiness Score: 4/10
-The core logic (feature extraction, prediction) is ready, but the wrapping infrastructure needs a complete rewrite to support the microservice pattern.
+**Readiness Score:** **High** (Core logic is ready, only wrapper code needed).
