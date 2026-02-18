@@ -9,9 +9,7 @@ const OUTPUT_FILE = path.join(process.cwd(), 'DEAD_CODE_INVENTORY.md');
 
 // Heuristic regex to find exports
 const EXPORT_REGEX = /export\s+(?:const|function|class|type|interface|enum)\s+([a-zA-Z0-9_]+)/g;
-// Specific regex for default exports (harder to track by name, often file name is used)
-// We will focus on named exports for now as default exports are usually imported with any name.
-// However, for components, default export is common. We can use the file name as a proxy for the component name.
+const EXPORT_BRACE_REGEX = /export\s+(?:type\s+)?\{([^}]+)\}/g;
 
 interface ExportItem {
   name: string;
@@ -41,15 +39,33 @@ function getExports(filePath: string): string[] {
   const content = fs.readFileSync(filePath, 'utf-8');
   const exports: string[] = [];
   let match;
+
+  // 1. Direct exports: export const Foo ...
   while ((match = EXPORT_REGEX.exec(content)) !== null) {
     exports.push(match[1]);
   }
 
-  // Check for default export
+  // 2. Named exports block: export { Foo, Bar as Baz }
+  while ((match = EXPORT_BRACE_REGEX.exec(content)) !== null) {
+      const block = match[1];
+      const items = block.split(',').map(s => s.trim()).filter(s => s);
+      for (const item of items) {
+          // specific case: export { type Foo }
+          let cleanItem = item.replace(/^type\s+/, '');
+
+          // Handle aliases: 'A as B'
+          const parts = cleanItem.split(/\s+as\s+/);
+          if (parts.length === 2) {
+             exports.push(parts[1].trim());
+          } else {
+             exports.push(parts[0].trim());
+          }
+      }
+  }
+
+  // 3. Default export
   if (content.match(/export\s+default/)) {
-    // changing logic: for default export, we assume the file name (without ext) is the "name" to search for
     const fileName = path.basename(filePath, path.extname(filePath));
-    // If index.ts, use parent folder name
     if (fileName === 'index') {
        const parentDir = path.basename(path.dirname(filePath));
        exports.push(parentDir);
@@ -58,17 +74,29 @@ function getExports(filePath: string): string[] {
     }
   }
 
-  return exports;
+  return [...new Set(exports)]; // Remove duplicates
 }
 
 function checkUsage(exportName: string, definedInFile: string, allFiles: string[]): boolean {
   for (const file of allFiles) {
-    if (file === definedInFile) continue; // Skip definition file
+    if (file === definedInFile) continue;
+
+    // Skip test files from checking usage (optional, but we probably want to know if code is ONLY used in tests)
+    // For now, allow usage in tests to count as "used".
+
     const content = fs.readFileSync(file, 'utf-8');
-    // Simple check: is the name present?
-    // This can have false positives (comments, strings), but better than false negatives.
-    // We try to match strictly as a word boundary to avoid partial matches
+
+    // Precise import check is hard with regex.
+    // We stick to simple inclusion check but try to be a bit smarter.
+
+    // Case 1: Import { exportName } from ...
+    // Case 2: Import * as X ... X.exportName
+    // Case 3: <exportName ... /> (JSX)
+    // Case 4: Re-export: export { exportName } ...
+
+    // To avoid matching substrings (e.g. "Card" in "CreditCard"), we use word boundaries.
     const regex = new RegExp(`\\b${exportName}\\b`);
+
     if (regex.test(content)) {
       return true;
     }
@@ -114,6 +142,9 @@ async function main() {
   } else {
     report += `## Potential Dead Code (${inventory.length} items)\n\n`;
     report += `| Type | Name | File Path |\n|---|---|---|\n`;
+    // Sort for consistency
+    inventory.sort((a, b) => a.filePath.localeCompare(b.filePath) || a.name.localeCompare(b.name));
+
     inventory.forEach(item => {
       const relativePath = path.relative(process.cwd(), item.filePath);
       report += `| ${item.type} | \`${item.name}\` | \`${relativePath}\` |\n`;

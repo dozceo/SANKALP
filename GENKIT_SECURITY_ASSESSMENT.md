@@ -1,6 +1,6 @@
 # Genkit Dev Server Security Assessment
 
-Generated on: 2026-02-17T19:19:35.188Z
+Generated on: 2026-02-18T19:16:01.302Z
 
 ## Environment Guards
 

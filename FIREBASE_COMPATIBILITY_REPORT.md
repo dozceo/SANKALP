@@ -1,6 +1,6 @@
 # Firebase SDK Compatibility Report
 
-Generated on: 2026-02-17T19:19:32.783Z
+Generated on: 2026-02-18T19:15:40.484Z
 
 ## Installed Versions
 
