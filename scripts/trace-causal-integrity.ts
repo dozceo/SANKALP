@@ -1,300 +1,276 @@
 
-import fs from 'fs';
-import path from 'path';
-import { extractMasteryFeatures, type StudentHistory, type RawQuizResult } from '../src/ml/features/student_features';
-import { makeRevisionDecision } from '../src/ai/adk/decision-engine';
-import { DecisionAction, type ADKDecision } from '../src/ai/adk/types';
-import { generateStudentIntelligence } from '../src/lib/generateStudentIntelligence';
-import { type StudentNode } from '../src/data/docsData';
+import path from "path";
+import fs from "fs";
+import { predictMastery } from "../src/ml/inference/ml-bridge";
+import { extractMasteryFeatures, type StudentHistory } from "../src/ml/features/student_features";
+import { makeRevisionDecision, selectContentStrategy } from "../src/ai/adk/decision-engine";
+import { type MasteryPredictionInput, type MasteryPredictionOutput } from "../src/ml/inference/types";
+import { type ADKDecision, DecisionAction, ContentStrategy } from "../src/ai/adk/types";
 
-// Mock ML Bridge
-interface Prediction {
-    mastery_probability: number;
-    confidence: number;
-    predicted_class: "mastered" | "not_mastered" | "error";
-    error?: string;
-}
+// Setup environment for ML Bridge
+process.env.ML_PYTHON_SCRIPT = path.join(process.cwd(), "src", "ml", "inference", "predict_mastery.py");
+// Mock API URL to force subprocess usage
+process.env.ML_API_URL = "http://invalid-url";
 
-interface TraceStep<T> {
+interface Scenario {
     name: string;
-    input: any;
-    output: T | null;
-    error?: string;
-    warnings: string[];
-    semanticValid: boolean;
+    description: string;
+    studentHistory: StudentHistory;
+    daysUntilExam?: number;
+    expectedOutcome: {
+        masteryLevel: "HIGH" | "LOW" | "ERROR";
+        adkAction: DecisionAction;
+    };
+    injectedFault?: "FEATURE_CORRUPTION" | "ML_GARBAGE";
 }
 
-interface CausalTrace {
-    id: string;
-    steps: {
-        featureExtraction: TraceStep<any>;
-        mlPrediction: TraceStep<any>;
-        adkDecision: TraceStep<ADKDecision>;
-        uiRendering: TraceStep<any>;
-        fallbackCheck?: TraceStep<any>;
+interface TraceResult {
+    scenario: string;
+    features: MasteryPredictionInput;
+    mlOutput: MasteryPredictionOutput;
+    adkDecision: ADKDecision;
+    llmContext: string;
+    uiState: {
+        masteryDisplay: string;
+        alertLevel: string;
+        reasoning: string;
     };
-    semanticViolations: string[];
+    coherenceViolations: string[];
+    cascadeEffects: string[];
 }
 
-async function runTrace(scenarioName: string, history: StudentHistory, faultInjection?: (step: string, data: any) => any): Promise<CausalTrace> {
-    const trace: CausalTrace = {
-        id: scenarioName,
-        steps: {
-            featureExtraction: { name: "Feature Extraction", input: history, output: null, warnings: [], semanticValid: true },
-            mlPrediction: { name: "ML Prediction", input: null, output: null, warnings: [], semanticValid: true },
-            adkDecision: { name: "ADK Decision", input: null, output: null, warnings: [], semanticValid: true },
-            uiRendering: { name: "UI Rendering", input: null, output: null, warnings: [], semanticValid: true },
-            fallbackCheck: { name: "Fallback Logic Check", input: null, output: null, warnings: [], semanticValid: true }
-        },
-        semanticViolations: []
+// Helper to create synthetic quiz history
+function createHistory(avgScore: number, count: number, daysAgoStart: number): StudentHistory {
+    const history: StudentHistory = {
+        quizResults: [],
+        lastLoginDate: new Date(),
+        registrationDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     };
 
-    try {
+    for (let i = 0; i < count; i++) {
+        // Distribute timestamps
+        const daysAgo = Math.floor(Math.random() * daysAgoStart);
+        history.quizResults.push({
+            topic: "Calculus",
+            score: Math.max(0, Math.min(1, avgScore + (Math.random() * 0.2 - 0.1))),
+            timestamp: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+            timeSpent: 60,
+            questionsAttempted: 10
+        });
+    }
+    return history;
+}
+
+const scenarios: Scenario[] = [
+    {
+        name: "Baseline High Mastery",
+        description: "Student consistently scores high > 80%",
+        studentHistory: createHistory(0.85, 10, 14),
+        daysUntilExam: 30,
+        expectedOutcome: { masteryLevel: "HIGH", adkAction: DecisionAction.PROGRESS_ALLOWED }
+    },
+    {
+        name: "Baseline Low Mastery",
+        description: "Student consistently scores low < 40%",
+        studentHistory: createHistory(0.3, 10, 14),
+        daysUntilExam: 30,
+        expectedOutcome: { masteryLevel: "LOW", adkAction: DecisionAction.URGENT_REVISION } // Or SCHEDULED depending on ADK logic
+    },
+    {
+        name: "Edge Case: Exam Cramming",
+        description: "Low mastery but exam is in 2 days",
+        studentHistory: createHistory(0.3, 5, 5),
+        daysUntilExam: 2,
+        expectedOutcome: { masteryLevel: "LOW", adkAction: DecisionAction.URGENT_REVISION }
+    },
+    {
+        name: "Fault Injection: Valid Mastery but Garbage Time",
+        description: "Feature extraction produces negative time spent",
+        studentHistory: (() => {
+            const h = createHistory(0.8, 5, 5);
+            h.quizResults.forEach(r => r.timeSpent = -100); // Invalid time
+            return h;
+        })(),
+        expectedOutcome: { masteryLevel: "HIGH", adkAction: DecisionAction.PROGRESS_ALLOWED } // Should handle gracefully
+    },
+    {
+        name: "Silent Corruption: High Mastery Signal but Zero Score",
+        description: "Simulating ML model drift/error where probability is high but data contradicts",
+        studentHistory: createHistory(0.1, 10, 5), // Very low score
+        injectedFault: "ML_GARBAGE", // Will override ML output
+        expectedOutcome: { masteryLevel: "HIGH", adkAction: DecisionAction.URGENT_REVISION } // Expect conflict
+    }
+];
+
+async function runTrace() {
+    console.log("Starting Causal Integrity Trace...");
+    const results: TraceResult[] = [];
+
+    for (const scenario of scenarios) {
+        console.log(`\nAnalyzing Scenario: ${scenario.name}`);
+
         // 1. Feature Extraction
-        const topic = history.quizResults[0]?.topic || "Math";
-        let features = extractMasteryFeatures(topic, history);
+        let features = extractMasteryFeatures("Calculus", scenario.studentHistory);
 
-        if (faultInjection) features = faultInjection("featureExtraction", features);
-
-        trace.steps.featureExtraction.output = features;
-
-        // Validate Features
-        if (features.avg_quiz_score < 0 || features.avg_quiz_score > 1) {
-            trace.steps.featureExtraction.warnings.push(`Invalid avg_quiz_score: ${features.avg_quiz_score}`);
-            trace.steps.featureExtraction.semanticValid = false;
+        // Fault Injection at Feature Level
+        if (scenario.injectedFault === "FEATURE_CORRUPTION") {
+             features.avg_quiz_score = NaN;
         }
-        if (features.days_since_last_revision < 0) {
-             trace.steps.featureExtraction.warnings.push(`Negative days_since_last_revision: ${features.days_since_last_revision}`);
-             trace.semanticViolations.push("Feature Extraction: Negative days since last revision");
-             trace.steps.featureExtraction.semanticValid = false;
-        }
+
+        console.log("  -> Features Extracted:", JSON.stringify(features));
 
         // 2. ML Prediction
-        trace.steps.mlPrediction.input = features;
-        // Mocking predictMastery
-        let prediction: Prediction = {
-            mastery_probability: features.avg_quiz_score * 0.9 + 0.05,
-            confidence: 0.8,
-            predicted_class: features.avg_quiz_score > 0.6 ? "mastered" : "not_mastered",
-            error: undefined
-        };
-
-        if (faultInjection) prediction = faultInjection("mlPrediction", prediction);
-
-        trace.steps.mlPrediction.output = prediction;
-
-        // Validate ML Semantic Consistency
-        if (features.avg_quiz_score >= 0.9 && prediction.mastery_probability < 0.2) {
-             trace.semanticViolations.push(`ML Integrity: High quiz score (${features.avg_quiz_score}) led to low mastery prediction (${prediction.mastery_probability})`);
-             trace.steps.mlPrediction.semanticValid = false;
+        let prediction: MasteryPredictionOutput;
+        try {
+            prediction = await predictMastery(features);
+        } catch (e) {
+            console.error("  -> ML Prediction Failed:", e);
+            prediction = { mastery_probability: 0, confidence: 0, predicted_class: "error", error: String(e) };
         }
 
+        // Fault Injection at ML Level
+        if (scenario.injectedFault === "ML_GARBAGE") {
+            prediction = {
+                mastery_probability: 0.95,
+                confidence: 0.99,
+                predicted_class: "mastered"
+            };
+            console.log("  -> [INJECTED FAULT] ML Prediction overridden to High Mastery despite low scores.");
+        } else {
+            console.log("  -> ML Prediction:", JSON.stringify(prediction));
+        }
 
         // 3. ADK Decision
-        const mlSignals = {
-            mastery_probability: prediction.mastery_probability,
-            confidence: prediction.confidence,
-            days_since_last_revision: features.days_since_last_revision,
-            attempts_count: features.attempts_per_topic,
-            attention_risk: prediction.mastery_probability < 0.4 ? "HIGH" : "LOW" as const
-        };
-
-        if (faultInjection) {
-             const injected = faultInjection("adkInput", mlSignals);
-             Object.assign(mlSignals, injected);
-        }
-
-        trace.steps.adkDecision.input = { topic, mlSignals };
-        const decision = makeRevisionDecision({
-            studentId: history.studentId || "unknown",
-            topic: topic,
+        const adkDecision = makeRevisionDecision({
+            studentId: "test-student",
+            topic: "Calculus",
             currentDate: new Date(),
-            mlSignals
+            daysUntilExam: scenario.daysUntilExam,
+            mlSignals: {
+                mastery_probability: prediction.mastery_probability,
+                confidence: prediction.confidence,
+                days_since_last_revision: features.days_since_last_revision,
+                attempts_count: features.attempts_per_topic,
+                attention_risk: prediction.mastery_probability < 0.4 ? "HIGH" : "LOW"
+            }
         });
+        console.log("  -> ADK Decision:", adkDecision.action, adkDecision.reasoning);
 
-        trace.steps.adkDecision.output = decision;
+        // 4. LLM Prompt Context
+        const llmStrategy = selectContentStrategy(adkDecision);
 
-        // Validate ADK Semantic Consistency
-        if (prediction.mastery_probability < 0.4 && decision.action === DecisionAction.PROGRESS_ALLOWED) {
-            trace.semanticViolations.push(`ADK Integrity: Low mastery (${prediction.mastery_probability}) allowed progress.`);
-            trace.steps.adkDecision.semanticValid = false;
+        // 5. UI State Simulation
+        // Based on LearningStateCard logic
+        const uiState = {
+            masteryDisplay: `${Math.round(prediction.mastery_probability * 100)}%`,
+            alertLevel: adkDecision.priority,
+            reasoning: adkDecision.reasoning
+        };
+
+        // 6. Semantic Validation
+        const violations: string[] = [];
+        const cascades: string[] = [];
+
+        // Rule 1: High Mastery (ML) -> No Urgent Revision (ADK)
+        // Exception: Cramming mode might trigger urgent revision regardless? No, usually high mastery means no revision needed.
+        if (prediction.mastery_probability > 0.8 && adkDecision.action === DecisionAction.URGENT_REVISION) {
+            violations.push("High Mastery signal resulted in Urgent Revision decision");
+            cascades.push("ML High Confidence -> ADK False Alarm -> UI Alert Fatigue");
         }
-        if (prediction.mastery_probability > 0.8 && decision.action === DecisionAction.URGENT_REVISION) {
-            if (!decision.reasoning.toLowerCase().includes("forgetting") && !decision.reasoning.toLowerCase().includes("exam")) {
-                 trace.semanticViolations.push(`ADK Integrity: High mastery (${prediction.mastery_probability}) flagged for urgent revision without justification.`);
-                 trace.steps.adkDecision.semanticValid = false;
+
+        // Rule 2: Low Mastery (ML) -> Intervention/Revision (ADK)
+        if (prediction.mastery_probability < 0.4 && adkDecision.action === DecisionAction.PROGRESS_ALLOWED) {
+            violations.push("Low Mastery signal ignored, allowed progress");
+            cascades.push("ML Low Confidence -> ADK Silent Failure -> User False Sense of Security");
+        }
+
+        // Rule 3: LLM Context alignment
+        if (adkDecision.contentStrategy === ContentStrategy.SHORT_FORM && !llmStrategy.includes("Brief")) {
+            violations.push("Content Strategy mismatch in LLM Prompt");
+        }
+
+        // Rule 4: Feature-Reality check (specifically for the injection case)
+        if (scenario.injectedFault === "ML_GARBAGE") {
+            // We know the history has avg score 0.1
+            if (prediction.mastery_probability > 0.8) {
+                // This is the injection, but check if ADK caught it?
+                // ADK relies on ML signals. If ML says 0.95, ADK says Progress Allowed.
+                // But reality (history) says 0.1.
+                // This detects the "Garbage In, Garbage Out" if ADK doesn't cross-check history.
+                // ADK `makeRevisionDecision` uses `mlSignals` which come from ML. It doesn't see raw history.
+                // So this IS a silent failure point.
+                cascades.push("Feature-Model Divergence: Model hallucinated mastery, ADK trusted it blindly.");
             }
         }
 
-
-        // 4. UI Rendering (Simulation)
-        const uiIntelligence = {
-            mastery: {
-                [topic]: {
-                    score: prediction.mastery_probability,
-                    priority: decision.priority,
-                    needsRevision: decision.priority !== "LOW"
-                }
-            },
-            adkDecision: decision.action === DecisionAction.URGENT_REVISION ? "SHORT_REVISION_MODE" : "PROGRESS_MODE",
-            reasoning: [decision.reasoning]
-        };
-
-        trace.steps.uiRendering.input = uiIntelligence;
-        trace.steps.uiRendering.output = `Tooltip: ${uiIntelligence.reasoning[0]} | Mode: ${uiIntelligence.adkDecision}`;
-
-        // Validate UI Semantic Consistency
-        if (decision.priority === "HIGH" && uiIntelligence.adkDecision === "PROGRESS_MODE") {
-             trace.semanticViolations.push("UI Integrity: High priority decision mapped to PROGRESS_MODE");
-             trace.steps.uiRendering.semanticValid = false;
-        }
-
-        // 5. Fallback Logic Check
-        const mockStudentNode: StudentNode = {
-            id: history.studentId || "unknown",
-            name: "Test Student",
-            type: "student",
-            masteryScores: {
-                [topic]: features.avg_quiz_score
-            }
-        };
-
-        const fallbackIntel = generateStudentIntelligence(mockStudentNode);
-        trace.steps.fallbackCheck!.output = fallbackIntel;
-
-        const fallbackScore = fallbackIntel.mastery[topic]?.score;
-        if (Math.abs(fallbackScore - prediction.mastery_probability) > 0.2) {
-             trace.semanticViolations.push(`Silent Failure: Fallback logic divergence. ML predicted ${prediction.mastery_probability.toFixed(2)} but fallback generated ${fallbackScore?.toFixed(2)}`);
-             trace.steps.fallbackCheck!.semanticValid = false;
-        }
-        const fallbackDays = fallbackIntel.mastery[topic]?.daysSinceRevision;
-        if (Math.abs(fallbackDays - features.days_since_last_revision) > 5) {
-             trace.semanticViolations.push(`Silent Failure: Fallback logic uses random revision dates (${fallbackDays} vs actual ${features.days_since_last_revision})`);
-             trace.steps.fallbackCheck!.semanticValid = false;
-        }
-
-
-    } catch (e: any) {
-        trace.steps.featureExtraction.error = e.message;
+        results.push({
+            scenario: scenario.name,
+            features,
+            mlOutput: prediction,
+            adkDecision,
+            llmContext: llmStrategy.substring(0, 100) + "...",
+            uiState,
+            coherenceViolations: violations,
+            cascadeEffects: cascades
+        });
     }
 
-    return trace;
+    generateReport(results);
 }
 
-async function main() {
-    const traces: CausalTrace[] = [];
+function generateReport(results: TraceResult[]) {
+    const reportPath = path.join(process.cwd(), "CAUSAL_INTEGRITY_REPORT.md");
 
-    const baseHistory: StudentHistory = {
-        studentId: "student-1",
-        lastLoginDate: new Date(),
-        registrationDate: new Date(),
-        quizResults: [
-            {
-                topic: "Calculus",
-                score: 0.9,
-                timestamp: new Date(),
-                timeSpent: 60,
-                questionsAttempted: 10
+    let md = "# Cross-System Causal Integrity Report\n\n";
+    md += "## Visual DAG of Data Flow\n";
+    md += "```mermaid\n";
+    md += "graph TD\n";
+    md += "    A[User Quiz] -->|Raw Scores| B[Feature Extraction]\n";
+    md += "    B -->|Feature Vector| C[ML Prediction (Python)]\n";
+    md += "    C -->|Mastery Probability| D[ADK Decision Engine]\n";
+    md += "    D -->|Strategy & Context| E[LLM Prompt Construction]\n";
+    md += "    E -->|Generated Text| F[UI Rendering]\n";
+    md += "    C -.->|Silent Failure?| F\n";
+    md += "```\n\n";
+
+    md += "## Semantic Coherence Matrix\n\n";
+    md += "| Scenario | ML Signal | ADK Decision | UI Alert Level | Coherence Violations |\n";
+    md += "|----------|-----------|--------------|----------------|----------------------|\n";
+
+    for (const r of results) {
+        const violations = r.coherenceViolations.length > 0 ? `❌ ${r.coherenceViolations.join("<br>")}` : "✅ Consistent";
+        md += `| ${r.scenario} | ${(r.mlOutput.mastery_probability * 100).toFixed(0)}% | ${r.adkDecision.action} | ${r.uiState.alertLevel} | ${violations} |\n`;
+    }
+
+    md += "\n## Silent Failure Cascades\n\n";
+    for (const r of results) {
+        if (r.cascadeEffects.length > 0) {
+            md += `### ${r.scenario}\n`;
+            for (const c of r.cascadeEffects) {
+                md += `- ⚠️ **Cascade Detected**: ${c}\n`;
             }
-        ]
-    };
-
-    // 1. Baseline Success
-    traces.push(await runTrace("Baseline: Good Student", baseHistory));
-
-    // 2. ML Failure Injection
-    traces.push(await runTrace("Fault: ML Under-prediction", baseHistory, (step, data) => {
-        if (step === "mlPrediction") {
-            return { ...data, mastery_probability: 0.1 };
+            md += "\n**Blast Radius**: " + estimateBlastRadius(r) + "\n\n";
         }
-        return data;
-    }));
+    }
 
-    // 3. Future Quiz Date
-    const futureHistory: StudentHistory = {
-        ...baseHistory,
-        quizResults: [
-            {
-                topic: "Calculus",
-                score: 0.9,
-                timestamp: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
-                timeSpent: 60,
-                questionsAttempted: 10
-            }
-        ]
-    };
-    traces.push(await runTrace("Edge: Future Quiz Date", futureHistory));
+    md += "## Recommendations\n";
+    md += "1. **Cross-Check ML with Heuristics**: ADK should not solely rely on ML probability if raw quiz scores are available (e.g. if avg_score < 0.3 but ML > 0.8, flag error).\n";
+    md += "2. **Circuit Breakers**: Implement bounds checking on Feature Extraction (e.g. time_spent cannot be negative).\n";
+    md += "3. **Explanation Verification**: Add a post-generation validation step to ensure LLM explanations match the numerical data shown in UI.\n";
 
-    // Generate Markdown Report
-    let report = "# Causal Integrity Report\n\n";
-
-    report += "## 1. Visual Causal Flow (DAG)\n";
-    report += "```mermaid\n";
-    report += "graph TD\n";
-    report += "    A[User Quiz] -->|Raw Data| B(Feature Extraction)\n";
-    report += "    B -->|Features| C{ML Model}\n";
-    report += "    C -->|Mastery Prob| D{ADK Decision Engine}\n";
-    report += "    D -->|Decision| E[LLM Prompt]\n";
-    report += "    D -->|Mode| F[UI Rendering]\n";
-    report += "    E -->|Explanation| F\n";
-    report += "    G[Fallback Logic] -.->|Random Data| F\n";
-    report += "    style G stroke:#f00,stroke-width:2px,stroke-dasharray: 5 5\n";
-    report += "```\n\n";
-
-    report += "## 2. Semantic Coherence Violation Matrix\n";
-    report += "| Scenario | Violations Found |\n";
-    report += "|---|---|\n";
-    traces.forEach(t => {
-        const violations = t.semanticViolations.length > 0 ? "🔴 " + t.semanticViolations.length : "🟢 None";
-        report += `| ${t.id} | ${violations} |\n`;
-    });
-
-    report += "\n## 3. Silent Failure Cascade Scenarios\n";
-    report += "- **Scenario 1: API Failure -> Fallback Divergence**. If the ML API is unreachable, the frontend silently falls back to `generateStudentIntelligence`, which uses random numbers for revision dates. This causes the UI to recommend revision for topics recently mastered, or ignore stale topics.\n";
-    report += "- **Scenario 2: Future Date Corruption**. If a client sends a future timestamp (e.g., misconfigured clock), Feature Extraction produces negative `days_since_revision`. This propagates to ML and ADK without error, potentially causing erratic retention predictions.\n";
-    report += "- **Scenario 3: High Score / Low Mastery**. If the ML model drifts or is poisoned (e.g. predicts 0.1 mastery for 0.9 quiz score), the ADK triggers 'ADAPTIVE_TEACHING' for a mastered topic. The UI reflects this with 'High Priority', confusing the user.\n";
-
-    report += "\n## 4. Blast Radius Analysis\n";
-    report += "| Failure Point | Impact Scope | User Perception | Severity |\n";
-    report += "|---|---|---|---|\n";
-    report += "| **Feature Extraction (Negative Time)** | ML, ADK, UI | Confusing retention stats | Medium |\n";
-    report += "| **ML Prediction (Model Drift)** | ADK, UI, LLM | Wrong study recommendations | High |\n";
-    report += "| **Fallback Logic (Random)** | UI | 'It works but it's wrong' | Critical |\n";
-
-    report += "\n## 5. Recommended Circuit Breakers\n";
-    report += "To prevent these silent failures, the following semantic guards should be implemented:\n\n";
-    report += "### A. Feature Extraction Guard\n";
-    report += "```typescript\n";
-    report += "if (days_since_last_revision < 0) {\n";
-    report += "    console.warn('Future date detected, clamping to 0');\n";
-    report += "    days_since_last_revision = 0;\n";
-    report += "}\n";
-    report += "```\n\n";
-    report += "### B. ML Sanity Check\n";
-    report += "```typescript\n";
-    report += "// In ml-bridge.ts\n";
-    report += "if (features.avg_quiz_score > 0.8 && prediction.mastery_probability < 0.2) {\n";
-    report += "    // Flag for review, potentially fallback to rule-based heuristic\n";
-    report += "    return { ...prediction, predicted_class: 'error', error: 'Semantic mismatch' };\n";
-    report += "}\n";
-    report += "```\n\n";
-    report += "### C. Fallback Synchronization\n";
-    report += "Replace `generateStudentIntelligence` random logic with a deterministic heuristic that mirrors the ML model (e.g. `score * 0.9`).\n";
-
-    report += "\n## 6. Detailed Trace Logs\n";
-    traces.forEach(t => {
-        if (t.semanticViolations.length > 0) {
-            report += `### ${t.id}\n`;
-            report += "**Violations:**\n";
-            t.semanticViolations.forEach(v => report += `- ${v}\n`);
-            report += "\n**Trace Output:**\n```json\n";
-            report += JSON.stringify(t.steps, null, 2);
-            report += "\n```\n\n";
-        }
-    });
-
-    fs.writeFileSync('CAUSAL_INTEGRITY_REPORT.md', report);
-    console.log("Report generated: CAUSAL_INTEGRITY_REPORT.md");
+    fs.writeFileSync(reportPath, md);
+    console.log(`\nReport generated at: ${reportPath}`);
+    process.exit(0);
 }
 
-main();
+function estimateBlastRadius(r: TraceResult): string {
+    if (r.adkDecision.action === DecisionAction.PROGRESS_ALLOWED && r.mlOutput.mastery_probability < 0.4) {
+        return "CRITICAL: Student advances without mastery, leading to future failure spiral.";
+    }
+    if (r.adkDecision.action === DecisionAction.URGENT_REVISION && r.mlOutput.mastery_probability > 0.8) {
+        return "MEDIUM: User frustration due to unnecessary revision recommendations.";
+    }
+    return "LOW: Minor UI inconsistency.";
+}
+
+runTrace().catch(console.error);
