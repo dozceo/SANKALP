@@ -1,70 +1,333 @@
-# Causal Integrity Report: Cross-System Failure Analysis
+# Causal Integrity Report
 
-## 1. Visual Data Flow (DAG)
-
-The following Directed Acyclic Graph represents the causal chain from user input to UI rendering, annotated with observed silent failure points.
-
+## 1. Visual Causal Flow (DAG)
 ```mermaid
 graph TD
-    A[User Quiz Submission] -->|Raw Data| B(Feature Extraction)
-    B -->|Features| C{ML Prediction Model}
-    C -->|Prediction| D(ADK Decision Engine)
-    D -->|Decision| E{LLM Content Generation}
-    E -->|Explanation| F[UI Rendering]
-
-    subgraph "Silent Failure Points"
-    B -.->|Accepts Negative Time| B_Fail[Invalid Features]
-    C -.->|Overconfidence (1.0)| C_Fail[False Mastery]
-    C -.->|Process Error (0.0)| C_Err[Default Fallback]
-    D -.->|Blind Trust| D_Fail[Inappropriate Strategy]
-    end
+    A[User Quiz] -->|Raw Data| B(Feature Extraction)
+    B -->|Features| C{ML Model}
+    C -->|Mastery Prob| D{ADK Decision Engine}
+    D -->|Decision| E[LLM Prompt]
+    D -->|Mode| F[UI Rendering]
+    E -->|Explanation| F
+    G[Fallback Logic] -.->|Random Data| F
+    style G stroke:#f00,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
 ## 2. Semantic Coherence Violation Matrix
-
-This matrix highlights where the semantic meaning of the data diverges from the system's output.
-
-| Stage | Input State | Output State | Semantic Violation | Severity |
-| :--- | :--- | :--- | :--- | :--- |
-| **ML Prediction** | Low Quiz Scores (Avg: 24%) | Mastery Probability: 1.0 (Mastered) | **Complete Inversion**: System claims failing student is a master. | **CRITICAL** |
-| **Feature Extraction** | Time Spent: -10 seconds | Valid Feature Set | **Physical Impossibility**: Negative time accepted. | HIGH |
-| **ADK Decision** | ML Error (Prob: 0.0) | Action: SCHEDULED_REVISION | **Masking**: System failure presented as "Routine Recommendation". | MEDIUM |
-| **LLM Generation** | Action: PROGRESS_ALLOWED | Text: "Strong mastery - ready for advanced content" | **Hallucination Support**: LLM justifies the false mastery prediction. | HIGH |
+| Scenario | Violations Found |
+|---|---|
+| Baseline: Good Student | 🟢 None |
+| Fault: ML Under-prediction | 🔴 3 |
+| Edge: Future Quiz Date | 🔴 2 |
 
 ## 3. Silent Failure Cascade Scenarios
-
-### Scenario A: The "False Master" (Critical)
-1.  **Trigger**: Student takes multiple quizzes, scoring poorly (20-30%).
-2.  **Propagation**:
-    *   **Feature Extraction**: Correctly calculates low average.
-    *   **ML Prediction**: Incorrectly predicts `mastery_probability: 1.0` (likely due to overfitting or data drift).
-    *   **ADK Decision**: Sees 1.0, applies `Rule 4 (High Mastery)`. Decides `PROGRESS_ALLOWED`.
-    *   **LLM**: Generates "You have mastered this topic! Moving to advanced concepts."
-3.  **Outcome**: Failing student is encouraged to skip fundamentals and attempt advanced work, leading to frustration and dropout. **No error is logged.**
-
-### Scenario B: The "Hidden Outage"
-1.  **Trigger**: ML Python bridge fails (e.g., missing dependency `joblib`).
-2.  **Propagation**:
-    *   **ML Bridge**: Catches error, returns default `mastery_probability: 0`.
-    *   **ADK Decision**: Sees 0.0. Checks rules. `Rule 1` & `Rule 2` fail due to missing auxiliary signals (`days_until_forget`, `attention_risk`).
-    *   **Default Fallback**: Applies `SCHEDULED_REVISION` (Routine).
-3.  **Outcome**: User receives a generic "Review this topic" message regardless of actual needs. System appears functional but intelligence is dead.
+- **Scenario 1: API Failure -> Fallback Divergence**. If the ML API is unreachable, the frontend silently falls back to `generateStudentIntelligence`, which uses random numbers for revision dates. This causes the UI to recommend revision for topics recently mastered, or ignore stale topics.
+- **Scenario 2: Future Date Corruption**. If a client sends a future timestamp (e.g., misconfigured clock), Feature Extraction produces negative `days_since_revision`. This propagates to ML and ADK without error, potentially causing erratic retention predictions.
+- **Scenario 3: High Score / Low Mastery**. If the ML model drifts or is poisoned (e.g. predicts 0.1 mastery for 0.9 quiz score), the ADK triggers 'ADAPTIVE_TEACHING' for a mastered topic. The UI reflects this with 'High Priority', confusing the user.
 
 ## 4. Blast Radius Analysis
+| Failure Point | Impact Scope | User Perception | Severity |
+|---|---|---|---|
+| **Feature Extraction (Negative Time)** | ML, ADK, UI | Confusing retention stats | Medium |
+| **ML Prediction (Model Drift)** | ADK, UI, LLM | Wrong study recommendations | High |
+| **Fallback Logic (Random)** | UI | 'It works but it's wrong' | Critical |
 
-*   **ML Model Failure**: 100% of revision recommendations are currently untrustworthy due to the "False Master" prediction bug.
-*   **Feature Validation**: The lack of bounds checking (e.g., negative time) allows corrupted data to poison the ML model, potentially causing the erratic predictions.
-*   **ADK Logic**: The decision engine relies entirely on the ML probability being accurate. It lacks a "sanity check" (e.g., "If avg_score < 0.3, CANNOT be Mastered").
+## 5. Recommended Circuit Breakers
+To prevent these silent failures, the following semantic guards should be implemented:
 
-## 5. Recommendations
+### A. Feature Extraction Guard
+```typescript
+if (days_since_last_revision < 0) {
+    console.warn('Future date detected, clamping to 0');
+    days_since_last_revision = 0;
+}
+```
 
-1.  **Circuit Breakers**:
-    *   **Feature Layer**: Throw error if `time_spent < 0` or `score < 0`.
-    *   **ADK Layer**: Implement a "Sanity Guard".
-        ```typescript
-        if (ml.mastery_probability > 0.8 && features.avg_quiz_score < 0.5) {
-            return ForceRemedialAction();
+### B. ML Sanity Check
+```typescript
+// In ml-bridge.ts
+if (features.avg_quiz_score > 0.8 && prediction.mastery_probability < 0.2) {
+    // Flag for review, potentially fallback to rule-based heuristic
+    return { ...prediction, predicted_class: 'error', error: 'Semantic mismatch' };
+}
+```
+
+### C. Fallback Synchronization
+Replace `generateStudentIntelligence` random logic with a deterministic heuristic that mirrors the ML model (e.g. `score * 0.9`).
+
+## 6. Detailed Trace Logs
+### Fault: ML Under-prediction
+**Violations:**
+- ML Integrity: High quiz score (0.9) led to low mastery prediction (0.1)
+- UI Integrity: High priority decision mapped to PROGRESS_MODE
+- Silent Failure: Fallback logic divergence. ML predicted 0.10 but fallback generated 0.90
+
+**Trace Output:**
+```json
+{
+  "featureExtraction": {
+    "name": "Feature Extraction",
+    "input": {
+      "studentId": "student-1",
+      "lastLoginDate": "2026-02-17T06:23:33.792Z",
+      "registrationDate": "2026-02-17T06:23:33.792Z",
+      "quizResults": [
+        {
+          "topic": "Calculus",
+          "score": 0.9,
+          "timestamp": "2026-02-17T06:23:33.792Z",
+          "timeSpent": 60,
+          "questionsAttempted": 10
         }
-        ```
-2.  **Model Retraining**: The current `mastery_model.pkl` is severely flawed (predicting 1.0 for low scores). It must be retrained with balanced, realistic data.
-3.  **Error Transparency**: If ML fails, the UI should indicate "Personalization unavailable" rather than giving a generic (potentially wrong) recommendation.
+      ]
+    },
+    "output": {
+      "avg_quiz_score": 0.9,
+      "attempts_per_topic": 1,
+      "days_since_last_revision": 0,
+      "quiz_score_variance": 0,
+      "time_spent_per_question": 6
+    },
+    "warnings": [],
+    "semanticValid": true
+  },
+  "mlPrediction": {
+    "name": "ML Prediction",
+    "input": {
+      "avg_quiz_score": 0.9,
+      "attempts_per_topic": 1,
+      "days_since_last_revision": 0,
+      "quiz_score_variance": 0,
+      "time_spent_per_question": 6
+    },
+    "output": {
+      "mastery_probability": 0.1,
+      "confidence": 0.8,
+      "predicted_class": "mastered"
+    },
+    "warnings": [],
+    "semanticValid": false
+  },
+  "adkDecision": {
+    "name": "ADK Decision",
+    "input": {
+      "topic": "Calculus",
+      "mlSignals": {
+        "mastery_probability": 0.1,
+        "confidence": 0.8,
+        "days_since_last_revision": 0,
+        "attempts_count": 1,
+        "attention_risk": "HIGH"
+      }
+    },
+    "output": {
+      "action": "ADAPTIVE_TEACHING",
+      "priority": "HIGH",
+      "contentStrategy": "INTERACTIVE",
+      "reasoning": "Low mastery with attention challenges - needs engaging format",
+      "adkFlags": [
+        "ADAPTIVE_TEACHING",
+        "ATTENTION_RISK"
+      ],
+      "llmContext": {
+        "strategy": "INTERACTIVE",
+        "targetDuration": "2-MIN",
+        "tone": "MOTIVATING",
+        "includeExamples": true,
+        "includeVisuals": true,
+        "difficulty": "BASIC"
+      }
+    },
+    "warnings": [],
+    "semanticValid": true
+  },
+  "uiRendering": {
+    "name": "UI Rendering",
+    "input": {
+      "mastery": {
+        "Calculus": {
+          "score": 0.1,
+          "priority": "HIGH",
+          "needsRevision": true
+        }
+      },
+      "adkDecision": "PROGRESS_MODE",
+      "reasoning": [
+        "Low mastery with attention challenges - needs engaging format"
+      ]
+    },
+    "output": "Tooltip: Low mastery with attention challenges - needs engaging format | Mode: PROGRESS_MODE",
+    "warnings": [],
+    "semanticValid": false
+  },
+  "fallbackCheck": {
+    "name": "Fallback Logic Check",
+    "input": null,
+    "output": {
+      "studentId": "student-1",
+      "mastery": {
+        "Calculus": {
+          "score": 0.9,
+          "confidence": 0.8,
+          "daysSinceRevision": 3,
+          "attempts": 8,
+          "trend": "IMPROVING",
+          "priority": "LOW",
+          "needsRevision": false
+        }
+      },
+      "revisionUrgency": "NONE",
+      "attentionRisk": "LOW",
+      "adkDecision": "PROGRESS_MODE",
+      "confidence": "HIGH",
+      "generatedAt": "2026-02-17T06:23:33.794Z",
+      "reasoning": [
+        "Average mastery: 90%",
+        "0 high-priority topics",
+        "No specific weaknesses identified"
+      ],
+      "flags": []
+    },
+    "warnings": [],
+    "semanticValid": false
+  }
+}
+```
+
+### Edge: Future Quiz Date
+**Violations:**
+- Feature Extraction: Negative days since last revision
+- Silent Failure: Fallback logic uses random revision dates (5 vs actual -5)
+
+**Trace Output:**
+```json
+{
+  "featureExtraction": {
+    "name": "Feature Extraction",
+    "input": {
+      "studentId": "student-1",
+      "lastLoginDate": "2026-02-17T06:23:33.792Z",
+      "registrationDate": "2026-02-17T06:23:33.792Z",
+      "quizResults": [
+        {
+          "topic": "Calculus",
+          "score": 0.9,
+          "timestamp": "2026-02-22T06:23:33.794Z",
+          "timeSpent": 60,
+          "questionsAttempted": 10
+        }
+      ]
+    },
+    "output": {
+      "avg_quiz_score": 0.9,
+      "attempts_per_topic": 1,
+      "days_since_last_revision": -5,
+      "quiz_score_variance": 0,
+      "time_spent_per_question": 6
+    },
+    "warnings": [
+      "Negative days_since_last_revision: -5"
+    ],
+    "semanticValid": false
+  },
+  "mlPrediction": {
+    "name": "ML Prediction",
+    "input": {
+      "avg_quiz_score": 0.9,
+      "attempts_per_topic": 1,
+      "days_since_last_revision": -5,
+      "quiz_score_variance": 0,
+      "time_spent_per_question": 6
+    },
+    "output": {
+      "mastery_probability": 0.8600000000000001,
+      "confidence": 0.8,
+      "predicted_class": "mastered"
+    },
+    "warnings": [],
+    "semanticValid": true
+  },
+  "adkDecision": {
+    "name": "ADK Decision",
+    "input": {
+      "topic": "Calculus",
+      "mlSignals": {
+        "mastery_probability": 0.8600000000000001,
+        "confidence": 0.8,
+        "days_since_last_revision": -5,
+        "attempts_count": 1,
+        "attention_risk": "LOW"
+      }
+    },
+    "output": {
+      "action": "PROGRESS_ALLOWED",
+      "priority": "LOW",
+      "contentStrategy": "CHALLENGE",
+      "reasoning": "Strong mastery - ready for advanced content",
+      "adkFlags": [
+        "MASTERY_ACHIEVED"
+      ],
+      "llmContext": {
+        "strategy": "CHALLENGE",
+        "targetDuration": "15-MIN",
+        "tone": "CHALLENGING",
+        "includeExamples": false,
+        "includeVisuals": false,
+        "difficulty": "ADVANCED"
+      }
+    },
+    "warnings": [],
+    "semanticValid": true
+  },
+  "uiRendering": {
+    "name": "UI Rendering",
+    "input": {
+      "mastery": {
+        "Calculus": {
+          "score": 0.8600000000000001,
+          "priority": "LOW",
+          "needsRevision": false
+        }
+      },
+      "adkDecision": "PROGRESS_MODE",
+      "reasoning": [
+        "Strong mastery - ready for advanced content"
+      ]
+    },
+    "output": "Tooltip: Strong mastery - ready for advanced content | Mode: PROGRESS_MODE",
+    "warnings": [],
+    "semanticValid": true
+  },
+  "fallbackCheck": {
+    "name": "Fallback Logic Check",
+    "input": null,
+    "output": {
+      "studentId": "student-1",
+      "mastery": {
+        "Calculus": {
+          "score": 0.9,
+          "confidence": 0.8,
+          "daysSinceRevision": 5,
+          "attempts": 5,
+          "trend": "IMPROVING",
+          "priority": "LOW",
+          "needsRevision": false
+        }
+      },
+      "revisionUrgency": "NONE",
+      "attentionRisk": "LOW",
+      "adkDecision": "PROGRESS_MODE",
+      "confidence": "HIGH",
+      "generatedAt": "2026-02-17T06:23:33.794Z",
+      "reasoning": [
+        "Average mastery: 90%",
+        "0 high-priority topics",
+        "No specific weaknesses identified"
+      ],
+      "flags": []
+    },
+    "warnings": [],
+    "semanticValid": false
+  }
+}
+```
