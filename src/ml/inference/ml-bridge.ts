@@ -112,12 +112,7 @@ class PythonBridge {
                 delete data._id;
 
                 if (data.error) {
-                    req.resolve({
-                        mastery_probability: 0,
-                        confidence: 0,
-                        predicted_class: "error",
-                        error: data.error
-                    });
+                    req.reject(new Error(data.error));
                 } else {
                     req.resolve(data as MasteryPredictionOutput);
                 }
@@ -147,6 +142,8 @@ class PythonBridge {
                 if (this.pendingRequests.has(id)) {
                     this.pendingRequests.delete(id);
                     reject(new Error("Timeout waiting for Python inference"));
+                    // Fail fast: Kill the process if it's unresponsive to prevent queue blocking
+                    this.process?.kill();
                 }
             }, 10000);
 
