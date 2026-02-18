@@ -1,156 +1,74 @@
 # Genkit Flow Validation Audit Report
 
-**Date:** October 26, 2023
-**Scope:** `src/ai/flows/*.ts`
-**Objective:** Verify that all Genkit flows enforce strict input validation via Zod schemas and do not construct LLM prompts using unvalidated input.
+**Date:** 2024-05-24
+**Scope:** `src/ai/flows/`
 
-## Summary of Findings
+## Executive Summary
+A static analysis audit of all Genkit flow definitions was performed to detect unvalidated input parameters, string concatenation in prompts, and missing Zod constraints. The audit identified significant security risks across multiple flows, including potential prompt injection vectors and unsafe input handling.
 
-A static analysis of the 8 Genkit flow definitions revealed consistent security gaps across all files. The primary issues are:
-1.  **Missing Length Constraints:** String inputs (`z.string()`) lack `.max()` constraints, allowing for potential Denial of Service (DoS) attacks via large payloads.
-2.  **Unrestricted Input Content:** Free-form text fields accept any character, including potential prompt injection sequences, without sanitization or pattern matching.
-3.  **Direct Prompt Injection:** User input is directly interpolated into LLM prompts using handlebars syntax (e.g., `{{{input}}}`), making the system vulnerable to prompt injection attacks if the input contains malicious instructions.
-4.  **Primitive Input Types:** Some flows (e.g., `speech-to-speech`, `text-to-speech`) use primitive `z.string()` schemas instead of structured objects, limiting extensibility and validation precision.
+## Methodology
+The audit was conducted using a custom TypeScript AST analysis script (`scripts/audit-genkit-flows.ts`) that scanned for:
+- `ai.generate` calls using template literals or string concatenation (High Risk).
+- `ai.definePrompt` definitions using unescaped Handlebars `{{{...}}}` (High Risk).
+- `ai.definePrompt` definitions using escaped Handlebars `{{...}}` (Medium Risk - still vulnerable to instruction injection).
+- Direct variable usage in prompts (Medium Risk).
+- Unsafe `JSON.parse` usage on input fields.
 
-## Detailed Analysis
+## Detailed Findings
 
-### 1. `src/ai/flows/adaptive-quiz-engine.ts`
+### High Risk Findings
 
--   **Flow Name:** `adaptiveQuizFlow`
--   **Input Schema:**
-    ```typescript
-    z.object({
-      topic: z.string(),
-      numQuestions: z.number(),
-      educationLevel: z.string(),
-      difficulty: z.enum(['Easy', 'Medium', 'Hard']),
-    })
-    ```
--   **Vulnerabilities:**
-    -   `topic`: Unbounded string. Vulnerable to prompt injection (e.g., "Math. Ignore previous instructions...").
-    -   `numQuestions`: Unbounded number. Could request negative or excessive questions (DoS).
-    -   `educationLevel`: Unbounded string.
--   **Risk Level:** **High**
--   **Remediation:**
-    -   `topic`: `z.string().min(3).max(100).regex(/^[a-zA-Z0-9\s\-_]+$/)`
-    -   `numQuestions`: `z.number().int().min(1).max(20)`
-    -   `educationLevel`: `z.string().max(50)` or use an Enum (e.g., `z.enum(['High School', 'University'])`).
+#### 1. `src/ai/flows/speech-to-speech.ts`
+- **Issue:** Uses template literal for prompt construction.
+- **Details:** `prompt: \`You are CognitoBot... Question: "${userQuery}"\``
+- **Impact:** Critical. Allows direct prompt injection if `userQuery` contains malicious instructions.
+- **Recommendation:** Use `ai.definePrompt` with structured input or sanitize `userQuery` rigorously.
 
-### 2. `src/ai/flows/custom-cognitive-chatbot.ts`
+#### 2. `src/ai/flows/custom-cognitive-chatbot.ts`
+- **Issue:** Uses unescaped Handlebars `{{{...}}}`.
+- **Details:** `prompt: ... {{{personality}}} ... {{{customInstructions}}} ...`
+- **Impact:** High. Input parameters are injected directly without escaping.
+- **Recommendation:** Use double braces `{{...}}` where possible, or validate that inputs do not contain prompt injection payloads.
 
--   **Flow Name:** `customizedConceptFlow`
--   **Input Schema:**
-    ```typescript
-    z.object({
-      concept: z.string(),
-      brainMapContext: z.string(),
-      language: z.string(),
-      personality: z.string(),
-      customInstructions: z.string(),
-    })
-    ```
--   **Vulnerabilities:**
-    -   `customInstructions`: **Critical Risk**. Allows direct modification of system behavior.
-    -   All fields are unbounded strings.
--   **Risk Level:** **Critical**
--   **Remediation:**
-    -   `customInstructions`: Strictly validate against a whitelist of allowed instruction types or remove entirely if not essential. If essential, restrict length significantly (e.g., `max(200)`).
-    -   `concept`: `z.string().max(200)`
-    -   `language`: `z.string().max(50)` (or ISO code validation).
-    -   `personality`: `z.enum([...])` or strict length limit.
+#### 3. `src/ai/flows/mindful-mentor.ts`
+- **Issue:** Uses unescaped Handlebars `{{{...}}}`.
+- **Impact:** High. Similar to the cognitive chatbot, allows injection via unescaped inputs.
 
-### 3. `src/ai/flows/mindful-mentor.ts`
+#### 4. `src/ai/flows/multilingual-cognitive-chatbot.ts`
+- **Issue:** Uses unescaped Handlebars `{{{...}}}`.
+- **Impact:** High.
 
--   **Flow Name:** `mindfulMentorFlow`
--   **Input Schema:**
-    ```typescript
-    z.object({
-      studentConcern: z.string(),
-      studentHistory: z.string(),
-    })
-    ```
--   **Vulnerabilities:**
-    -   `studentConcern`: Unbounded string. Primary vector for jailbreaking attempts.
-    -   `studentHistory`: Unbounded string.
--   **Risk Level:** **High**
--   **Remediation:**
-    -   `studentConcern`: `z.string().max(1000)`
-    -   `studentHistory`: `z.string().max(2000)`
+#### 5. `src/ai/flows/smart-revision-planner.ts`
+- **Issue:** Uses unescaped Handlebars `{{{...}}}` AND Unsafe `JSON.parse`.
+- **Details:** Parses `input.brainMap` (string) as JSON without schema validation on the structure, then injects parts of it into the prompt.
+- **Impact:** High. Malicious JSON structure could inject arbitrary content into the prompt logic.
+- **Recommendation:** Define a Zod schema for the JSON structure and validate after parsing.
 
-### 4. `src/ai/flows/multilingual-cognitive-chatbot.ts`
+#### 6. `src/ai/flows/syllabus-generator.ts`
+- **Issue:** Uses unescaped Handlebars `{{{...}}}`.
+- **Impact:** High.
 
--   **Flow Name:** `explainConceptFlow`
--   **Input Schema:**
-    ```typescript
-    z.object({
-      concept: z.string(),
-      brainMapContext: z.string(),
-      language: z.string(),
-    })
-    ```
--   **Vulnerabilities:**
-    -   Similar to `custom-cognitive-chatbot.ts`, but without `customInstructions`.
-    -   `concept` and `language` are unbounded.
--   **Risk Level:** **Medium**
--   **Remediation:**
-    -   `concept`: `z.string().max(200)`
-    -   `language`: `z.string().max(50)`
+### Medium Risk Findings
 
-### 5. `src/ai/flows/smart-revision-planner.ts`
+#### 1. `src/ai/flows/adaptive-quiz-engine.ts`
+- **Issue:** Uses double braces `{{...}}`.
+- **Details:** While HTML-escaped, this does not prevent instruction injection (e.g., "Ignore previous instructions").
+- **Recommendation:** Ensure inputs are strictly validated (e.g., max length, allowed characters).
 
--   **Flow Name:** `smartRevisionPlannerFlow`
--   **Input Schema:**
-    ```typescript
-    z.object({
-      brainMap: z.string(), // JSON string
-      studentId: z.string(),
-    })
-    ```
--   **Vulnerabilities:**
-    -   `brainMap`: Accepts a raw JSON string. If parsed without validation, the structure is trusted blindly.
-    -   `topicsToExplain` (internal prompt input): Constructed from ML decisions, but relies on `topic` names which come from the `brainMap` input. Indirect injection possible if `brainMap` contains malicious topic names.
--   **Risk Level:** **Medium**
--   **Remediation:**
-    -   `brainMap`: Validate the parsed object against a strict Zod schema immediately after `JSON.parse()`.
-    -   `studentId`: `z.string().uuid()` or specific format.
+#### 2. `src/ai/flows/text-to-speech.ts`
+- **Issue:** Uses direct variable for prompt.
+- **Details:** `prompt: text`
+- **Impact:** Medium. The user controls the entire prompt. While intended for TTS, it bypasses prompt engineering controls.
 
-### 6. `src/ai/flows/speech-to-speech.ts`
-
--   **Flow Name:** `speechToSpeechFlow`
--   **Input Schema:** `z.string()` (Data URI)
--   **Vulnerabilities:**
-    -   Input validation is weak (relies on description).
-    -   **Indirect Prompt Injection:** The flow transcribes audio to text (`userQuery`) and then inserts it directly into the prompt: `Question: "${userQuery}"`. Malicious audio can inject commands.
--   **Risk Level:** **High**
--   **Remediation:**
-    -   Input: Validate Data URI format strictly (MIME type, base64).
-    -   Prompt: Use structured prompt inputs instead of string interpolation for `userQuery` if supported, or sanitize `userQuery` (though difficult for natural language). Use "Sandwich Defense" or delimiter instructions in the system prompt.
-
-### 7. `src/ai/flows/syllabus-generator.ts`
-
--   **Flow Name:** `syllabusGeneratorFlow`
--   **Input Schema:**
-    ```typescript
-    z.object({
-      query: z.string(),
-    })
-    ```
--   **Vulnerabilities:**
-    -   `query`: Unbounded string.
--   **Risk Level:** **Medium**
--   **Remediation:**
-    -   `query`: `z.string().min(3).max(100).regex(/^[a-zA-Z0-9\s\-_]+$/)`
-
-### 8. `src/ai/flows/text-to-speech.ts`
-
--   **Flow Name:** `textToSpeechFlow`
--   **Input Schema:** `z.string()`
--   **Vulnerabilities:**
-    -   Unbounded string length. Sending massive text could cause high costs or timeouts.
--   **Risk Level:** **Low** (primarily DoS/Cost)
--   **Remediation:**
-    -   Input: `z.string().max(5000)`
+## Recommendations
+1.  **Migrate to `ai.definePrompt` everywhere:** Avoid manual `ai.generate` calls with template strings.
+2.  **Sanitize Inputs:** Implement a "Prompt Firewall" or validation layer that checks for common injection patterns (e.g., "Ignore previous instructions").
+3.  **Strict Zod Schemas:** Replace `z.string()` with `z.string().max(N).regex(...)` to constrain input space.
+4.  **Structured Output:** Continue enforcing `outputSchema` to mitigate the impact of successful injections.
+5.  **Review `JSON.parse`:** Avoid passing JSON as strings. If necessary, use `z.string().transform(str => JSON.parse(str))` combined with a Zod schema for the parsed object.
 
 ## Conclusion
+The current implementation of Genkit flows exposes several surfaces to prompt injection attacks. Immediate remediation is required for `speech-to-speech.ts` and `smart-revision-planner.ts` due to the combination of complex logic and loose validation.
 
-The current state of Genkit flows represents a significant security risk due to the lack of strict input validation. Immediate remediation is recommended to implement the Zod constraints outlined above.
+---
+*Generated by `scripts/audit-genkit-flows.ts`*
