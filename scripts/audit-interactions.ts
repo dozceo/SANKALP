@@ -1,125 +1,124 @@
+import fs from 'fs';
+import path from 'path';
 
-import * as fs from 'fs';
-import * as path from 'path';
+const TARGET_DIRS = ['src/app', 'src/components'];
+const OUTPUT_FILE = 'interaction-feedback-gap-report.md';
 
-const INTERACTIVE_ELEMENTS = ['button', 'a', 'input', 'select', 'textarea'];
-
-interface InteractionIssue {
+interface Gap {
   file: string;
+  line: number;
   element: string;
-  issue: string;
+  missing: string[];
 }
 
-const issues: InteractionIssue[] = [];
+const gaps: Gap[] = [];
+
+// Interactive elements to check
+const ELEMENTS = ['button', 'a', 'input', 'select', 'textarea'];
 
 function scanFile(filePath: string) {
   const content = fs.readFileSync(filePath, 'utf-8');
+  const lines = content.split('\n');
+  const fileName = path.basename(filePath, '.tsx').toLowerCase();
 
-  // 1. Check for interactive elements and missing states
-  // Regex to match opening tag of interactive elements
-  // This is a rough approximation.
-  const tagRegex = /<(button|a|input|select|textarea)\b([^>]*)>/g;
-  let match;
-  while ((match = tagRegex.exec(content)) !== null) {
-    const element = match[1];
-    const attributes = match[2];
+  // 1. Check UI Component definitions (in src/components/ui)
+  if (filePath.includes('src/components/ui/') && ELEMENTS.includes(fileName)) {
+     // Check whole file for state classes
+     const missing: string[] = [];
 
-    // Find className inside attributes
-    const classMatch = attributes.match(/className=["']([^"']+)["']/);
-    if (classMatch) {
-      const classes = classMatch[1];
-      const missing: string[] = [];
+     // Hover
+     if (fileName !== 'input' && fileName !== 'textarea' && fileName !== 'select') {
+         if (!content.includes('hover:') && !content.includes('data-[state=open]') && !content.includes('data-[state=checked]')) {
+             // Allow other states as proxies for interactivity if component is complex
+             missing.push('hover');
+         }
+     }
 
-      // Check for hover
-      if (!classes.includes('hover:') && !classes.includes('group-hover:')) {
-          // If it's a button, it should have hover.
-          // If it uses a variant (e.g. valid shadcn classes like 'ghost'), it might handle it?
-          // But here we see raw classes.
-          missing.push('hover');
-      }
+     // Focus
+     if (!content.includes('focus:') && !content.includes('focus-visible:') && !content.includes('ring-')) {
+         missing.push('focus');
+     }
 
-      // Check for focus
-      if (!classes.includes('focus:') && !classes.includes('focus-visible:') && !classes.includes('ring-')) {
-          missing.push('focus');
-      }
+     // Disabled
+     if ((fileName === 'button' || fileName === 'input' || fileName === 'select' || fileName === 'textarea')) {
+         if (!content.includes('disabled:') && !content.includes('aria-disabled:') && !content.includes('data-[disabled]')) {
+             missing.push('disabled');
+         }
+     }
 
-      // Check for active (only for button really critical)
-      if (element === 'button' && !classes.includes('active:')) {
-          missing.push('active');
-      }
+     if (missing.length > 0) {
+         gaps.push({
+             file: filePath,
+             line: 1,
+             element: `UI Component: ${fileName}`,
+             missing: missing
+         });
+     }
+     return;
+  }
 
-      // Check for disabled (button, input, etc)
-      if ((element === 'button' || element === 'input') && !classes.includes('disabled:')) {
-          // Check if 'disabled' attribute is present as a prop?
-          // But visual feedback needs a class usually, unless default browser styles are relied upon.
-          // Tailwind requires disabled: modifiers.
-          missing.push('disabled');
-      }
+  // 2. Check Raw HTML usage in other files
+  lines.forEach((line, index) => {
+    // Regex for <tag ... className="...">
+    // Matches <button ... className="...">
+    const match = line.match(/<(button|a|input|select|textarea)\b([^>]*)>/);
+    if (match) {
+        const tag = match[1];
+        const attr = match[2];
 
-      // Filter out false positives for 'a' tag
-      if (element === 'a') {
-         // remove active/disabled
-         const aIndex = missing.indexOf('active');
-         if (aIndex > -1) missing.splice(aIndex, 1);
-         const dIndex = missing.indexOf('disabled');
-         if (dIndex > -1) missing.splice(dIndex, 1);
-      }
+        // Only check if className is present
+        const classMatch = attr.match(/className=["']([^"']+)["']/);
+        if (classMatch) {
+            const classes = classMatch[1];
+            const missing: string[] = [];
 
-      if (missing.length > 0) {
-        issues.push({
-          file: filePath,
-          element,
-          issue: `Missing states: ${missing.join(', ')}`
-        });
-      }
-    } else {
-        // No className? using default styles? or style prop?
-        // If no className, we can't check for utility classes.
-        // Assuming it might be unstyled or using global styles.
-        // Warn if it's a raw button.
-        if (element === 'button') {
-            issues.push({
-                file: filePath,
-                element,
-                issue: 'Raw button without className (missing visual feedback check)'
-            });
+            // Hover
+            if (tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
+                 if (!classes.includes('hover:') && !classes.includes('group-hover:') && !classes.includes('peer-hover:')) {
+                     // Check if parent has group? Can't easily.
+                     // Just flag it.
+                     missing.push('hover');
+                 }
+            }
+
+            // Focus
+            if (!classes.includes('focus:') && !classes.includes('focus-visible:') && !classes.includes('ring-')) {
+                 missing.push('focus');
+            }
+
+            // Disabled
+            if ((tag === 'button' || tag === 'input' || tag === 'select' || tag === 'textarea')) {
+                 if (!classes.includes('disabled:') && !classes.includes('aria-disabled:')) {
+                     missing.push('disabled');
+                 }
+            }
+
+            if (missing.length > 0) {
+                gaps.push({
+                    file: filePath,
+                    line: index + 1,
+                    element: `<${tag}>`,
+                    missing: missing
+                });
+            }
+        }
+
+        // 3. Loading State Check (Heuristic)
+        // If it's a submit button, check if it has disabled logic or loading indicator
+        if (tag === 'button' && attr.includes('type="submit"')) {
+             if (!attr.includes('disabled={') && !attr.includes('aria-busy')) {
+                  // gaps.push(...) - maybe too noisy?
+                  // Let's add it to a separate category or same gap list
+                  gaps.push({
+                      file: filePath,
+                      line: index + 1,
+                      element: `<${tag} type="submit">`,
+                      missing: ['loading state handling (disabled={...} or aria-busy)']
+                  });
+             }
         }
     }
-  }
-
-  // 2. Check for non-interactive elements with onClick
-  const clickRegex = /<(div|span|p|li|section|article)\b([^>]*)onClick/g;
-  while ((match = clickRegex.exec(content)) !== null) {
-      const element = match[1];
-      const attributes = match[2];
-
-      // Check for role="button" and tabIndex
-      const hasRole = attributes.includes('role="button"');
-      const hasTabIndex = attributes.includes('tabIndex');
-
-      if (!hasRole || !hasTabIndex) {
-          issues.push({
-              file: filePath,
-              element,
-              issue: `Non-interactive element with onClick missing role="button" or tabIndex`
-          });
-      }
-
-      // Also check visual feedback
-      if (attributes.includes('className')) {
-           const classMatch = attributes.match(/className=["']([^"']+)["']/);
-           if (classMatch) {
-               const classes = classMatch[1];
-               if (!classes.includes('hover:') && !classes.includes('cursor-pointer')) {
-                   issues.push({
-                       file: filePath,
-                       element,
-                       issue: `Clickable ${element} missing hover state or cursor-pointer`
-                   });
-               }
-           }
-      }
-  }
+  });
 }
 
 function traverseDir(dir: string) {
@@ -137,18 +136,25 @@ function traverseDir(dir: string) {
 }
 
 console.log('Starting Interaction Audit...');
-traverseDir('src/app');
-traverseDir('src/components');
+TARGET_DIRS.forEach(dir => traverseDir(dir));
 
 let report = '# Interaction Feedback Gap Report\n\n';
-if (issues.length === 0) {
+if (gaps.length === 0) {
   report += 'No interaction feedback gaps found.\n';
 } else {
-  report += '| File | Element | Issue |\n|---|---|---|\n';
-  issues.forEach(i => {
-    report += `| ${i.file} | ${i.element} | ${i.issue} |\n`;
+  report += '| File | Line | Element | Missing States |\n|---|---|---|---|\n';
+  // Sort by file and line
+  gaps.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+  gaps.forEach(g => {
+    report += `| ${g.file} | ${g.line} | \`${g.element}\` | ${g.missing.join(', ')} |\n`;
   });
 }
 
-fs.writeFileSync('interaction-feedback-gap-report.md', report);
-console.log('Interaction Audit Complete. Report saved to interaction-feedback-gap-report.md');
+report += `\n## Methodology
+- **UI Components**: Verified definition files in \`src/components/ui/\` for presence of state modifiers.
+- **Raw Elements**: Scanned raw HTML tags (\`<button>\`, \`<a>\`, etc.) with inline classes.
+- **Submit Buttons**: Checked for \`disabled={...}\` or \`aria-busy\` on buttons with \`type="submit"\`.
+`;
+
+fs.writeFileSync(OUTPUT_FILE, report);
+console.log(`Interaction Audit Complete. Report saved to ${OUTPUT_FILE}`);
