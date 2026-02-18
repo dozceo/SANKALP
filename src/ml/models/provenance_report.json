@@ -1,10 +1,10 @@
 {
   "model_name": "Topic Mastery Prediction Model",
   "version": "1.0.0",
-  "training_timestamp": "2026-02-17T19:35:33.685506",
+  "training_timestamp": "2026-02-18T05:34:59.200206",
   "provenance": {
     "git_commit_hash": "8a332c3b353be9d4531d9fd22b5e24b0a1ff4d70",
-    "script_hash": "ffe98b863caf789055943e4a72490955da1bfd7fad502a4c29cbd783c90b44f0",
+    "script_hash": "b6b5352b4da3eaa79fd3ad266e10b8f18c113f122a7bb418233c82fbc25173e0",
     "data_hash": "83fddbff3e7ff38dfb966846a4b97ff71546c13dc2bee04838263e2d302e613b",
     "script_path": "src/ml/training/train_mastery_model.py",
     "data_path": "src/ml/training/training_data.csv",
