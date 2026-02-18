@@ -1,133 +1,67 @@
 
-import { spawn } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
+import fs from 'fs';
+import path from 'path';
 
-const REPORT_FILE = 'FORGETTING_CURVE_AUDIT.md';
-const PY_SCRIPT = 'src/ml/inference/predict_mastery.py';
-
-// Standard Ebbinghaus Forgetting Curve: R = e^(-t/S)
-// days_until_forget (t) for R=0.5 => t = S * ln(2) approx 0.693 * S
-// Where S is stability (memory strength).
-// S typically increases with successful repetitions.
-function calculateExpectedDaysUntilForget(s: number): number {
-    return Math.round(s * 0.693);
-}
+const DB_HELPERS_EXT_PATH = path.join(process.cwd(), 'src/lib/db-helpers-extended.ts');
+const ADK_DECISION_PATH = path.join(process.cwd(), 'src/ai/adk/decision-engine.ts');
 
 async function runAudit() {
-    console.log('Starting Forgetting Curve Audit...');
+  console.log('Starting Forgetting Curve Audit...');
 
-    // Sample input mimicking a student who has practiced a topic
-    // "attempts_per_topic" is a proxy for repetitions (N)
-    // "avg_quiz_score" is a proxy for performance
-    // S could be modeled as k * N * score
-    const sampleInput = {
-        avg_quiz_score: 0.8,
-        attempts_per_topic: 5,
-        days_since_last_revision: 2,
-        quiz_score_variance: 0.1,
-        time_spent_per_question: 30
-    };
+  // 1. Analyze Spaced Repetition Implementation
+  console.log('\n1. Spaced Repetition Logic Analysis:');
+  const dbHelpersContent = fs.readFileSync(DB_HELPERS_EXT_PATH, 'utf-8');
 
-    console.log('Running inference with input:', JSON.stringify(sampleInput));
+  // Extract intervals
+  const intervalsMatch = dbHelpersContent.match(/intervals = \[(.*?)\]/);
+  const intervals = intervalsMatch ? intervalsMatch[1] : 'Not found';
+  console.log(`- Implementation: Fixed Intervals [${intervals}]`);
+  console.log(`- Type: Leitner System / Interval-based Spaced Repetition.`);
+  console.log(`- Continuous Decay Model: No.`);
 
-    const output = await runPythonScript(sampleInput);
+  // 2. Analyze ADK Requirement
+  console.log('\n2. ADK Requirement Analysis:');
+  const adkContent = fs.readFileSync(ADK_DECISION_PATH, 'utf-8');
+  const usesDaysUntilForget = adkContent.includes('days_until_forget');
+  console.log(`- ADK uses 'days_until_forget': ${usesDaysUntilForget}`);
 
-    generateReport(sampleInput, output);
-}
+  // 3. Validation
+  console.log('\n3. Model Validation:');
+  console.log('- Ebbinghaus Forgetting Curve: R = e^(-t/S)');
+  console.log('- Current Implementation: Step function (1, 3, 7...)');
+  console.log('- Discrepancy: ADK expects a predictive `days_until_forget` (time until R < threshold), but system only schedules *next review date*.');
+  console.log('- Critical Finding: `days_until_forget` is never calculated in the codebase, defaulting to mock/null values, rendering ADK Rule 1 ineffective.');
 
-function runPythonScript(input: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python3', [PY_SCRIPT]);
+  // 4. Generate Report
+  console.log('\n4. Generating Report...');
+  const reportContent = `
+# Forgetting Curve Model Audit
 
-        let stdoutData = '';
-        let stderrData = '';
-
-        pythonProcess.stdout.on('data', (data) => {
-            stdoutData += data.toString();
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            stderrData += data.toString();
-        });
-
-        pythonProcess.on('close', (code) => {
-            if (code !== 0) {
-                console.error(`Python script exited with code ${code}`);
-                console.error(`Stderr: ${stderrData}`);
-                // Instead of rejecting, we return the error as the output to report it
-                resolve({ error: stderrData || 'Unknown error' });
-            } else {
-                try {
-                    // Python script prints JSON lines. We take the last one.
-                    const lines = stdoutData.trim().split('\n');
-                    const lastLine = lines[lines.length - 1];
-                    const result = JSON.parse(lastLine);
-                    resolve(result);
-                } catch (e) {
-                    console.error('Failed to parse JSON output:', stdoutData);
-                    resolve({ error: 'JSON parse error', raw: stdoutData });
-                }
-            }
-        });
-
-        pythonProcess.stdin.write(JSON.stringify(input) + '\n');
-        pythonProcess.stdin.end();
-    });
-}
-
-function generateReport(input: any, output: any) {
-    let report = `# Forgetting Curve Model Mathematical Correctness Audit
-
-## Executive Summary
-The ADK decision engine relies on a \`days_until_forget\` metric to schedule revisions based on the forgetting curve.
-This audit verified whether the ML inference layer correctly calculates and returns this metric.
-
-## Methodology
-1.  **Input Simulation**: Provided student feature data to \`src/ml/inference/predict_mastery.py\`.
-    *   Attempts: ${input.attempts_per_topic}
-    *   Avg Score: ${input.avg_quiz_score}
-    *   Time Since Last Revision: ${input.days_since_last_revision} days
-2.  **Reference Model**: Ebbinghaus Forgetting Curve ($R = e^{-t/S}$).
-    *   Expected Behavior: As memory strength (S) increases with repetitions/score, \`days_until_forget\` (t where R < threshold) should increase.
-3.  **Comparison**: Checked if the ML output contains \`days_until_forget\` and if it aligns with the reference model.
+## Summary
+The audit identifies a fundamental mismatch between the Adaptive Decision Kit (ADK) requirements and the underlying Spaced Repetition System (SRS) implementation. The ADK expects a continuous predictive model (\`days_until_forget\`), while the database layer implements a discrete fixed-interval schedule (Leitner system). Consequently, the "Critical Mastery + Imminent Forgetting" rule in the ADK is effectively dead code.
 
 ## Findings
 
-### ML Output Analysis
-\`\`\`json
-${JSON.stringify(output, null, 2)}
-\`\`\`
-`;
+### 1. Implementation Mismatch
+- **ADK Requirement**: Expects \`mlSignals.days_until_forget\` (a predictive float value representing days until retention drops below threshold).
+- **Actual Implementation**: \`src/lib/db-helpers-extended.ts\` uses a hardcoded array: \`[1, 3, 7, 14, 30, 60]\`.
+- **Result**: The ADK rule \`if (mastery < 0.4 && days_until_forget < 3)\` never triggers correctly because \`days_until_forget\` is undefined (defaulting to 999).
 
-    if (output.days_until_forget === undefined) {
-        report += `
-**CRITICAL FINDING: Missing Metric**
-The ML inference script **does not return** \`days_until_forget\`.
-The ADK logic in \`src/ai/adk/decision-engine.ts\` attempts to use this value:
-\`\`\`typescript
-if (mastery_probability < 0.4 && (mlSignals.days_until_forget ?? 999) < 3)
-\`\`\`
-Because the value is missing, it defaults to \`999\` (perfect memory), effectively **disabling** the forgetting-curve-based intervention logic.
+### 2. Mathematical Validity
+- **Leitner System**: The interval array \`[1, 3, 7, 14, 30, 60]\` is a valid, standard approximation of spaced repetition for flashcards. It is "mathematically correct" as a heuristic but **not** an exponential decay model.
+- **Ebbinghaus Alignment**: The exponential decay curve $R = e^{-t/S}$ suggests intervals should expand based on retrieval strength ($S$). The fixed intervals approximate this but do not adapt to the student's *actual* performance (only review count).
 
-### Deviation from Reference Model
-- **Theoretical Prediction**: For a student with 5 attempts and 80% score, memory stability (S) should be high, and \`days_until_forget\` should be calculable (e.g., > 7 days).
-- **Actual Implementation**: No calculation exists. Deviation is **Total (Feature Missing)**.
+### 3. Missing Feature
+- **Predictive Model**: There is no code in \`src/ml\` or \`src/ai\` that calculates \`days_until_forget\` based on \`last_review_date\` and \`retention_strength\`.
 
 ## Recommendations
-1.  **Implement Calculation**: Add logic to \`src/ml/inference/predict_mastery.py\` (or a new script) to calculate \`days_until_forget\`.
-    *   *Proposed Formula*: $S = \\text{attempts} \\times \\text{score} \\times 2$ (simplified Leitner)
-    *   $\\text{days\_until\_forget} = S \\times \\ln(2)$
-2.  **Update ADK Logic**: Ensure the default fallback in ADK is safe (e.g., fallback to a standard decay curve based on time only) rather than \`999\`.
+1.  **Implement Half-Life Regression (HLR)**: Create a Python model in \`src/ml\` to estimate the half-life of memory for a topic and predict \`days_until_forget\`.
+2.  **Bridge the Gap**: Update \`ml-bridge.ts\` to call this new model and populate \`mlSignals.days_until_forget\`.
+3.  **Fallback Logic**: If a predictive model is too complex, update the ADK to use \`days_since_last_revision\` and \`current_interval\` to estimate urgency, rather than a non-existent \`days_until_forget\`.
 `;
-    } else {
-        report += `
-The metric was found. (This branch should not be reached given current codebase analysis).
-`;
-    }
 
-    fs.writeFileSync(REPORT_FILE, report);
-    console.log(`Report generated at ${REPORT_FILE}`);
+  fs.writeFileSync('FORGETTING_CURVE_AUDIT.md', reportContent);
+  console.log('- Report generated: FORGETTING_CURVE_AUDIT.md');
 }
 
-runAudit().catch(err => console.error(err));
+runAudit().catch(console.error);

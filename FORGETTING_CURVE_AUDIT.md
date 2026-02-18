@@ -1,43 +1,24 @@
-# Forgetting Curve Model Mathematical Correctness Audit
 
-## Executive Summary
-The ADK decision engine relies on a `days_until_forget` metric to schedule revisions based on the forgetting curve.
-This audit verified whether the ML inference layer correctly calculates and returns this metric.
+# Forgetting Curve Model Audit
 
-## Methodology
-1.  **Input Simulation**: Provided student feature data to `src/ml/inference/predict_mastery.py`.
-    *   Attempts: 5
-    *   Avg Score: 0.8
-    *   Time Since Last Revision: 2 days
-2.  **Reference Model**: Ebbinghaus Forgetting Curve ($R = e^{-t/S}$).
-    *   Expected Behavior: As memory strength (S) increases with repetitions/score, `days_until_forget` (t where R < threshold) should increase.
-3.  **Comparison**: Checked if the ML output contains `days_until_forget` and if it aligns with the reference model.
+## Summary
+The audit identifies a fundamental mismatch between the Adaptive Decision Kit (ADK) requirements and the underlying Spaced Repetition System (SRS) implementation. The ADK expects a continuous predictive model (`days_until_forget`), while the database layer implements a discrete fixed-interval schedule (Leitner system). Consequently, the "Critical Mastery + Imminent Forgetting" rule in the ADK is effectively dead code.
 
 ## Findings
 
-### ML Output Analysis
-```json
-{
-  "mastery_probability": 0.963,
-  "confidence": 0.963,
-  "predicted_class": "mastered"
-}
-```
+### 1. Implementation Mismatch
+- **ADK Requirement**: Expects `mlSignals.days_until_forget` (a predictive float value representing days until retention drops below threshold).
+- **Actual Implementation**: `src/lib/db-helpers-extended.ts` uses a hardcoded array: `[1, 3, 7, 14, 30, 60]`.
+- **Result**: The ADK rule `if (mastery < 0.4 && days_until_forget < 3)` never triggers correctly because `days_until_forget` is undefined (defaulting to 999).
 
-**CRITICAL FINDING: Missing Metric**
-The ML inference script **does not return** `days_until_forget`.
-The ADK logic in `src/ai/adk/decision-engine.ts` attempts to use this value:
-```typescript
-if (mastery_probability < 0.4 && (mlSignals.days_until_forget ?? 999) < 3)
-```
-Because the value is missing, it defaults to `999` (perfect memory), effectively **disabling** the forgetting-curve-based intervention logic.
+### 2. Mathematical Validity
+- **Leitner System**: The interval array `[1, 3, 7, 14, 30, 60]` is a valid, standard approximation of spaced repetition for flashcards. It is "mathematically correct" as a heuristic but **not** an exponential decay model.
+- **Ebbinghaus Alignment**: The exponential decay curve $R = e^{-t/S}$ suggests intervals should expand based on retrieval strength ($S$). The fixed intervals approximate this but do not adapt to the student's *actual* performance (only review count).
 
-### Deviation from Reference Model
-- **Theoretical Prediction**: For a student with 5 attempts and 80% score, memory stability (S) should be high, and `days_until_forget` should be calculable (e.g., > 7 days).
-- **Actual Implementation**: No calculation exists. Deviation is **Total (Feature Missing)**.
+### 3. Missing Feature
+- **Predictive Model**: There is no code in `src/ml` or `src/ai` that calculates `days_until_forget` based on `last_review_date` and `retention_strength`.
 
 ## Recommendations
-1.  **Implement Calculation**: Add logic to `src/ml/inference/predict_mastery.py` (or a new script) to calculate `days_until_forget`.
-    *   *Proposed Formula*: $S = \text{attempts} \times \text{score} \times 2$ (simplified Leitner)
-    *   $\text{days_until_forget} = S \times \ln(2)$
-2.  **Update ADK Logic**: Ensure the default fallback in ADK is safe (e.g., fallback to a standard decay curve based on time only) rather than `999`.
+1.  **Implement Half-Life Regression (HLR)**: Create a Python model in `src/ml` to estimate the half-life of memory for a topic and predict `days_until_forget`.
+2.  **Bridge the Gap**: Update `ml-bridge.ts` to call this new model and populate `mlSignals.days_until_forget`.
+3.  **Fallback Logic**: If a predictive model is too complex, update the ADK to use `days_since_last_revision` and `current_interval` to estimate urgency, rather than a non-existent `days_until_forget`.

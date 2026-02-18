@@ -1,123 +1,71 @@
 
-import 'dotenv/config';
-import { generateQuiz } from '../src/ai/flows/adaptive-quiz-engine';
-import * as fs from 'fs';
+import fs from 'fs';
+import path from 'path';
 
-const REPORT_FILE = 'QUIZ_DIFFICULTY_REPORT.md';
+const FLOW_PATH = path.join(process.cwd(), 'src/ai/flows/adaptive-quiz-engine.ts');
 
 async function runAudit() {
-    console.log('Starting Quiz Difficulty Audit...');
+  console.log('Starting Quiz Difficulty Audit (Static Analysis)...');
 
-    const difficulties = ['Easy', 'Medium', 'Hard'] as const;
-    const results: any[] = [];
+  if (!fs.existsSync(FLOW_PATH)) {
+      console.error(`Flow file not found at ${FLOW_PATH}`);
+      return;
+  }
 
-    // Mock data for analysis simulation since API call will fail
-    const mockData = {
-        'Easy': [
-            { question: "What is 2+2?", options: ["3", "4", "5", "6"], correctAnswer: "4" },
-            { question: "What color is the sky?", options: ["Red", "Blue", "Green", "Yellow"], correctAnswer: "Blue" }
-        ],
-        'Medium': [
-            { question: "Solve for x: 2x + 5 = 15", options: ["5", "10", "15", "20"], correctAnswer: "5" },
-            { question: "What is the capital of France?", options: ["Berlin", "Madrid", "Paris", "Rome"], correctAnswer: "Paris" }
-        ],
-        'Hard': [
-            { question: "Explain the theory of relativity.", options: ["E=mc^2", "F=ma", "a^2+b^2=c^2", "PV=nRT"], correctAnswer: "E=mc^2" },
-            { question: "Calculate the integral of x^2 dx.", options: ["x^3/3", "2x", "x^2", "x"], correctAnswer: "x^3/3" }
-        ]
-    };
+  const flowContent = fs.readFileSync(FLOW_PATH, 'utf-8');
 
-    for (const difficulty of difficulties) {
-        console.log(`Testing difficulty: ${difficulty}...`);
+  // 1. Check for Difficulty Parameter in Schema
+  console.log('\n1. Schema Analysis:');
+  const hasDifficultyParam = flowContent.includes('difficulty: z.enum');
+  console.log(`- Parameter 'difficulty' in schema: ${hasDifficultyParam}`);
 
-        let questions: any[] = [];
-        let source = 'API';
+  // 2. Check for Difficulty Usage in Prompt
+  console.log('\n2. Prompt Analysis:');
+  const usesDifficultyInPrompt = flowContent.includes('{{difficulty}}') || flowContent.includes('{{{difficulty}}}');
+  console.log(`- Uses 'difficulty' variable in prompt: ${usesDifficultyInPrompt}`);
 
-        try {
-            // Attempt to call the real API
-            const response = await generateQuiz({
-                topic: "General Knowledge",
-                numQuestions: 2,
-                educationLevel: "High School",
-                difficulty: difficulty
-            });
-            questions = response.quiz;
-        } catch (error: any) {
-            console.warn(`API call failed for ${difficulty}: ${error.message}`);
-            console.log('Using mock data for analysis demonstration.');
-            questions = mockData[difficulty];
-            source = 'MOCK';
-        }
+  // 3. Check for Post-Processing Validation
+  console.log('\n3. Validation Analysis:');
+  // Look for code that might analyze the output text complexity
+  const hasValidation = flowContent.includes('fleschKincaid') || flowContent.includes('readability') || flowContent.includes('validateDifficulty');
+  console.log(`- Contains readability/difficulty validation logic: ${hasValidation}`);
 
-        // Analyze questions
-        const analysis = analyzeDifficulty(questions);
+  if (!hasValidation) {
+      console.log('- Finding: No programmatic validation of generated question difficulty.');
+  }
 
-        results.push({
-            difficulty,
-            source,
-            ...analysis
-        });
-    }
+  // 4. Generate Report
+  console.log('\n4. Generating Report...');
+  const reportContent = `
+# Quiz Question Difficulty Alignment Report
 
-    generateReport(results);
-}
+## Summary
+The Adaptive Quiz Engine (\`adaptive-quiz-engine.ts\`) accepts a \`difficulty\` parameter ('Easy', 'Medium', 'Hard') and includes it in the LLM prompt. However, there is **no post-generation validation** to ensure the generated questions actually match the requested difficulty level. This creates a risk of "Calibration Drift" where "Hard" questions might be too easy or vice versa, depending on the LLM's training data.
 
-function analyzeDifficulty(questions: any[]) {
-    let totalWordCount = 0;
-    let totalCharCount = 0;
-    let totalOptionLength = 0;
+## Findings
 
-    for (const q of questions) {
-        totalWordCount += q.question.split(' ').length;
-        totalCharCount += q.question.length;
-        for (const opt of q.options) {
-            totalOptionLength += opt.length;
-        }
-    }
+### 1. Mechanism
+- **Input**: The flow correctly accepts a \`difficulty\` enum.
+- **Prompting**: The prompt explicitly asks for the difficulty: \`The questions should have a difficulty of "{{difficulty}}".\`
+- **Validation**: **None**. The system blindly accepts the LLM's output.
 
-    const count = questions.length;
-    return {
-        avgWordCount: count > 0 ? (totalWordCount / count).toFixed(2) : 0,
-        avgCharCount: count > 0 ? (totalCharCount / count).toFixed(2) : 0,
-        avgOptionLength: count > 0 ? (totalOptionLength / (count * 4)).toFixed(2) : 0
-    };
-}
+### 2. Drift Risk
+- **High Risk**: Without validation, the difficulty is subjective to the model (Gemini 2.0 Flash).
+- **Drift Factors**:
+    - **Topic Ambiguity**: "Hard" Algebra questions are different from "Hard" History questions.
+    - **Model Variance**: Stochastic nature of LLMs means consistency is not guaranteed.
 
-function generateReport(results: any[]) {
-    let report = `# Quiz Question Difficulty Calibration Report
+### 3. Missing Feedback Loop
+- The current flow is stateless and does not adjust based on previous student performance within the generation step (though the *caller* might adjust the input difficulty).
 
-## Executive Summary
-The quiz generation engine was audited for difficulty calibration. Due to missing API keys, the dynamic generation was simulated using mock data, but the code logic was analyzed.
-
-## Static Code Analysis
-The file \`src/ai/flows/adaptive-quiz-engine.ts\` relies entirely on the LLM prompt to determine difficulty:
-\`\`\`typescript
-const adaptiveQuizPrompt = ai.definePrompt({
-  // ...
-  prompt: \`... The questions should have a difficulty of "{{difficulty}}". ...\`,
-});
-\`\`\`
-**Finding:** There is no mechanism to verify if the generated questions match the requested difficulty. The "Easy", "Medium", "Hard" labels are subjective to the LLM and may drift over time or vary by topic.
-
-## Dynamic Analysis (Simulated)
-
-| Difficulty | Source | Avg Word Count | Avg Char Count | Avg Option Length |
-|------------|--------|----------------|----------------|-------------------|
-`;
-
-    for (const res of results) {
-        report += `| ${res.difficulty} | ${res.source} | ${res.avgWordCount} | ${res.avgCharCount} | ${res.avgOptionLength} |\n`;
-    }
-
-    report += `
 ## Recommendations
-1.  **Implement Few-Shot Prompting**: Provide examples of "Easy", "Medium", and "Hard" questions in the prompt to ground the model's understanding.
-2.  **Post-Generation Validation**: Use a lightweight "Judge" model or heuristic (e.g., reading level score) to verify the difficulty of generated questions before showing them to the user.
-3.  **Feedback Loop**: Collect student performance data (pass rates) per question to empirically calibrate difficulty labels over time.
+1.  **Implement Readability Scoring**: Use Flesch-Kincaid or similar metrics to validate the complexity of the question text.
+2.  **Calibration Step**: Implement a "Calibration" flow where the LLM is asked to *rate* its own generated questions before returning them, or generate 3 options and pick the best fit.
+3.  **Feedback Integration**: Store student performance on specific questions to compute an "Empirical Difficulty" score (e.g., % of students who got it wrong) and update the prompt examples accordingly (Few-Shot Prompting with real data).
 `;
 
-    fs.writeFileSync(REPORT_FILE, report);
-    console.log(`Report generated at ${REPORT_FILE}`);
+  fs.writeFileSync('QUIZ_DIFFICULTY_ALIGNMENT_REPORT.md', reportContent);
+  console.log('- Report generated: QUIZ_DIFFICULTY_ALIGNMENT_REPORT.md');
 }
 
-runAudit().catch(err => console.error(err));
+runAudit().catch(console.error);

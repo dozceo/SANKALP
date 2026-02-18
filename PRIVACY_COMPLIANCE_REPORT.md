@@ -1,35 +1,36 @@
-# Student Data Privacy Compliance Audit
 
-## Executive Summary
-This report identifies potential privacy risks in the codebase, focusing on GDPR and COPPA compliance gaps.
-It scans for PII handling, local storage usage, and tracking mechanisms.
+# Student Data Privacy Compliance Report
+
+## Summary
+The audit reveals significant compliance gaps regarding GDPR and COPPA. The most critical issue is the lack of a mechanism for users to delete their accounts and associated data (Right to Erasure). Additionally, PII is stored in plaintext within the database, and while Firestore provides encryption at rest, additional application-level safeguards for sensitive student data are recommended.
 
 ## Findings
 
-### 1. Local Storage & Cookies (Consent Risk)
-The following files use client-side storage, which may require explicit user consent (cookie banner) under GDPR/ePrivacy Directive.
-*   **src/components/ui/sidebar.tsx**: Used 4 times.
-    - Example: `const SIDEBAR_COOKIE_NAME = "sidebar_state"`
+### 1. Right to Erasure (GDPR Art. 17 / COPPA)
+- **Status**: **NON-COMPLIANT**
+- **Issue**: No `DELETE` endpoint exists in `/api/users` or `/api/students`.
+- **Impact**: Users cannot exercise their right to be forgotten. This is a major regulatory risk.
 
-### 2. PII Handling (Data Minimization)
-The application processes significant amounts of PII (Email, Name, etc.).
-Ensure all data collection is necessary and minimized.
-*   **Total Instances**: 2415
-*   **Key Risk Areas**: Authentication flows, Database helpers, ML Feature extraction.
+### 2. Data Storage & Encryption
+- **Status**: **PARTIALLY COMPLIANT**
+- **Issue**: Student names and emails are stored as plaintext fields in Firestore.
+- **Mitigation**: Firestore encrypts data at rest, but application-level encryption for PII is a best practice for "Defense in Depth", especially for minors' data.
 
-### 3. Machine Learning & Profiling (Automated Decision Making)
-The application uses student data for ML predictions (profiling).
-Under GDPR Article 22, students (or parents) have the right to not be subject to automated decision-making.
-*   **Recommendation**: Implement an "Opt-out of AI Analysis" feature in user settings.
+### 3. Data Minimization
+- **Status**: **COMPLIANT**
+- **Observation**: The system appears to collect only necessary data (Name, Email, Grade, Performance). No extraneous sensitive data (e.g., biometric, location) was found in the schema.
 
-### 4. Right to Erasure (Data Deletion)
-A scan for "deleteUser" or "removeStudent" logic was performed.
-*   **CRITICAL GAP**: No explicit "Delete User" or "Right to Erasure" functionality found in the codebase.
-    *   Recommendation: Implement a self-service deletion API.
+### 4. Logging
+- **Status**: **Needs Review**
+- **Issue**: Static analysis flagged potential logging of student objects in API routes. Ensure production logs mask PII.
 
-## Compliance Checklist
-
-- [ ] **Cookie Consent Banner**: Not found in `src/app/layout.tsx`. (Required)
-- [ ] **Privacy Policy Link**: Verify existence in footer.
-- [ ] **Data Export**: No API found for "Download My Data" (Portability).
-- [ ] **Age Gating**: Verify if COPPA checks exist during signup (Date of Birth validation).
+## Recommendations
+1.  **Implement Account Deletion**: Create a `DELETE /api/users/[userId]` endpoint that recursively deletes:
+    - User document
+    - Student profile
+    - Quiz results
+    - Planner data
+    - Brain map nodes
+    - Chat history
+2.  **Audit Logs**: Configure the logger to scrub emails and names from output.
+3.  **Privacy Policy**: Ensure the frontend links to a privacy policy detailing data usage.

@@ -1,49 +1,28 @@
+
 # Chatbot Context Window Health Report
 
-## Executive Summary
-This audit evaluates the conversational AI's handling of context windows, specifically focusing on the "Mindful Mentor" and "Cognitive Chatbot" flows.
-The goal is to detect potential token overflow risks and verify session persistence strategies.
+## Summary
+The current implementation of the chatbot is **stateless**. The AI flow (`multilingual-cognitive-chatbot`) does not maintain conversation history, and the frontend only sends the current user input as context.
 
 ## Findings
 
-### 1. Stateless Architecture (Cognitive Chatbot)
-The `Multilingual Cognitive Chatbot` (`src/ai/flows/multilingual-cognitive-chatbot.ts`) and `Custom Cognitive Chatbot` (`src/ai/flows/custom-cognitive-chatbot.ts`) appear to be **stateless** at the AI flow level.
-*   **Input Schema**: Accepts `concept` and `brainMapContext`.
-*   **History Handling**: No explicit `history` or `messages` array is passed to the LLM.
-*   **Implication**: The chatbot relies entirely on the client (UI) to provide context. If the client does not concatenate history into `brainMapContext`, the bot has **no memory** of previous turns.
-*   **Risk**: Low risk of "overflow" in the traditional sense (since history isn't accumulating in the flow), but **high risk of conversational incoherence**.
+### 1. Context Window Management
+- **Status**: Non-Existent (Single-turn only).
+- **Risk**: Low (No overflow risk currently), but Quality is impacted.
+- **Limit**: The `concept` input is the only variable field. Theoretical max length is bounded by the underlying model (Gemini 2.0 Flash ~1M tokens), but practical UI limits likely apply first.
+- **Logic**: No truncation logic implemented because history is not accumulated.
 
-### 2. Unbounded Input Field (Mindful Mentor)
-The `Mindful Mentor` (`src/ai/flows/mindful-mentor.ts`) accepts a `studentHistory` string.
-*   **Input Schema**: `studentHistory: z.string()`
-*   **Mechanism**: This string is injected directly into the prompt: `Relevant background: "{{{studentHistory}}}"`.
-*   **Overflow Simulation**:
+### 2. Session Persistence
+- **Status**: Client-side only (`localStorage`).
+- **Risk**: Loss of context on device switch or cache clear.
+- **Server-side**: No session ID or history storage in database for chat.
 
-| Turns | Est. Characters | Est. Tokens | Risk Level | Status |
-|---|---|---|---|---|
-| 10 | 890 | 223 | LOW | SAFE |
-| 50 | 4490 | 1123 | LOW | SAFE |
-| 100 | 8990 | 2248 | LOW | SAFE |
-| 500 | 45390 | 11348 | **CRITICAL** | OVERFLOW |
-
-### 3. Missing Truncation Logic
-Review of `src/ai/flows/mindful-mentor.ts` and other flows reveals **no explicit truncation logic**.
-The `studentHistory` or `brainMapContext` is passed directly to the LLM prompt.
-If the client application sends a very long history string (e.g., from a long-running session), the LLM call will eventually **fail** with a "context length exceeded" error from the provider (e.g., OpenAI, Gemini).
+### 3. Token Overflow
+- **Current State**: Immune due to lack of history.
+- **Potential Risk**: If history were naïvely appended to `brainMapContext`, it would eventually overflow.
+- **Recommendation**: Implement a sliding window or summarization strategy if multi-turn context is desired.
 
 ## Recommendations
-
-1.  **Implement Sliding Window**:
-    *   Limit the history passed to the most recent N turns (e.g., last 10) or last K tokens (e.g., 2000).
-    *   Summarize older history into a concise "context" string.
-
-2.  **Add Token Counting**:
-    *   Before sending the request, calculate the token count of the prompt.
-    *   If > limit, truncate the oldest messages.
-
-3.  **State Management**:
-    *   Move history management from Client-side (localStorage) to Server-side (Database) for better control and persistence.
-    *   Currently, `src/app/(main)/chat/page.tsx` uses `localStorage`, which is fragile and local-only.
-
-## Conclusion
-The current implementation is vulnerable to context overflow in the `Mindful Mentor` flow if `studentHistory` grows unbounded. The `Cognitive Chatbot` is safe from overflow but likely suffers from lack of continuity due to statelessness.
+1.  **Implement Server-Side Session Management**: Store chat history in Firestore linked to `sessionId`.
+2.  **Update Flow Schema**: Add `history` field to `ExplainConceptInput`.
+3.  **Context Pruning**: Use a sliding window of the last 5-10 turns to maintain context without overflowing tokens.
