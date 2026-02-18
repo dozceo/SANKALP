@@ -3,8 +3,8 @@ import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const REPORT_FILE = 'FORGETTING_CURVE_AUDIT.md';
-const PY_SCRIPT = 'src/ml/inference/predict_mastery.py';
+const REPORT_FILE = process.env.REPORT_FILE || 'FORGETTING_CURVE_AUDIT.md';
+const PY_SCRIPT = process.env.PY_SCRIPT || 'src/ml/inference/predict_mastery.py';
 
 // Standard Ebbinghaus Forgetting Curve: R = e^(-t/S)
 // days_until_forget (t) for R=0.5 => t = S * ln(2) approx 0.693 * S
@@ -15,7 +15,7 @@ function calculateExpectedDaysUntilForget(s: number): number {
 }
 
 async function runAudit() {
-    console.log('Starting Forgetting Curve Audit...');
+    console.log('[Audit] Starting Forgetting Curve Audit...');
 
     // Sample input mimicking a student who has practiced a topic
     // "attempts_per_topic" is a proxy for repetitions (N)
@@ -29,9 +29,16 @@ async function runAudit() {
         time_spent_per_question: 30
     };
 
-    console.log('Running inference with input:', JSON.stringify(sampleInput));
+    console.log('[Audit] Running inference with input:', JSON.stringify(sampleInput));
 
     const output = await runPythonScript(sampleInput);
+
+    // If python script failed to execute (e.g. missing deps), fail the audit
+    if (output.error && output.error.includes("ModuleNotFoundError")) {
+        console.error('[Audit] FAIL: Python dependencies missing.');
+        console.error(output.error);
+        process.exit(2);
+    }
 
     generateReport(sampleInput, output);
 }
@@ -53,10 +60,9 @@ function runPythonScript(input: any): Promise<any> {
 
         pythonProcess.on('close', (code) => {
             if (code !== 0) {
-                console.error(`Python script exited with code ${code}`);
-                console.error(`Stderr: ${stderrData}`);
+                console.error(`[Audit] Python script exited with code ${code}`);
                 // Instead of rejecting, we return the error as the output to report it
-                resolve({ error: stderrData || 'Unknown error' });
+                resolve({ error: stderrData || 'Unknown error', raw: stdoutData });
             } else {
                 try {
                     // Python script prints JSON lines. We take the last one.
@@ -65,7 +71,7 @@ function runPythonScript(input: any): Promise<any> {
                     const result = JSON.parse(lastLine);
                     resolve(result);
                 } catch (e) {
-                    console.error('Failed to parse JSON output:', stdoutData);
+                    console.error('[Audit] Failed to parse JSON output:', stdoutData);
                     resolve({ error: 'JSON parse error', raw: stdoutData });
                 }
             }
@@ -100,6 +106,8 @@ ${JSON.stringify(output, null, 2)}
 \`\`\`
 `;
 
+    let failed = false;
+
     if (output.days_until_forget === undefined) {
         report += `
 **CRITICAL FINDING: Missing Metric**
@@ -120,14 +128,26 @@ Because the value is missing, it defaults to \`999\` (perfect memory), effective
     *   $\\text{days\_until\_forget} = S \\times \\ln(2)$
 2.  **Update ADK Logic**: Ensure the default fallback in ADK is safe (e.g., fallback to a standard decay curve based on time only) rather than \`999\`.
 `;
+        failed = true;
     } else {
         report += `
-The metric was found. (This branch should not be reached given current codebase analysis).
+The metric was found.
 `;
     }
 
     fs.writeFileSync(REPORT_FILE, report);
-    console.log(`Report generated at ${REPORT_FILE}`);
+    console.log(`[Audit] Report generated at ${REPORT_FILE}`);
+
+    if (failed) {
+        console.error('[Audit] FAIL: Missing `days_until_forget` metric.');
+        process.exit(1);
+    } else {
+        console.log('[Audit] PASS: Metric present.');
+        process.exit(0);
+    }
 }
 
-runAudit().catch(err => console.error(err));
+runAudit().catch(err => {
+    console.error('[Audit] Error:', err);
+    process.exit(2);
+});

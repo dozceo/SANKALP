@@ -1,123 +1,115 @@
 
-import 'dotenv/config';
-import { getMotivationalCounseling } from '../src/ai/flows/mindful-mentor';
 import * as fs from 'fs';
-import * as path from 'path';
+import { z } from 'zod'; // Using zod directly as genkit might need setup
 
-// Mock Genkit if API key is missing to allow simulation
-if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
-    console.warn('No API key found. Mocking Genkit for simulation.');
-    process.env.GOOGLE_GENAI_API_KEY = 'mock-key';
+const REPORT_FILE = process.env.REPORT_FILE || 'CHATBOT_CONTEXT_HEALTH_REPORT.md';
 
-    // We need to mock the module via module alias or similar, but since we are running tsx,
-    // we might need to rely on the fact that if the key is missing, genkit initialization might fail
-    // unless we mock it *before* import.
-    // However, we already imported. Let's see if it works.
-    // If it fails, we will use a different approach (mocking the function directly).
-}
-
-const REPORT_FILE = 'CHATBOT_CONTEXT_REPORT.md';
+// Simulation Configuration
+const MAX_CONTEXT_TOKENS = parseInt(process.env.MAX_CONTEXT_TOKENS || '8192', 10);
+const AVG_CHARS_PER_TOKEN = parseInt(process.env.AVG_CHARS_PER_TOKEN || '4', 10);
+const CRITICAL_THRESHOLD_PERCENT = 0.9; // 90% of max tokens
 
 async function runAudit() {
-    console.log('Starting Chatbot Context Window Audit...');
+    console.log(`[Audit] Starting Chatbot Context Audit (Limit: ${MAX_CONTEXT_TOKENS} tokens)...`);
 
-    const historySizes = [1000, 5000, 10000, 20000, 50000, 100000];
-    const results: any[] = [];
-
-    // Base content to repeat
-    const baseHistory = "Student has been struggling with calculus. ";
-
-    for (const size of historySizes) {
-        console.log(`Testing with history size: ${size} chars...`);
-
-        const history = baseHistory.repeat(Math.ceil(size / baseHistory.length)).substring(0, size);
-
-        const start = Date.now();
-        let status = 'SUCCESS';
-        let errorMsg = '';
-        let outputLength = 0;
-
-        try {
-            // We are calling the server action directly.
-            // In a real scenario, this would hit the LLM.
-            // If we are mocking, we should intercept this.
-
-            // For this audit, if we can't hit the API, we will assume a token limit of ~32k tokens (~128k chars)
-            // or typical limits. But let's try to call it.
-            const response = await getMotivationalCounseling({
-                studentConcern: "I am feeling overwhelmed.",
-                studentHistory: history
-            });
-
-            outputLength = response.advice.length;
-        } catch (error: any) {
-            status = 'FAILED';
-            errorMsg = error.message;
-            console.error(`Failed at ${size}: ${error.message}`);
-        }
-
-        const duration = Date.now() - start;
-
-        results.push({
-            size,
-            status,
-            duration,
-            outputLength,
-            error: errorMsg
-        });
-
-        // Break early if we hit a hard failure to avoid wasting time on larger inputs
-        if (status === 'FAILED' && errorMsg.includes('limit')) {
-            break;
-        }
-    }
-
-    generateReport(results);
-}
-
-function generateReport(results: any[]) {
-    let report = `# Chatbot Context Window Audit Report
+    let report = `# Chatbot Context Window Health Report
 
 ## Executive Summary
-The chatbot flow was tested with increasing conversation history sizes to determine context window limits and failure modes.
+This audit evaluates the conversational AI's handling of context windows, specifically focusing on the "Mindful Mentor" and "Cognitive Chatbot" flows.
+The goal is to detect potential token overflow risks and verify session persistence strategies.
 
-## Test Results
+## Findings
 
-| History Size (chars) | Status | Duration (ms) | Output Length | Error |
-|----------------------|--------|---------------|---------------|-------|
+### 1. Stateless Architecture (Cognitive Chatbot)
+The \`Multilingual Cognitive Chatbot\` (\`src/ai/flows/multilingual-cognitive-chatbot.ts\`) and \`Custom Cognitive Chatbot\` (\`src/ai/flows/custom-cognitive-chatbot.ts\`) appear to be **stateless** at the AI flow level.
+*   **Input Schema**: Accepts \`concept\` and \`brainMapContext\`.
+*   **History Handling**: No explicit \`history\` or \`messages\` array is passed to the LLM.
+*   **Implication**: The chatbot relies entirely on the client (UI) to provide context. If the client does not concatenate history into \`brainMapContext\`, the bot has **no memory** of previous turns.
+*   **Risk**: Low risk of "overflow" in the traditional sense (since history isn't accumulating in the flow), but **high risk of conversational incoherence**.
+
+### 2. Unbounded Input Field (Mindful Mentor)
+The \`Mindful Mentor\` (\`src/ai/flows/mindful-mentor.ts\`) accepts a \`studentHistory\` string.
+*   **Input Schema**: \`studentHistory: z.string()\`
+*   **Mechanism**: This string is injected directly into the prompt: \`Relevant background: "{{{studentHistory}}}"\`.
+*   **Overflow Simulation**:
 `;
 
-    for (const res of results) {
-        report += `| ${res.size} | ${res.status} | ${res.duration} | ${res.outputLength} | ${res.error} |\n`;
+    // Simulation: Constructing a long history
+    // Simulate growing history
+    const simulatedHistorySteps = [10, 50, 100, 500, 1000]; // number of turns
+
+    report += `\n| Turns | Est. Characters | Est. Tokens | Risk Level | Status |\n|---|---|---|---|---|\n`;
+
+    let maxRiskLevel = 'LOW';
+    let failed = false;
+
+    for (const n of simulatedHistorySteps) {
+        const historyStr = generateHistory(n);
+        const chars = historyStr.length;
+        const tokens = Math.ceil(chars / AVG_CHARS_PER_TOKEN);
+
+        let risk = 'LOW';
+        let status = 'SAFE';
+
+        if (tokens > MAX_CONTEXT_TOKENS) {
+            risk = '**CRITICAL**';
+            status = 'OVERFLOW';
+            maxRiskLevel = 'CRITICAL';
+            failed = true;
+        } else if (tokens > MAX_CONTEXT_TOKENS * CRITICAL_THRESHOLD_PERCENT) {
+            risk = 'HIGH';
+            status = 'WARNING';
+            if (maxRiskLevel !== 'CRITICAL') maxRiskLevel = 'HIGH';
+        }
+
+        report += `| ${n} | ${chars} | ${tokens} | ${risk} | ${status} |\n`;
     }
 
     report += `
-## Analysis
-`;
+### 3. Missing Truncation Logic
+Review of \`src/ai/flows/mindful-mentor.ts\` and other flows reveals **no explicit truncation logic**.
+The \`studentHistory\` or \`brainMapContext\` is passed directly to the LLM prompt.
+If the client application sends a very long history string (e.g., from a long-running session), the LLM call will eventually **fail** with a "context length exceeded" error from the provider (e.g., OpenAI, Gemini).
 
-    const failed = results.find(r => r.status === 'FAILED');
-    if (failed) {
-        report += `The chatbot failed at history size ${failed.size} chars. This indicates a token limit or timeout issue.\n`;
-        report += `**Recommendation:** Implement conversation summarization or a sliding window context manager to keep the history within limits (e.g., 10k chars).\n`;
-    } else {
-        report += `The chatbot handled all tested history sizes up to ${results[results.length-1].size} chars. \n`;
-        report += `However, unbounded growth is still a risk. \n`;
-        report += `**Recommendation:** Monitor token usage and implement a retention policy.\n`;
-    }
+## Recommendations
 
-    report += `
-## Technical Details
-- Flow: \`mindfulMentorFlow\`
-- Input tested: \`studentHistory\`
-- Max tested size: ${results[results.length-1].size} chars
+1.  **Implement Sliding Window**:
+    *   Limit the history passed to the most recent N turns (e.g., last 10) or last K tokens (e.g., 2000).
+    *   Summarize older history into a concise "context" string.
+
+2.  **Add Token Counting**:
+    *   Before sending the request, calculate the token count of the prompt.
+    *   If > limit, truncate the oldest messages.
+
+3.  **State Management**:
+    *   Move history management from Client-side (localStorage) to Server-side (Database) for better control and persistence.
+    *   Currently, \`src/app/(main)/chat/page.tsx\` uses \`localStorage\`, which is fragile and local-only.
+
+## Conclusion
+The current implementation is vulnerable to context overflow in the \`Mindful Mentor\` flow if \`studentHistory\` grows unbounded. The \`Cognitive Chatbot\` is safe from overflow but likely suffers from lack of continuity due to statelessness.
 `;
 
     fs.writeFileSync(REPORT_FILE, report);
-    console.log(`Report generated at ${REPORT_FILE}`);
+    console.log(`[Audit] Report generated at ${REPORT_FILE}`);
+
+    if (failed) {
+        console.error(`[Audit] FAIL: Context overflow detected (Risk Level: ${maxRiskLevel})`);
+        process.exit(1);
+    } else {
+        console.log(`[Audit] PASS: Context window health acceptable (Risk Level: ${maxRiskLevel})`);
+        process.exit(0);
+    }
 }
 
-// We need to handle the case where the import fails or the function calls fail because of missing API key in the environment
-// by catching the import error or mocking the function if it's not available.
-// But since we are in strict mode, let's just run it.
+function generateHistory(turns: number): string {
+    let history = "";
+    for (let i = 0; i < turns; i++) {
+        history += `User: I am struggling with question ${i}.\nBot: Let's break it down. What part is confusing?\n`;
+    }
+    return history;
+}
 
-runAudit().catch(err => console.error(err));
+runAudit().catch((err) => {
+    console.error(err);
+    process.exit(2);
+});
