@@ -1,12 +1,27 @@
 {
   "model_name": "Topic Mastery Prediction Model",
   "version": "1.0.0",
-  "training_timestamp": "2026-02-17T05:03:40.314267",
+  "training_timestamp": "2026-02-17T19:19:52.940743",
   "provenance": {
-    "git_commit_hash": "b2f6ba9c9e3f0a6b25937e47fb19be2a9817f3f0",
-    "script_hash": "015e38a8fdd83fbbc698a3ec1bb6800b0b7b8b9b4f93d8765e6223f2c4981473",
+    "git_commit_hash": "8a332c3b353be9d4531d9fd22b5e24b0a1ff4d70",
+    "script_hash": "0503c7d78388d2f46143dd85317576f0207334b76b82902adb720c95418132c2",
     "data_hash": "7acdb57982fc67a102e418c747efdd55634975f3cb0ba50709725beb55c2f059",
-    "data_source": "training_data.csv"
+    "data_source": "/app/src/ml/training/training_data.csv",
+    "data_generation_metadata": {
+      "script_hash": "570058421cb36d749755ea1c5acd31b227963dc9bce7d26944bca6e7b96578e4",
+      "git_hash": "8a332c3b353be9d4531d9fd22b5e24b0a1ff4d70",
+      "random_seed": 42,
+      "n_samples": 2000,
+      "columns": [
+        "avg_quiz_score",
+        "attempts_per_topic",
+        "days_since_last_revision",
+        "quiz_score_variance",
+        "time_spent_per_question",
+        "mastered"
+      ],
+      "generated_at": "2026-02-17T19:19:50.799287"
+    }
   },
   "parameters": {
     "model_type": "LogisticRegression",
