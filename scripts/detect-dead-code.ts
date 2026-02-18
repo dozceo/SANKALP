@@ -1,173 +1,174 @@
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as ts from 'typescript';
+import fs from 'fs';
+import path from 'path';
+
+/**
+ * Dead Code Detection Script
+ *
+ * Scans `src/components` and `src/lib` for exported entities (functions, classes, consts)
+ * and checks if they are imported/used elsewhere in the `src` directory.
+ *
+ * Usage:
+ *   npx tsx scripts/detect-dead-code.ts [--strict]
+ *
+ * Flags:
+ *   --strict: Exit with code 1 if any potential dead code is found. Useful for CI.
+ */
 
 const SRC_DIR = path.join(process.cwd(), 'src');
 const COMPONENTS_DIR = path.join(SRC_DIR, 'components');
 const LIB_DIR = path.join(SRC_DIR, 'lib');
+const OUTPUT_FILE = path.join(process.cwd(), 'DEAD_CODE_INVENTORY.md');
 
-interface ExportInfo {
+// Heuristic regex to find exports
+const EXPORT_REGEX = /export\s+(?:const|function|class|type|interface|enum)\s+([a-zA-Z0-9_]+)/g;
+
+interface ExportItem {
   name: string;
-  type: 'named' | 'default';
   filePath: string;
+  type: 'component' | 'lib';
 }
 
-function getAllFiles(dir: string): string[] {
+/**
+ * Recursively find all files in a directory with specific extensions.
+ */
+function getAllFiles(dir: string, extension: string[] = ['.ts', '.tsx']): string[] {
   let results: string[] = [];
-  const list = fs.readdirSync(dir);
-  list.forEach(file => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat && stat.isDirectory()) {
-      results = results.concat(getAllFiles(filePath));
-    } else {
-      if (file.endsWith('.ts') || file.endsWith('.tsx')) {
-        results.push(filePath);
+  if (!fs.existsSync(dir)) return results;
+
+  try {
+    const list = fs.readdirSync(dir);
+    list.forEach(file => {
+      const filePath = path.join(dir, file);
+      const stat = fs.statSync(filePath);
+      if (stat && stat.isDirectory()) {
+        results = results.concat(getAllFiles(filePath, extension));
+      } else {
+        if (extension.includes(path.extname(file))) {
+          results.push(filePath);
+        }
       }
-    }
-  });
+    });
+  } catch (err) {
+    console.error(`Error reading directory ${dir}:`, err);
+  }
   return results;
 }
 
-function getExports(filePath: string): ExportInfo[] {
-  const fileContent = fs.readFileSync(filePath, 'utf-8');
-  const sourceFile = ts.createSourceFile(
-    filePath,
-    fileContent,
-    ts.ScriptTarget.Latest,
-    true
-  );
+/**
+ * Extract exported names from a file.
+ */
+function getExports(filePath: string): string[] {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const exports: string[] = [];
+    let match;
+    while ((match = EXPORT_REGEX.exec(content)) !== null) {
+      exports.push(match[1]);
+    }
 
-  const exports: ExportInfo[] = [];
-
-  ts.forEachChild(sourceFile, node => {
-    if (ts.isExportAssignment(node)) {
-      exports.push({ name: 'default', type: 'default', filePath });
-    } else if (ts.isExportDeclaration(node)) {
-      // export { x } from ...
-      if (node.exportClause && ts.isNamedExports(node.exportClause)) {
-        node.exportClause.elements.forEach(element => {
-          exports.push({ name: element.name.text, type: 'named', filePath });
-        });
-      }
-    } else if (
-      (ts.isFunctionDeclaration(node) ||
-        ts.isClassDeclaration(node) ||
-        ts.isInterfaceDeclaration(node) ||
-        ts.isTypeAliasDeclaration(node) ||
-        ts.isVariableStatement(node) ||
-        ts.isEnumDeclaration(node)) &&
-      node.modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)
-    ) {
-      if (ts.isVariableStatement(node)) {
-        node.declarationList.declarations.forEach(decl => {
-          if (ts.isIdentifier(decl.name)) {
-            exports.push({ name: decl.name.text, type: 'named', filePath });
-          }
-        });
-      } else if ('name' in node && node.name && ts.isIdentifier(node.name as any)) {
-        exports.push({ name: (node.name as any).text, type: 'named', filePath });
+    // Check for default export
+    if (content.match(/export\s+default/)) {
+      const fileName = path.basename(filePath, path.extname(filePath));
+      // If index.ts, use parent folder name
+      if (fileName === 'index') {
+         const parentDir = path.basename(path.dirname(filePath));
+         exports.push(parentDir);
+      } else {
+         exports.push(fileName);
       }
     }
-  });
 
-  return exports;
+    return exports;
+  } catch (err) {
+    console.error(`Error reading file ${filePath}:`, err);
+    return [];
+  }
 }
 
-function isUsed(exportInfo: ExportInfo, allFiles: string[]): boolean {
-  // If default export, check if file is imported
-  // If named export, check if name is imported
-
-  // Naive check: search for string in other files.
-  // For default export, we look for the filename being imported.
-  // This is hard because of relative paths.
-  // Instead, for default export, we can look for `from '.../filename'` or `from '.../filename.ts'` (without ext usually)
-
-  const fileNameBase = path.basename(exportInfo.filePath, path.extname(exportInfo.filePath));
-
-  // We'll iterate all other files
+/**
+ * Check if an exported name is used in any file other than its definition.
+ */
+function checkUsage(exportName: string, definedInFile: string, allFiles: string[]): boolean {
   for (const file of allFiles) {
-    if (file === exportInfo.filePath) continue;
-
-    const content = fs.readFileSync(file, 'utf-8');
-
-    if (exportInfo.type === 'default') {
-        // Check for import of the file
-        // This is a heuristic. We check if the file name (without extension) appears in an import statement.
-        // Or strictly, we can check if the path is resolved. But we can't easily resolve paths here without a full compiler host.
-        // So we will just look for the filename in quotes.
-        // e.g. import X from './path/to/file';
-        // pattern: /['"]\.[./]*\/filename['"]/
-
-        // Simpler: just check if the filename appears in the content? No, too many false positives.
-        // Let's assume standard import syntax.
-        // We look for the file basename in '...' or "..."
-        if (content.includes(`/${fileNameBase}'`) || content.includes(`/${fileNameBase}"`)) {
-            return true;
-        }
-    } else {
-      // Named export
-      // Check for `import { ... name ... }` or `import { name as alias }`
-      // Or `import * as X ... X.name`
-
-      // Simple text search for the name.
-      // We must ensure it's not a local variable with same name.
-      // But for "dead code inventory", false positives (saying it IS used when it's just a local var) are safer than false negatives (saying unused when it IS used).
-      // Wait, false positive = "Used" -> we don't list it. Code remains. Safe.
-      // False negative = "Unused" -> we list it. User deletes it. Code breaks. Unsafe.
-      // So we want to be conservative: if we see the name, assume used.
-
-      // Regex to match whole word
-      const regex = new RegExp(`\\b${exportInfo.name}\\b`);
+    if (file === definedInFile) continue; // Skip definition file
+    try {
+      const content = fs.readFileSync(file, 'utf-8');
+      // strict word boundary check to avoid partial matches
+      const regex = new RegExp(`\\b${exportName}\\b`);
       if (regex.test(content)) {
         return true;
       }
+    } catch (err) {
+        // file might have been deleted or moved during scan
+        continue;
     }
   }
-
   return false;
 }
 
 async function main() {
-  console.log('Scanning for files...');
+  console.log('Starting Dead Code Detection...');
+  const isStrict = process.argv.includes('--strict');
+
   const componentFiles = getAllFiles(COMPONENTS_DIR);
   const libFiles = getAllFiles(LIB_DIR);
-  const targetFiles = [...componentFiles, ...libFiles];
+  const allSourceFiles = getAllFiles(SRC_DIR);
 
-  const allSrcFiles = getAllFiles(SRC_DIR);
+  const inventory: ExportItem[] = [];
 
-  console.log(`Found ${targetFiles.length} files to analyze in components/ and lib/.`);
-  console.log(`Total source files: ${allSrcFiles.length}`);
-
-  const unusedExports: ExportInfo[] = [];
-
-  for (const file of targetFiles) {
+  // Analyze Components
+  for (const file of componentFiles) {
     const exports = getExports(file);
     for (const exp of exports) {
-      if (!isUsed(exp, allSrcFiles)) {
-        unusedExports.push(exp);
+      if (!checkUsage(exp, file, allSourceFiles)) {
+        inventory.push({ name: exp, filePath: file, type: 'component' });
       }
     }
   }
 
-  const reportPath = 'DEAD_CODE_REPORT.md';
-  const reportContent = `# Dead Code Inventory
+  // Analyze Lib
+  for (const file of libFiles) {
+    const exports = getExports(file);
+    for (const exp of exports) {
+      if (!checkUsage(exp, file, allSourceFiles)) {
+        inventory.push({ name: exp, filePath: file, type: 'lib' });
+      }
+    }
+  }
 
-Generated on: ${new Date().toISOString()}
+  // Generate Report
+  let report = `# Dead Code Inventory\n\nGenerated on: ${new Date().toISOString()}\n\n`;
+  report += `This report lists exported components and utilities from \`src/components\` and \`src/lib\` that do not appear to be used elsewhere in the \`src\` directory. **Note:** This is a heuristic analysis (string search). Manual verification is recommended before deletion.\n\n`;
 
-The following exports in \`src/components\` and \`src/lib\` appear to be unused.
-**Note:** This is a heuristic scan. Verify before deleting.
+  if (inventory.length === 0) {
+    report += `No dead code detected!\n`;
+    console.log('✅ No dead code detected.');
+  } else {
+    report += `## Potential Dead Code (${inventory.length} items)\n\n`;
+    report += `| Type | Name | File Path |\n|---|---|---|\n`;
+    inventory.forEach(item => {
+      const relativePath = path.relative(process.cwd(), item.filePath);
+      report += `| ${item.type} | \`${item.name}\` | \`${relativePath}\` |\n`;
+    });
+    console.warn(`⚠️ Found ${inventory.length} potential dead code items. See ${OUTPUT_FILE} for details.`);
+  }
 
-| File | Export Type | Name |
-|------|-------------|------|
-${unusedExports.map(e => `| \`${path.relative(process.cwd(), e.filePath)}\` | ${e.type} | \`${e.name}\` |`).join('\n')}
+  try {
+    fs.writeFileSync(OUTPUT_FILE, report);
+    console.log(`Report generated at ${OUTPUT_FILE}`);
+  } catch (err) {
+    console.error(`Error writing report to ${OUTPUT_FILE}:`, err);
+    process.exit(1);
+  }
 
-${unusedExports.length === 0 ? 'No unused exports found.' : ''}
-`;
-
-  fs.writeFileSync(reportPath, reportContent);
-  console.log(`Report generated at ${reportPath}`);
+  if (isStrict && inventory.length > 0) {
+      console.error('❌ Strict mode enabled: Exiting with error due to detected dead code.');
+      process.exit(1);
+  }
 }
 
-main().catch(console.error);
+main().catch((err) => {
+    console.error('Unhandled error in script:', err);
+    process.exit(1);
+});
