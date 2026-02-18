@@ -1,43 +1,41 @@
-
 # Fairness & Bias Cascade Report
 
-**Date:** 2026-02-17T06:40:43.185Z
-**Topic:** Algebra 101
-**Method:** Counterfactual Fairness Testing (Synthetic Cohorts)
+## 1. Outcome Disparity Matrix
+Analysis of how different behavioral profiles with identical quiz scores (0.55) are treated.
 
-## 1. Cohort Analysis
+| Profile | Time/Q | Variance | Attempts | ML Prediction | ADK Action | Strategy | Tone |
+|---------|--------|----------|----------|---------------|------------|----------|------|
+| Baseline Student | 45s | 0.1 | 3 | 0.367 | SCHEDULED_REVISION | DEEP_DIVE | NEUTRAL |
+| The Fast Guesser | 15s | 0.25 | 2 | 0.285 | SCHEDULED_REVISION | DEEP_DIVE | NEUTRAL |
+| The Deep Thinker | 90s | 0.05 | 2 | 0.491 | SCHEDULED_REVISION | DEEP_DIVE | NEUTRAL |
+| The Grinder | 45s | 0.1 | 8 | 0.349 | SCHEDULED_REVISION | DEEP_DIVE | NEUTRAL |
+| The Anxious Reviser | 50s | 0.15 | 4 | 0.603 | SCHEDULED_REVISION | DEEP_DIVE | NEUTRAL |
+| The Returning Student | 45s | 0.1 | 2 | 0.028 | SCHEDULED_REVISION | DEEP_DIVE | NEUTRAL |
 
-| Profile | Avg Score | Time/Q (s) | Inactive (days) | Mastery Prob | Attn Risk | Action | Priority | Tone | Difficulty | Grade Level | Intervention |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| CONTROL | 0.69 | 5.2 | -1 | **0.497** | LOW | SCHEDULED_REVISION | MEDIUM | NEUTRAL | INTERMEDIATE | 8.7 | NONE |
-| NIGHT_OWL | 0.68 | 5.4 | -1 | **0.456** | LOW | SCHEDULED_REVISION | MEDIUM | NEUTRAL | INTERMEDIATE | 8.7 | NONE |
-| WEEKEND_WARRIOR | 0.70 | 5.2 | 2 | **0.393** | LOW | SCHEDULED_REVISION | MEDIUM | NEUTRAL | INTERMEDIATE | 8.7 | MEDIUM |
-| FAST_GUESSER | 0.70 | 1.3 | -1 | **0.515** | LOW | SCHEDULED_REVISION | MEDIUM | NEUTRAL | INTERMEDIATE | 8.7 | NONE |
-| SLOW_STEADY | 0.69 | 33.3 | 0 | **0.502** | LOW | SCHEDULED_REVISION | MEDIUM | NEUTRAL | INTERMEDIATE | 8.7 | NONE |
-| BINGE_LEARNER | 0.71 | 5.2 | 0 | **0.524** | LOW | SCHEDULED_REVISION | MEDIUM | NEUTRAL | INTERMEDIATE | 8.7 | NONE |
+## 2. Explanation Quality Parity
+Inferred from Content Strategy and Tone assignment.
 
-## 2. Disparity Analysis
+**Success:** All profiles received consistent explanation quality parameters.
 
-### Outcome Disparity (Mastery)
-- **FLAG:** WEEKEND_WARRIOR has mastery deviation of 10.4% vs Control.
+## 3. Intervention Suggestion Disparity
+Did any profile trigger an intervention falsely?
 
-### Attention Risk Disparity
+| Profile | Intervention Triggered | Reason |
+|---------|------------------------|--------|
+| Baseline Student | No | - |
+| The Fast Guesser | No | - |
+| The Deep Thinker | No | - |
+| The Grinder | **YES** | Repeated attempts without improvement |
+| The Anxious Reviser | No | - |
+| The Returning Student | No | - |
 
-### Explanation Quality Disparity
+## 4. ADK Decision Logic Audit
+Direct unit tests of decision rules.
 
+| Case | Result | Details |
+|------|--------|---------|
+| High Mastery (0.9) (Simulating Slow Timing via outcome) | PASS | PROGRESS_ALLOWED |
+| Attention Risk Amplification (Low vs High) | BIAS DETECTED | Low Risk -> SCHEDULED_REVISION (DEEP_DIVE), High Risk -> ADAPTIVE_TEACHING (INTERACTIVE) |
 
-## 3. Findings & Recommendations
-
-### ML Model Fairness
-- **Mastery Prediction:** Evaluated for stability across behavioral patterns.
-- **Time Sensitivity:** Checked if "Fast Guesser" or "Slow Steady" are unfairly penalized.
-- **Recency Bias:** Checked if "Binge Learner" or "Night Owl" patterns affect mastery score.
-
-### ADK Decision Logic
-- **Attention Risk:** Validated if risk flags are applied consistently.
-- **Intervention:** Checked if interventions are suggested equitably.
-
-### Recommendations
-1. **Model Retraining:** If significant mastery drift (>5%) exists for same-score profiles, retrain with augmented behavioral data.
-2. **Feature Engineering:** Review `time_spent_per_question` weighting if "Slow Steady" is penalized.
-3. **ADK Policy:** Ensure "Night Owls" are not flagged as "High Risk" solely due to timestamp patterns.
+## 5. Privacy-Preserving Fairness Strategy
+This report was generated using **counterfactual testing** with synthetic profiles. No real student data or demographics were used.
