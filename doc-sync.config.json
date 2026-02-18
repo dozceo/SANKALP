@@ -1,0 +1,43 @@
+{
+  "ignore_dirs": [
+    ".git",
+    "node_modules",
+    ".genkit",
+    ".jules",
+    "reports",
+    ".idx",
+    "messages",
+    ".DS_Store"
+  ],
+  "ignore_files": [
+    "DOC_SYNC_REPORT.md",
+    "NEW_DOC_SYNC_REPORT.md",
+    "CHANGELOG.md"
+  ],
+  "feature_map": {
+    "Teacher Dashboard": [
+      "src/app/(main)/teacher",
+      "src/components/app/teacher-sidebar-nav.tsx"
+    ],
+    "Adaptive Quiz": [
+      "src/app/(main)/quiz",
+      "src/components/quiz"
+    ],
+    "Syllabus Generator": [
+      "src/ai/flows/syllabus-generator.ts"
+    ],
+    "Database Integration": [
+      "src/lib/db-helpers.ts",
+      "src/lib/firebase.ts"
+    ],
+    "ML Prediction": [
+      "src/ml/inference/predict_mastery.py"
+    ],
+    "Student Intelligence API": [
+      "src/app/api/intelligence/student/route.ts"
+    ]
+  },
+  "package_json_path": "package.json",
+  "api_root": "src/app/api",
+  "root_dir": "."
+}
