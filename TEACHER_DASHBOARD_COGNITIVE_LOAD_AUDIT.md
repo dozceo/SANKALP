@@ -1,27 +1,47 @@
 # Teacher Dashboard Cognitive Load Audit
 
-This report evaluates the information density and complexity of the Teacher Dashboard components to identify potential cognitive overload.
+This report evaluates the information density and complexity of Teacher Dashboard components.
 
-## Summary
-- Total Components Analyzed: 7
-- Total Complexity Score: 630
+## src/app/(main)/teacher/classes/[classId]/page.tsx
+- **Visual Complexity**: 70 elements
+- **Data Density**: 45 data components
+- **Interactivity**: 6 interactive elements
+- **Status**: ⚠️ High Cognitive Load
 
-## Component Complexity Ranking
-| Component | Complexity Score | Interactive | Data Display | Logic (Hooks) | LOC |
-|---|---|---|---|---|---|
-| classes/[classId]/page.tsx | 124 | 6 | 47 | 8 | 393 |
-| classes/page.tsx | 113 | 25 | 26 | 12 | 537 |
-| students/page.tsx | 112 | 25 | 27 | 11 | 414 |
-| student/[studentId]/StudentAnalyticsClient.tsx | 104 | 12 | 40 | 4 | 308 |
-| students/[studentId]/page.tsx | 96 | 4 | 37 | 6 | 320 |
-| page.tsx | 79 | 3 | 29 | 6 | 242 |
-| student/[studentId]/page.tsx | 2 | 2 | 0 | 0 | 37 |
+## src/app/(main)/teacher/classes/page.tsx
+- **Visual Complexity**: 93 elements
+- **Data Density**: 25 data components
+- **Interactivity**: 40 interactive elements
+- **Status**: ⚠️ High Cognitive Load
 
-## Recommendations
-Found 6 high-complexity components (Score > 50). Consider refactoring or breaking down:
-- **classes/[classId]/page.tsx**: Score 124. High internal state management. Multiple data visualizations.
-- **classes/page.tsx**: Score 113. High internal state management.
-- **students/page.tsx**: Score 112. High internal state management.
-- **student/[studentId]/StudentAnalyticsClient.tsx**: Score 104. Multiple data visualizations.
-- **students/[studentId]/page.tsx**: Score 96. High internal state management. Multiple data visualizations.
-- **page.tsx**: Score 79. High internal state management. Multiple data visualizations.
+## src/app/(main)/teacher/page.tsx
+- **Visual Complexity**: 39 elements
+- **Data Density**: 27 data components
+- **Interactivity**: 2 interactive elements
+- **Status**: ⚠️ High Cognitive Load
+
+## src/app/(main)/teacher/student/[studentId]/StudentAnalyticsClient.tsx
+- **Visual Complexity**: 58 elements
+- **Data Density**: 30 data components
+- **Interactivity**: 11 interactive elements
+- **Status**: ⚠️ High Cognitive Load
+
+## src/app/(main)/teacher/students/[studentId]/page.tsx
+- **Visual Complexity**: 57 elements
+- **Data Density**: 34 data components
+- **Interactivity**: 4 interactive elements
+- **Status**: ⚠️ High Cognitive Load
+
+## src/app/(main)/teacher/students/page.tsx
+- **Visual Complexity**: 69 elements
+- **Data Density**: 25 data components
+- **Interactivity**: 25 interactive elements
+- **Status**: ⚠️ High Cognitive Load
+
+
+**Total High Load Components:** 6
+
+## Optimization Recommendations
+1.  **Progressive Disclosure**: Hide detailed data behind "Show More" toggles.
+2.  **Dashboard Widgets**: Break complex views into smaller, reusable widget components.
+3.  **Visual Hierarchy**: Ensure critical alerts (red) stand out against informational data (neutral).

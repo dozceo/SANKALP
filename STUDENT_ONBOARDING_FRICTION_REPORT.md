@@ -1,24 +1,35 @@
-# Student Onboarding Friction Report
+# Student Onboarding Flow Friction Report
 
-This report identifies friction points in the student onboarding flow by analyzing form complexity and validation strictness.
+This report identifies potential friction points in the student onboarding flow.
 
-## Form Schema Complexity (Zod)
-| Schema Name | Field Count | Validation Rules | Friction Risk |
-|---|---|---|---|
-| loginSchema | 2 | 0 | Low |
-| signUpSchema | 4 | 0 | Low |
-| joinClassSchema | 1 | 2 | Low |
-| studentOnboardingSchema | 7 | 4 | Medium |
-| teacherOnboardingSchema | 5 | 4 | Low |
+## src/app/(auth)/join-class/page.tsx
+- **Form Length**: 1 inputs
+- **Risk**: 🟢 Low Friction
 
-## UI Complexity (Page Analysis)
-| Page Path | Input Elements | Flow Type | Friction Risk |
-|---|---|---|---|
-| join-class/page.tsx | 1 | Single page | Low |
-| login/page.tsx | 2 | Single page | Low |
-| onboarding/page.tsx | 3 | Multi-step detected | Low |
-| sign-up/page.tsx | 6 | Single page | Medium |
-| teacher-onboarding/page.tsx | 2 | Multi-step detected | Low |
+## src/app/(auth)/login/page.tsx
+- **Form Length**: 2 inputs
+- **Risk**: 🟢 Low Friction
 
-## Critical Friction Points
-No critical friction points detected based on field counts.
+## src/app/(auth)/onboarding/page.tsx
+- **Form Length**: 3 inputs
+- **Validation Load**: 13 validation checks
+- **Guidance**: 17 instruction elements
+- **Risk**: 🔴 High Friction - Potential Drop-off Point
+
+## src/app/(auth)/sign-up/page.tsx
+- **Form Length**: 6 inputs
+- **Validation Load**: 6 validation checks
+- **Guidance**: 10 instruction elements
+- **Risk**: 🔴 High Friction - Potential Drop-off Point
+
+## src/app/(auth)/teacher-onboarding/page.tsx
+- **Form Length**: 2 inputs
+- **Risk**: 🟢 Low Friction
+
+
+**Total High Friction Points:** 2
+
+## Optimization Recommendations
+1.  **Multi-Step Forms**: Break long forms (>4 inputs) into multiple steps.
+2.  **Inline Validation**: Provide immediate feedback rather than on-submit errors.
+3.  **Social Login**: Reduce friction by offering Google/GitHub login options.

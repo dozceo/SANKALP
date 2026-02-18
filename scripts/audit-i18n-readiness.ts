@@ -1,97 +1,99 @@
 import fs from 'fs';
 import path from 'path';
 
-const TARGET_DIRS = ['src/app', 'src/components'];
-const REPORT_FILE = 'I18N_READINESS_REPORT.md';
+const TARGET_DIRS = [
+  path.join(process.cwd(), 'src', 'app'),
+  path.join(process.cwd(), 'src', 'components')
+];
+const OUTPUT_FILE = 'I18N_READINESS_REPORT.md';
 
-function scanDirectory(dir: string, fileList: string[] = []) {
-  if (!fs.existsSync(dir)) return fileList;
-  const files = fs.readdirSync(dir);
-  files.forEach((file) => {
+function scanDirectory(dir: string): string[] {
+  let results: string[] = [];
+  if (!fs.existsSync(dir)) return results;
+  const list = fs.readdirSync(dir);
+  list.forEach(file => {
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
-    if (stat.isDirectory()) {
-      scanDirectory(filePath, fileList);
+    if (stat && stat.isDirectory()) {
+      results = results.concat(scanDirectory(filePath));
     } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
-      fileList.push(filePath);
+      results.push(filePath);
     }
   });
-  return fileList;
+  return results;
 }
 
-function analyzeFile(filePath: string) {
+function analyzeFile(filePath: string): { hardcodedStrings: string[] } {
   const content = fs.readFileSync(filePath, 'utf-8');
+  const hardcodedStrings: string[] = [];
 
-  // Heuristic regexes for hardcoded strings
-
-  // 1. Text between tags: >Some Text<
-  // We exclude whitespace-only strings
-  // We exclude strings that are just likely numbers or symbols
-  // We use [^<>{}] to avoid capturing content with curlies inside, though nested tags might be an issue.
-  // This is a simple audit, so false negatives are acceptable, we want to catch the obvious ones.
-  const textContentRegex = />\s*([a-zA-Z0-9][^<>{}]*[a-zA-Z0-9])\s*</g;
-
-  // 2. Common attributes: placeholder="Some Text", title="Some Text", alt="Some Text", label="Some Text"
-  // We look for double quotes
-  const attributeRegex = /(placeholder|title|alt|label|aria-label)\s*=\s*"([^"{}]*[a-zA-Z]+[^"{} ৮ম]*)"/g;
-
-  let hardcodedStrings: string[] = [];
+  // Regex to find text between JSX tags that isn't just whitespace or brackets
+  const textNodeRegex = />([^<{]+)</g;
   let match;
+  while ((match = textNodeRegex.exec(content)) !== null) {
+    const text = match[1].trim();
+    // Improved filtering to reduce false positives
+    if (
+      text.length > 1 && // Ignore single chars unless meaningful (hard to tell, safe to skip for noise reduction)
+      /[a-zA-Z]/.test(text) && // Must contain at least one letter
+      !/^[{}();,.[\]]+$/.test(text) && // Must not be just punctuation
+      !text.startsWith(');') &&
+      !text.startsWith('})') &&
+      !text.startsWith(']') &&
+      !text.includes('React.') && // Exclude likely code references
+      !text.includes('=>') && // Exclude arrow functions
+      !text.includes('return ') // Exclude return statements
+    ) {
+      hardcodedStrings.push(text);
+    }
+  }
 
-  while ((match = textContentRegex.exec(content)) !== null) {
-      // Exclude if it looks like a variable reference (simple check)
-      if (!match[1].includes('{') && !match[1].includes('}')) {
-          hardcodedStrings.push(match[1].trim());
+  // Regex for specific attributes
+  const attrRegex = /(?:placeholder|title|alt|aria-label)="([^"]+)"/g;
+  while ((match = attrRegex.exec(content)) !== null) {
+    // attributes usually contain real text, but let's be safe
+    const text = match[1].trim();
+    if (text.length > 0 && /[a-zA-Z]/.test(text)) {
+        hardcodedStrings.push(text);
+    }
+  }
+
+  return { hardcodedStrings };
+}
+
+function generateReport() {
+  let report = '# i18n Readiness Assessment Report\n\n';
+  report += 'This report identifies potential hardcoded user-facing strings that need externalization.\n\n';
+
+  let totalStrings = 0;
+  let fileCount = 0;
+
+  TARGET_DIRS.forEach(dir => {
+    const files = scanDirectory(dir);
+    files.forEach(file => {
+      const analysis = analyzeFile(file);
+      if (analysis.hardcodedStrings.length > 0) {
+        const relativePath = path.relative(process.cwd(), file);
+        report += `## ${relativePath}\n`;
+        report += `- **Hardcoded Strings Found**: ${analysis.hardcodedStrings.length}\n`;
+        report += `- **Examples**: "${analysis.hardcodedStrings.slice(0, 3).join('", "')}"${analysis.hardcodedStrings.length > 3 ? '...' : ''}\n\n`;
+        totalStrings += analysis.hardcodedStrings.length;
+        fileCount++;
       }
-  }
+    });
+  });
 
-  while ((match = attributeRegex.exec(content)) !== null) {
-      hardcodedStrings.push(`${match[1]}="${match[2]}"`);
-  }
+  report += `\n**Total Files with Hardcoded Strings:** ${fileCount}\n`;
+  report += `**Total Hardcoded Strings Detected:** ${totalStrings}\n`;
 
-  return {
-    filePath,
-    hardcodedStrings
-  };
+  report += `\n## Localization Effort Estimate
+- **Low Effort**: < 50 strings. Can be manually extracted in a day.
+- **Medium Effort**: 50-200 strings. Requires dedicated sprint task.
+- **High Effort**: > 200 strings. Significant architectural change needed.
+`;
+
+  fs.writeFileSync(OUTPUT_FILE, report);
+  console.log(`Report generated at ${OUTPUT_FILE}`);
 }
 
-function generateReport(results: any[]) {
-  let report = '# Internationalization (i18n) Readiness Report\n\n';
-  report += 'This report identifies potential hardcoded strings in JSX that need to be externalized for localization.\n\n';
-
-  const filesWithIssues = results.filter(r => r.hardcodedStrings.length > 0);
-  const totalStrings = filesWithIssues.reduce((sum, r) => sum + r.hardcodedStrings.length, 0);
-
-  report += `## Summary\n`;
-  report += `- Total Files Scanned: ${results.length}\n`;
-  report += `- Files with Hardcoded Strings: ${filesWithIssues.length}\n`;
-  report += `- Total Hardcoded Strings Detected: ${totalStrings}\n\n`;
-
-  report += `## Files Requiring Attention\n`;
-
-  if (filesWithIssues.length === 0) {
-      report += "No obvious hardcoded strings found.\n";
-  } else {
-      // Sort by number of strings descending
-      filesWithIssues.sort((a, b) => b.hardcodedStrings.length - a.hardcodedStrings.length);
-
-      filesWithIssues.forEach(file => {
-        report += `### ${file.filePath} (${file.hardcodedStrings.length} strings)\n`;
-        // Show first 5 examples
-        file.hardcodedStrings.slice(0, 5).forEach((s: string) => report += `- \`${s}\`\n`);
-        if (file.hardcodedStrings.length > 5) report += `- ... and ${file.hardcodedStrings.length - 5} more\n`;
-        report += '\n';
-      });
-  }
-
-  fs.writeFileSync(REPORT_FILE, report);
-  console.log(`Report generated at ${REPORT_FILE}`);
-}
-
-let allFiles: string[] = [];
-TARGET_DIRS.forEach(dir => {
-    allFiles = scanDirectory(dir, allFiles);
-});
-
-const results = allFiles.map(analyzeFile);
-generateReport(results);
+generateReport();
