@@ -5,7 +5,7 @@ import numpy as np
 
 # Add src/ml/training to path to import the module
 current_dir = os.path.dirname(os.path.abspath(__file__))
-module_path = os.path.join(current_dir, '../src/ml/training')
+module_path = os.path.join(current_dir, '../../src/ml/training')
 sys.path.append(module_path)
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
     print("Could not import generate_training_data. Defining mock function based on code analysis.")
     # Fallback if import fails (e.g. missing dependencies in env or path issues)
     def generate_training_data(n_samples=1000):
-        # ... logic copied from read file ...
         np.random.seed(42)
         data = []
         for _ in range(n_samples):
@@ -46,30 +45,33 @@ def analyze_data():
     print("Generating 1000 samples...")
     df = generate_training_data(1000)
 
-    print("\n--- Data Realism Audit ---")
-    print(f"Total Samples: {len(df)}")
+    report = []
+    report.append("# Data Realism Report")
+    report.append("")
+    report.append(f"**Total Samples:** {len(df)}")
 
     # Class Balance
     mastery_rate = df['mastered'].mean()
-    print(f"Mastery Rate: {mastery_rate:.2%} (Expected ~60%)")
+    report.append(f"**Mastery Rate:** {mastery_rate:.2%} (Expected ~60%)")
+    report.append("")
 
     # Feature Stats by Class
-    print("\n--- Feature Statistics by Class ---")
-    print(df.groupby('mastered').mean().round(2))
+    report.append("## Feature Statistics by Class")
+    stats = df.groupby('mastered').mean().round(2)
+    report.append(stats.to_markdown())
+    report.append("")
 
-    print("\n--- Outlier Detection ---")
+    report.append("## Outlier Detection")
     # Check for unrealistic combinations
-    # e.g., High score but very high variance?
-    # or Low score but very low time spent (guessing)?
-
     guessers = df[(df['avg_quiz_score'] < 0.3) & (df['time_spent_per_question'] < 15)]
-    print(f"Potential Guessers (Score < 0.3, Time < 15s): {len(guessers)} ({len(guessers)/len(df):.1%})")
+    report.append(f"- **Potential Guessers** (Score < 0.3, Time < 15s): {len(guessers)} ({len(guessers)/len(df):.1%})")
 
     crammers = df[(df['days_since_last_revision'] < 2) & (df['attempts_per_topic'] > 8)]
-    print(f"Potential Crammers (Days < 2, Attempts > 8): {len(crammers)} ({len(crammers)/len(df):.1%})")
+    report.append(f"- **Potential Crammers** (Days < 2, Attempts > 8): {len(crammers)} ({len(crammers)/len(df):.1%})")
+    report.append("")
 
     # Overlap Analysis
-    print("\n--- Distribution Overlap ---")
+    report.append("## Distribution Overlap")
     # Check if distributions are too separated (easy classification)
     m_scores = df[df['mastered']==1]['avg_quiz_score']
     nm_scores = df[df['mastered']==0]['avg_quiz_score']
@@ -78,12 +80,27 @@ def analyze_data():
     overlap_min = max(m_scores.min(), nm_scores.min())
     overlap_max = min(m_scores.max(), nm_scores.max())
 
-    print(f"Score Overlap Range: [{overlap_min}, {overlap_max}]")
+    report.append(f"- **Score Overlap Range:** [{overlap_min}, {overlap_max}]")
     in_overlap = df[(df['avg_quiz_score'] >= overlap_min) & (df['avg_quiz_score'] <= overlap_max)]
-    print(f"Samples in Overlap Region: {len(in_overlap)} ({len(in_overlap)/len(df):.1%})")
+    report.append(f"- **Samples in Overlap Region:** {len(in_overlap)} ({len(in_overlap)/len(df):.1%})")
 
     if len(in_overlap) < 100:
-        print("⚠️ WARNING: Low overlap indicates synthetic data might be too easily separable.")
+        report.append("\n**⚠️ WARNING:** Low overlap indicates synthetic data might be too easily separable.")
+    else:
+        report.append("\n**✅ PASS:** Sufficient overlap detected.")
+
+    # Write report
+    report_content = "\n".join(report)
+    print(report_content)
+
+    # Ensure reports dir exists (relative to script execution root, usually repo root)
+    if not os.path.exists('reports'):
+        os.makedirs('reports')
+
+    with open('reports/DATA_REALISM_REPORT.md', 'w') as f:
+        f.write(report_content)
+
+    print(f"\nReport saved to reports/DATA_REALISM_REPORT.md")
 
 if __name__ == "__main__":
     analyze_data()

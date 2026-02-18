@@ -1,109 +1,20 @@
-# Data Realism Audit Report
+# Data Realism Report
 
-**Date:** 2026-02-17 19:30:45.296815
-**Dataset:** `training_data.csv`
-**Samples:** 2000
+**Total Samples:** 1000
+**Mastery Rate:** 9.10% (Expected ~60%)
 
-## 1. Class Balance
-| Class | Count | Percentage |
-|---|---|---|
-| 0 | 1822 | 91.1% |
-| 1 | 178 | 8.9% |
+## Feature Statistics by Class
+|   mastered |   avg_quiz_score |   attempts_per_topic |   days_since_last_revision |   quiz_score_variance |   time_spent_per_question |
+|-----------:|-----------------:|---------------------:|---------------------------:|----------------------:|--------------------------:|
+|          0 |             0.47 |                 5.73 |                      15.06 |                  0.11 |                     45.14 |
+|          1 |             0.8  |                 4.2  |                       8.96 |                  0.05 |                     39.47 |
 
-**⚠️ Warning:** Severe class imbalance detected. Minority class < 10%.
+## Outlier Detection
+- **Potential Guessers** (Score < 0.3, Time < 15s): 4 (0.4%)
+- **Potential Crammers** (Days < 2, Attempts > 8): 14 (1.4%)
 
-## 2. Feature Distributions
+## Distribution Overlap
+- **Score Overlap Range:** [0.67, 0.88]
+- **Samples in Overlap Region:** 174 (17.4%)
 
-### avg_quiz_score
-- Mean: 0.50
-- Std: 0.19
-- Min: 0.00
-- Max: 1.00
-
-```
-0.00-0.10       | ## (20)
-0.10-0.20       | ######### (79)
-0.20-0.30       | ####################### (204)
-0.30-0.40       | ################################## (300)
-0.40-0.50       | ########################################### (378)
-0.50-0.60       | ################################################## (438)
-0.60-0.70       | ################################## (305)
-0.70-0.80       | ################# (156)
-0.80-0.90       | ########## (93)
-0.90-1.00       | ### (27)
-```
-
-### attempts_per_topic
-- Mean: 5.66
-- Std: 2.32
-- Min: 1.00
-- Max: 9.00
-
-```
-1.00-1.80       | ################ (108)
-1.80-2.60       | ################## (122)
-2.60-3.40       | ################# (113)
-3.40-4.20       | ################################################## (328)
-4.20-5.00       |  (0)
-5.00-5.80       | ###################################### (251)
-5.80-6.60       | ######################################### (272)
-6.60-7.40       | ######################################### (275)
-7.40-8.20       | ######################################### (269)
-8.20-9.00       | ####################################### (262)
-```
-
-### time_spent_per_question
-- Mean: 44.66
-- Std: 15.09
-- Min: 10.00
-- Max: 90.20
-
-```
-10.00-18.02     | ######### (80)
-18.02-26.04     | ################## (153)
-26.04-34.06     | ############################### (261)
-34.06-42.08     | ########################################## (357)
-42.08-50.10     | ################################################## (420)
-50.10-58.12     | ######################################### (346)
-58.12-66.14     | ########################## (219)
-66.14-74.16     | ############# (113)
-74.16-82.18     | ### (33)
-82.18-90.20     | ## (18)
-```
-
-### days_since_last_revision
-- Mean: 14.41
-- Std: 8.66
-- Min: 0.00
-- Max: 29.00
-
-```
-0.00-2.90       | ################################################## (221)
-2.90-5.80       | ########################################## (190)
-5.80-8.70       | ########################################## (188)
-8.70-11.60      | ########################################## (188)
-11.60-14.50     | ################################################ (214)
-14.50-17.40     | ############################################## (205)
-17.40-20.30     | ############################################### (210)
-20.30-23.20     | ########################################### (193)
-23.20-26.10     | ############################################# (202)
-26.10-29.00     | ########################################## (189)
-```
-
-## 3. Correlation Analysis
-Correlation with Target (mastered):
-| Feature | Correlation |
-|---|---|
-| avg_quiz_score | 0.494 |
-| time_spent_per_question | -0.103 |
-| attempts_per_topic | -0.194 |
-| days_since_last_revision | -0.227 |
-| quiz_score_variance | -0.251 |
-
-## 4. Realism Findings
-- ⚠️ Mastery rate is very low (< 20%). Is the threshold too high?
-
-## 5. Recommendations
-1. **Adjust Class Balance:** The dataset is highly imbalanced. Consider oversampling the minority class or adjusting the generation logic to produce more 'mastered' examples.
-2. **Review Logic Overrides:** The strict logic in `generate_data.py` (e.g., `if avg_quiz_score < 0.5: mastery_prob = 0`) creates sharp cutoffs that might not reflect real-world nuance.
-3. **Expand Feature Set:** Consider adding 'consistency_score' or 'topic_difficulty' for more robust modeling.
+**✅ PASS:** Sufficient overlap detected.

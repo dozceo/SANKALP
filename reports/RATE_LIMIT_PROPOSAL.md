@@ -1,12 +1,12 @@
 # ML Prediction API Rate Limiting Proposal
 
-**Date:** 2026-02-17T19:28:08.937Z
+**Date:** 2026-02-18T19:06:16.730Z
 **Test Scenario:** 50 requests with 50 concurrency.
 
 ## Performance Analysis
-- **Total Duration:** 860ms
-- **Throughput:** 58.14 requests/second
-- **Success Rate:** 0.0%
+- **Total Duration:** 3117ms
+- **Throughput:** 16.04 requests/second
+- **Success Rate:** 100.0%
 
 ## Observations
 The current implementation uses a persistent Python subprocess via `stdin/stdout`.
