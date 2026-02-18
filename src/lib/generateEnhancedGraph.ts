@@ -1,5 +1,6 @@
 import { StudentNode, GraphData, GraphNode, GraphLink, NodeType } from '@/data/docsData';
 import { lightenColor } from '@/lib/color-utils';
+import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
 
 /**
  * Enhanced graph generation with hierarchical node support
