@@ -46,10 +46,7 @@ export function StudentProfileForm() {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (!user?.uid) {
-                setFetching(false);
-                return;
-            }
+            if (!user?.uid) return;
             try {
                 const response = await fetch(`/api/student?studentId=${user.uid}`);
                 if (response.ok) {
@@ -141,9 +138,8 @@ export function StudentProfileForm() {
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label htmlFor="student-name" className="block text-sm font-medium mb-2">Your Name</label>
+                        <label className="block text-sm font-medium mb-2">Your Name</label>
                         <Input
-                            id="student-name"
                             placeholder="Enter your full name"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -151,14 +147,12 @@ export function StudentProfileForm() {
                     </div>
 
                     <div>
-                        <label id="grade-label" className="block text-sm font-medium mb-2">Grade/Class</label>
-                        <div role="radiogroup" aria-labelledby="grade-label" className="flex flex-wrap gap-2">
+                        <label className="block text-sm font-medium mb-2">Grade/Class</label>
+                        <div className="flex flex-wrap gap-2">
                             {GRADES.map(grade => (
                                 <button
                                     key={grade}
                                     type="button"
-                                    role="radio"
-                                    aria-checked={formData.grade === grade}
                                     onClick={() => setFormData({ ...formData, grade })}
                                     className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.grade === grade
                                         ? 'border-primary bg-primary/10 font-semibold'
@@ -172,13 +166,12 @@ export function StudentProfileForm() {
                     </div>
 
                     <div>
-                        <label id="subjects-label" className="block text-sm font-medium mb-2">Subjects</label>
-                        <div role="group" aria-labelledby="subjects-label" className="flex flex-wrap gap-2">
+                        <label className="block text-sm font-medium mb-2">Subjects</label>
+                        <div className="flex flex-wrap gap-2">
                             {SUBJECTS.map(subject => (
                                 <button
                                     key={subject}
                                     type="button"
-                                    aria-pressed={formData.subjects.includes(subject)}
                                     onClick={() => handleSubjectToggle(subject)}
                                     className={`px-3 py-2 rounded-lg border text-sm transition-all flex items-center gap-2 ${formData.subjects.includes(subject)
                                         ? 'border-primary bg-primary/10 font-semibold'
@@ -193,14 +186,12 @@ export function StudentProfileForm() {
                     </div>
 
                     <div>
-                        <label id="study-time-label" className="block text-sm font-medium mb-2">Daily Study Time</label>
-                        <div role="radiogroup" aria-labelledby="study-time-label" className="flex flex-wrap gap-2">
+                        <label className="block text-sm font-medium mb-2">Daily Study Time</label>
+                        <div className="flex flex-wrap gap-2">
                             {STUDY_TIMES.map(time => (
                                 <button
                                     key={time}
                                     type="button"
-                                    role="radio"
-                                    aria-checked={formData.dailyStudyTime === time}
                                     onClick={() => setFormData({ ...formData, dailyStudyTime: time })}
                                     className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.dailyStudyTime === time
                                         ? 'border-primary bg-primary/10 font-semibold'
@@ -214,9 +205,8 @@ export function StudentProfileForm() {
                     </div>
 
                     <div>
-                        <label htmlFor="student-goals" className="block text-sm font-medium mb-2">Learning Goals</label>
+                        <label className="block text-sm font-medium mb-2">Learning Goals</label>
                         <Textarea
-                            id="student-goals"
                             placeholder="e.g., Score 95% in board exams, Master calculus, Improve problem-solving..."
                             value={formData.goals}
                             onChange={e => setFormData({ ...formData, goals: e.target.value })}

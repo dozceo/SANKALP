@@ -23,7 +23,7 @@ export async function addPlannerItem(item: Omit<PlannerData, 'id'>): Promise<str
             completed: false,
             completedAt: null,
             reviewDates: [],
-            nextReviewDate: item.scheduledFor || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // Default: 3 days from now
+            nextReviewDate: null,
             reviewCount: 0,
             brainMapNodeId: item.brainMapNodeId || null,
             createdAt: FieldValue.serverTimestamp(),

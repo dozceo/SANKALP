@@ -14,7 +14,7 @@
 - ✅ **Explainable by design** (every decision has reasoning)
 
 > **Status:** Production-Ready Architecture with Synthetic Data  
-> Complete ML → ADK → Frontend integration. Database integration with Firebase is active.
+> Complete ML → ADK → Frontend integration. Database integration pending.
 
 ## Key Features 🚀
 
@@ -25,7 +25,7 @@
 -   **Teacher Analytics** : Risk dashboards, intervention suggestions, class-level intelligence
 -   **Syllabus Generator**: Retrieves official syllabi with exam strategies
 -   **Adaptive Quiz Engine**: Generates questions based on weak areas
--   **Mindful Mentor**: An AI tutor available to answer varied queries, providing motivation and explaining complex topics with context awareness.
+-   **Cognitive Chatbot**: An AI tutor available to answer varied queries and explain complex topics.
 
 ## Tech Stack 🛠️
 
@@ -40,7 +40,7 @@
 ### Backend / AI
 -   **AI Framework**: [Genkit](https://firebase.google.com/docs/genkit) (Google's AI SDK)
 -   **Model Integration**: Google Generative AI (Gemini)
--   **Database/Auth**: [Firebase](https://firebase.google.com/) (Firestore & Auth)
+-   **Database/Auth**: [Firebase](https://firebase.google.com/) (configured dependencies)
 
 ### ML System
 -   **Training**: Python 3.8+, scikit-learn (Logistic Regression for Topic Mastery)
@@ -64,16 +64,15 @@ SANKALP/
 │   │   ├── models/         # Trained .pkl models
 │   │   └── README.md       # ML architecture documentation
 │   ├── app/                # Next.js App Router (Frontend)
-│   │   ├── (auth)/         # Authentication routes (Login/Signup/Onboarding)
-│   │   ├── (main)/         # Main dashboard routes (Home, Syllabus, Quiz, Teacher)
+│   │   ├── (auth)/         # Authentication routes (Login/Signup)
+│   │   ├── (main)/         # Main dashboard routes (Home, Syllabus, Quiz)
 │   │   └── globals.css     # Global styles & Tailwind directives
 │   ├── components/         # Reusable UI components
 │   │   ├── ui/             # Radix/Shadcn primitives (Buttons, Cards, Inputs)
 │   │   └── ...             # Feature-specific components
 │   └── lib/                # Shared utilities
-│       ├── validations/    # Zod schemas for form validation
-│       └── styles/         # Design tokens
 ├── docs/                   # Documentation & Blueprints
+├── env.txt                 # (WARNING) Contains secrets - move to .env
 ├── package.json            # Dependencies & Scripts
 └── next.config.ts          # Next.js configuration
 ```
@@ -117,15 +116,15 @@ python generate_data.py
 # Train Topic Mastery model
 python train_mastery_model.py
 ```
-This creates `src/ml/models/mastery_model.pk`l with >90% accuracy.
+This creates `src/ml/models/mastery_model.pk`l with ~75-85% accuracy.
 
 ### 4. Environment Configuration
 Create `.env.local` in the root:
 ```env
 GEMINI_API_KEY=your_actual_api_key_here
 NEXT_PUBLIC_FIREBASE_API_KEY=...
-# ... other Firebase config variables
 ```
+⚠️ **Do not use `env.txt` in production!**
 
 ### 5. Run Development Server
 ```bash
@@ -142,7 +141,8 @@ npm run genkit:dev
 This project is currently a functional prototype. To make it production-ready, specific steps are needed:
 
 ### 1. Security (CRITICAL) 🔐
--   **Authentication**: Fully implemented in `(auth)` using Firebase Auth and Zod validation. Ensure AI endpoints are protected and only accessible to logged-in users.
+-   **Remove `env.txt`**: This file contains a raw API key. Immediately rotate the key and use `.env.local` which is git-ignored.
+-   **Authentication**: Fully implement the routes in `(auth)`. Ensure AI endpoints are protected and only accessible to logged-in users.
 
 ### 2. Code Quality & Testing
 -   **Error Handling**: Replace generic "An unexpected error occurred" messages with specific error codes (e.g., quota exceeded, network timeout).
@@ -150,12 +150,15 @@ This project is currently a functional prototype. To make it production-ready, s
 -   **Type Safety**: Ensure `any` types are minimized and strict TypeScript checks are enabled.
 
 ### 3. Infrastructure
--   **Database**: Connected to Firebase Firestore for user progress, syllabi, and teacher data.
+-   **Database**: Connect the mock data providers to a real Firestore/Postgres database to persist user progress and generated syllabi.
 -   **Caching**: Implement caching (Redis or Next.js Cache) for common syllabus queries to save on API costs and reduce latency.
+
+### 4. Documentation
+-   Expand functionality documentation for the "Mindful Mentor" and "Teacher Dashboard" which are currently skeletal.
 
 ## Limitations
 -   **Mock Data**: Some dates (like the "Exam Date" in the syllabus page) are hardcoded for demonstration (`new Date() + 2 days`).
--   **ML Model**: Trained on synthetic data; needs real user data for production accuracy.
+-   **Session Persistence**: Refreshing the page may lose the generated syllabus if not saved to a database.
 
 ## License
 MIT License (Placeholder)

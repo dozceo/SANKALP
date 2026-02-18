@@ -1,20 +1,12 @@
 'use client';
 
-import { useCallback, useRef, useEffect, useState, useMemo, memo, type MutableRefObject } from 'react';
+import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
-import { docsTree, studentsData, flatDocs } from '@/data/studentsDataStatic';
+import { docsTree, flattenDocs, studentsData } from '@/data/studentsDataStatic';
 import { generateEnhancedGraphData } from '@/lib/generateEnhancedGraph';
-import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, DocNode, StudentNode, GraphData } from '@/data/docsData';
-import { Maximize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X, ChevronDown, ChevronUp, Filter } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Globe, Target, X } from 'lucide-react';
 
 // Dynamically import ForceGraph2D with SSR disabled
 const ForceGraph2D = dynamic(
@@ -28,23 +20,8 @@ interface InteractiveGraphProps {
   graphData?: GraphData;
 }
 
-type ExtendedNodeObject = NodeObject & GraphNode & { _cachedLightColor?: string };
+type ExtendedNodeObject = NodeObject & GraphNode;
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
-
-// Optimization: Move constant outside component to prevent re-creation
-import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
-
-const NODE_TYPE_COLORS: Record<string, string> = {
-  student: GRAPH_COLORS_HEX.student,
-  subject: GRAPH_COLORS_HEX.subject,
-  chapter: GRAPH_COLORS_HEX.chapter,
-  topic: GRAPH_COLORS_HEX.topic,
-  weakness: GRAPH_COLORS_HEX.weakness,
-  strength: GRAPH_COLORS_HEX.strength,
-  skill: GRAPH_COLORS_HEX.skill,
-};
-
-const DEFAULT_NODE_COLOR = GRAPH_COLORS_HEX.default;
 
 export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: externalGraphData }: InteractiveGraphProps) {
   const graphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
@@ -54,143 +31,74 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'high-risk' | 'topics'>('all');
-
-  // Optimization: Use refs for frequent updates to avoid re-creating canvas functions
-  const hoveredNodeRef = useRef<string | null>(null);
-  const highlightedNodeRef = useRef<string | undefined>(highlightedNode);
-
-  useEffect(() => {
-    hoveredNodeRef.current = hoveredNode;
-  }, [hoveredNode]);
-
-  useEffect(() => {
-    highlightedNodeRef.current = highlightedNode;
-  }, [highlightedNode]);
-
   const [isGlobalView, setIsGlobalView] = useState(false);
+  const [connectedNodes, setConnectedNodes] = useState<Set<string>>(new Set());
 
   const fullGraphData = useMemo(() => generateEnhancedGraphData(studentsData), []);
-
-  // Optimization: Pre-calculate adjacency map and link map for O(1) lookups
-  const { adjacencyMap, nodeLinksMap } = useMemo(() => {
-    const adjMap = new Map<string, Set<string>>();
-    const linkMap = new Map<string, ExtendedLinkObject[]>();
-
-    fullGraphData.links.forEach(l => {
-      // Handle both string and object cases (force-graph mutates links)
-      const source = l.source as unknown;
-      const target = l.target as unknown;
-      const sourceId = typeof source === 'object' && source && 'id' in source ? (source as { id: string }).id : String(source);
-      const targetId = typeof target === 'object' && target && 'id' in target ? (target as { id: string }).id : String(target);
-
-      if (!adjMap.has(sourceId)) adjMap.set(sourceId, new Set());
-      if (!adjMap.has(targetId)) adjMap.set(targetId, new Set());
-
-      adjMap.get(sourceId)!.add(targetId);
-      adjMap.get(targetId)!.add(sourceId);
-
-      // Build link map
-      if (!linkMap.has(sourceId)) linkMap.set(sourceId, []);
-      if (!linkMap.has(targetId)) linkMap.set(targetId, []);
-      linkMap.get(sourceId)!.push(l as ExtendedLinkObject);
-      linkMap.get(targetId)!.push(l as ExtendedLinkObject);
-    });
-    return { adjacencyMap: adjMap, nodeLinksMap: linkMap };
-  }, [fullGraphData]);
-
-  // Optimization: Pre-calculate node map for O(1) lookups
-  const nodeMap = useMemo(() => {
-    const map = new Map<string, ExtendedNodeObject>();
-    fullGraphData.nodes.forEach(n => map.set(n.id, n as ExtendedNodeObject));
-    return map;
-  }, [fullGraphData]);
 
   // Generate local graph data (only nodes connected to highlighted node)
   const localGraphData = useMemo(() => {
     if (!highlightedNode || isGlobalView) return fullGraphData;
 
-    // Find all connected node IDs using optimized adjacency map
+    const flatNodes = flattenDocs(docsTree);
+    const currentNode = flatNodes.find(n => n.id === highlightedNode);
+
+    if (!currentNode) return fullGraphData;
+
+    // Find all connected node IDs
     const connected = new Set<string>([highlightedNode]);
 
-    // Add direct connections (O(1) lookup vs previous O(N) traversal)
-    const neighbors = adjacencyMap.get(highlightedNode);
-    if (neighbors) {
-      neighbors.forEach(id => connected.add(id));
+    // Add connections from current node
+    if (currentNode.connections) {
+      currentNode.connections.forEach(id => connected.add(id));
     }
 
-    // Filter nodes and links
-    // Optimization: Use nodeMap for O(1) lookup instead of O(N) filter
-    const filteredNodes: ExtendedNodeObject[] = [];
-    connected.forEach(id => {
-      const node = nodeMap.get(id);
-      if (node) filteredNodes.push(node);
-    });
-
-    // Optimization: Use nodeLinksMap for O(1) lookup instead of O(N) filter
-    const filteredLinks: ExtendedLinkObject[] = [];
-    const processedLinkIds = new Set<ExtendedLinkObject>();
-
-    connected.forEach(id => {
-      const links = nodeLinksMap.get(id);
-      if (links) {
-        links.forEach(l => {
-          if (processedLinkIds.has(l)) return;
-
-          const source = l.source as unknown;
-          const target = l.target as unknown;
-          const sourceId = source && typeof source === 'object' && 'id' in source ? (source as { id: string }).id : source as string;
-          const targetId = target && typeof target === 'object' && 'id' in target ? (target as { id: string }).id : target as string;
-
-          if (sourceId && targetId && connected.has(sourceId) && connected.has(targetId)) {
-            filteredLinks.push(l);
-            processedLinkIds.add(l);
-          }
-        });
+    // Add nodes that have connections to current node
+    flatNodes.forEach(node => {
+      if (node.connections?.includes(highlightedNode)) {
+        connected.add(node.id);
       }
     });
 
-    return { nodes: filteredNodes, links: filteredLinks };
-  }, [highlightedNode, isGlobalView, fullGraphData, adjacencyMap, nodeLinksMap, nodeMap]);
-
-  // Use external data if provided, otherwise fallback to local/generated data
-  const baseGraphData = externalGraphData || (isGlobalView ? fullGraphData : localGraphData);
-
-  const graphData = useMemo(() => {
-    if (filter === 'all') return baseGraphData;
-
-    let filteredNodes = baseGraphData.nodes;
-
-    if (filter === 'high-risk') {
-      // Show high risk students and their connected topics
-      filteredNodes = baseGraphData.nodes.filter(n => {
-        if (n.type === 'student') {
-          return (n as any).risk?.toLowerCase() === 'high';
+    // Add parent nodes
+    function findParent(nodes: DocNode[], targetId: string, parentId?: string): string | undefined {
+      for (const node of nodes) {
+        if (node.id === targetId) return parentId;
+        if (node.children) {
+          const found = findParent(node.children, targetId, node.id);
+          if (found) return found;
         }
-        return true; // Keep topics/others for context, or filter?
-        // Let's filter to only high risk students and topics connected to them?
-        // For simplicity, just show high risk students and ALL topics,
-        // OR just high risk students.
-        // Audit says: "Show only High Risk Students".
-      });
-      // Refine: Only High Risk Students.
-       filteredNodes = baseGraphData.nodes.filter(n =>
-         (n.type === 'student' && (n as any).risk?.toLowerCase() === 'high') ||
-         n.type !== 'student' // Keep context nodes (topics) so it's not empty?
-       );
-    } else if (filter === 'topics') {
-      filteredNodes = baseGraphData.nodes.filter(n => n.type === 'topic');
+      }
+      return undefined;
     }
 
-    const nodeIds = new Set(filteredNodes.map(n => n.id));
-    const filteredLinks = baseGraphData.links.filter(l => {
-      const s = typeof l.source === 'object' ? (l.source as any).id : l.source;
-      const t = typeof l.target === 'object' ? (l.target as any).id : l.target;
-      return nodeIds.has(s) && nodeIds.has(t);
+    const parentId = findParent(docsTree, highlightedNode);
+    if (parentId) connected.add(parentId);
+
+    // Add child nodes
+    const currentDocNode = flatNodes.find(n => n.id === highlightedNode);
+    if (currentDocNode && 'children' in currentDocNode) {
+      const docWithChildren = currentDocNode as DocNode;
+      docWithChildren.children?.forEach(child => connected.add(child.id));
+    }
+
+    setConnectedNodes(connected);
+
+    // Filter nodes and links
+    const filteredNodes = fullGraphData.nodes.filter(n => connected.has(n.id));
+    const filteredLinks = fullGraphData.links.filter(l => {
+      const source = l.source as unknown;
+      const target = l.target as unknown;
+      const sourceId = source && typeof source === 'object' && 'id' in source ? (source as { id: string }).id : source as string;
+      const targetId = target && typeof target === 'object' && 'id' in target ? (target as { id: string }).id : target as string;
+      return sourceId && targetId && connected.has(sourceId) && connected.has(targetId);
     });
 
     return { nodes: filteredNodes, links: filteredLinks };
-  }, [baseGraphData, filter]);
+  }, [highlightedNode, isGlobalView, fullGraphData]);
+
+  // Use external data if provided, otherwise fallback to local/generated data
+  const graphData = externalGraphData || (isGlobalView ? fullGraphData : localGraphData);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -218,7 +126,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     }
   }, [highlightedNode]);
 
-  const handleNodeClick = useCallback((node: ExtendedNodeObject, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
+  const handleNodeClick = useCallback((node: ExtendedNodeObject, ref: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
     if (onNodeClick && typeof node.id === 'string') {
       onNodeClick(node.id);
     }
@@ -229,53 +137,57 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     }
   }, [onNodeClick]);
 
-  // Memoize handlers to prevent re-creation
-  const handleZoom = useCallback((factor: number, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
+  const handleZoom = (factor: number, ref: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
     if (ref.current) {
       ref.current.zoom(ref.current.zoom() * factor, 300);
     }
-  }, []);
+  };
 
-  const handleReset = useCallback((ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
+  const handleReset = (ref: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => {
     if (ref.current) {
       ref.current.centerAt(0, 0, 500);
       ref.current.zoom(1, 500);
     }
-  }, []);
+  };
+
+  const nodeColor = useCallback((node: ExtendedNodeObject) => {
+    // Use custom color if specified
+    if (node.color) {
+      return node.color;
+    }
+
+    // Highlighted node
+    if (node.id === highlightedNode) {
+      return '#a78bfa'; // Active node - lighter purple
+    }
+
+    // Hovered node
+    if (node.id === hoveredNode) {
+      return '#c4b5fd'; // Hovered node - even lighter
+    }
+
+    // Default colors by node type
+    const typeColors: Record<string, string> = {
+      student: '#9333EA',    // Purple
+      subject: '#3B82F6',    // Blue
+      chapter: '#06B6D4',    // Cyan
+      topic: '#6B7280',      // Gray
+      weakness: '#EF4444',   // Red
+      strength: '#10B981',   // Green
+      skill: '#F59E0B',      // Amber
+    };
+
+    return typeColors[node.type] || '#6d28d9'; // Fallback
+  }, [highlightedNode, hoveredNode]);
 
   const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.name;
     const baseSize = node.val || 8;
-    // Use refs for stable access to changing state
-    const isHighlighted = node.id === highlightedNodeRef.current;
-    const isHovered = node.id === hoveredNodeRef.current;
+    const isHighlighted = node.id === highlightedNode;
+    const isHovered = node.id === hoveredNode;
     const nodeSize = (isHighlighted || isHovered ? baseSize * 1.3 : baseSize) / globalScale;
 
     if (node.x === undefined || node.y === undefined) return;
-
-    // Optimization: Efficient color determination
-    let baseColor: string;
-    let lightColor: string;
-
-    if (isHighlighted) {
-      baseColor = GRAPH_COLORS_HEX.highlight;
-      lightColor = GRAPH_COLORS_HEX.highlightLight;
-    } else if (isHovered) {
-      baseColor = GRAPH_COLORS_HEX.hover;
-      lightColor = GRAPH_COLORS_HEX.hoverLight;
-    } else {
-      // Use pre-calculated or type-based colors
-      baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
-      // Use pre-calculated light color if available, otherwise calculate once (memoized) and cache
-      if (node.lightColor) {
-        lightColor = node.lightColor;
-      } else {
-        if (!node._cachedLightColor) {
-          node._cachedLightColor = lightenColor(baseColor, 20);
-        }
-        lightColor = node._cachedLightColor;
-      }
-    }
 
     // Glow effect for highlighted/hovered nodes
     if (isHighlighted || isHovered) {
@@ -291,32 +203,23 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fill();
     }
 
-    // Optimization: Skip expensive gradient for small nodes or when zoomed out
-    // Use simple flat color for better performance
-    if (globalScale < 1.5 && !isHighlighted && !isHovered) {
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
-      ctx.fillStyle = baseColor;
-      ctx.fill();
-    } else {
-      // Node circle with gradient
-      const nodeGradient = ctx.createRadialGradient(
-        node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
-        node.x, node.y, nodeSize
-      );
+    // Node circle with gradient
+    const nodeGradient = ctx.createRadialGradient(
+      node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
+      node.x, node.y, nodeSize
+    );
+    const baseColor = nodeColor(node);
+    nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
+    nodeGradient.addColorStop(1, baseColor);
 
-      nodeGradient.addColorStop(0, lightColor);
-      nodeGradient.addColorStop(1, baseColor);
-
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
-      ctx.fillStyle = nodeGradient;
-      ctx.fill();
-    }
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+    ctx.fillStyle = nodeGradient;
+    ctx.fill();
 
     // Border for highlighted node
     if (isHighlighted) {
-      ctx.strokeStyle = GRAPH_COLORS_HEX.highlightLight;
+      ctx.strokeStyle = '#e9d5ff';
       ctx.lineWidth = 2 / globalScale;
       ctx.stroke();
     }
@@ -333,10 +236,10 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       ctx.fillText(label, node.x + 0.5, node.y + nodeSize + 3.5);
 
-      ctx.fillStyle = isHighlighted ? '#ffffff' : isHovered ? GRAPH_COLORS_HEX.hoverLight : '#a1a1aa';
+      ctx.fillStyle = isHighlighted ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#a1a1aa';
       ctx.fillText(label, node.x, node.y + nodeSize + 3);
     }
-  }, []); // Dependencies removed to keep function stable
+  }, [highlightedNode, hoveredNode, nodeColor]);
 
   const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const start = link.source;
@@ -344,10 +247,9 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
     if (!start || !end || start.x === undefined || start.y === undefined || end.x === undefined || end.y === undefined) return;
 
-    // Use refs
     const isConnectedToHighlighted =
-      (start.id === highlightedNodeRef.current || end.id === highlightedNodeRef.current) ||
-      (start.id === hoveredNodeRef.current || end.id === hoveredNodeRef.current);
+      (start.id === highlightedNode || end.id === highlightedNode) ||
+      (start.id === hoveredNode || end.id === hoveredNode);
 
     // Calculate curved path
     const dx = end.x - start.x;
@@ -386,7 +288,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       ctx.fillStyle = 'rgba(196, 181, 253, 0.8)';
       ctx.fill();
     }
-  }, []); // Dependencies removed
+  }, [highlightedNode, hoveredNode]);
 
   const handleNodeHover = useCallback((node: ExtendedNodeObject | null) => {
     if (node && typeof node.id === 'string') {
@@ -398,23 +300,84 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     }
   }, []);
 
+  const GraphControls = ({ graphRefProp, showToggle = true }: { graphRefProp: React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>, showToggle?: boolean }) => (
+    <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+      {showToggle && (
+        <button
+          onClick={() => setIsGlobalView(!isGlobalView)}
+          className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isGlobalView
+            ? 'bg-primary/30 text-primary'
+            : 'bg-secondary/80 hover:bg-secondary text-muted-foreground hover:text-foreground'
+            }`}
+          title={isGlobalView ? 'Show local graph' : 'Show global graph'}
+          aria-label={isGlobalView ? 'Show local graph' : 'Show global graph'}
+        >
+          {isGlobalView ? <Globe className="w-4 h-4" aria-hidden="true" /> : <Target className="w-4 h-4" aria-hidden="true" />}
+        </button>
+      )}
+      <button
+        onClick={() => handleZoom(1.5, graphRefProp)}
+        className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+        title="Zoom in"
+        aria-label="Zoom in"
+      >
+        <ZoomIn className="w-4 h-4" aria-hidden="true" />
+      </button>
+      <button
+        onClick={() => handleZoom(0.67, graphRefProp)}
+        className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+        title="Zoom out"
+        aria-label="Zoom out"
+      >
+        <ZoomOut className="w-4 h-4" aria-hidden="true" />
+      </button>
+      <button
+        onClick={() => handleReset(graphRefProp)}
+        className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+        title="Reset view"
+        aria-label="Reset view"
+      >
+        <RotateCcw className="w-4 h-4" aria-hidden="true" />
+      </button>
+      {!isModalOpen && (
+        <>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+            title={isExpanded ? 'Collapse' : 'Expand'}
+            aria-label={isExpanded ? 'Collapse graph' : 'Expand graph'}
+          >
+            {isExpanded ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="p-1.5 bg-primary/20 hover:bg-primary/30 rounded text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+            title="Open fullscreen"
+            aria-label="Open fullscreen view"
+          >
+            <Maximize2 className="w-4 h-4" aria-hidden="true" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+
+  const GraphTitle = ({ title }: { title: string }) => (
+    <div className="absolute top-2 left-3 z-10 flex items-center gap-2">
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        {title}
+      </span>
+      <span className="text-[10px] text-muted-foreground/60">
+        {graphData.nodes.length} nodes
+      </span>
+    </div>
+  );
+
   return (
     <>
       <div className="graph-container relative" ref={containerRef}>
-        <GraphControls
-          graphRefProp={graphRef}
-          isGlobalView={isGlobalView}
-          setIsGlobalView={setIsGlobalView}
-          isExpanded={isExpanded}
-          setIsExpanded={setIsExpanded}
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
-          onZoom={handleZoom}
-          onReset={handleReset}
-          filter={filter}
-          setFilter={setFilter}
-        />
-        <GraphTitle title={isGlobalView ? 'Global Graph' : 'Local Graph'} nodeCount={graphData.nodes.length} />
+        <GraphControls graphRefProp={graphRef} />
+        <GraphTitle title={isGlobalView ? 'Global Graph' : 'Local Graph'} />
 
         <ForceGraph2D
           ref={graphRef as any}
@@ -467,19 +430,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
             {/* Modal Controls */}
             <div className="absolute top-16 right-4 z-20">
-              <GraphControls
-                graphRefProp={modalGraphRef}
-                isGlobalView={isGlobalView}
-                setIsGlobalView={setIsGlobalView}
-                isExpanded={isExpanded}
-                setIsExpanded={setIsExpanded}
-                isModalOpen={isModalOpen}
-                setIsModalOpen={setIsModalOpen}
-                onZoom={handleZoom}
-                onReset={handleReset}
-                filter={filter}
-                setFilter={setFilter}
-              />
+              <GraphControls graphRefProp={modalGraphRef} showToggle={true} />
             </div>
 
             {/* Modal Graph */}
@@ -512,168 +463,12 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   );
 }
 
-const GraphControls = memo(function GraphControls({
-  graphRefProp,
-  isGlobalView,
-  setIsGlobalView,
-  isExpanded,
-  setIsExpanded,
-  isModalOpen,
-  setIsModalOpen,
-  onZoom,
-  onReset,
-  filter,
-  setFilter
-}: {
-  graphRefProp: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>;
-  isGlobalView: boolean;
-  setIsGlobalView: (v: boolean) => void;
-  isExpanded: boolean;
-  setIsExpanded: (v: boolean) => void;
-  isModalOpen: boolean;
-  setIsModalOpen: (v: boolean) => void;
-  onZoom: (factor: number, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
-  onReset: (ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
-  filter: 'all' | 'high-risk' | 'topics';
-  setFilter: (f: 'all' | 'high-risk' | 'topics') => void;
-}) {
-  return (
-    <TooltipProvider delayDuration={300}>
-      <div className="flex flex-col gap-2 p-2 bg-card/80 backdrop-blur-sm rounded-lg border border-border shadow-sm absolute top-4 right-4 z-10">
-        {/* Filters */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${filter !== 'all' ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
-              aria-label="Filter Graph"
-            >
-              <Filter className="w-4 h-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setFilter('all')}>
-              Show All
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilter('high-risk')}>
-              High Risk Students
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilter('topics')}>
-              Topics Only
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <div className="h-px bg-border my-1" />
-
-        <div className="flex flex-col gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => onZoom(1.2, graphRefProp)}
-                className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-                aria-label="Zoom In"
-              >
-                <ZoomIn className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Zoom In</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => onZoom(0.8, graphRefProp)}
-                className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-                aria-label="Zoom Out"
-              >
-                <ZoomOut className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Zoom Out</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => onReset(graphRefProp)}
-                className="p-1.5 hover:bg-secondary rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-                aria-label="Reset View"
-              >
-                <RotateCcw className="w-4 h-4 text-muted-foreground hover:text-foreground" aria-hidden="true" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Reset View</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        <div className="h-px bg-border my-1" />
-
-        <div className="flex flex-col gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setIsGlobalView(!isGlobalView)}
-                className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isGlobalView ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
-                aria-label={isGlobalView ? "Switch to Local View" : "Switch to Global View"}
-              >
-                {isGlobalView ? <Globe className="w-4 h-4" aria-hidden="true" /> : <Target className="w-4 h-4" aria-hidden="true" />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>{isGlobalView ? "Switch to Local View" : "Switch to Global View"}</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {!isModalOpen && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${isExpanded ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
-                  aria-label={isExpanded ? "Collapse view" : "Expand view"}
-                >
-                  {isExpanded ? <ChevronUp className="w-4 h-4" aria-hidden="true" /> : <ChevronDown className="w-4 h-4" aria-hidden="true" />}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p>{isExpanded ? "Collapse view" : "Expand view"}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {!isModalOpen && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background`}
-                  aria-label="Enter fullscreen mode"
-                >
-                  <Maximize2 className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p>Fullscreen</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      </div>
-    </TooltipProvider>
-  );
-});
-
-function GraphTitle({ title, nodeCount }: { title: string; nodeCount: number }) {
-  return (
-    <div className="absolute top-4 left-4 z-10 bg-card/80 backdrop-blur-sm p-3 rounded-lg border border-border shadow-sm pointer-events-none">
-      <h3 className="text-sm font-semibold mb-1 text-foreground">{title}</h3>
-      <p className="text-xs text-muted-foreground">{nodeCount} nodes</p>
-    </div>
-  );
+// Helper function to lighten a hex color
+function lightenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, (num >> 16) + amt);
+  const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
+  const B = Math.min(255, (num & 0x0000ff) + amt);
+  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
 }

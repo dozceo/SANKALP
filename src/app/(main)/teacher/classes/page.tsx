@@ -58,9 +58,9 @@ import Link from "next/link";
 
 // Form Schema
 const createClassSchema = z.object({
-  className: z.string().min(3, "Class name must be at least 3 characters."),
-  subject: z.string().min(2, "Subject must be at least 2 characters."),
-  grade: z.string().min(1, "Please enter a grade level."),
+  className: z.string().min(3, "Class name must be at least 3 characters"),
+  subject: z.string().min(2, "Subject is required"),
+  grade: z.string().min(1, "Grade is required"),
 });
 
 interface ClassData {

@@ -6,7 +6,7 @@
  */
 
 import { db } from './firebase-admin';
-import { FieldValue, WriteBatch } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // ============================================
 // Type Definitions
@@ -53,9 +53,7 @@ export interface Student {
     name: string;
     classId?: string;
     className?: string;
-    classSubject?: string;
     teacherId?: string;
-    teacherName?: string;
     grade?: string;
     joinedClassAt?: Date;
     registrationDate: Date;
@@ -74,7 +72,6 @@ export interface QuizResult {
     score: number; // 0.0 to 1.0
     timeSpent: number; // seconds
     questionsAttempted: number;
-    questionsCount?: number; // Total questions in quiz
     timestamp: Date;
 }
 
@@ -315,9 +312,7 @@ export async function getStudent(studentId: string): Promise<Student | null> {
             name: data?.name || '',
             classId: data?.classId,
             className: data?.className,
-            classSubject: data?.classSubject,
             teacherId: data?.teacherId,
-            teacherName: data?.teacherName,
             grade: data?.grade,
             joinedClassAt: data?.joinedClassAt?.toDate(),
             registrationDate: data?.registrationDate?.toDate() || new Date(),
@@ -386,21 +381,15 @@ export async function updateLastLogin(studentId: string): Promise<void> {
  */
 export async function getQuizResults(
     studentId: string,
-    limit: number = 100,
-    options?: { select?: string[] }
+    limit: number = 100
 ): Promise<QuizResult[]> {
     try {
-        let query = db
+        const snapshot = await db
             .collection('quizResults')
             .where('studentId', '==', studentId)
             .orderBy('timestamp', 'desc')
-            .limit(limit);
-
-        if (options?.select && options.select.length > 0) {
-            query = query.select(...options.select);
-        }
-
-        const snapshot = await query.get();
+            .limit(limit)
+            .get();
 
         return snapshot.docs.map((doc) => {
             const data = doc.data();
@@ -416,87 +405,6 @@ export async function getQuizResults(
         });
     } catch (error) {
         console.error('Error fetching quiz results:', error);
-        throw error;
-    }
-}
-
-/**
- * Get batched quiz results for multiple students
- * Fetches data in chunks to respect Firestore 'in' query limits (10).
- * Results are sorted by timestamp desc in memory.
- */
-export async function getBatchedQuizResults(
-    studentIds: string[],
-    limitPerStudent?: number,
-    options?: { select?: string[] }
-): Promise<Map<string, QuizResult[]>> {
-    if (!studentIds.length) {
-        return new Map();
-    }
-
-    // Chunk size 10 for 'in' query
-    const chunkSize = 10;
-    const chunks = [];
-    for (let i = 0; i < studentIds.length; i += chunkSize) {
-        chunks.push(studentIds.slice(i, i + chunkSize));
-    }
-
-    try {
-        const resultsMap = new Map<string, QuizResult[]>();
-
-        // Process chunks in parallel
-        await Promise.all(chunks.map(async (chunk) => {
-            let query = db
-                .collection('quizResults')
-                .where('studentId', 'in', chunk)
-                .orderBy('timestamp', 'desc');
-
-            if (options?.select && options.select.length > 0) {
-                query = query.select(...options.select);
-            }
-
-            // We fetch all and sort in memory to be safe and avoid composite index requirements
-            // and to correctly apply per-student limits
-            const snapshot = await query.get();
-
-            snapshot.docs.forEach(doc => {
-                const data = doc.data();
-                const result: QuizResult = {
-                    id: doc.id,
-                    studentId: data.studentId,
-                    topic: data.topic,
-                    score: data.score,
-                    timeSpent: data.timeSpent,
-                    questionsAttempted: data.questionsAttempted,
-                    timestamp: data.timestamp?.toDate() || new Date(),
-                };
-
-                // Optimization: Avoid redundant Map.set calls
-                let existing = resultsMap.get(result.studentId);
-                if (!existing) {
-                    existing = [];
-                    resultsMap.set(result.studentId, existing);
-                }
-                existing.push(result);
-            });
-        }));
-
-        // Sort and slice per student
-        resultsMap.forEach((results, studentId) => {
-            // Results are already sorted by timestamp due to orderBy in query and sequential processing
-
-            // Apply limit if requested
-            if (limitPerStudent && results.length > limitPerStudent) {
-                resultsMap.set(studentId, results.slice(0, limitPerStudent));
-            } else {
-                // Ensure sorted array is set back (sort mutates, but good to be explicit)
-                resultsMap.set(studentId, results);
-            }
-        });
-
-        return resultsMap;
-    } catch (error) {
-        console.error('Error fetching batched quiz results:', error);
         throw error;
     }
 }
@@ -1043,82 +951,21 @@ export async function addStudentToClass(studentId: string, classCode: string): P
             throw new Error('Class not found');
         }
 
-        const batch = db.batch();
-
-        // Check if student is already in a class and remove them if so
-        const student = await getStudent(studentId);
-        if (student?.classId) {
-            // Only remove if it's a different class
-            if (student.classId !== classDoc.id) {
-                // Pass the batch so removal is part of the atomic update
-                await removeStudentFromClass(studentId, student.classId, batch);
-            } else {
-                // Already in this class, nothing to do
-                return;
-            }
-        }
-
-        // Add student to new class
-        const classRef = db.collection('classes').doc(classDoc.id);
-        batch.update(classRef, {
+        // Add student to class
+        await db.collection('classes').doc(classDoc.id).update({
             studentIds: FieldValue.arrayUnion(studentId),
         });
 
         // Update student document
-        const studentRef = db.collection('students').doc(studentId);
-        batch.update(studentRef, {
+        await db.collection('students').doc(studentId).update({
             classId: classDoc.id,
             className: classDoc.className,
-            classSubject: classDoc.subject,
             teacherId: classDoc.teacherId,
-            teacherName: classDoc.teacherName,
             grade: classDoc.grade,
             joinedClassAt: FieldValue.serverTimestamp(),
         });
-
-        // Commit all changes atomically
-        await batch.commit();
     } catch (error) {
         console.error('Error adding student to class:', error);
-        throw error;
-    }
-}
-
-/**
- * Remove student from class
- */
-export async function removeStudentFromClass(
-    studentId: string,
-    classId: string,
-    batch?: WriteBatch
-): Promise<void> {
-    try {
-        const writeBatch = batch || db.batch();
-
-        // Remove student from class document
-        const classRef = db.collection('classes').doc(classId);
-        writeBatch.update(classRef, {
-            studentIds: FieldValue.arrayRemove(studentId),
-        });
-
-        // Clear class info from student document
-        const studentRef = db.collection('students').doc(studentId);
-        writeBatch.update(studentRef, {
-            classId: FieldValue.delete(),
-            className: FieldValue.delete(),
-            classSubject: FieldValue.delete(),
-            teacherId: FieldValue.delete(),
-            teacherName: FieldValue.delete(),
-            grade: FieldValue.delete(),
-            joinedClassAt: FieldValue.delete(),
-        });
-
-        // Only commit if we created the batch
-        if (!batch) {
-            await writeBatch.commit();
-        }
-    } catch (error) {
-        console.error('Error removing student from class:', error);
         throw error;
     }
 }
@@ -1142,7 +989,6 @@ export async function getStudentsInClass(classId: string): Promise<Student[]> {
                 name: data.name,
                 classId: data.classId,
                 className: data.className,
-                classSubject: data.classSubject,
                 teacherId: data.teacherId,
                 grade: data.grade,
                 joinedClassAt: data.joinedClassAt?.toDate(),
@@ -1159,31 +1005,22 @@ export async function getStudentsInClass(classId: string): Promise<Student[]> {
 /**
  * Get all students for a teacher (across all their classes)
  */
-export async function getTeacherStudents(
-    teacherId: string,
-    options?: { select?: string[] }
-): Promise<Student[]> {
+export async function getTeacherStudents(teacherId: string): Promise<Student[]> {
     try {
-        let query = db
+        const snapshot = await db
             .collection('students')
-            .where('teacherId', '==', teacherId);
-
-        if (options?.select && options.select.length > 0) {
-            query = query.select(...options.select);
-        }
-
-        const snapshot = await query.get();
+            .where('teacherId', '==', teacherId)
+            .get();
 
         return snapshot.docs.map((doc) => {
             const data = doc.data();
             return {
                 id: doc.id,
                 userId: data.userId || doc.id,
-                email: data.email || '',
-                name: data.name || '',
+                email: data.email,
+                name: data.name,
                 classId: data.classId,
                 className: data.className,
-                classSubject: data.classSubject,
                 teacherId: data.teacherId,
                 grade: data.grade,
                 joinedClassAt: data.joinedClassAt?.toDate(),

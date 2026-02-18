@@ -17,21 +17,13 @@ const ExplainConceptInputSchema = z.object({
 });
 export type ExplainConceptInput = z.infer<typeof ExplainConceptInputSchema>;
 
-export const ExplainConceptOutputSchema = z.object({
+const ExplainConceptOutputSchema = z.object({
   explanation: z.string().describe('The explanation of the concept in the target language.'),
 });
 export type ExplainConceptOutput = z.infer<typeof ExplainConceptOutputSchema>;
 
 export async function explainConcept(input: ExplainConceptInput): Promise<ExplainConceptOutput> {
-  console.log('[MultilingualChatbot] Explaining concept:', input.concept, 'in', input.language);
-  try {
-    const result = await explainConceptFlow(input);
-    console.log('[MultilingualChatbot] Successfully generated explanation');
-    return result;
-  } catch (error) {
-    console.error('[MultilingualChatbot] Error in flow execution:', error);
-    throw error;
-  }
+  return explainConceptFlow(input);
 }
 
 const prompt = ai.definePrompt({
@@ -57,12 +49,7 @@ const explainConceptFlow = ai.defineFlow(
     outputSchema: ExplainConceptOutputSchema,
   },
   async input => {
-    console.log('[MultilingualChatbot] Starting flow execution...');
     const {output} = await prompt(input);
-    if (!output) {
-      console.error('[MultilingualChatbot] Flow completed but returned no output');
-      throw new Error('AI failed to generate an explanation.');
-    }
-    return output;
+    return output!;
   }
 );

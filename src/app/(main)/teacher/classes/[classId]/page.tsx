@@ -190,7 +190,7 @@ export default function ClassDetailsPage() {
                 </Button>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-3">
                 <Card className="md:col-span-2">
                     <CardHeader>
                         <div className="flex items-center gap-3">
@@ -224,7 +224,7 @@ export default function ClassDetailsPage() {
                             </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col">
                                 <span className="text-sm text-muted-foreground">Students Enrolled</span>
                                 <span className="text-2xl font-bold">{students.length}</span>

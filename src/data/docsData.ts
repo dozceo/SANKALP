@@ -40,15 +40,6 @@ export interface StudyMaterial {
     priority: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
-export interface Badge {
-    id: string;
-    title: string;
-    description: string;
-    icon: string;
-    earnedAt: string;
-    color?: string;
-}
-
 // Type definitions
 export interface StudentNode {
     id: string;
@@ -64,12 +55,6 @@ export interface StudentNode {
     connections?: string[];
     lastActive?: string;
     masteryScores?: Record<string, number>;
-    badges?: Badge[];
-    streak?: number;
-    classId?: string;
-    className?: string;
-    classSubject?: string;
-    teacherName?: string;
 
     // New hierarchical study data
     subjects?: Subject[];
@@ -100,7 +85,6 @@ export interface GraphNode {
     parent?: string;        // For hierarchical relationships
     mastery?: number;       // For topics
     color?: string;         // Override default color
-    lightColor?: string;    // Pre-calculated light color for rendering
 }
 
 export interface GraphLink {
@@ -212,21 +196,20 @@ export function generateGraphData(students: StudentNode[]): GraphData {
         });
     });
 
-    // Track existing links to prevent duplicates (O(1) lookup)
-    const linkKeys = new Set<string>();
-
     // Create links between students (peer connections)
     students.forEach(student => {
         student.connections?.forEach(connectionId => {
-            const s = student.id;
-            const t = connectionId;
-            const key = s < t ? `${s}-${t}` : `${t}-${s}`;
+            // Avoid duplicate links
+            const existingLink = links.find(
+                l =>
+                    (l.source === student.id && l.target === connectionId) ||
+                    (l.source === connectionId && l.target === student.id)
+            );
 
-            if (!linkKeys.has(key)) {
-                linkKeys.add(key);
+            if (!existingLink) {
                 links.push({
-                    source: s,
-                    target: t,
+                    source: student.id,
+                    target: connectionId,
                     type: 'peer',
                 });
             }

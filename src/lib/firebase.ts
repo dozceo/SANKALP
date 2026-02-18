@@ -6,12 +6,7 @@
  */
 
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
-import {
-    getAuth,
-    Auth,
-    setPersistence,
-    browserSessionPersistence
-} from "firebase/auth";
+import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getAnalytics, Analytics } from "firebase/analytics";
@@ -79,23 +74,6 @@ const initializeFirebase = () => {
 
     // Initialize Firebase services
     auth = getAuth(app as FirebaseApp);
-
-    /**
-     * Session Isolation for Development
-     *
-     * In development mode, we use browserSessionPersistence to allow developers to
-     * log in with different accounts (e.g., Student and Teacher) in different tabs
-     * of the same browser. This prevents session coupling and role-switching issues.
-     *
-     * In production, we default to browserLocalPersistence (Firebase default)
-     * to provide a smoother UX where users stay logged in across sessions.
-     */
-    if (process.env.NODE_ENV === 'development') {
-        setPersistence(auth, browserSessionPersistence).catch((error) => {
-            console.error('Failed to set Firebase auth persistence:', error);
-        });
-    }
-
     db = getFirestore(app as FirebaseApp);
     storage = getStorage(app as FirebaseApp);
 

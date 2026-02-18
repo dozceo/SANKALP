@@ -29,57 +29,23 @@ def generate_training_data(n_samples=1000):
     data = []
     
     for _ in range(n_samples):
-        # Determine mastery status FIRST based on a latent "ability" variable
-        # This creates a more realistic causal link
-        ability = np.random.beta(5, 5) # Bell curve of student ability (0-1)
+        # Determine mastery status first (ground truth)
+        mastered = np.random.choice([0, 1], p=[0.4, 0.6])
         
-        # Features are derived from ability + noise
-
-        # 1. Average Quiz Score (Strongly correlated with ability)
-        # Add some random noise, clip to 0-1
-        avg_quiz_score = np.clip(ability + np.random.normal(0, 0.1), 0, 1)
-
-        # 2. Attempts per topic
-        # Lower ability students might try more times (struggling) OR fewer times (giving up)
-        # Let's model it as: Struggling students attempt more often up to a point
-        if ability < 0.3:
-            attempts_per_topic = np.random.randint(1, 5) # Giving up early
-        elif ability < 0.7:
-            attempts_per_topic = np.random.randint(4, 10) # Trying hard
+        if mastered == 1:
+            # Mastered students have higher scores, more practice, better consistency
+            avg_quiz_score = np.random.beta(8, 2)  # skewed toward high values
+            attempts_per_topic = np.random.randint(3, 10)
+            days_since_last_revision = np.random.randint(0, 7)
+            quiz_score_variance = np.random.uniform(0.0, 0.15)
+            time_spent_per_question = np.random.uniform(20, 60)
         else:
-            attempts_per_topic = np.random.randint(1, 4) # Mastered quickly
-
-        # 3. Time spent
-        # Lower ability -> potentially longer (struggling) or very short (guessing)
-        time_spent_per_question = np.clip(60 - (ability * 30) + np.random.normal(0, 15), 10, 120)
-
-        # 4. Variance
-        # Inconsistent students have higher variance
-        quiz_score_variance = np.clip((1 - ability) * 0.2 + np.random.normal(0, 0.05), 0, 0.5)
-
-        # 5. Days since revision
-        # Random factor, but maybe better students revise more often (lower days)?
-        days_since_last_revision = np.random.randint(0, 30)
-
-        # DETERMINISTIC LOGIC for "Ground Truth" to ensure model learns valid rules
-        # This fixes the issue where random choice overrides strong signal
-
-        # Base probability of mastery is the quiz score
-        mastery_prob = avg_quiz_score
-
-        # Penalize for high variance (inconsistency)
-        mastery_prob -= quiz_score_variance * 0.5
-
-        # Penalize for long time since revision
-        if days_since_last_revision > 14:
-            mastery_prob -= 0.2
-
-        # Hard cutoff for very low scores (The Critical Fix)
-        if avg_quiz_score < 0.5:
-             mastery_prob = 0 # Impossible to be mastered if failing quizzes
-
-        # Threshold for binary classification
-        mastered = 1 if mastery_prob > 0.65 else 0
+            # Non-mastered students have lower scores, inconsistency
+            avg_quiz_score = np.random.beta(2, 5)  # skewed toward low values
+            attempts_per_topic = np.random.randint(1, 6)
+            days_since_last_revision = np.random.randint(5, 30)
+            quiz_score_variance = np.random.uniform(0.1, 0.3)
+            time_spent_per_question = np.random.uniform(10, 120)
         
         data.append({
             'avg_quiz_score': round(avg_quiz_score, 2),
@@ -95,7 +61,7 @@ def generate_training_data(n_samples=1000):
 if __name__ == "__main__":
     # Generate data
     print("Generating synthetic training data...")
-    df = generate_training_data(n_samples=2000) # Increased sample size
+    df = generate_training_data(n_samples=1000)
     
     # Save to CSV
     output_path = "training_data.csv"

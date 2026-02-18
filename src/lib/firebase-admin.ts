@@ -10,11 +10,9 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getAuth, Auth } from 'firebase-admin/auth';
-import { chaos } from '@/lib/chaos-config';
-import { MockFirestore } from '@/lib/mock-db';
 
 let adminApp: App | undefined;
-let adminDb: Firestore | any | undefined;
+let adminDb: Firestore | undefined;
 let adminAuth: Auth | undefined;
 
 /**
@@ -64,26 +62,13 @@ const initializeFirebaseAdmin = () => {
             throw new Error('Missing Firebase Admin configuration');
         }
 
-        // Use Mock DB if configured (e.g. for Chaos Tests)
-        if (process.env.USE_MOCK_DB === 'true') {
-            console.log('⚠️ Using In-Memory Mock Firestore');
-            adminDb = new MockFirestore();
-        } else {
-            adminDb = getFirestore(adminApp);
-        }
-
+        adminDb = getFirestore(adminApp);
         adminAuth = getAuth(adminApp);
 
         console.log('✅ Firebase Admin SDK initialized');
         return { app: adminApp, db: adminDb, auth: adminAuth };
     } catch (error) {
         console.error('❌ Firebase Admin initialization failed:', error);
-        // Fallback to mock if initialization failed but we need to run tests
-        if (process.env.USE_MOCK_DB === 'true') {
-             console.log('⚠️ Firebase Init Failed, Using In-Memory Mock Firestore');
-             adminDb = new MockFirestore();
-             return { app: adminApp, db: adminDb, auth: adminAuth };
-        }
         throw error;
     }
 };
@@ -91,66 +76,8 @@ const initializeFirebaseAdmin = () => {
 // Initialize on module load
 const firebaseAdmin = initializeFirebaseAdmin();
 
-// Chaos Proxy for Firestore
-function createChaosFirestore(realDb: Firestore | any): Firestore {
-    const handler: ProxyHandler<any> = {
-        get(target, prop, receiver) {
-            const value = Reflect.get(target, prop, receiver);
-
-            // If it's a function, we might need to wrap it
-            if (typeof value === 'function') {
-                const funcName = String(prop);
-
-                // Read operations
-                if (funcName === 'get') {
-                    return async (...args: any[]) => {
-                        await chaos.checkChaos('firestoreRead');
-                        return value.apply(target, args);
-                    };
-                }
-
-                // Write operations
-                if (['set', 'update', 'delete', 'create', 'add', 'runTransaction'].includes(funcName)) {
-                    return async (...args: any[]) => {
-                        await chaos.checkChaos('firestoreWrite');
-                        return value.apply(target, args);
-                    };
-                }
-
-                // Batch/Transaction commit
-                if (funcName === 'commit') {
-                    return async (...args: any[]) => {
-                         await chaos.checkChaos('firestoreWrite');
-                         return value.apply(target, args);
-                    }
-                }
-
-                // Chaining methods - return a proxy of the result
-                // We need to be careful not to wrap things that aren't Firestore objects
-                // A heuristic: if it returns an object with 'firestore' property or is a Query/Collection/Doc
-                if (['collection', 'doc', 'where', 'orderBy', 'limit', 'batch', 'query'].includes(funcName)) {
-                    return (...args: any[]) => {
-                        const result = value.apply(target, args);
-                        if (result && typeof result === 'object') {
-                            return new Proxy(result, handler);
-                        }
-                        return result;
-                    };
-                }
-            }
-
-            return value;
-        }
-    };
-
-    return new Proxy(realDb, handler);
-}
-
 // Export services
-export const db = (process.env.NODE_ENV === 'production' && !process.env.ENABLE_CHAOS)
-    ? firebaseAdmin.db
-    : createChaosFirestore(firebaseAdmin.db);
-
+export const db = firebaseAdmin.db;
 export const auth = firebaseAdmin.auth;
 export const app = firebaseAdmin.app;
 

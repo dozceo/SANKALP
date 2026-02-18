@@ -1,33 +1,5 @@
 import { StudentNode, GraphData, GraphNode, GraphLink } from '@/data/docsData';
 import { studentsData } from '@/data/studentsDataStatic';
-import { lightenColor } from '@/lib/color-utils';
-
-// Optimization: Cache student map for O(1) lookups
-let studentMapCache: Map<string, StudentNode> | null = null;
-let lastDataLength = 0;
-
-function getStudentById(id: string): StudentNode | undefined {
-    // Rebuild cache if data length changes (simple invalidation)
-    if (!studentMapCache || studentsData.length !== lastDataLength) {
-        studentMapCache = new Map();
-        studentsData.forEach(s => studentMapCache!.set(s.id, s));
-        lastDataLength = studentsData.length;
-    }
-    return studentMapCache.get(id);
-}
-
-// Node colors by type (Moved outside to avoid re-creation)
-import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
-
-const NODE_COLORS = {
-    student: GRAPH_COLORS_HEX.student,
-    subject: GRAPH_COLORS_HEX.subject,
-    chapter: GRAPH_COLORS_HEX.chapter,
-    topic: GRAPH_COLORS_HEX.topic,
-    weakness: GRAPH_COLORS_HEX.weakness,
-    strength: GRAPH_COLORS_HEX.strength,
-    peer: GRAPH_COLORS_HEX.peer,
-};
 
 /**
  * Generate personal knowledge graph for a single student
@@ -36,26 +8,25 @@ const NODE_COLORS = {
 export function generatePersonalGraph(student: StudentNode): GraphData {
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
-    const existingNodeIds = new Set<string>();
 
-    const addNode = (node: GraphNode) => {
-        if (!existingNodeIds.has(node.id)) {
-            // Optimization: Pre-calculate light color
-            if (node.color && !node.lightColor) {
-                node.lightColor = lightenColor(node.color, 20);
-            }
-            nodes.push(node);
-            existingNodeIds.add(node.id);
-        }
+    // Node colors by type
+    const colors = {
+        student: '#9333EA',      // Purple
+        subject: '#3B82F6',      // Blue
+        chapter: '#06B6D4',      // Cyan
+        topic: '#6B7280',        // Gray
+        weakness: '#EF4444',     // Red
+        strength: '#10B981',     // Green
+        peer: '#8B5CF6',         // Light Purple
     };
 
     // 1. Central student node
-    addNode({
+    nodes.push({
         id: student.id,
         name: student.name,
         val: 20,
         type: 'student',
-        color: NODE_COLORS.student,
+        color: colors.student,
     });
 
     // 2. Study Materials from Planner (Hierarchical: Subjects → Chapters → Topics)
@@ -64,12 +35,12 @@ export function generatePersonalGraph(student: StudentNode): GraphData {
             const subjectId = `${student.id}-subject-${subject.id}`;
 
             // Create subject node
-            addNode({
+            nodes.push({
                 id: subjectId,
                 name: subject.name,
                 val: 15,
                 type: 'subject',
-                color: subject.color || NODE_COLORS.subject,
+                color: subject.color || colors.subject,
                 parent: student.id,
             });
 
@@ -86,12 +57,12 @@ export function generatePersonalGraph(student: StudentNode): GraphData {
                     const chapterId = `${subjectId}-chapter-${chapter.id}`;
 
                     // Create chapter node
-                    addNode({
+                    nodes.push({
                         id: chapterId,
                         name: chapter.name,
                         val: 12,
                         type: 'chapter',
-                        color: NODE_COLORS.chapter,
+                        color: colors.chapter,
                         parent: subjectId,
                     });
 
@@ -108,12 +79,12 @@ export function generatePersonalGraph(student: StudentNode): GraphData {
                             const topicId = `${chapterId}-topic-${topic.id}`;
 
                             // Create topic node
-                            addNode({
+                            nodes.push({
                                 id: topicId,
                                 name: topic.name,
                                 val: 10,
                                 type: 'topic',
-                                color: NODE_COLORS.topic,
+                                color: colors.topic,
                                 mastery: topic.mastery,
                                 parent: chapterId,
                             });
@@ -135,12 +106,12 @@ export function generatePersonalGraph(student: StudentNode): GraphData {
     if (student.strengths && student.strengths.length > 0) {
         student.strengths.forEach((strength, index) => {
             const strengthId = `${student.id}-strength-${index}`;
-            addNode({
+            nodes.push({
                 id: strengthId,
                 name: `✓ ${strength}`,
                 val: 10,
                 type: 'strength',
-                color: NODE_COLORS.strength,
+                color: colors.strength,
             });
             links.push({
                 source: student.id,
@@ -154,12 +125,12 @@ export function generatePersonalGraph(student: StudentNode): GraphData {
     if (student.weaknesses && student.weaknesses.length > 0) {
         student.weaknesses.forEach((weakness, index) => {
             const weaknessId = `${student.id}-weakness-${index}`;
-            addNode({
+            nodes.push({
                 id: weaknessId,
                 name: `⚠️ ${weakness}`,
                 val: 10,
                 type: 'weakness',
-                color: NODE_COLORS.weakness,
+                color: colors.weakness,
             });
             links.push({
                 source: student.id,
@@ -172,22 +143,18 @@ export function generatePersonalGraph(student: StudentNode): GraphData {
     // 5. Study Group (Peer Connections)
     if (student.connections && student.connections.length > 0) {
         student.connections.forEach(peerId => {
-            // Optimization: Use Map lookup instead of O(N) find
-            const peer = getStudentById(peerId);
+            const peer = studentsData.find(s => s.id === peerId);
             if (peer) {
                 // Add peer node (smaller than center student)
-                // addNode checks for duplicates automatically
-                addNode({
+                nodes.push({
                     id: peer.id,
                     name: peer.name,
                     val: 12,
                     type: 'student',
-                    color: NODE_COLORS.peer,
+                    color: colors.peer,
                 });
 
                 // Link to peer
-                // We don't check for duplicate links here as peers are usually unique in the connections list
-                // But duplicate check in addNode prevents duplicate nodes
                 links.push({
                     source: student.id,
                     target: peer.id,

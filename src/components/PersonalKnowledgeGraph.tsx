@@ -4,10 +4,8 @@ import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { generatePersonalGraph } from '@/lib/generatePersonalGraph';
-import { lightenColor } from '@/lib/color-utils';
 import type { GraphNode, StudentNode } from '@/data/docsData';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
-import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
 
 // Dynamically import ForceGraph2D with SSR disabled
 const ForceGraph2D = dynamic(
@@ -20,10 +18,7 @@ interface PersonalKnowledgeGraphProps {
     height?: number;
 }
 
-type ExtendedNodeObject = NodeObject & GraphNode & {
-    _cachedLightColor?: string;
-    _cachedBaseColor?: string;
-};
+type ExtendedNodeObject = NodeObject & GraphNode;
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
 export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowledgeGraphProps) {
@@ -31,7 +26,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 800, height });
     const [isExpanded, setIsExpanded] = useState(false);
-    const hoveredNodeRef = useRef<string | null>(null);
+    const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
     // Generate graph data for this student
     const graphData = useMemo(() => generatePersonalGraph(student), [student]);
@@ -53,18 +48,18 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         return () => window.removeEventListener('resize', updateDimensions);
     }, [isExpanded, height]);
 
-    const handleZoom = useCallback((factor: number) => {
+    const handleZoom = (factor: number) => {
         if (graphRef.current) {
             graphRef.current.zoom(graphRef.current.zoom() * factor, 300);
         }
-    }, []);
+    };
 
-    const handleReset = useCallback(() => {
+    const handleReset = () => {
         if (graphRef.current) {
             graphRef.current.centerAt(0, 0, 500);
             graphRef.current.zoom(1, 500);
         }
-    }, []);
+    };
 
     const nodeColor = useCallback((node: ExtendedNodeObject) => {
         // Use custom color if specified
@@ -73,42 +68,22 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         }
 
         // Hovered node
-        if (node.id === hoveredNodeRef.current) {
-            return GRAPH_COLORS_HEX.hover;
+        if (node.id === hoveredNode) {
+            return '#c4b5fd';
         }
 
         // Fallback
-        return GRAPH_COLORS_HEX.default;
-    }, []);
+        return '#6d28d9';
+    }, [hoveredNode]);
 
     const nodeCanvasObject = useCallback((node: ExtendedNodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
         const label = node.name;
         const baseSize = node.val || 8;
         const isCenter = node.id === student.id;
-        const isHovered = node.id === hoveredNodeRef.current;
+        const isHovered = node.id === hoveredNode;
         const nodeSize = (isCenter || isHovered ? baseSize * 1.3 : baseSize) / globalScale;
 
         if (node.x === undefined || node.y === undefined) return;
-
-        // Optimization: Use pre-calculated colors
-        let baseColor: string;
-        let lightColor: string;
-
-        if (isHovered) {
-            baseColor = GRAPH_COLORS_HEX.hover;
-            lightColor = GRAPH_COLORS_HEX.hoverLight;
-        } else {
-            baseColor = node.color || GRAPH_COLORS_HEX.default;
-            // Use pre-calculated light color if available, otherwise calculate once and cache
-            if (node.lightColor) {
-                lightColor = node.lightColor;
-            } else {
-                if (!node._cachedLightColor) {
-                    node._cachedLightColor = lightenColor(baseColor, 20);
-                }
-                lightColor = node._cachedLightColor;
-            }
-        }
 
         // Glow effect for center/hovered nodes
         if (isCenter || isHovered) {
@@ -116,41 +91,32 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
                 node.x, node.y, 0,
                 node.x, node.y, nodeSize * 3
             );
-            // Use baseColor for glow, but transparent
-            gradient.addColorStop(0, `${baseColor}66`); // Hex opacity
-            gradient.addColorStop(1, `${baseColor}00`);
+            const glowColor = node.color || '#9333EA';
+            gradient.addColorStop(0, `${glowColor}66`);
+            gradient.addColorStop(1, `${glowColor}00`);
             ctx.beginPath();
             ctx.arc(node.x, node.y, nodeSize * 3, 0, 2 * Math.PI);
             ctx.fillStyle = gradient;
             ctx.fill();
         }
 
-        // Optimization: Skip expensive gradient for small nodes or when zoomed out
-        // Use simple flat color for better performance
-        if (globalScale < 1.5 && !isCenter && !isHovered) {
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
-            ctx.fillStyle = baseColor;
-            ctx.fill();
-        } else {
-            // Node circle with gradient
-            const nodeGradient = ctx.createRadialGradient(
-                node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
-                node.x, node.y, nodeSize
-            );
+        // Node circle with gradient
+        const nodeGradient = ctx.createRadialGradient(
+            node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
+            node.x, node.y, nodeSize
+        );
+        const baseColor = nodeColor(node);
+        nodeGradient.addColorStop(0, lightenColor(baseColor, 20));
+        nodeGradient.addColorStop(1, baseColor);
 
-            nodeGradient.addColorStop(0, lightColor);
-            nodeGradient.addColorStop(1, baseColor);
-
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
-            ctx.fillStyle = nodeGradient;
-            ctx.fill();
-        }
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+        ctx.fillStyle = nodeGradient;
+        ctx.fill();
 
         // Border for center node
         if (isCenter) {
-            ctx.strokeStyle = GRAPH_COLORS_HEX.hoverLight;
+            ctx.strokeStyle = '#e9d5ff';
             ctx.lineWidth = 2.5 / globalScale;
             ctx.stroke();
         }
@@ -167,10 +133,10 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             ctx.fillText(label, node.x + 0.5, node.y + nodeSize + 3.5);
 
-            ctx.fillStyle = isCenter ? '#ffffff' : isHovered ? GRAPH_COLORS_HEX.hoverLight : '#d1d5db';
+            ctx.fillStyle = isCenter ? '#f5f3ff' : isHovered ? '#e9d5ff' : '#d1d5db';
             ctx.fillText(label, node.x, node.y + nodeSize + 3);
         }
-    }, [student.id]); // Removed hoveredNode dependency
+    }, [student.id, hoveredNode, nodeColor]);
 
     const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
         const start = link.source;
@@ -201,7 +167,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         ctx.quadraticCurveTo(cpX, cpY, end.x, end.y);
 
         const alpha = isFromCenter ? 0.5 : 0.2;
-        const color = start.color || GRAPH_COLORS_HEX.student;
+        const color = start.color || '#9333EA';
         ctx.strokeStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
         ctx.lineWidth = isFromCenter ? 1.5 / globalScale : 0.8 / globalScale;
         ctx.stroke();
@@ -209,10 +175,10 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
     const handleNodeHover = useCallback((node: ExtendedNodeObject | null) => {
         if (node && typeof node.id === 'string') {
-            hoveredNodeRef.current = node.id;
+            setHoveredNode(node.id);
             document.body.style.cursor = 'pointer';
         } else {
-            hoveredNodeRef.current = null;
+            setHoveredNode(null);
             document.body.style.cursor = 'default';
         }
     }, []);
@@ -223,35 +189,31 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
                 <button
                     onClick={() => handleZoom(1.5)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
                     title="Zoom in"
-                    aria-label="Zoom in"
                 >
-                    <ZoomIn className="w-4 h-4" aria-hidden="true" />
+                    <ZoomIn className="w-4 h-4" />
                 </button>
                 <button
                     onClick={() => handleZoom(0.67)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
                     title="Zoom out"
-                    aria-label="Zoom out"
                 >
-                    <ZoomOut className="w-4 h-4" aria-hidden="true" />
+                    <ZoomOut className="w-4 h-4" />
                 </button>
                 <button
                     onClick={handleReset}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
                     title="Reset view"
-                    aria-label="Reset view"
                 >
-                    <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                    <RotateCcw className="w-4 h-4" />
                 </button>
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
                     title={isExpanded ? 'Collapse' : 'Expand'}
-                    aria-label={isExpanded ? 'Collapse graph' : 'Expand graph'}
                 >
-                    {isExpanded ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
+                    {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </button>
             </div>
 
@@ -267,15 +229,15 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
             {/* Graph */}
             <ForceGraph2D
-                ref={graphRef as any}
+                ref={graphRef as React.MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>}
                 graphData={graphData}
                 width={dimensions.width}
                 height={dimensions.height}
                 backgroundColor="transparent"
                 nodeRelSize={6}
-                nodeCanvasObject={nodeCanvasObject as any}
-                linkCanvasObject={linkCanvasObject as any}
-                onNodeHover={handleNodeHover as any}
+                nodeCanvasObject={nodeCanvasObject}
+                linkCanvasObject={linkCanvasObject}
+                onNodeHover={handleNodeHover}
                 cooldownTicks={100}
                 d3AlphaDecay={0.02}
                 d3VelocityDecay={0.3}
@@ -287,4 +249,14 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             />
         </div>
     );
+}
+
+// Helper function to lighten a hex color
+function lightenColor(hex: string, percent: number): string {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.min(255, (num >> 16) + amt);
+    const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
+    const B = Math.min(255, (num & 0x0000ff) + amt);
+    return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
 }

@@ -23,16 +23,13 @@ type QuizQuestion = AdaptiveQuizOutput["quiz"][0];
 const quizFormSchema = z.object({
   topic: z.string().min(2, { message: "Topic must be at least 2 characters." }),
   numQuestions: z.coerce.number().min(1, "Please enter at least 1 question.").max(10, "You can generate a maximum of 10 questions."),
-  educationLevel: z.string().min(3, { message: "Educational level must be at least 3 characters." }),
-  difficulty: z.enum(['Easy', 'Medium', 'Hard'], {
-    errorMap: () => ({ message: "Please select a valid difficulty level." }),
-  }),
+  educationLevel: z.string().min(3, { message: "Please specify an educational level." }),
+  difficulty: z.enum(['Easy', 'Medium', 'Hard']),
 });
 
 
 export default function QuizPage() {
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
-  const [isFallback, setIsFallback] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
@@ -55,7 +52,6 @@ export default function QuizPage() {
     try {
       const result = await createQuiz(values);
       setQuiz(result.quiz);
-      setIsFallback(!!result.isFallback);
       setQuizTopic(values.topic);
       setQuizStartTime(Date.now());
       // Reset state for new quiz
@@ -163,12 +159,6 @@ export default function QuizPage() {
   if (quiz && currentQuestion) {
     return (
       <Card className="max-w-2xl mx-auto">
-        {isFallback && (
-          <div className="bg-amber-50 text-amber-700 px-4 py-2 text-xs border-b border-amber-100 flex items-center gap-2">
-            <Loader2 className="h-3 w-3" />
-            AI is busy. Serving high-quality standard questions for {quizTopic}.
-          </div>
-        )}
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Question {currentQuestionIndex + 1} of {quiz.length}</CardTitle>
           <Progress value={((currentQuestionIndex + 1) / quiz.length) * 100} className="w-full" />
@@ -253,7 +243,7 @@ export default function QuizPage() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="numQuestions"

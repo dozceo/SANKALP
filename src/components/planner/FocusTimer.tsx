@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
-import { useStudent } from "@/hooks/useStudent";
+import { useState, useEffect, useRef } from "react";
+import { useStudent } from "@/contexts/StudentContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import {
     Select,
     SelectContent,
@@ -57,7 +55,7 @@ export function FocusTimer() {
 
     // Get all topics from study materials
     const studyMaterials = currentStudent?.studyMaterials || [];
-    const topics = useMemo(() => studyMaterials.map(m => m.topic), [studyMaterials]);
+    const topics = studyMaterials.map(m => m.topic);
 
     // Format time as MM:SS
     const formatTime = (seconds: number) => {
@@ -166,11 +164,7 @@ export function FocusTimer() {
 
     const handleStart = () => {
         if (!selectedTopic) {
-            toast({
-                title: "Topic Required",
-                description: "Please select a topic before starting the timer.",
-                variant: "destructive",
-            });
+            alert("Please select a topic first");
             return;
         }
         initAudio();
@@ -206,11 +200,11 @@ export function FocusTimer() {
             <CardContent className="space-y-6">
                 {/* Topic Selection */}
                 <div className="space-y-2">
-                    <Label htmlFor="study-topic">
+                    <label className="text-sm font-medium">
                         What do you want to study?
-                    </Label>
+                    </label>
                     <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-                        <SelectTrigger id="study-topic">
+                        <SelectTrigger>
                             <SelectValue placeholder="Select a topic" />
                         </SelectTrigger>
                         <SelectContent>
@@ -256,16 +250,17 @@ export function FocusTimer() {
 
                 {/* Timer Display */}
                 <div className="text-center space-y-4">
-                    <div
-                        className="text-7xl font-bold tabular-nums text-primary"
-                        role="timer"
-                        aria-label="Time remaining"
-                    >
+                    <div className="text-7xl font-bold tabular-nums text-primary">
                         {formatTime(timeLeft)}
                     </div>
 
                     {/* Progress Bar */}
-                    <Progress value={progress} className="h-2" />
+                    <div className="w-full bg-secondary rounded-full h-2">
+                        <div
+                            className="bg-primary h-2 rounded-full transition-all duration-1000"
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
 
                     {/* Control Buttons */}
                     <div className="flex gap-4 justify-center pt-4">

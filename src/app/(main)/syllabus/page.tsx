@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,89 +11,29 @@ import { getSyllabus } from "./actions";
 import { type SyllabusOutput } from "@/ai/flows/syllabus-generator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslations } from 'next-intl';
 
 export default function SyllabusPage() {
   const [query, setQuery] = useState("");
   const [syllabus, setSyllabus] = useState<SyllabusOutput | null>(null);
-  const [source, setSource] = useState<'ai' | 'fallback' | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-  const t = useTranslations('Syllabus');
-
-  // Load cached syllabus on mount
-  useEffect(() => {
-    const cached = sessionStorage.getItem('lastSyllabus');
-    if (cached) {
-      try {
-        setSyllabus(JSON.parse(cached));
-      } catch (e) {
-        console.error("Failed to parse cached syllabus", e);
-      }
-    }
-  }, []);
-
-  // Cache syllabus when it changes
-  useEffect(() => {
-    if (syllabus) {
-      sessionStorage.setItem('lastSyllabus', JSON.stringify(syllabus));
-    }
-  }, [syllabus]);
-
-  const handleSave = async () => {
-    if (!user || !syllabus) return;
-    setSaving(true);
-    try {
-      const response = await fetch('/api/syllabus/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId: user.uid,
-          examName: query,
-          title: syllabus.title,
-          structure: syllabus.structure,
-          strategy: syllabus.strategy,
-        }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Syllabus Saved!",
-          description: "Your syllabus has been added to your planner.",
-        });
-      } else {
-        throw new Error("Failed to save syllabus");
-      }
-    } catch (e) {
-      toast({
-        title: "Error",
-        description: "Failed to save the syllabus. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
     setError(null);
     setSyllabus(null);
-    setSource(null);
     try {
       const result = await getSyllabus(query);
       if (result) {
-        setSyllabus(result.data);
-        setSource(result.source);
+        setSyllabus(result);
       } else {
         setError("Could not retrieve the syllabus. Please try a different query.");
       }
     } catch (e) {
-      console.error("[SyllabusUI] Search failed:", e);
       setError("An unexpected error occurred. Please try again later.");
     }
     setLoading(false);
@@ -109,16 +49,16 @@ export default function SyllabusPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-headline">{t('title')}</h1>
+        <h1 className="text-3xl font-bold font-headline">Academic Syllabus</h1>
         <p className="text-muted-foreground">
-          {t('description')}
+          Your AI-powered guide to exam structures, strategies, and resources.
         </p>
       </div>
 
       <Tabs defaultValue="syllabus">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto">
-          <TabsTrigger value="syllabus" className="py-2">Syllabus</TabsTrigger>
-          <TabsTrigger value="cramming" disabled={!isCrammingTime} className="py-2">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="syllabus">Syllabus</TabsTrigger>
+          <TabsTrigger value="cramming" disabled={!isCrammingTime}>
             <Zap className="mr-2 h-4 w-4" /> Cramming Helper
             {!isCrammingTime && <span className="ml-2 text-xs text-muted-foreground">(Activates 3 days before exam)</span>}
           </TabsTrigger>
@@ -131,25 +71,20 @@ export default function SyllabusPage() {
               <CardDescription>Enter your exam or subject to get the latest official syllabus, strategy, and materials.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSearch();
-                }}
-                className="flex w-full max-w-lg items-center space-x-2"
-              >
+              <div className="flex w-full max-w-lg items-center space-x-2">
                 <Input
                   type="text"
                   placeholder="e.g., 'AP Calculus BC', 'NEET Biology'"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   disabled={loading}
                 />
-                <Button type="submit" disabled={loading}>
+                <Button onClick={handleSearch} disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                  <span className="sr-only sm:not-sr-only sm:ml-2">{t('generateButton')}</span>
+                  <span className="sr-only sm:not-sr-only sm:ml-2">Search</span>
                 </Button>
-              </form>
+              </div>
             </CardContent>
           </Card>
 
@@ -167,12 +102,6 @@ export default function SyllabusPage() {
 
           {syllabus && (
             <Card className="mt-6">
-              {source === 'fallback' && (
-                <div className="bg-amber-50 text-amber-700 px-4 py-2 text-xs border-b border-amber-100 flex items-center gap-2">
-                  <AlertTriangle className="h-3 w-3" />
-                  Note: Using standard syllabus template. AI generation is currently unavailable.
-                </div>
-              )}
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl font-headline">
                   <BookCopy /> {syllabus.title}
@@ -192,12 +121,7 @@ export default function SyllabusPage() {
                   <ul className="space-y-2">
                     {syllabus.references.map((link, index) => (
                       <li key={index}>
-                        <a
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary underline hover:no-underline hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-                        >
+                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">
                           {link}
                         </a>
                       </li>
