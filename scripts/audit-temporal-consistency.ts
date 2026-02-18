@@ -1,323 +1,415 @@
+import fs from 'fs';
+import path from 'path';
+import { makeRevisionDecision } from '../src/ai/adk/decision-engine';
+import { MLSignals, DecisionContext, DecisionAction, ContentStrategy } from '../src/ai/adk/types';
 
-import {
-    extractMasteryFeatures,
-    StudentHistory,
-    RawQuizResult,
-    MasteryFeatures
-} from '../src/ml/features/student_features';
+// --- Types ---
 
-// ==========================================
-// Types
-// ==========================================
+type TopicName = string;
+
+interface TopicState {
+    mastery: number; // 0.0 to 1.0
+    attempts: number;
+    lastQuizDate: Date | null;
+    lastRevisionDate: Date | null;
+    consecutiveFailures: number;
+}
 
 interface StudentState {
-    lastTimestamp: number;
-    mastery: number;
-    totalAttempts: number;
-    lastQuizScore: number;
-}
-
-interface InvariantViolation {
     studentId: string;
-    timestamp: string;
+    topics: Record<TopicName, TopicState>;
+    lastActive: Date;
+    // For tracking invariants
+    history: Event[];
+}
+
+enum EventType {
+    QUIZ_ATTEMPT = 'QUIZ_ATTEMPT',
+    REVISION_SESSION = 'REVISION_SESSION',
+    SYSTEM_CHECK = 'SYSTEM_CHECK', // Represents a periodic check (e.g. daily cron) where ADK runs
+    MANUAL_OVERRIDE = 'MANUAL_OVERRIDE', // Simulates a manual intervention or data patch
+}
+
+interface Event {
+    id: string;
+    type: EventType;
+    timestamp: Date;
+    topic: TopicName;
+    payload: any; // e.g. quiz score, revision duration
+}
+
+interface Violation {
     rule: string;
-    details: string;
+    description: string;
+    timestamp: Date;
+    studentId: string;
+    topic?: string;
+    severity: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
-type ConsistencyRule = (
-    prevState: StudentState,
-    currentState: StudentState,
-    event: RawQuizResult
-) => InvariantViolation | null;
+// --- Constants ---
+const TOPICS = ['Math', 'Science', 'History', 'Geography'];
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-// ==========================================
-// Mock ML Logic (Proxy for Python Model)
-// ==========================================
+// --- Helper Functions ---
 
-function mockPredictMastery(features: MasteryFeatures): number {
-    let mastery_prob = features.avg_quiz_score;
-
-    // Penalize for high variance
-    mastery_prob -= features.quiz_score_variance * 0.5;
-
-    // Penalize for long time since revision (Forgetting Curve)
-    if (features.days_since_last_revision > 14) {
-        mastery_prob -= 0.2;
-    }
-
-    // Hard cutoff for low scores
-    if (features.avg_quiz_score < 0.5) {
-        mastery_prob = 0;
-    }
-
-    // Clamp to 0-1
-    return Math.max(0, Math.min(1, mastery_prob));
+function randomDate(start: Date, end: Date): Date {
+    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 }
 
-// ==========================================
-// Scenario Generators
-// ==========================================
+function addDays(date: Date, days: number): Date {
+    return new Date(date.getTime() + days * ONE_DAY_MS);
+}
 
-function generateNormalFlow(studentId: string): StudentHistory {
-    const baseTime = new Date('2023-01-01T10:00:00Z').getTime();
-    const quizzes: RawQuizResult[] = [];
+// --- State Machine ---
 
-    // 5 quizzes over 5 days, improving scores
-    for (let i = 0; i < 5; i++) {
-        quizzes.push({
-            topic: 'Math',
-            score: 0.6 + (i * 0.05), // 0.6, 0.65, 0.7...
-            timestamp: new Date(baseTime + i * 24 * 60 * 60 * 1000),
-            timeSpent: 60,
-            questionsAttempted: 5
+function getInitialState(studentId: string): StudentState {
+    return {
+        studentId,
+        topics: {},
+        lastActive: new Date(0), // Epoch
+        history: [],
+    };
+}
+
+function getTopicState(state: StudentState, topic: string): TopicState {
+    if (!state.topics[topic]) {
+        state.topics[topic] = {
+            mastery: 0,
+            attempts: 0,
+            lastQuizDate: null,
+            lastRevisionDate: null,
+            consecutiveFailures: 0,
+        };
+    }
+    return state.topics[topic];
+}
+
+function applyEvent(state: StudentState, event: Event): StudentState {
+    // structuredClone is available in Node 17+ and preserves Date objects
+    const newState = structuredClone(state);
+    newState.lastActive = new Date(Math.max(newState.lastActive.getTime(), event.timestamp.getTime()));
+    newState.history.push(event);
+
+    const topicState = getTopicState(newState, event.topic);
+
+    switch (event.type) {
+        case EventType.QUIZ_ATTEMPT:
+            topicState.attempts++;
+            topicState.lastQuizDate = event.timestamp;
+
+            const score = event.payload.score; // 0.0 to 1.0
+            // Simple mastery update logic (similar to generate_data.py)
+            // Mastery moves towards score with some inertia
+            topicState.mastery = topicState.mastery * 0.7 + score * 0.3;
+
+            if (score < 0.6) {
+                topicState.consecutiveFailures++;
+            } else {
+                topicState.consecutiveFailures = 0;
+            }
+            break;
+
+        case EventType.REVISION_SESSION:
+            topicState.lastRevisionDate = event.timestamp;
+            // Revision bumps mastery slightly
+            topicState.mastery = Math.min(1.0, topicState.mastery + 0.1);
+            break;
+
+        case EventType.SYSTEM_CHECK:
+            // Simulate Forgetting Curve
+            // In generate_data.py: if days_since_last_revision > 14: mastery_prob -= 0.2
+            // Here we apply continuous decay if inactive
+            const lastInteraction = topicState.lastRevisionDate || topicState.lastQuizDate || event.timestamp;
+            const daysSince = (event.timestamp.getTime() - lastInteraction.getTime()) / ONE_DAY_MS;
+
+            if (daysSince > 14) {
+                 topicState.mastery = Math.max(0, topicState.mastery - 0.05); // Gradual decay
+            }
+            break;
+
+        case EventType.MANUAL_OVERRIDE:
+             if (event.payload.mastery !== undefined) {
+                 topicState.mastery = event.payload.mastery;
+             }
+             break;
+    }
+
+    return newState;
+}
+
+// --- Data Generator ---
+
+function generateValidHistory(studentId: string, days: number = 30): Event[] {
+    const events: Event[] = [];
+    let currentDate = new Date('2023-01-01');
+    const learnedTopics = new Set<string>();
+
+    // Initial learning phase
+    for (let i = 0; i < days; i++) {
+        currentDate = addDays(currentDate, 1);
+
+        // Randomly pick a topic to work on
+        const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
+
+        // 70% chance of doing a quiz
+        if (Math.random() < 0.7) {
+            events.push({
+                id: `evt_${studentId}_${i}_quiz`,
+                type: EventType.QUIZ_ATTEMPT,
+                timestamp: new Date(currentDate.getTime() + Math.random() * 3600000), // Add some time within the day
+                topic: topic,
+                payload: { score: Math.random() > 0.3 ? 0.8 : 0.4 } // Mostly passing
+            });
+            learnedTopics.add(topic);
+        }
+
+        // 30% chance of revision - ONLY IF LEARNED
+        if (Math.random() < 0.3 && learnedTopics.has(topic)) {
+             events.push({
+                id: `evt_${studentId}_${i}_rev`,
+                type: EventType.REVISION_SESSION,
+                timestamp: new Date(currentDate.getTime() + Math.random() * 3600000 + 4000000), // Later in the day
+                topic: topic,
+                payload: { duration: 15 }
+            });
+        }
+
+        // Daily system check
+        events.push({
+            id: `evt_${studentId}_${i}_check`,
+            type: EventType.SYSTEM_CHECK,
+            timestamp: new Date(currentDate.getTime() + 23 * 3600000), // End of day
+            topic: topic, // Check runs for all, but event needs a topic field for simplicity in this model
+            payload: {}
         });
     }
 
-    return {
-        studentId,
-        quizResults: quizzes,
-        lastLoginDate: new Date(),
-        registrationDate: new Date(baseTime)
-    };
+    return events.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 }
 
-function generateTimeTravel(studentId: string): StudentHistory {
-    const baseTime = new Date('2023-01-01T10:00:00Z').getTime();
-    const quizzes: RawQuizResult[] = [];
+function injectCorruptions(events: Event[]): Event[] {
+    const corrupted = [...events];
 
-    // Day 1
-    quizzes.push({
-        topic: 'Math',
-        score: 0.7,
-        timestamp: new Date(baseTime),
-        timeSpent: 60,
-        questionsAttempted: 5
-    });
+    // 1. Time Travel: Swap timestamps of two events far apart
+    if (corrupted.length > 10) {
+        const idx1 = 5;
+        const idx2 = corrupted.length - 2;
+        const temp = corrupted[idx1].timestamp;
+        corrupted[idx1].timestamp = corrupted[idx2].timestamp; // Event 5 happens in future
+        // We leave Event N-2 with original timestamp? No, swap them to create paradox
+        corrupted[idx2].timestamp = temp; // Event N-2 happens in past
 
-    // Day 0 (Time Travel Paradox)
-    quizzes.push({
-        topic: 'Math',
-        score: 0.8,
-        timestamp: new Date(baseTime - 24 * 60 * 60 * 1000),
-        timeSpent: 60,
-        questionsAttempted: 5
-    });
+        // Mark them so we know where to look
+        corrupted[idx1].payload._corruption = 'Time Travel (Future)';
+        corrupted[idx2].payload._corruption = 'Time Travel (Past)';
+    }
 
-    return {
-        studentId,
-        quizResults: quizzes,
-        lastLoginDate: new Date(),
-        registrationDate: new Date(baseTime)
-    };
-}
-
-function generateZombieState(studentId: string): StudentHistory {
-    const baseTime = new Date('2023-01-01T10:00:00Z').getTime();
-    const quizzes: RawQuizResult[] = [];
-
-    // Day 1: Good score
-    quizzes.push({
-        topic: 'Math',
-        score: 0.9,
-        timestamp: new Date(baseTime),
-        timeSpent: 60,
-        questionsAttempted: 5
-    });
-
-    // Day 30: Good score (But should have decayed in between if we track continuous state)
-    // Here we simulate a history where the student returns after 30 days.
-    // The violation to check is: Does the mastery calculation respect the gap?
-    quizzes.push({
-        topic: 'Math',
-        score: 0.9,
-        timestamp: new Date(baseTime + 30 * 24 * 60 * 60 * 1000),
-        timeSpent: 60,
-        questionsAttempted: 5
-    });
-
-    return {
-        studentId,
-        quizResults: quizzes,
-        lastLoginDate: new Date(),
-        registrationDate: new Date(baseTime)
-    };
-}
-
-function generateMasteryTeleportation(studentId: string): StudentHistory {
-     const baseTime = new Date('2023-01-01T10:00:00Z').getTime();
-    const quizzes: RawQuizResult[] = [];
-
-    // Day 1: Low score
-    quizzes.push({
-        topic: 'Math',
-        score: 0.2,
-        timestamp: new Date(baseTime),
-        timeSpent: 60,
-        questionsAttempted: 5
-    });
-
-    // Day 2: Sudden jump without intermediate steps (simulated by immediate high score)
-    // In a real system, teleportation is state changing without an event.
-    // In event sourcing, it's a huge delta between two events that exceeds realistic learning rate.
-    quizzes.push({
-        topic: 'Math',
-        score: 0.95,
-        timestamp: new Date(baseTime + 24 * 60 * 60 * 1000),
-        timeSpent: 60,
-        questionsAttempted: 5
-    });
-
-    return {
-        studentId,
-        quizResults: quizzes,
-        lastLoginDate: new Date(),
-        registrationDate: new Date(baseTime)
-    };
-}
-
-
-// ==========================================
-// Audit Logic
-// ==========================================
-
-function auditHistory(history: StudentHistory): InvariantViolation[] {
-    const violations: InvariantViolation[] = [];
-    const quizzes = history.quizResults; // Don't sort, trust the input order to detect issues
-
-    // Initial State
-    let prevState: StudentState = {
-        lastTimestamp: 0,
-        mastery: 0,
-        totalAttempts: 0,
-        lastQuizScore: 0
-    };
-
-    // We need to simulate the cumulative history for feature extraction
-    // because extractMasteryFeatures takes the whole history.
-    const cumulativeHistory: RawQuizResult[] = [];
-
-    for (const quiz of quizzes) {
-        // 1. Check Temporal Ordering (Immediate check)
-        if (prevState.totalAttempts > 0 && quiz.timestamp.getTime() < prevState.lastTimestamp) {
-            violations.push({
-                studentId: history.studentId || 'unknown',
-                timestamp: quiz.timestamp.toISOString(),
-                rule: 'TemporalOrdering',
-                details: `Event timestamp (${quiz.timestamp.toISOString()}) is before previous event (${new Date(prevState.lastTimestamp).toISOString()})`
-            });
-        }
-
-        // 2. Check Forgetting Curve Compliance (Pre-Event)
-        // Check "Implied State at Start of Event" (just before the quiz)
-        const daysSinceLast = prevState.totalAttempts > 0
-            ? (quiz.timestamp.getTime() - prevState.lastTimestamp) / (1000 * 60 * 60 * 24)
-            : 0;
-
-        if (daysSinceLast > 14 && prevState.mastery > 0.5) {
-             // Calculate mastery JUST BEFORE this new quiz
-             // using the OLD cumulative history (which doesn't have current quiz yet)
-             // but using the CURRENT time (quiz.timestamp) as reference date.
-             const featuresPre = extractMasteryFeatures(
-                 quiz.topic,
-                 { ...history, quizResults: [...cumulativeHistory] },
-                 quiz.timestamp
-             );
-
-             const masteryPre = mockPredictMastery(featuresPre);
-
-             // If masteryPre is still high, it means the model is NOT decaying properly with time.
-             if (masteryPre > 0.8) {
-                  violations.push({
-                      studentId: history.studentId || 'unknown',
-                      timestamp: quiz.timestamp.toISOString(),
-                      rule: 'ForgettingCurve',
-                      details: `Mastery pre-quiz (${masteryPre.toFixed(2)}) did not decay despite ${daysSinceLast.toFixed(1)} days inactivity.`
-                  });
-             }
-        }
-
-        // Add to cumulative history to calculate mastery at this point in time
-        cumulativeHistory.push(quiz);
-
-        // Calculate features based on history UP TO THIS POINT
-        const features = extractMasteryFeatures(
-            quiz.topic,
-            { ...history, quizResults: cumulativeHistory },
-            quiz.timestamp // Use current quiz time as reference
-        );
-
-        // Predict Mastery
-        const currentMastery = mockPredictMastery(features);
-
-        const currentState: StudentState = {
-            lastTimestamp: quiz.timestamp.getTime(),
-            mastery: currentMastery,
-            totalAttempts: prevState.totalAttempts + 1,
-            lastQuizScore: quiz.score
+    // 2. Causality Violation: Revision before first quiz
+    // Find a topic's first quiz and insert a revision before it
+    const topic = TOPICS[0];
+    const firstQuizIdx = corrupted.findIndex(e => e.topic === topic && e.type === EventType.QUIZ_ATTEMPT);
+    if (firstQuizIdx > 0) {
+        const firstQuiz = corrupted[firstQuizIdx];
+        const badEvent: Event = {
+            id: 'evt_corruption_causality',
+            type: EventType.REVISION_SESSION,
+            timestamp: new Date(firstQuiz.timestamp.getTime() - ONE_DAY_MS), // 1 day before
+            topic: topic,
+            payload: { duration: 30, _corruption: 'Causality Violation' }
         };
+        corrupted.splice(firstQuizIdx, 0, badEvent);
+    }
 
-        // 3. Check Mastery Teleportation (Unrealistic Learning Rate)
-        // If mastery jumps from 0.2 to 0.9 in one step (1 day), is it possible?
-        // Only applicable if we have history (not the first quiz)
-        if (prevState.totalAttempts > 0 && currentState.mastery - prevState.mastery > 0.6 && daysSinceLast < 2) {
-             violations.push({
-                studentId: history.studentId || 'unknown',
-                timestamp: quiz.timestamp.toISOString(),
-                rule: 'MasteryTeleportation',
-                details: `Mastery jumped by ${(currentState.mastery - prevState.mastery).toFixed(2)} in ${daysSinceLast.toFixed(1)} days. Unrealistic learning rate.`
+    // 3. Mastery Teleportation
+    // Insert a Manual Override that jumps mastery
+    const midPoint = Math.floor(corrupted.length / 2);
+    corrupted.splice(midPoint, 0, {
+        id: 'evt_corruption_teleport',
+        type: EventType.MANUAL_OVERRIDE,
+        timestamp: new Date(corrupted[midPoint].timestamp.getTime() + 1000),
+        topic: TOPICS[1],
+        payload: { mastery: 0.95, _corruption: 'Mastery Teleportation' }
+    });
+
+    return corrupted; // Note: Not re-sorting to preserve time travel bug
+}
+
+// --- Auditor ---
+
+function auditStudentHistory(studentId: string, events: Event[]): Violation[] {
+    const violations: Violation[] = [];
+    let currentState = getInitialState(studentId);
+
+    // Track previous state for "teleportation" check
+    let previousMastery: Record<string, number> = {};
+
+    for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        const topic = event.topic;
+
+        // 1. Temporal Ordering Check
+        if (i > 0 && event.timestamp < events[i-1].timestamp) {
+            violations.push({
+                rule: 'Temporal Ordering',
+                description: `Event ${event.id} timestamp (${event.timestamp.toISOString()}) is earlier than previous event ${events[i-1].id} (${events[i-1].timestamp.toISOString()})`,
+                timestamp: event.timestamp,
+                studentId,
+                topic,
+                severity: 'HIGH'
             });
         }
 
-        // Update state
-        prevState = currentState;
+        const topicStateBefore = currentState.topics[topic] || { mastery: 0, attempts: 0 };
+
+        // 2. Causality Check
+        if (event.type === EventType.REVISION_SESSION) {
+            if (topicStateBefore.attempts === 0 && topicStateBefore.mastery === 0) {
+                 violations.push({
+                    rule: 'Causality Violation',
+                    description: `Revision session for topic '${topic}' occurred before any learning activity (attempts=0, mastery=0).`,
+                    timestamp: event.timestamp,
+                    studentId,
+                    topic,
+                    severity: 'MEDIUM'
+                });
+            }
+        }
+
+        // Apply Event
+        currentState = applyEvent(currentState, event);
+        const topicStateAfter = currentState.topics[topic];
+
+        // 3. Monotonicity Check (Attempts)
+        if (topicStateAfter.attempts < topicStateBefore.attempts) {
+             violations.push({
+                rule: 'Monotonicity Violation',
+                description: `Quiz attempts count decreased from ${topicStateBefore.attempts} to ${topicStateAfter.attempts}.`,
+                timestamp: event.timestamp,
+                studentId,
+                topic,
+                severity: 'HIGH'
+            });
+        }
+
+        // 4. Mastery Teleportation Check
+        // If mastery changed by > 0.3 without a quiz or huge revision, flag it
+        const masteryDiff = Math.abs(topicStateAfter.mastery - (topicStateBefore.mastery || 0));
+        if (masteryDiff > 0.4 && event.type !== EventType.QUIZ_ATTEMPT && event.type !== EventType.REVISION_SESSION) {
+             violations.push({
+                rule: 'Mastery Teleportation',
+                description: `Mastery changed by ${masteryDiff.toFixed(2)} without valid learning event (Event Type: ${event.type}).`,
+                timestamp: event.timestamp,
+                studentId,
+                topic,
+                severity: 'HIGH'
+            });
+        }
+
+        // 5. ADK Logic Validation (Run on SYSTEM_CHECK)
+        if (event.type === EventType.SYSTEM_CHECK) {
+            // Reconstruct signals
+            const signals: MLSignals = {
+                mastery_probability: topicStateAfter.mastery,
+                confidence: 0.8,
+                days_since_last_revision: topicStateAfter.lastRevisionDate
+                    ? (event.timestamp.getTime() - topicStateAfter.lastRevisionDate.getTime()) / ONE_DAY_MS
+                    : 999,
+                attempts_count: topicStateAfter.attempts,
+                attention_risk: topicStateAfter.consecutiveFailures > 2 ? 'HIGH' : 'LOW',
+            };
+
+            const context: DecisionContext = {
+                studentId,
+                topic,
+                currentDate: event.timestamp,
+                daysUntilExam: 30, // Default far away
+                mlSignals: signals
+            };
+
+            // If we are close to exam (simulate based on date), check Cramming Logic
+            // For now, let's just check the Forgetting Rule (Policy 3)
+            // Policy 3: Moderate Mastery (0.4-0.6) + Stale (>7 days) -> SCHEDULED_REVISION
+
+            if (signals.mastery_probability >= 0.4 && signals.mastery_probability < 0.6 && signals.days_since_last_revision > 7) {
+                 const decision = makeRevisionDecision(context);
+                 if (decision.action !== DecisionAction.SCHEDULED_REVISION) {
+                      violations.push({
+                        rule: 'ADK Logic Drift',
+                        description: `ADK failed to recommend SCHEDULED_REVISION for stale moderate mastery. Recommended: ${decision.action}`,
+                        timestamp: event.timestamp,
+                        studentId,
+                        topic,
+                        severity: 'LOW' // It might be valid due to other rules, but worth noting in audit
+                    });
+                 }
+            }
+        }
     }
 
     return violations;
 }
 
-// ==========================================
-// Main Execution
-// ==========================================
 
-function runAudit() {
-    console.log("# Temporal Consistency Audit Report\n");
-    console.log(`Generated at: ${new Date().toISOString()}\n`);
+// --- Main Execution ---
 
-    const scenarios = [
-        { name: "Normal Learner", data: generateNormalFlow("student_normal") },
-        { name: "Time Traveler", data: generateTimeTravel("student_time_traveler") },
-        { name: "Zombie State (Forgetful)", data: generateZombieState("student_zombie") },
-        { name: "Mastery Teleporter", data: generateMasteryTeleportation("student_teleporter") }
-    ];
+async function runAudit() {
+    console.log("Starting Temporal Consistency Audit...");
 
-    let totalViolations = 0;
+    // 1. Generate Clean Data
+    console.log("Generating clean student history...");
+    const cleanHistory = generateValidHistory('student_clean', 45);
 
-    for (const scenario of scenarios) {
-        console.log(`## Scenario: ${scenario.name}`);
-        const violations = auditHistory(scenario.data);
+    // 2. Generate Corrupted Data
+    console.log("Generating corrupted student history...");
+    const corruptedHistory = injectCorruptions(generateValidHistory('student_corrupted', 45));
 
-        if (violations.length === 0) {
-            console.log("✅ No violations detected.\n");
-        } else {
-            console.log("❌ Violations Detected:");
-            for (const v of violations) {
-                console.log(`- [${v.rule}] ${v.timestamp}: ${v.details}`);
-            }
-            console.log("");
-            totalViolations += violations.length;
-        }
-    }
+    // 3. Run Audit
+    const cleanViolations = auditStudentHistory('student_clean', cleanHistory);
+    const corruptedViolations = auditStudentHistory('student_corrupted', corruptedHistory);
 
-    console.log("## Risk Assessment");
-    if (totalViolations > 0) {
-        console.log("⚠️  CRITICAL: Invariants violated in synthetic scenarios. The system logic or data pipeline permits invalid states.");
-        console.log("- Time Travel bugs indicate potential DB sync issues or client-side clock trust.");
-        console.log("- Mastery Teleportation indicates feature extraction might be over-weighting recent events.");
-        console.log("- Forgetting Curve failures indicate the ML model may not be penalizing inactivity correctly.");
-    } else {
-        console.log("✅ System logic appears consistent across tested scenarios.");
-    }
+    console.log(`Clean History Violations: ${cleanViolations.length}`);
+    console.log(`Corrupted History Violations: ${corruptedViolations.length}`);
+
+    // 4. Generate Report
+    const reportContent = `
+# Temporal Consistency Audit Report
+
+**Date:** ${new Date().toISOString()}
+
+## Executive Summary
+This audit enforces invariants on the student state machine across session boundaries. It simulates historical replay to detect anomalies such as time travel, causality violations, and mastery teleportation.
+
+## Dataset Overview
+- **Clean Dataset**: ${cleanHistory.length} events (Expect 0 violations)
+- **Corrupted Dataset**: ${corruptedHistory.length} events (Injected faults)
+
+## Violation Log
+
+### Clean Dataset
+${cleanViolations.length === 0 ? "✅ No violations found." : cleanViolations.map(v => `- [${v.severity}] ${v.rule}: ${v.description}`).join('\n')}
+
+### Corrupted Dataset
+${corruptedViolations.length === 0 ? "✅ No violations found." : corruptedViolations.map(v => `- [${v.severity}] **${v.rule}**: ${v.description} (Topic: ${v.topic})`).join('\n')}
+
+## Detailed Analysis of Violations
+
+${corruptedViolations.map(v => `
+### ${v.rule}
+- **Severity**: ${v.severity}
+- **Timestamp**: ${v.timestamp.toISOString()}
+- **Description**: ${v.description}
+- **Root Cause Analysis**: ${v.rule === 'Temporal Ordering' ? 'Event timestamps are out of sequence. Likely caused by client-side clock drift or unsorted log ingestion.' : ''}${v.rule === 'Causality Violation' ? 'Revision occurred before learning. Likely caused by race condition in event logging or manual DB edits.' : ''}${v.rule === 'Mastery Teleportation' ? 'Sudden mastery shift without learning event. Likely caused by "Manual Override" or unstable ML prediction update.' : ''}
+`).join('\n')}
+
+## Recommendations
+1. **Strict Ordering**: Enforce server-side timestamping for all critical learning events.
+2. **Causality Guards**: Reject 'Revision' events for topics with 0 mastery/attempts at API level.
+3. **Anomaly Detection**: Run this temporal audit as a nightly batch job on production data.
+`;
+
+    fs.writeFileSync('TEMPORAL_CONSISTENCY_AUDIT.md', reportContent);
+    console.log("Audit Report generated: TEMPORAL_CONSISTENCY_AUDIT.md");
 }
 
-// Run if main
-runAudit();
+runAudit().catch(console.error);
