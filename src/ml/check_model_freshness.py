@@ -1,8 +1,19 @@
 import joblib
 import hashlib
 import os
-import sys
 from datetime import datetime
+import sklearn
+
+# Configuration for models to check
+MODELS_CONFIG = [
+    {
+        "name": "Topic Mastery Prediction Model",
+        "model_path": "models/mastery_model.pkl",
+        "training_script": "training/train_mastery_model.py",
+        "training_data": "training/training_data.csv",
+        "retrain_command": "python3 src/ml/training/train_mastery_model.py"
+    }
+]
 
 def get_file_hash(filepath):
     """Calculate SHA256 hash of a file"""
@@ -15,81 +26,115 @@ def get_file_hash(filepath):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
+def check_sklearn_version(stored_version):
+    """Check if stored sklearn version matches current environment"""
+    current_version = sklearn.__version__
+    if stored_version != current_version:
+        return f"- ⚠️ **Version Mismatch:** Model trained with scikit-learn {stored_version}, running with {current_version}."
+    return None
+
 def check_freshness():
     # Define paths relative to this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    report_lines = []
 
-    # Assuming standard project structure:
-    # src/ml/check_model_freshness.py
-    # src/ml/models/mastery_model.pkl
-    # src/ml/training/train_mastery_model.py
-    # src/ml/training/training_data.csv
+    report_lines.append("# ML Model Freshness Report\n")
+    report_lines.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    report_lines.append(f"**Environment Scikit-learn Version:** {sklearn.__version__}\n")
 
-    # If script is in src/ml:
-    model_path = os.path.join(script_dir, "models", "mastery_model.pkl")
-    training_script_path = os.path.join(script_dir, "training", "train_mastery_model.py")
-    data_path = os.path.join(script_dir, "training", "training_data.csv")
+    all_fresh = True
 
-    print("# ML Model Freshness Report\n")
-    print(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"**Model:** `{model_path}`")
-    print(f"**Training Script:** `{training_script_path}`")
-    print(f"**Training Data:** `{data_path}`\n")
+    for config in MODELS_CONFIG:
+        model_rel_path = config["model_path"]
+        model_path = os.path.join(script_dir, model_rel_path)
+        script_path = os.path.join(script_dir, config["training_script"])
+        data_path = os.path.join(script_dir, config["training_data"])
 
-    if not os.path.exists(model_path):
-        print("## ❌ Model Missing")
-        print(f"Model file not found at `{model_path}`.")
-        return
+        report_lines.append(f"## Model: {config['name']}")
+        report_lines.append(f"- **Path:** `{model_rel_path}`")
+        report_lines.append(f"- **Training Script:** `{config['training_script']}`")
+        report_lines.append(f"- **Training Data:** `{config['training_data']}`\n")
 
-    try:
-        loaded_object = joblib.load(model_path)
-    except Exception as e:
-        print("## ❌ Load Failed")
-        print(f"Failed to load model: {e}")
-        return
+        if not os.path.exists(model_path):
+            report_lines.append(f"### ❌ Status: MISSING")
+            report_lines.append(f"Model file not found at `{model_path}`.")
+            all_fresh = False
+            continue
 
-    # Check for metadata
-    if isinstance(loaded_object, dict) and "metadata" in loaded_object:
-        metadata = loaded_object["metadata"]
-        stored_script_hash = metadata.get("script_hash")
-        stored_data_hash = metadata.get("data_hash")
-        training_timestamp = metadata.get("training_timestamp")
-        sklearn_version = metadata.get("sklearn_version", "unknown")
+        try:
+            loaded_object = joblib.load(model_path)
+        except Exception as e:
+            report_lines.append(f"### ❌ Status: CORRUPT")
+            report_lines.append(f"Failed to load model: {e}")
+            all_fresh = False
+            continue
 
-        print("## Model Metadata")
-        print(f"- **Training Timestamp:** {training_timestamp}")
-        print(f"- **Scikit-learn Version:** {sklearn_version}")
-        print(f"- **Stored Script Hash:** `{stored_script_hash}`")
-        print(f"- **Stored Data Hash:** `{stored_data_hash}`\n")
+        # Check for metadata
+        if isinstance(loaded_object, dict) and "metadata" in loaded_object:
+            metadata = loaded_object["metadata"]
+            stored_script_hash = metadata.get("script_hash")
+            stored_data_hash = metadata.get("data_hash")
+            training_timestamp = metadata.get("training_timestamp")
+            stored_sklearn_version = metadata.get("sklearn_version", "unknown")
 
-        # Calculate current hashes
-        current_script_hash = get_file_hash(training_script_path)
-        current_data_hash = get_file_hash(data_path)
+            report_lines.append("### Metadata")
+            report_lines.append(f"- **Training Timestamp:** {training_timestamp}")
+            report_lines.append(f"- **Trained with Scikit-learn:** {stored_sklearn_version}")
+            report_lines.append(f"- **Stored Script Hash:** `{stored_script_hash}`")
+            report_lines.append(f"- **Stored Data Hash:** `{stored_data_hash}`\n")
 
-        print("## Current State")
-        print(f"- **Current Script Hash:** `{current_script_hash}`")
-        print(f"- **Current Data Hash:** `{current_data_hash}`\n")
+            # Calculate current hashes
+            current_script_hash = get_file_hash(script_path)
+            current_data_hash = get_file_hash(data_path)
 
-        issues = []
-        if current_script_hash != stored_script_hash:
-            issues.append("- ⚠️ **Script Drift:** The training script has changed since the model was trained.")
-        if current_data_hash != stored_data_hash:
-            issues.append("- ⚠️ **Data Drift:** The training data has changed since the model was trained.")
+            issues = []
 
-        if not issues:
-            print("## ✅ Status: FRESH")
-            print("The model is up-to-date with the current training script and data.")
+            # Check hashes
+            if current_script_hash != stored_script_hash:
+                issues.append("- ⚠️ **Script Drift:** The training script has changed since the model was trained.")
+            if current_data_hash != stored_data_hash:
+                issues.append("- ⚠️ **Data Drift:** The training data has changed since the model was trained.")
+
+            # Check version
+            version_issue = check_sklearn_version(stored_sklearn_version)
+            if version_issue:
+                issues.append(version_issue)
+
+            if not issues:
+                report_lines.append("### ✅ Status: FRESH")
+                report_lines.append("The model is up-to-date with the current training script, data, and environment.")
+            else:
+                report_lines.append("### ⚠️ Status: STALE / MISMATCH")
+                report_lines.append("The model is out of sync or environment mismatch detected:")
+                for issue in issues:
+                    report_lines.append(issue)
+
+                report_lines.append(f"\n**Recommendation:** Run `{config['retrain_command']}` to retrain the model.")
+                all_fresh = False
+
         else:
-            print("## ⚠️ Status: STALE")
-            print("The model is out of sync with the codebase:")
-            for issue in issues:
-                print(issue)
-            print("\n**Recommendation:** Run `python3 src/ml/training/train_mastery_model.py` to retrain the model.")
+            report_lines.append("### ❓ Status: UNKNOWN PROVENANCE")
+            report_lines.append("The model file does not contain provenance metadata.")
+            report_lines.append(f"\n**Recommendation:** Run `{config['retrain_command']}` to retrain the model with metadata.")
+            all_fresh = False
 
+        report_lines.append("\n---\n")
+
+    # Summary
+    report_lines.append("## Summary")
+    if all_fresh:
+        report_lines.append("✅ All models are fresh and compatible.")
     else:
-        print("## ❓ Status: UNKNOWN PROVENANCE")
-        print("The model file does not contain provenance metadata. It likely predates the current versioning system.")
-        print("\n**Recommendation:** Run `python3 src/ml/training/train_mastery_model.py` to retrain the model with metadata.")
+        report_lines.append("⚠️ Some models are stale, missing, or have version mismatches. See details above.")
+
+    # Output to file
+    report_content = "\n".join(report_lines)
+    report_path = os.path.join(script_dir, "MODEL_FRESHNESS_REPORT.md")
+    with open(report_path, "w") as f:
+        f.write(report_content)
+
+    print(report_content)
+    print(f"\n📄 Report saved to: {report_path}")
 
 if __name__ == "__main__":
     check_freshness()
