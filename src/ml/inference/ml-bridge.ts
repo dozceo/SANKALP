@@ -46,8 +46,8 @@ class PythonBridge {
     }
 
     private startProcess() {
-        // Spawn Python process
-        this.process = spawn("python", [PYTHON_SCRIPT_PATH]);
+        // Spawn Python process with unbuffered output to avoid IPC hangs
+        this.process = spawn("python", ["-u", PYTHON_SCRIPT_PATH]);
 
         // Setup Readline interface for stdout
         if (this.process.stdout) {
@@ -148,7 +148,7 @@ class PythonBridge {
                     this.pendingRequests.delete(id);
                     reject(new Error("Timeout waiting for Python inference"));
                 }
-            }, 5000);
+            }, 10000);
 
             this.pendingRequests.set(id, { resolve, reject, timeout });
 
