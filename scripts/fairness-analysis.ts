@@ -1,3 +1,9 @@
+/**
+ * Fairness & Bias Cascade Analysis Script
+ *
+ * Usage:
+ * TS_NODE_COMPILER_OPTIONS='{"module":"commonjs"}' npx ts-node -r tsconfig-paths/register scripts/fairness-analysis.ts
+ */
 
 import { predictMastery } from "../src/ml/inference/ml-bridge";
 import { makeRevisionDecision, makeInterventionDecision, selectContentStrategy } from "../src/ai/adk/decision-engine";
