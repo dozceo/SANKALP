@@ -4,7 +4,7 @@
 
 [@sentry/nextjs] WARNING: You are using the Sentry SDK with `next dev --turbo`. The Sentry SDK doesn't yet fully support Turbopack. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds without `--turbo` will still fully work. If you are just trying out Sentry or attempting to configure the SDK, we recommend temporarily removing the `--turbo` flag while you are developing locally. Follow this issue for progress on Sentry + Turbopack: https://github.com/getsentry/sentry-javascript/issues/8105. (You can suppress this warning by setting SENTRY_SUPPRESS_TURBOPACK_WARNING=1 as environment variable)
 [@sentry/nextjs] WARNING: You are using the Sentry SDK with `next dev --turbo`. The Sentry SDK doesn't yet fully support Turbopack. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds without `--turbo` will still fully work. If you are just trying out Sentry or attempting to configure the SDK, we recommend temporarily removing the `--turbo` flag while you are developing locally. Follow this issue for progress on Sentry + Turbopack: https://github.com/getsentry/sentry-javascript/issues/8105. (You can suppress this warning by setting SENTRY_SUPPRESS_TURBOPACK_WARNING=1 as environment variable)
-   ▲ Next.js 15.5.7 (Turbopack)
+   ▲ Next.js 15.5.12 (Turbopack)
    - Local:        http://localhost:9002
    - Network:      http://192.168.0.2:9002
    - Environments: .env.local
@@ -18,40 +18,7 @@ You can learn more, including how to opt-out if you'd not like to participate in
 https://nextjs.org/telemetry
 
  ○ Compiling instrumentation Node.js ...
- ✓ Compiled instrumentation Node.js in 2.7s
+ ✓ Compiled instrumentation Node.js in 2.4s
  ○ Compiling instrumentation Edge ...
- ✓ Compiled instrumentation Edge in 629ms
- ○ Compiling middleware ...
- ✓ Compiled middleware in 546ms
- ✓ Ready in 7.2s
- ○ Compiling /_not-found/page ...
- ✓ Compiled /_not-found/page in 12.3s
-⚠️ Firebase skipped (server-side rendering)
- GET / 404 in 14806ms
- GET / 404 in 211ms
- ○ Compiling /api/student ...
- ✓ Compiled /api/student in 553ms
-✅ Firebase Admin SDK initialized
-[Student API] GET request for studentId: test
-Error fetching student: Error: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
-    at getStudent (src/lib/db-helpers.ts:304:75)
-    at GET (src/app/api/student/route.ts:20:41)
-  302 | export async function getStudent(studentId: string): Promise<Student | null> {
-  303 |     try {
-> 304 |         const studentDoc = await db.collection('students').doc(studentId).get();
-      |                                                                           ^
-  305 |
-  306 |         if (!studentDoc.exists) {
-  307 |             return null;
-[Student API] Error: Error: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
-    at getStudent (src/lib/db-helpers.ts:304:75)
-    at GET (src/app/api/student/route.ts:20:41)
-  302 | export async function getStudent(studentId: string): Promise<Student | null> {
-  303 |     try {
-> 304 |         const studentDoc = await db.collection('students').doc(studentId).get();
-      |                                                                           ^
-  305 |
-  306 |         if (!studentDoc.exists) {
-  307 |             return null;
- GET /api/student?studentId=test 500 in 9647ms
- GET / 404 in 203ms
+ ✓ Compiled instrumentation Edge in 678ms
+ ✓ Ready in 5.6s
