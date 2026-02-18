@@ -1,10 +1,15 @@
 
+import fs from 'fs';
+import path from 'path';
+
 /**
  * Chaos Configuration Manager
  *
  * Manages the state of chaos injection for the application.
  * Allows setting failure modes and tracking metrics for resilience testing.
  */
+
+const CHAOS_STATE_FILE = path.resolve(process.cwd(), 'chaos-state.json');
 
 type ChaosState = {
   mlLatency: number; // ms
@@ -45,8 +50,34 @@ class ChaosManager {
     firestoreWriteCalls: 0,
   };
 
+  constructor() {
+      this.load();
+  }
+
+  private load() {
+      if (fs.existsSync(CHAOS_STATE_FILE)) {
+          try {
+              const content = fs.readFileSync(CHAOS_STATE_FILE, 'utf-8');
+              const loaded = JSON.parse(content);
+              // Merge with defaults to ensure structure
+              this.state = { ...this.state, ...loaded };
+          } catch (e) {
+              console.error('Failed to load chaos state:', e);
+          }
+      }
+  }
+
+  private save() {
+      try {
+          fs.writeFileSync(CHAOS_STATE_FILE, JSON.stringify(this.state, null, 2));
+      } catch (e) {
+          console.error('Failed to save chaos state:', e);
+      }
+  }
+
   // Getters
   public getState(): ChaosState {
+    this.load(); // Ensure fresh state
     return { ...this.state };
   }
 
@@ -56,7 +87,9 @@ class ChaosManager {
 
   // Setters
   public setState(newState: Partial<ChaosState>) {
+    this.load(); // Load current state first
     this.state = { ...this.state, ...newState };
+    this.save();
     console.log('[ChaosManager] State updated:', this.state);
   }
 
@@ -72,6 +105,7 @@ class ChaosManager {
       firestoreReadError: false,
       firestoreWriteError: false,
     };
+    this.save();
     console.log('[ChaosManager] State reset');
   }
 
@@ -92,6 +126,9 @@ class ChaosManager {
   public async checkChaos(service: 'ml' | 'genkit' | 'firestoreRead' | 'firestoreWrite'): Promise<void> {
     // Only active in non-production or if explicitly enabled
     if (process.env.NODE_ENV === 'production' && !process.env.ENABLE_CHAOS) return;
+
+    // Reload state to pick up changes from other processes
+    this.load();
 
     switch (service) {
       case 'ml':

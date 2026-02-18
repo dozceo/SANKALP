@@ -53,3 +53,8 @@ firestore-debug.log
 # python
 __pycache__/
 *.pyc
+
+# chaos testing artifacts
+chaos-state.json
+mock-db.json
+server.log
