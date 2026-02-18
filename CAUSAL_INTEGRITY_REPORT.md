@@ -16,8 +16,8 @@ graph TD
 ## 2. Semantic Coherence Violation Matrix
 | Scenario | Violations Found |
 |---|---|
-| Baseline: Good Student | 🟢 None |
-| Fault: ML Under-prediction | 🔴 3 |
+| Baseline: Good Student | 🔴 1 |
+| Fault: ML Under-prediction | 🔴 4 |
 | Edge: Future Quiz Date | 🔴 2 |
 
 ## 3. Silent Failure Cascade Scenarios
@@ -56,11 +56,9 @@ if (features.avg_quiz_score > 0.8 && prediction.mastery_probability < 0.2) {
 Replace `generateStudentIntelligence` random logic with a deterministic heuristic that mirrors the ML model (e.g. `score * 0.9`).
 
 ## 6. Detailed Trace Logs
-### Fault: ML Under-prediction
+### Baseline: Good Student
 **Violations:**
-- ML Integrity: High quiz score (0.9) led to low mastery prediction (0.1)
-- UI Integrity: High priority decision mapped to PROGRESS_MODE
-- Silent Failure: Fallback logic divergence. ML predicted 0.10 but fallback generated 0.90
+- Silent Failure: Fallback logic uses random revision dates (8 vs actual 0)
 
 **Trace Output:**
 ```json
@@ -69,13 +67,151 @@ Replace `generateStudentIntelligence` random logic with a deterministic heuristi
     "name": "Feature Extraction",
     "input": {
       "studentId": "student-1",
-      "lastLoginDate": "2026-02-17T06:23:33.792Z",
-      "registrationDate": "2026-02-17T06:23:33.792Z",
+      "lastLoginDate": "2026-02-18T06:31:29.706Z",
+      "registrationDate": "2026-02-18T06:31:29.706Z",
       "quizResults": [
         {
           "topic": "Calculus",
           "score": 0.9,
-          "timestamp": "2026-02-17T06:23:33.792Z",
+          "timestamp": "2026-02-18T06:31:29.706Z",
+          "timeSpent": 60,
+          "questionsAttempted": 10
+        }
+      ]
+    },
+    "output": {
+      "avg_quiz_score": 0.9,
+      "attempts_per_topic": 1,
+      "days_since_last_revision": 0,
+      "quiz_score_variance": 0,
+      "time_spent_per_question": 6
+    },
+    "warnings": [],
+    "semanticValid": true
+  },
+  "mlPrediction": {
+    "name": "ML Prediction",
+    "input": {
+      "avg_quiz_score": 0.9,
+      "attempts_per_topic": 1,
+      "days_since_last_revision": 0,
+      "quiz_score_variance": 0,
+      "time_spent_per_question": 6
+    },
+    "output": {
+      "mastery_probability": 0.8600000000000001,
+      "confidence": 0.8,
+      "predicted_class": "mastered"
+    },
+    "warnings": [],
+    "semanticValid": true
+  },
+  "adkDecision": {
+    "name": "ADK Decision",
+    "input": {
+      "topic": "Calculus",
+      "mlSignals": {
+        "mastery_probability": 0.8600000000000001,
+        "confidence": 0.8,
+        "days_since_last_revision": 0,
+        "attempts_count": 1,
+        "attention_risk": "LOW"
+      }
+    },
+    "output": {
+      "action": "PROGRESS_ALLOWED",
+      "priority": "LOW",
+      "contentStrategy": "CHALLENGE",
+      "reasoning": "Strong mastery - ready for advanced content",
+      "adkFlags": [
+        "MASTERY_ACHIEVED"
+      ],
+      "llmContext": {
+        "strategy": "CHALLENGE",
+        "targetDuration": "15-MIN",
+        "tone": "CHALLENGING",
+        "includeExamples": false,
+        "includeVisuals": false,
+        "difficulty": "ADVANCED"
+      }
+    },
+    "warnings": [],
+    "semanticValid": true
+  },
+  "uiRendering": {
+    "name": "UI Rendering",
+    "input": {
+      "mastery": {
+        "Calculus": {
+          "score": 0.8600000000000001,
+          "priority": "LOW",
+          "needsRevision": false
+        }
+      },
+      "adkDecision": "PROGRESS_MODE",
+      "reasoning": [
+        "Strong mastery - ready for advanced content"
+      ]
+    },
+    "output": "Tooltip: Strong mastery - ready for advanced content | Mode: PROGRESS_MODE",
+    "warnings": [],
+    "semanticValid": true
+  },
+  "fallbackCheck": {
+    "name": "Fallback Logic Check",
+    "input": null,
+    "output": {
+      "studentId": "student-1",
+      "mastery": {
+        "Calculus": {
+          "score": 0.9,
+          "confidence": 0.8,
+          "daysSinceRevision": 8,
+          "attempts": 5,
+          "trend": "IMPROVING",
+          "priority": "MEDIUM",
+          "needsRevision": true
+        }
+      },
+      "revisionUrgency": "NONE",
+      "attentionRisk": "LOW",
+      "adkDecision": "PROGRESS_MODE",
+      "confidence": "HIGH",
+      "generatedAt": "2026-02-18T06:31:29.707Z",
+      "reasoning": [
+        "Average mastery: 90%",
+        "0 high-priority topics",
+        "No specific weaknesses identified"
+      ],
+      "flags": []
+    },
+    "warnings": [],
+    "semanticValid": false
+  }
+}
+```
+
+### Fault: ML Under-prediction
+**Violations:**
+- ML Integrity: High quiz score (0.9) led to low mastery prediction (0.1)
+- UI Integrity: High priority decision mapped to PROGRESS_MODE
+- Silent Failure: Fallback logic divergence. ML predicted 0.10 but fallback generated 0.90
+- Silent Failure: Fallback logic uses random revision dates (13 vs actual 0)
+
+**Trace Output:**
+```json
+{
+  "featureExtraction": {
+    "name": "Feature Extraction",
+    "input": {
+      "studentId": "student-1",
+      "lastLoginDate": "2026-02-18T06:31:29.706Z",
+      "registrationDate": "2026-02-18T06:31:29.706Z",
+      "quizResults": [
+        {
+          "topic": "Calculus",
+          "score": 0.9,
+          "timestamp": "2026-02-18T06:31:29.706Z",
           "timeSpent": 60,
           "questionsAttempted": 10
         }
@@ -169,21 +305,21 @@ Replace `generateStudentIntelligence` random logic with a deterministic heuristi
         "Calculus": {
           "score": 0.9,
           "confidence": 0.8,
-          "daysSinceRevision": 3,
-          "attempts": 8,
+          "daysSinceRevision": 13,
+          "attempts": 9,
           "trend": "IMPROVING",
-          "priority": "LOW",
-          "needsRevision": false
+          "priority": "HIGH",
+          "needsRevision": true
         }
       },
-      "revisionUrgency": "NONE",
+      "revisionUrgency": "SCHEDULED",
       "attentionRisk": "LOW",
       "adkDecision": "PROGRESS_MODE",
       "confidence": "HIGH",
-      "generatedAt": "2026-02-17T06:23:33.794Z",
+      "generatedAt": "2026-02-18T06:31:29.707Z",
       "reasoning": [
         "Average mastery: 90%",
-        "0 high-priority topics",
+        "1 high-priority topics",
         "No specific weaknesses identified"
       ],
       "flags": []
@@ -197,7 +333,7 @@ Replace `generateStudentIntelligence` random logic with a deterministic heuristi
 ### Edge: Future Quiz Date
 **Violations:**
 - Feature Extraction: Negative days since last revision
-- Silent Failure: Fallback logic uses random revision dates (5 vs actual -5)
+- Silent Failure: Fallback logic uses random revision dates (12 vs actual -5)
 
 **Trace Output:**
 ```json
@@ -206,13 +342,13 @@ Replace `generateStudentIntelligence` random logic with a deterministic heuristi
     "name": "Feature Extraction",
     "input": {
       "studentId": "student-1",
-      "lastLoginDate": "2026-02-17T06:23:33.792Z",
-      "registrationDate": "2026-02-17T06:23:33.792Z",
+      "lastLoginDate": "2026-02-18T06:31:29.706Z",
+      "registrationDate": "2026-02-18T06:31:29.706Z",
       "quizResults": [
         {
           "topic": "Calculus",
           "score": 0.9,
-          "timestamp": "2026-02-22T06:23:33.794Z",
+          "timestamp": "2026-02-23T06:31:29.707Z",
           "timeSpent": 60,
           "questionsAttempted": 10
         }
@@ -307,21 +443,21 @@ Replace `generateStudentIntelligence` random logic with a deterministic heuristi
         "Calculus": {
           "score": 0.9,
           "confidence": 0.8,
-          "daysSinceRevision": 5,
-          "attempts": 5,
+          "daysSinceRevision": 12,
+          "attempts": 9,
           "trend": "IMPROVING",
-          "priority": "LOW",
-          "needsRevision": false
+          "priority": "HIGH",
+          "needsRevision": true
         }
       },
-      "revisionUrgency": "NONE",
+      "revisionUrgency": "SCHEDULED",
       "attentionRisk": "LOW",
       "adkDecision": "PROGRESS_MODE",
       "confidence": "HIGH",
-      "generatedAt": "2026-02-17T06:23:33.794Z",
+      "generatedAt": "2026-02-18T06:31:29.707Z",
       "reasoning": [
         "Average mastery: 90%",
-        "0 high-priority topics",
+        "1 high-priority topics",
         "No specific weaknesses identified"
       ],
       "flags": []
