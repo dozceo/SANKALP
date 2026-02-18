@@ -2,37 +2,69 @@
 import fs from 'fs';
 import path from 'path';
 
-// Mocks
-const mockAI = {
-  definePrompt: (config: any) => async (input: any) => {
-    // Return mock explanations based on input
-    const topics = input.topicsToExplain.split(', ');
-    const explanations = topics.map((t: string) => {
-        const topicName = t.split(' (')[0];
-        return { topic: topicName, reason: `Mock explanation for ${topicName}` };
-    });
-    return { output: { explanations } };
-  },
-  defineFlow: (config: any, handler: Function) => handler
+/**
+ * Flow Integrity Check Script
+ *
+ * Verifies the robustness of the Smart Revision Planner flow against failure modes.
+ * Simulates the flow execution with mocked dependencies to ensure graceful degradation.
+ *
+ * Usage:
+ *   npx tsx scripts/check-flow-integrity.ts [options]
+ *
+ * Options:
+ *   --output <path>     Path to output report file (default: FLOW_INTEGRITY_REPORT.md)
+ *   --json              Output result as JSON to stdout
+ *   --fail-on-error     Exit with code 1 if any test case fails
+ */
+
+const DEFAULTS = {
+  REPORT_FILE: 'FLOW_INTEGRITY_REPORT.md',
 };
 
-const mockZod = {
-  object: (schema: any) => ({ describe: () => {} }),
-  string: () => ({ describe: () => {} }),
-  array: (schema: any) => ({ describe: () => {} }),
-  enum: (values: any) => ({ describe: () => {} }),
-  number: () => ({ optional: () => ({ describe: () => {} }) }),
-  infer: (schema: any) => {}
-};
+// --- Types ---
 
-// State Machine for Flow validation
+interface SmartRevisionPlannerInput {
+  brainMap: string;
+  studentId: string;
+}
+
+interface RevisionTask {
+  topic: string;
+  reason: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  masteryScore?: number;
+}
+
+interface SmartRevisionPlannerOutput {
+  revisionList: RevisionTask[];
+}
+
 type FlowState = 'INIT' | 'HISTORY_FETCHED' | 'ML_DECISIONS_MADE' | 'LLM_CALLED' | 'OUTPUT_GENERATED' | 'ERROR';
+
+interface FlowContext {
+  getStudent: (id: string) => Promise<any>;
+  getQuizResults: (id: string, limit: number) => Promise<any[]>;
+  extractMasteryFeatures: (topic: string, history: any) => any;
+  predictMastery: (features: any) => Promise<any>;
+  makeRevisionDecision: (context: any) => any;
+  makeInterventionDecision: (context: any) => void;
+  logDecision: (context: any, decision: any) => void;
+  explanationPrompt: (input: { topicsToExplain: string }) => Promise<any>;
+}
+
+interface TestCase {
+  name: string;
+  input: SmartRevisionPlannerInput;
+  mocks: Partial<FlowContext>;
+  expectedState: FlowState;
+  check: (result: SmartRevisionPlannerOutput) => boolean;
+}
+
+// --- Mock Logic ---
+
 let currentState: FlowState = 'INIT';
 
-// Logic Mirror from src/ai/flows/smart-revision-planner.ts
-// We adapt it to use our mocks and track state
-
-async function smartRevisionPlannerFlow(input: any, context: any) {
+async function smartRevisionPlannerFlow(input: SmartRevisionPlannerInput, context: FlowContext): Promise<SmartRevisionPlannerOutput> {
   currentState = 'INIT';
   const {
     getStudent, getQuizResults, extractMasteryFeatures, predictMastery,
@@ -110,6 +142,7 @@ async function smartRevisionPlannerFlow(input: any, context: any) {
     currentState = 'LLM_CALLED';
   } catch (error) {
     // Fallback logic
+    console.warn("LLM Call Failed, using fallback explanations");
   }
 
   const revisionList = mlDecisions.slice(0, 5).map((decision: any, idx: number) => {
@@ -135,7 +168,7 @@ async function smartRevisionPlannerFlow(input: any, context: any) {
   return { revisionList };
 }
 
-async function makeRevisionDecisions(brainMapData: any, studentHistory: any, context: any) {
+async function makeRevisionDecisions(brainMapData: any, studentHistory: any, context: FlowContext) {
   const { extractMasteryFeatures, predictMastery, makeRevisionDecision, makeInterventionDecision, logDecision } = context;
   const decisions = [];
 
@@ -155,7 +188,7 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: any, con
         confidence: mlPrediction.confidence,
         days_since_last_revision: features.days_since_last_revision,
         attempts_count: features.attempts_per_topic,
-        performance_trend: calculatePerformanceTrend(topic.name, studentHistory),
+        performance_trend: "STABLE", // Simplified
       };
 
       const adkDecision = makeRevisionDecision({
@@ -209,140 +242,199 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: any, con
   });
 }
 
-function calculatePerformanceTrend(topic: string, history: any) {
-    // Simplified mock trend
-    return "STABLE";
-}
+// --- Test Definitions ---
 
-
-// Test Runner
-async function runTests() {
-  const reportPath = path.join(process.cwd(), 'FLOW_INTEGRITY_REPORT.md');
-  let report = `# Smart Revision Planner Flow Integrity Report\n\n`;
-  report += `**Generated:** ${new Date().toLocaleString()}\n\n`;
-  report += `## Test Cases\n\n`;
-
-  const testCases = [
-    {
-      name: "Happy Path - Normal Operation",
-      input: {
-        brainMap: JSON.stringify({ topics: [{ name: "Algebra", daysSinceLastRevision: 5 }] }),
-        studentId: "student1"
-      },
-      mocks: {
-        getStudent: async () => ({ lastLoginDate: new Date() }),
-        getQuizResults: async () => [],
-        extractMasteryFeatures: () => ({ avg_quiz_score: 0.5, attempts_per_topic: 1, days_since_last_revision: 5 }),
-        predictMastery: async () => ({ mastery_probability: 0.4, confidence: 0.8 }), // Low mastery -> revise
-        makeRevisionDecision: () => ({ action: 'URGENT_REVISION', priority: 'HIGH', contentStrategy: 'SHORT_FORM' }),
-        explanationPrompt: async () => ({ output: { explanations: [{ topic: "Algebra", reason: "AI Reason" }] } })
-      },
-      expectedState: 'OUTPUT_GENERATED',
-      check: (result: any) => result.revisionList.length === 1 && result.revisionList[0].topic === "Algebra"
+const TEST_CASES: TestCase[] = [
+  {
+    name: "Happy Path - Normal Operation",
+    input: {
+      brainMap: JSON.stringify({ topics: [{ name: "Algebra", daysSinceLastRevision: 5 }] }),
+      studentId: "student1"
     },
-    {
-      name: "ML Service Failure (Graceful Degradation)",
+    mocks: {
+      getStudent: async () => ({ lastLoginDate: new Date() }),
+      getQuizResults: async () => [],
+      extractMasteryFeatures: () => ({ avg_quiz_score: 0.5, attempts_per_topic: 1, days_since_last_revision: 5 }),
+      predictMastery: async () => ({ mastery_probability: 0.4, confidence: 0.8 }),
+      makeRevisionDecision: () => ({ action: 'URGENT_REVISION', priority: 'HIGH', contentStrategy: 'SHORT_FORM' }),
+      explanationPrompt: async () => ({ output: { explanations: [{ topic: "Algebra", reason: "AI Reason" }] } })
+    },
+    expectedState: 'OUTPUT_GENERATED',
+    check: (result) => result.revisionList.length === 1 && result.revisionList[0].topic === "Algebra"
+  },
+  {
+    name: "ML Service Failure (Graceful Degradation)",
+    input: {
+      brainMap: JSON.stringify({ topics: [{ name: "Geometry", daysSinceLastRevision: 15 }] }),
+      studentId: "student2"
+    },
+    mocks: {
+      getStudent: async () => ({}),
+      getQuizResults: async () => [],
+      extractMasteryFeatures: () => ({}),
+      predictMastery: async () => { throw new Error("ML Service Down"); },
+      makeRevisionDecision: () => ({}),
+      explanationPrompt: async () => ({ output: { explanations: [] } })
+    },
+    expectedState: 'OUTPUT_GENERATED',
+    check: (result) => result.revisionList.length === 1 && result.revisionList[0].priority === "MEDIUM"
+  },
+  {
+    name: "LLM Explanation Failure",
+    input: {
+      brainMap: JSON.stringify({ topics: [{ name: "Calculus", daysSinceLastRevision: 2 }] }),
+      studentId: "student3"
+    },
+    mocks: {
+      getStudent: async () => ({}),
+      getQuizResults: async () => [],
+      extractMasteryFeatures: () => ({ avg_quiz_score: 0.2, days_since_last_revision: 2 }),
+      predictMastery: async () => ({ mastery_probability: 0.1 }),
+      makeRevisionDecision: () => ({ action: 'URGENT_REVISION', priority: 'HIGH' }),
+      explanationPrompt: async () => { throw new Error("LLM Quota Exceeded"); }
+    },
+    expectedState: 'OUTPUT_GENERATED',
+    check: (result) => result.revisionList.length === 1 && result.revisionList[0].reason.startsWith("Urgent:")
+  },
+  {
+      name: "High Mastery (No Revision Needed)",
       input: {
-        brainMap: JSON.stringify({ topics: [{ name: "Geometry", daysSinceLastRevision: 15 }] }),
-        studentId: "student2"
+        brainMap: JSON.stringify({ topics: [{ name: "Physics", daysSinceLastRevision: 1 }] }),
+        studentId: "student4"
       },
       mocks: {
         getStudent: async () => ({}),
         getQuizResults: async () => [],
-        extractMasteryFeatures: () => ({}),
-        predictMastery: async () => { throw new Error("ML Service Down"); }, // FAIL
-        makeRevisionDecision: () => ({}),
+        extractMasteryFeatures: () => ({ avg_quiz_score: 0.9, days_since_last_revision: 1 }),
+        predictMastery: async () => ({ mastery_probability: 0.95 }),
+        makeRevisionDecision: () => ({ action: 'PROGRESS_ALLOWED', priority: 'LOW' }),
         explanationPrompt: async () => ({ output: { explanations: [] } })
       },
-      expectedState: 'OUTPUT_GENERATED', // Should still generate output via fallback
-      check: (result: any) => result.revisionList.length === 1 && result.revisionList[0].priority === "MEDIUM" // Fallback priority
-    },
-    {
-      name: "LLM Explanation Failure",
-      input: {
-        brainMap: JSON.stringify({ topics: [{ name: "Calculus", daysSinceLastRevision: 2 }] }),
-        studentId: "student3"
-      },
-      mocks: {
-        getStudent: async () => ({}),
-        getQuizResults: async () => [],
-        extractMasteryFeatures: () => ({ avg_quiz_score: 0.2, days_since_last_revision: 2 }),
-        predictMastery: async () => ({ mastery_probability: 0.1 }),
-        makeRevisionDecision: () => ({ action: 'URGENT_REVISION', priority: 'HIGH' }),
-        explanationPrompt: async () => { throw new Error("LLM Quota Exceeded"); } // FAIL
-      },
       expectedState: 'OUTPUT_GENERATED',
-      check: (result: any) => result.revisionList.length === 1 && result.revisionList[0].reason.startsWith("Urgent:") // Fallback reason
-    },
-    {
-        name: "High Mastery (No Revision Needed)",
-        input: {
-          brainMap: JSON.stringify({ topics: [{ name: "Physics", daysSinceLastRevision: 1 }] }),
-          studentId: "student4"
-        },
-        mocks: {
-          getStudent: async () => ({}),
-          getQuizResults: async () => [],
-          extractMasteryFeatures: () => ({ avg_quiz_score: 0.9, days_since_last_revision: 1 }),
-          predictMastery: async () => ({ mastery_probability: 0.95 }),
-          makeRevisionDecision: () => ({ action: 'PROGRESS_ALLOWED', priority: 'LOW' }), // No revision
-          explanationPrompt: async () => ({ output: { explanations: [] } })
-        },
-        expectedState: 'OUTPUT_GENERATED',
-        check: (result: any) => result.revisionList.length === 0
-    }
-  ];
+      check: (result) => result.revisionList.length === 0
+  }
+];
 
-  let passed = 0;
+// --- Runner ---
 
-  for (const test of testCases) {
-    report += `### ${test.name}\n`;
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const config = {
+    outputPath: path.join(process.cwd(), DEFAULTS.REPORT_FILE),
+    jsonOutput: false,
+    failOnError: false,
+  };
 
-    // Setup Context
-    const context = {
-      getStudent: test.mocks.getStudent,
-      getQuizResults: test.mocks.getQuizResults,
-      extractMasteryFeatures: test.mocks.extractMasteryFeatures,
-      predictMastery: test.mocks.predictMastery,
-      makeRevisionDecision: test.mocks.makeRevisionDecision,
-      makeInterventionDecision: () => {},
-      logDecision: () => {},
-      explanationPrompt: test.mocks.explanationPrompt
-    };
-
-    try {
-      const result = await smartRevisionPlannerFlow(test.input, context);
-
-      report += `- **Final State:** ${currentState}\n`;
-      report += `- **Output:** ${JSON.stringify(result.revisionList.map((r: any) => ({ topic: r.topic, reason: r.reason, priority: r.priority })))}\n`;
-
-      if (currentState === test.expectedState && test.check(result)) {
-        report += `- **Result:** ✅ PASSED\n\n`;
-        passed++;
-      } else {
-        report += `- **Result:** ❌ FAILED\n`;
-        report += `  - Expected State: ${test.expectedState}, Got: ${currentState}\n`;
-        report += `  - Check Failed: ${!test.check(result)}\n\n`;
-      }
-    } catch (error: any) {
-      report += `- **Result:** ❌ CRITICAL ERROR\n`;
-      report += `  - Error: ${error.message}\n\n`;
+  for (let i = 0; i < args.length; i++) {
+    switch (args[i]) {
+      case '--output':
+        config.outputPath = path.resolve(args[++i]);
+        break;
+      case '--json':
+        config.jsonOutput = true;
+        break;
+      case '--fail-on-error':
+        config.failOnError = true;
+        break;
     }
   }
-
-  report += `## Summary\n`;
-  report += `Total Tests: ${testCases.length}\n`;
-  report += `Passed: ${passed}\n`;
-  report += `Failed: ${testCases.length - passed}\n`;
-
-  if (passed === testCases.length) {
-      report += `\n**Overall Status:** ✅ FLOW INTEGRITY VERIFIED\n`;
-  } else {
-      report += `\n**Overall Status:** ⚠️ FLOW INTEGRITY ISSUES DETECTED\n`;
-  }
-
-  fs.writeFileSync(reportPath, report);
-  console.log(`Report generated at ${reportPath}`);
+  return config;
 }
 
-runTests();
+async function run() {
+  const config = parseArgs();
+  const results = [];
+  let passedCount = 0;
+
+  for (const test of TEST_CASES) {
+    // Merge mocks with defaults
+    const context: FlowContext = {
+      getStudent: async () => ({}),
+      getQuizResults: async () => [],
+      extractMasteryFeatures: () => ({}),
+      predictMastery: async () => ({ mastery_probability: 0.5 }),
+      makeRevisionDecision: () => ({ action: 'SCHEDULED_REVISION', priority: 'MEDIUM' }),
+      makeInterventionDecision: () => {},
+      logDecision: () => {},
+      explanationPrompt: async () => ({ output: { explanations: [] } }),
+      ...test.mocks
+    };
+
+    let result;
+    let error;
+    let passed = false;
+
+    try {
+      result = await smartRevisionPlannerFlow(test.input, context);
+      passed = (currentState === test.expectedState) && test.check(result);
+    } catch (e: any) {
+      error = e.message;
+      passed = false;
+    }
+
+    if (passed) passedCount++;
+
+    results.push({
+      name: test.name,
+      passed,
+      expectedState: test.expectedState,
+      actualState: currentState,
+      output: result,
+      error
+    });
+  }
+
+  const reportData = {
+    timestamp: new Date().toLocaleString(),
+    totalTests: TEST_CASES.length,
+    passedCount,
+    failedCount: TEST_CASES.length - passedCount,
+    results
+  };
+
+  if (config.jsonOutput) {
+    console.log(JSON.stringify(reportData, null, 2));
+  } else {
+    // Generate Markdown
+    let md = `# Smart Revision Planner Flow Integrity Report\n\n`;
+    md += `**Generated:** ${reportData.timestamp}\n\n`;
+    md += `## Summary\n`;
+    md += `- **Total Tests:** ${reportData.totalTests}\n`;
+    md += `- **Passed:** ${reportData.passedCount}\n`;
+    md += `- **Failed:** ${reportData.failedCount}\n`;
+
+    const status = reportData.failedCount === 0 ? '✅ FLOW INTEGRITY VERIFIED' : '⚠️ FLOW INTEGRITY ISSUES DETECTED';
+    md += `\n**Overall Status:** ${status}\n\n`;
+
+    md += `## Test Cases\n\n`;
+    results.forEach(r => {
+      md += `### ${r.name}\n`;
+      md += `- **Result:** ${r.passed ? '✅ PASSED' : '❌ FAILED'}\n`;
+      if (!r.passed) {
+        md += `  - Expected State: ${r.expectedState}\n`;
+        md += `  - Actual State: ${r.actualState}\n`;
+        if (r.error) md += `  - Error: ${r.error}\n`;
+      }
+      md += `- **Final State:** ${r.actualState}\n`;
+      if (r.output) {
+        const simplifiedOutput = r.output.revisionList.map((item: any) => ({
+             topic: item.topic,
+             priority: item.priority,
+             reason: item.reason.length > 50 ? item.reason.substring(0, 47) + '...' : item.reason
+        }));
+        md += `- **Output:** \`${JSON.stringify(simplifiedOutput)}\`\n`;
+      }
+      md += `\n`;
+    });
+
+    fs.writeFileSync(config.outputPath, md);
+    console.log(`Report generated at ${config.outputPath}`);
+  }
+
+  if (config.failOnError && reportData.failedCount > 0) {
+    console.error('Failure: Flow integrity tests failed.');
+    process.exit(1);
+  }
+}
+
+run();
