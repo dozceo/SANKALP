@@ -38,6 +38,34 @@ interface ValidationResult {
   details?: string;
   expectedStatus: 'valid' | 'invalid' | 'drift';
   match: boolean;
+  responseSnippet: string;
+  specificRecommendation: string;
+}
+
+function generateSpecificRecommendation(status: string, details: string): string {
+  if (status === 'valid') return 'None';
+
+  if (status === 'drift_extra_fields') {
+    // Extract field name from details if possible, e.g. "Unrecognized key(s) in object: 'metadata'"
+    const match = details.match(/'([^']+)'/);
+    const field = match ? match[1] : 'the extra field';
+    return `Add \`${field}: z.any().optional()\` to the schema or use \`.passthrough()\` to allow unknown keys.`;
+  }
+
+  if (details.includes('Expected array, received string')) {
+    return 'Update schema to `z.union([z.array(originalType), z.string()])` or refine prompt to ensure array output.';
+  }
+  if (details.includes('Invalid enum value')) {
+    return 'Add the received value to the Zod enum definition or validate the prompt constraints.';
+  }
+  if (details.includes('Expected string, received object')) {
+    return 'Update schema to allow object (e.g. `z.union([z.string(), z.object(...)])`) or check if a specific field (e.g., `.text`) should be extracted.';
+  }
+  if (details.includes('Required')) {
+    return 'Make the field optional with `.optional()` or ensure the prompt explicitly requires it.';
+  }
+
+  return 'Review schema constraints against the response structure.';
 }
 
 async function main() {
@@ -74,11 +102,9 @@ async function main() {
          if (schema instanceof z.ZodObject) {
              strictResult = schema.strict().safeParse(item.response);
          } else {
-             // For non-object schemas, assuming strict check is not applicable or done differently
              strictResult = { success: true };
          }
       } catch (e) {
-          // If strict() fails (e.g. chaining issues on some Zod versions or types), ignore
           strictResult = { success: true };
       }
 
@@ -99,7 +125,9 @@ async function main() {
       status,
       details,
       expectedStatus: item.expectedStatus,
-      match
+      match,
+      responseSnippet: JSON.stringify(item.response, null, 2),
+      specificRecommendation: generateSpecificRecommendation(status, details)
     });
   }
 
@@ -129,19 +157,44 @@ Unexpected Results: ${results.filter(r => !r.match).length}
   }
 
   report += `
-## Recommendations
+## Detailed Failures & Recommendations
+
+This section provides specific examples of schema drift and actionable recommendations for updates.
+
+`;
+
+  const failures = results.filter(r => r.status !== 'valid');
+  if (failures.length === 0) {
+    report += "No failures detected.\n";
+  } else {
+    for (const r of failures) {
+      report += `### ${r.flow} (${r.timestamp})
+**Status:** ${r.status}
+**Error Details:** ${r.details}
+
+**Response Snippet:**
+\`\`\`json
+${r.responseSnippet}
+\`\`\`
+
+**Recommendation:**
+${r.specificRecommendation}
+
+---
+`;
+    }
+  }
+
+  report += `
+## General Recommendations
 
 ### 1. Handling Extra Fields (Drift)
-For responses marked as **drift_extra_fields**, the LLM is returning more data than defined in the Zod schema.
-- **Recommendation:** If the extra fields are useful (e.g., \`metadata\`, \`reasoning\`), update the Zod schema to include them as optional fields.
-- **Recommendation:** If the extra fields are irrelevant, use \`.passthrough()\` in the schema to allow them without validation errors (if strict validation is enforced elsewhere), or explicitly strip them (default Zod behavior).
+- Use \`.passthrough()\` on Zod schemas if you want to allow extra fields without validation errors.
+- Use \`.strict()\` only if you want to enforce strict schema compliance and reject unknown fields.
 
 ### 2. Handling Invalid Schemas
-For responses marked as **invalid_schema**, the LLM output violates the contract.
-- **Recommendation:** Loosen constraints if the drift is acceptable (e.g., change \`z.array()\` to \`z.array().or(z.string())\` if the LLM sometimes returns a single string).
-- **Recommendation:** Improve prompt engineering to enforce the schema more strictly.
-- **Recommendation:** Add fallback logic or retry mechanisms in the flow.
-
+- Review the prompt engineering to ensure the LLM understands the output format.
+- Use \`z.union()\` or \`.optional()\` to accommodate variability in LLM responses.
 `;
 
   fs.writeFileSync(REPORT_PATH, report);

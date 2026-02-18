@@ -1,6 +1,6 @@
 # Schema Drift Report
 
-Generated on: 2026-02-17T19:17:26.360Z
+Generated on: 2026-02-18T19:05:26.315Z
 
 ## Summary
 Total Responses Analyzed: 11
@@ -24,16 +24,134 @@ Unexpected Results: 0
 | explainConceptFlow | 2025-05-24T16:00:00Z | valid | valid | ✅ | - |
 | explainConceptFlow | 2025-05-24T16:30:00Z | invalid_schema | invalid | ✅ | explanation: Required |
 
-## Recommendations
+## Detailed Failures & Recommendations
+
+This section provides specific examples of schema drift and actionable recommendations for updates.
+
+### syllabusGeneratorFlow (2025-05-20T11:00:00Z)
+**Status:** invalid_schema
+**Error Details:** references: Expected array, received string
+
+**Response Snippet:**
+```json
+{
+  "title": "Introduction to Psychology",
+  "structure": "Chapter 1...",
+  "strategy": "Read the book",
+  "references": "https://psychology.org"
+}
+```
+
+**Recommendation:**
+Update schema to `z.union([z.array(originalType), z.string()])` or refine prompt to ensure array output.
+
+---
+### syllabusGeneratorFlow (2025-05-20T12:00:00Z)
+**Status:** drift_extra_fields
+**Error Details:** : Unrecognized key(s) in object: 'metadata'
+
+**Response Snippet:**
+```json
+{
+  "title": "Biology 101",
+  "structure": "Cells...",
+  "strategy": "Memorize terms",
+  "references": [],
+  "metadata": {
+    "generatedBy": "model-v2"
+  }
+}
+```
+
+**Recommendation:**
+Add `metadata: z.any().optional()` to the schema or use `.passthrough()` to allow unknown keys.
+
+---
+### adaptiveQuizFlow (2025-05-21T09:30:00Z)
+**Status:** invalid_schema
+**Error Details:** quiz.0.correctAnswer: Required
+
+**Response Snippet:**
+```json
+{
+  "quiz": [
+    {
+      "question": "Capital of France?",
+      "options": [
+        "London",
+        "Berlin",
+        "Paris",
+        "Madrid"
+      ]
+    }
+  ]
+}
+```
+
+**Recommendation:**
+Make the field optional with `.optional()` or ensure the prompt explicitly requires it.
+
+---
+### smartRevisionPlannerFlow (2025-05-22T08:15:00Z)
+**Status:** invalid_schema
+**Error Details:** revisionList.0.priority: Invalid enum value. Expected 'HIGH' | 'MEDIUM' | 'LOW', received 'CRITICAL'
+
+**Response Snippet:**
+```json
+{
+  "revisionList": [
+    {
+      "topic": "Geometry",
+      "reason": "Upcoming exam",
+      "priority": "CRITICAL"
+    }
+  ]
+}
+```
+
+**Recommendation:**
+Add the received value to the Zod enum definition or validate the prompt constraints.
+
+---
+### mindfulMentorFlow (2025-05-23T14:30:00Z)
+**Status:** invalid_schema
+**Error Details:** advice: Expected string, received object
+
+**Response Snippet:**
+```json
+{
+  "advice": {
+    "text": "Take a deep breath."
+  }
+}
+```
+
+**Recommendation:**
+Update schema to allow object (e.g. `z.union([z.string(), z.object(...)])`) or check if a specific field (e.g., `.text`) should be extracted.
+
+---
+### explainConceptFlow (2025-05-24T16:30:00Z)
+**Status:** invalid_schema
+**Error Details:** explanation: Required
+
+**Response Snippet:**
+```json
+{
+  "text": "Photosynthesis is..."
+}
+```
+
+**Recommendation:**
+Make the field optional with `.optional()` or ensure the prompt explicitly requires it.
+
+---
+
+## General Recommendations
 
 ### 1. Handling Extra Fields (Drift)
-For responses marked as **drift_extra_fields**, the LLM is returning more data than defined in the Zod schema.
-- **Recommendation:** If the extra fields are useful (e.g., `metadata`, `reasoning`), update the Zod schema to include them as optional fields.
-- **Recommendation:** If the extra fields are irrelevant, use `.passthrough()` in the schema to allow them without validation errors (if strict validation is enforced elsewhere), or explicitly strip them (default Zod behavior).
+- Use `.passthrough()` on Zod schemas if you want to allow extra fields without validation errors.
+- Use `.strict()` only if you want to enforce strict schema compliance and reject unknown fields.
 
 ### 2. Handling Invalid Schemas
-For responses marked as **invalid_schema**, the LLM output violates the contract.
-- **Recommendation:** Loosen constraints if the drift is acceptable (e.g., change `z.array()` to `z.array().or(z.string())` if the LLM sometimes returns a single string).
-- **Recommendation:** Improve prompt engineering to enforce the schema more strictly.
-- **Recommendation:** Add fallback logic or retry mechanisms in the flow.
-
+- Review the prompt engineering to ensure the LLM understands the output format.
+- Use `z.union()` or `.optional()` to accommodate variability in LLM responses.
