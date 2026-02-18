@@ -12,7 +12,7 @@ import { extractMasteryFeatures, type StudentHistory } from "@/ml/features/stude
 import { makeRevisionDecision, makeInterventionDecision } from "@/ai/adk/decision-engine";
 import { DecisionAction, type MLSignals } from "@/ai/adk/types";
 import type { StudentIntelligence, MasterySignal, ADKMode } from "@/types/intelligence";
-import { getStudent, getQuizResults, getCachedPrediction, cachePrediction, saveADKDecision } from "@/lib/db-helpers";
+import { getStudent, getQuizResults, getCachedPrediction, cachePrediction, saveADKDecision, getBatchedCachedPredictions } from "@/lib/db-helpers";
 import { calculateTrend } from "@/lib/trend-utils";
 
 /**
@@ -93,18 +93,16 @@ export async function GET(request: NextRequest) {
         const topicData: TopicData[] = [];
         const topicsToPredict: Array<{ topic: string; features: MasteryPredictionInput }> = [];
 
-        // Pass 1: Extract features and check cache
-        // We use Promise.all to check cache in parallel
-        const cacheChecks = await Promise.all(
-            topics.map(async (topic) => {
-                const features = extractMasteryFeatures(topic, studentHistory);
-                const cached = await getCachedPrediction(studentId, topic);
-                return { topic, features, cached };
-            })
-        );
+        // Optimization: Batch cache check
+        // Check cache for all topics at once
+        const cachedPredictionsMap = await getBatchedCachedPredictions(studentId, topics);
 
-        for (const { topic, features, cached } of cacheChecks) {
-            if (cached) {
+        // Pass 1: Prepare topics
+        for (const topic of topics) {
+             const features = extractMasteryFeatures(topic, studentHistory);
+             const cached = cachedPredictionsMap.get(topic);
+
+             if (cached) {
                 topicData.push({
                     topic,
                     features,

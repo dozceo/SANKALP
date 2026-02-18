@@ -232,7 +232,37 @@ export async function batchPredictMastery(
         return [];
     }
 
-    // Optimization: Use the persistent bridge for all predictions in parallel
+    // Optimization: Check circuit breaker and try API first if available
+    if (Date.now() - lastApiFailureTime > CIRCUIT_OPEN_DURATION) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout for batch
+
+            // Map each item to a fetch promise
+            const apiPromises = topicFeatures.map(async ({ topic, features }) => {
+                 const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(features),
+                    signal: controller.signal,
+                });
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                const prediction = await response.json() as MasteryPredictionOutput;
+                return { topic, prediction };
+            });
+
+            // Wait for all to complete
+            const results = await Promise.all(apiPromises);
+            clearTimeout(timeoutId);
+            return results;
+
+        } catch (error) {
+            // API failed, update circuit breaker and fall back to bridge
+            lastApiFailureTime = Date.now();
+        }
+    }
+
+    // Fallback: Use the persistent bridge for all predictions in parallel
     // This avoids spawning a new Python process for every batch request
     const promises = topicFeatures.map(async ({ topic, features }) => {
         try {

@@ -1327,3 +1327,75 @@ export async function saveQuizGeneration(quiz: Omit<QuizGeneration, 'id'>): Prom
     }
 }
 
+
+/**
+ * Get batched cached ML predictions
+ * Fetches data in chunks to respect Firestore 'in' query limits (10).
+ */
+export async function getBatchedCachedPredictions(
+    studentId: string,
+    topics: string[]
+): Promise<Map<string, MLPrediction>> {
+    await chaos.checkChaos('firestoreRead');
+    if (!topics.length) {
+        return new Map();
+    }
+
+    // Chunk size 10 for 'in' query
+    const chunkSize = 10;
+    const chunks = [];
+    for (let i = 0; i < topics.length; i += chunkSize) {
+        chunks.push(topics.slice(i, i + chunkSize));
+    }
+
+    try {
+        const resultsMap = new Map<string, MLPrediction>();
+        const now = new Date();
+
+        // Process chunks in parallel
+        await Promise.all(chunks.map(async (chunk) => {
+            const snapshot = await db
+                .collection('mlPredictions')
+                .where('studentId', '==', studentId)
+                .where('topic', 'in', chunk)
+                .get();
+
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const expiresAt = data.expiresAt?.toDate() || new Date();
+
+                // Filter expired predictions
+                if (expiresAt <= now) {
+                    return;
+                }
+
+                const prediction: MLPrediction = {
+                    id: doc.id,
+                    studentId: data.studentId,
+                    topic: data.topic,
+                    masteryProbability: data.masteryProbability,
+                    confidence: data.confidence,
+                    daysSinceRevision: data.daysSinceRevision,
+                    createdAt: data.createdAt?.toDate() || new Date(),
+                    expiresAt: expiresAt,
+                };
+
+                // Keep the one with the latest expiration (or creation)
+                // If map already has this topic, check which one is newer
+                if (resultsMap.has(prediction.topic)) {
+                    const existing = resultsMap.get(prediction.topic)!;
+                    if (prediction.createdAt > existing.createdAt) {
+                        resultsMap.set(prediction.topic, prediction);
+                    }
+                } else {
+                    resultsMap.set(prediction.topic, prediction);
+                }
+            });
+        }));
+
+        return resultsMap;
+    } catch (error) {
+        console.error('Error fetching batched cached predictions:', error);
+        throw error;
+    }
+}

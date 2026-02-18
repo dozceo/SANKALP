@@ -16,8 +16,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { extractMasteryFeatures, type StudentHistory } from '@/ml/features/student_features';
-import { predictMastery } from '@/ml/inference/ml-bridge';
-import { getStudent, getQuizResults } from '@/lib/db-helpers';
+import { predictMastery, batchPredictMastery } from '@/ml/inference/ml-bridge';
+import { getStudent, getQuizResults, getBatchedCachedPredictions, cachePrediction } from '@/lib/db-helpers';
 import {
   makeRevisionDecision,
   makeInterventionDecision,
@@ -25,6 +25,8 @@ import {
   logDecision,
 } from '@/ai/adk/decision-engine';
 import { DecisionAction, type MLSignals } from '@/ai/adk/types';
+import { calculateTrend } from '@/lib/trend-utils';
+import { MasteryPredictionInput, MasteryPredictionOutput } from '@/ml/inference/types';
 
 const SmartRevisionPlannerInputSchema = z.object({
   brainMap: z.string().describe('The student\'s Brain Map data represented as a JSON string, including topics, progress, and last revision dates.'),
@@ -54,28 +56,111 @@ export async function smartRevisionPlanner(input: SmartRevisionPlannerInput): Pr
  */
 async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentHistory) {
   const decisions = [];
+  const topics = brainMapData.topics || [];
 
-  for (const topic of brainMapData.topics || []) {
-    try {
-      // Step 1: Extract ML features
+  if (topics.length === 0) return [];
+
+  // 1. Extract features for all topics
+  const topicFeaturesMap = new Map<string, MasteryPredictionInput>();
+  const topicObjMap = new Map<string, any>(); // Map topic name to topic object from brainMap
+
+  topics.forEach((topic: any) => {
+      topicObjMap.set(topic.name, topic);
       const features = extractMasteryFeatures(topic.name, studentHistory);
-
-      // Step 2: Get ML prediction
-      const mlPrediction = await predictMastery({
+      topicFeaturesMap.set(topic.name, {
         avg_quiz_score: features.avg_quiz_score,
         attempts_per_topic: features.attempts_per_topic,
         days_since_last_revision: features.days_since_last_revision,
         quiz_score_variance: features.quiz_score_variance,
         time_spent_per_question: features.time_spent_per_question,
       });
+  });
+
+  const topicNames = Array.from(topicFeaturesMap.keys());
+
+  // 2. Check Cache
+  let cachedPredictions = new Map<string, any>();
+  if (studentHistory.studentId) {
+      cachedPredictions = await getBatchedCachedPredictions(studentHistory.studentId, topicNames);
+  }
+
+  // 3. Identify missing topics
+  const topicsToPredict: Array<{ topic: string; features: MasteryPredictionInput }> = [];
+
+  topicNames.forEach(topic => {
+      if (!cachedPredictions.has(topic)) {
+          topicsToPredict.push({
+              topic,
+              features: topicFeaturesMap.get(topic)!
+          });
+      }
+  });
+
+  // 4. Batch Predict
+  let newPredictionsMap = new Map<string, MasteryPredictionOutput>();
+  if (topicsToPredict.length > 0) {
+      const batchResults = await batchPredictMastery(topicsToPredict);
+      batchResults.forEach(r => {
+          if (r.prediction && r.prediction.predicted_class !== 'error') {
+              newPredictionsMap.set(r.topic, r.prediction);
+
+              // Cache the new prediction
+              if (studentHistory.studentId) {
+                   // We don't await this to keep it fast
+                   cachePrediction({
+                      studentId: studentHistory.studentId,
+                      topic: r.topic,
+                      masteryProbability: r.prediction.mastery_probability,
+                      confidence: r.prediction.confidence,
+                      daysSinceRevision: topicFeaturesMap.get(r.topic)!.days_since_last_revision,
+                      createdAt: new Date(),
+                      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour cache
+                   }).catch(console.error);
+              }
+          }
+      });
+  }
+
+  for (const topicName of topicNames) {
+    try {
+      const topic = topicObjMap.get(topicName);
+      let prediction = cachedPredictions.get(topicName);
+
+      if (!prediction) {
+          prediction = newPredictionsMap.get(topicName);
+      }
+
+      if (!prediction) {
+          // Fallback: include topic if it hasn't been revised recently
+          if (topic.daysSinceLastRevision && topic.daysSinceLastRevision > 10) {
+            decisions.push({
+              topic: topicName,
+              masteryProbability: 0.5,
+              priority: "MEDIUM" as const,
+              daysSinceRevision: topic.daysSinceLastRevision,
+              adkDecision: null, // Mark as fallback
+            });
+          }
+          continue;
+      }
+
+      const features = topicFeaturesMap.get(topicName)!;
+      const masteryProb = (prediction.masteryProbability !== undefined)
+                          ? prediction.masteryProbability
+                          : prediction.mastery_probability;
 
       // Step 3: Build ML Signals for ADK
       const mlSignals: MLSignals = {
-        mastery_probability: mlPrediction.mastery_probability,
-        confidence: mlPrediction.confidence,
+        mastery_probability: masteryProb,
+        confidence: prediction.confidence,
         days_since_last_revision: features.days_since_last_revision,
         attempts_count: features.attempts_per_topic,
-        performance_trend: calculatePerformanceTrend(topic.name, studentHistory),
+        performance_trend: calculateTrend(
+            studentHistory.quizResults
+                .filter(r => r.topic === topicName)
+                .map(r => ({ score: r.score, timestamp: new Date(r.timestamp) })),
+            true
+        ) as "IMPROVING" | "STABLE" | "DECLINING",
       };
 
       // Step 4: ADK makes the decision
@@ -109,7 +194,7 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
       if (shouldRevise) {
         decisions.push({
           topic: topic.name,
-          masteryProbability: mlPrediction.mastery_probability,
+          masteryProbability: masteryProb,
           priority: adkDecision.priority,
           daysSinceRevision: features.days_since_last_revision,
           adkDecision, // Pass full ADK context for LLM
@@ -129,11 +214,12 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         // In production, save to DB for Teacher Mode dashboard
       }
     } catch (error) {
-      console.error(`Failed to make decision for topic ${topic.name}:`, error);
+      console.error(`Failed to make decision for topic ${topicName}:`, error);
       // Fallback: include topic if it hasn't been revised recently
+      const topic = topicObjMap.get(topicName);
       if (topic.daysSinceLastRevision && topic.daysSinceLastRevision > 10) {
         decisions.push({
-          topic: topic.name,
+          topic: topicName,
           masteryProbability: 0.5,
           priority: "MEDIUM" as const,
           daysSinceRevision: topic.daysSinceLastRevision,
@@ -294,53 +380,3 @@ const smartRevisionPlannerFlow = ai.defineFlow(
     return { revisionList };
   }
 );
-
-/**
- * Calculates the performance trend for a specific topic based on quiz history.
- * Compares the average score of the most recent quizzes against the previous set.
- */
-function calculatePerformanceTrend(
-  topic: string,
-  history: StudentHistory
-): "IMPROVING" | "STABLE" | "DECLINING" {
-  const topicQuizzes = history.quizResults
-    .filter((r) => r.topic === topic)
-    // Sort by timestamp descending (newest first)
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-  if (topicQuizzes.length < 2) {
-    return "STABLE";
-  }
-
-  let recent: number[] = [];
-  let previous: number[] = [];
-
-  // Determine window size based on available history
-  if (topicQuizzes.length >= 6) {
-    // Compare last 3 vs previous 3
-    recent = topicQuizzes.slice(0, 3).map((q) => q.score);
-    previous = topicQuizzes.slice(3, 6).map((q) => q.score);
-  } else if (topicQuizzes.length >= 4) {
-    // Compare last 2 vs previous 2
-    recent = topicQuizzes.slice(0, 2).map((q) => q.score);
-    previous = topicQuizzes.slice(2, 4).map((q) => q.score);
-  } else {
-    // Split remaining in half (e.g. 3 -> 1 vs 1, 2 -> 1 vs 1)
-    const midpoint = Math.floor(topicQuizzes.length / 2);
-    recent = topicQuizzes.slice(0, midpoint).map((q) => q.score);
-    previous = topicQuizzes.slice(midpoint, midpoint * 2).map((q) => q.score);
-  }
-
-  const recentAvg = recent.reduce((s, v) => s + v, 0) / recent.length;
-  const previousAvg = previous.reduce((s, v) => s + v, 0) / previous.length;
-
-  const threshold = 0.1; // 10% change required to indicate a trend
-
-  if (recentAvg > previousAvg + threshold) {
-    return "IMPROVING";
-  } else if (recentAvg < previousAvg - threshold) {
-    return "DECLINING";
-  }
-
-  return "STABLE";
-}
