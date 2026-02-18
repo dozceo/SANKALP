@@ -1,52 +1,61 @@
-# ML Model Deployment Maturity Assessment
+# ML Model Versioning & Deployment Maturity Assessment
 
 ## Executive Summary
-This report evaluates the current infrastructure's capability to support ML model versioning, A/B testing, and safe rollout strategies. The current system relies on a single-file deployment model (`mastery_model.pkl`) but has successfully implemented metadata tracking (`provenance_report.json`), improving traceability. However, it still lacks runtime version control or traffic splitting mechanisms, presenting risks for production updates.
+The current ML deployment infrastructure is at **Level 1 (Initial)** maturity. It relies on a single binary artifact (`mastery_model.pkl`) that is overwritten during deployment. This creates significant risks for reliability and prevents data-driven model improvements (A/B testing).
 
-## Current Infrastructure
--   **Model Storage:** Local filesystem (`src/ml/models/mastery_model.pkl`).
--   **Metadata:** `src/ml/models/provenance_report.json` (Git hash, script hash, data hash, metrics).
--   **Loading Mechanism:** Direct `joblib.load()` from a hardcoded path in `predict_mastery.py`.
--   **Update Strategy:** Overwrite the `.pkl` and `.json` files via Git or deployment artifact.
--   **Rollback:** Revert Git commit or restore previous file.
+To support safe model rollouts and experimentation, the infrastructure must be upgraded to support **Multi-Model Versioning** and **Traffic Routing**.
 
-## Identified Gaps
+## Current State Analysis
 
-### 1. Lack of Runtime Model Versioning (High)
--   **Issue:** The system only knows about "the current model". While metadata exists, there is no ability to reference a specific version (e.g., `v1.2.0`) in the API call.
--   **Risk:** Cannot easily revert to a known good state if a new model fails silently (e.g., performance regression).
--   **Recommendation:** Implement a model registry or simply versioned filenames (e.g., `mastery_model_v1.pkl`, `mastery_model_v2.pkl`) and update configuration to point to the active version.
+| Component | Status | Description | Risk |
+| :--- | :--- | :--- | :--- |
+| **Model Registry** | ❌ Missing | No central tracking of model versions, metrics, or lineage. | High - Cannot reproduce past results. |
+| **Versioning** | ❌ Missing | Hardcoded path: `../models/mastery_model.pkl`. | Critical - Overwrites previous version. |
+| **Rollout Strategy** | ⚠️ Big Bang | Immediate cutover for all users. | High - Bugs affect 100% of traffic instantly. |
+| **Rollback** | ⚠️ Manual | Requires re-running training or restoring backup. | Medium - Slow recovery time (RTO). |
+| **A/B Testing** | ❌ Impossible | Infrastructure supports only one active model. | High - Cannot validate improvements safely. |
 
-### 2. No A/B Testing Capability (Critical)
--   **Issue:** All traffic goes to the single loaded model. No infrastructure exists to route a percentage of requests to a "challenger" model.
--   **Risk:** New models are deployed to 100% of users immediately ("Big Bang" deployment), maximizing the impact of any defects.
--   **Recommendation:** Modify `ml-bridge.ts` or the future FastAPI service to support traffic splitting (e.g., based on user ID hash) between a `champion` and `challenger` model.
+## Critical Gaps
 
-### 3. Metadata Linkage (Partial Success)
--   **Status:** **Implemented.** `provenance_report.json` captures training context.
--   **Remaining Gap:** The metadata is not validated at load time. The system assumes the `.json` matches the `.pkl`.
--   **Recommendation:** Embed version ID inside the `.pkl` or verify hash on load.
+### 1. Single Point of Failure (Artifact Overwrite)
+The deployment script likely does `cp new_model.pkl mastery_model.pkl`.
+-   **Risk:** If the new model is corrupt or performs poorly, there is no immediate fallback.
+-   **Impact:** Downtime or degradation of service until manual intervention.
 
-### 4. Zero-Downtime Updates
--   **Issue:** Updating the model requires restarting the Python process or overwriting the file (which might cause read errors during the operation).
--   **Risk:** Brief service interruption during deployment.
--   **Recommendation:** Implement a "hot reload" endpoint or strategy where the new model is loaded into memory before switching traffic.
+### 2. Lack of Experimentation Capabilities
+We cannot run a "Challenger" model against the "Champion" model.
+-   **Impact:** We are flying blind on model updates. We rely on offline metrics (accuracy on test set) rather than online business metrics (user engagement, learning efficacy).
 
-## Roadmap to Maturity
+### 3. Missing Metadata
+There is no automated link between the `.pkl` file and the code/data used to train it.
+-   **Risk:** "It works on my machine" syndrome.
+-   **Impact:** Compliance and debugging nightmares.
 
-### Phase 1: Basic Versioning
--   Rename models to include version/date.
--   Use an environment variable `ACTIVE_MODEL_VERSION` to select the model file.
+## Recommendations
 
-### Phase 2: Registry & Validation
--   Store models in a cloud bucket (S3/GCS) with metadata.
--   Download models at startup based on manifest.
--   Verify SHA256 of loaded model against metadata.
+### Phase 1: Directory-Based Versioning (Immediate)
+Change the model loading logic to support a directory structure:
+```
+models/
+  ├── v1/
+  │   ├── model.pkl
+  │   └── metadata.json
+  ├── v2/
+  │   ├── model.pkl
+  │   └── metadata.json
+  └── production -> v1 (symlink or config)
+```
+**Action:** Update `predict_mastery.py` to read `MODEL_VERSION` env var.
 
-### Phase 3: Experimentation Infrastructure
--   Implement a feature flag system or experimentation service.
--   Route requests to specific model versions based on experiment groups.
--   Track metrics (latency, accuracy) per model version.
+### Phase 2: Traffic Routing (Short Term)
+Implement a simple router in the inference service (or `ml-bridge.ts`):
+-   90% traffic -> `v1` (Champion)
+-   10% traffic -> `v2` (Challenger)
 
-## Maturity Score: 2/5 (Repeatable)
-The system has basic repeatability (provenance tracking) but lacks the operational controls (versioning, A/B testing) required for a mature ML production environment.
+**Action:** Add `ab_test_group` to user context and pass to inference layer.
+
+### Phase 3: Model Registry (Long Term)
+Use a tool like MLflow or a simple S3/GCS bucket with versioning enabled to store artifacts and metadata.
+
+## Maturity Score: 1/5
+**Goal:** Reach Level 3 (Automated Rollouts & A/B Testing) within 3 months.

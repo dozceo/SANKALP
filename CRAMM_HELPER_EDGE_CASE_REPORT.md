@@ -18,11 +18,13 @@ Logic under test: `Math.ceil((exam - now) / (24h))` in [1, 3]
 | Just barely under 3 days (3 days - 1 second) | 3 | true | true | ✅ PASS |
 | Just barely 1 day (1 day - 1 second = 0.99 days) | 1 | true | true | ✅ PASS |
 | Timezone drift (Late night cramming) | 2 | true | true | ✅ PASS |
+| Timezone: Client ahead (Tokyo +9) - Morning cramming | 2 | true | true | ✅ PASS |
+| Timezone: Client behind (LA -8) - Late night | 3 | true | true | ✅ PASS |
 
 ## Summary
 
-- **Total Tests:** 10
-- **Passed:** 9
+- **Total Tests:** 12
+- **Passed:** 11
 - **Failed:** 1
 
 ⚠️ **CRITICAL BUG DETECTED:** Logic fails on edge cases.

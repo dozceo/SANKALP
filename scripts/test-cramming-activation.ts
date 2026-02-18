@@ -41,7 +41,7 @@ function runTests() {
   console.log("Simulating the time difference logic between `currentDate` and `examDate` to verify activation boundaries (1-3 days).");
   console.log("Logic under test: `Math.ceil((exam - now) / (24h))` in [1, 3]\n");
 
-  const baseDate = new Date("2024-01-01T12:00:00Z"); // Reference "Now"
+  const baseDate = new Date("2024-01-01T12:00:00Z"); // Reference "Now" (UTC)
 
   const scenarios = [
     {
@@ -102,6 +102,25 @@ function runTests() {
         name: "Timezone drift (Late night cramming)",
         current: new Date("2024-01-01T23:59:00Z"),
         exam: new Date("2024-01-03T09:00:00Z"), // ~1.4 days difference
+        expected: true
+    },
+    // New Timezone Scenarios
+    {
+        name: "Timezone: Client ahead (Tokyo +9) - Morning cramming",
+        // Client is 9AM Jan 2nd (UTC+9) = Jan 1st 24:00 UTC
+        // Exam is Jan 4th 9AM (UTC+9) = Jan 3rd 24:00 UTC
+        // Diff is exactly 2 days.
+        current: new Date("2024-01-02T00:00:00Z"),
+        exam: new Date("2024-01-04T00:00:00Z"),
+        expected: true
+    },
+    {
+        name: "Timezone: Client behind (LA -8) - Late night",
+        // Client is 11PM Jan 1st (UTC-8) = Jan 2nd 07:00 UTC
+        // Exam is Jan 4th 9AM (UTC-8) = Jan 4th 17:00 UTC
+        // Diff is ~2.4 days
+        current: new Date("2024-01-02T07:00:00Z"),
+        exam: new Date("2024-01-04T17:00:00Z"),
         expected: true
     }
   ];
