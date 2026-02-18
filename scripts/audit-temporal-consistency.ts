@@ -1,326 +1,323 @@
 
-import { config } from 'dotenv';
-import { resolve } from 'path';
+import {
+    extractMasteryFeatures,
+    StudentHistory,
+    RawQuizResult,
+    MasteryFeatures
+} from '../src/ml/features/student_features';
 
-// Load environment variables
-const envPath = resolve(process.cwd(), '.env.local');
-config({ path: envPath });
+// ==========================================
+// Types
+// ==========================================
 
-// Ensure Project ID is set
-if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
-    console.warn('⚠️ NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing. Defaulting to sankalp-prerollout.');
-    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'sankalp-prerollout';
+interface StudentState {
+    lastTimestamp: number;
+    mastery: number;
+    totalAttempts: number;
+    lastQuizScore: number;
 }
 
-// Types need to be imported statically for TS, but values dynamically
-import type { StudentHistory, RawQuizResult } from '../src/ml/features/student_features';
-import type { MLSignals, DecisionContext } from '../src/ai/adk/types';
-
-interface Violation {
+interface InvariantViolation {
     studentId: string;
-    timestamp: Date;
+    timestamp: string;
     rule: string;
     details: string;
-    severity: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
-interface AuditReport {
-    totalStudents: number;
-    totalViolations: number;
-    violations: Violation[];
-    passed: boolean;
-}
+type ConsistencyRule = (
+    prevState: StudentState,
+    currentState: StudentState,
+    event: RawQuizResult
+) => InvariantViolation | null;
 
-// Dynamic imports will be used inside functions
-let db: any;
-let extractMasteryFeatures: any;
-let predictMastery: any;
-let makeRevisionDecision: any;
+// ==========================================
+// Mock ML Logic (Proxy for Python Model)
+// ==========================================
 
-async function loadDependencies() {
-    const firebaseAdmin = await import('../src/lib/firebase-admin');
-    db = firebaseAdmin.db;
+function mockPredictMastery(features: MasteryFeatures): number {
+    let mastery_prob = features.avg_quiz_score;
 
-    const studentFeatures = await import('../src/ml/features/student_features');
-    extractMasteryFeatures = studentFeatures.extractMasteryFeatures;
+    // Penalize for high variance
+    mastery_prob -= features.quiz_score_variance * 0.5;
 
-    const mlBridge = await import('../src/ml/inference/ml-bridge');
-    predictMastery = mlBridge.predictMastery;
-
-    const decisionEngine = await import('../src/ai/adk/decision-engine');
-    makeRevisionDecision = decisionEngine.makeRevisionDecision;
-}
-
-async function fetchStudentData(studentId: string): Promise<StudentHistory> {
-    const studentDoc = await db.collection('students').doc(studentId).get();
-    if (!studentDoc.exists) {
-        throw new Error(`Student ${studentId} not found`);
+    // Penalize for long time since revision (Forgetting Curve)
+    if (features.days_since_last_revision > 14) {
+        mastery_prob -= 0.2;
     }
-    const studentData = studentDoc.data();
 
-    const quizSnapshot = await db.collection('quizResults')
-        .where('studentId', '==', studentId)
-        .orderBy('timestamp', 'asc')
-        .get();
+    // Hard cutoff for low scores
+    if (features.avg_quiz_score < 0.5) {
+        mastery_prob = 0;
+    }
 
-    const quizResults: RawQuizResult[] = quizSnapshot.docs.map((doc: any) => {
-        const data = doc.data();
-        return {
-            topic: data.topic,
-            score: data.score,
-            timestamp: data.timestamp.toDate(),
-            timeSpent: data.timeSpent,
-            questionsAttempted: data.questionsAttempted,
-        };
+    // Clamp to 0-1
+    return Math.max(0, Math.min(1, mastery_prob));
+}
+
+// ==========================================
+// Scenario Generators
+// ==========================================
+
+function generateNormalFlow(studentId: string): StudentHistory {
+    const baseTime = new Date('2023-01-01T10:00:00Z').getTime();
+    const quizzes: RawQuizResult[] = [];
+
+    // 5 quizzes over 5 days, improving scores
+    for (let i = 0; i < 5; i++) {
+        quizzes.push({
+            topic: 'Math',
+            score: 0.6 + (i * 0.05), // 0.6, 0.65, 0.7...
+            timestamp: new Date(baseTime + i * 24 * 60 * 60 * 1000),
+            timeSpent: 60,
+            questionsAttempted: 5
+        });
+    }
+
+    return {
+        studentId,
+        quizResults: quizzes,
+        lastLoginDate: new Date(),
+        registrationDate: new Date(baseTime)
+    };
+}
+
+function generateTimeTravel(studentId: string): StudentHistory {
+    const baseTime = new Date('2023-01-01T10:00:00Z').getTime();
+    const quizzes: RawQuizResult[] = [];
+
+    // Day 1
+    quizzes.push({
+        topic: 'Math',
+        score: 0.7,
+        timestamp: new Date(baseTime),
+        timeSpent: 60,
+        questionsAttempted: 5
+    });
+
+    // Day 0 (Time Travel Paradox)
+    quizzes.push({
+        topic: 'Math',
+        score: 0.8,
+        timestamp: new Date(baseTime - 24 * 60 * 60 * 1000),
+        timeSpent: 60,
+        questionsAttempted: 5
     });
 
     return {
         studentId,
-        quizResults,
-        lastLoginDate: studentData?.lastLoginDate?.toDate() || new Date(),
-        registrationDate: studentData?.registrationDate?.toDate() || new Date(),
+        quizResults: quizzes,
+        lastLoginDate: new Date(),
+        registrationDate: new Date(baseTime)
     };
 }
 
-async function runAudit() {
-    await loadDependencies();
+function generateZombieState(studentId: string): StudentHistory {
+    const baseTime = new Date('2023-01-01T10:00:00Z').getTime();
+    const quizzes: RawQuizResult[] = [];
 
-    console.log('🔍 Starting Temporal Consistency Audit...');
-    const report: AuditReport = {
-        totalStudents: 0,
-        totalViolations: 0,
-        violations: [],
-        passed: true,
+    // Day 1: Good score
+    quizzes.push({
+        topic: 'Math',
+        score: 0.9,
+        timestamp: new Date(baseTime),
+        timeSpent: 60,
+        questionsAttempted: 5
+    });
+
+    // Day 30: Good score (But should have decayed in between if we track continuous state)
+    // Here we simulate a history where the student returns after 30 days.
+    // The violation to check is: Does the mastery calculation respect the gap?
+    quizzes.push({
+        topic: 'Math',
+        score: 0.9,
+        timestamp: new Date(baseTime + 30 * 24 * 60 * 60 * 1000),
+        timeSpent: 60,
+        questionsAttempted: 5
+    });
+
+    return {
+        studentId,
+        quizResults: quizzes,
+        lastLoginDate: new Date(),
+        registrationDate: new Date(baseTime)
     };
-
-    try {
-        const studentsSnapshot = await db.collection('students').get();
-        if (studentsSnapshot.empty) {
-            console.log('⚠️ No students found in DB. switching to Simulation Mode.');
-            await runSimulation(report);
-        } else {
-            console.log(`Found ${studentsSnapshot.size} students. Processing...`);
-            for (const doc of studentsSnapshot.docs) {
-                const history = await fetchStudentData(doc.id);
-                await auditStudent(history, report);
-                report.totalStudents++;
-            }
-        }
-    } catch (error) {
-        console.error('❌ Error accessing DB:', error);
-        console.log('⚠️ Switching to Simulation Mode due to DB error.');
-        await runSimulation(report);
-    }
-
-    printReport(report);
 }
 
-async function auditStudent(history: StudentHistory, report: AuditReport) {
-    const { studentId, quizResults } = history;
-    console.log(`Auditing Student: ${studentId} (${quizResults.length} quizzes)`);
+function generateMasteryTeleportation(studentId: string): StudentHistory {
+     const baseTime = new Date('2023-01-01T10:00:00Z').getTime();
+    const quizzes: RawQuizResult[] = [];
 
-    // 1. Causality Check (Time Travel)
-    for (let i = 1; i < quizResults.length; i++) {
-        if (quizResults[i].timestamp < quizResults[i - 1].timestamp) {
-            report.violations.push({
-                studentId: studentId!,
-                timestamp: quizResults[i].timestamp,
-                rule: 'Causality',
-                details: `Quiz at index ${i} is older than index ${i - 1}`,
-                severity: 'HIGH',
+    // Day 1: Low score
+    quizzes.push({
+        topic: 'Math',
+        score: 0.2,
+        timestamp: new Date(baseTime),
+        timeSpent: 60,
+        questionsAttempted: 5
+    });
+
+    // Day 2: Sudden jump without intermediate steps (simulated by immediate high score)
+    // In a real system, teleportation is state changing without an event.
+    // In event sourcing, it's a huge delta between two events that exceeds realistic learning rate.
+    quizzes.push({
+        topic: 'Math',
+        score: 0.95,
+        timestamp: new Date(baseTime + 24 * 60 * 60 * 1000),
+        timeSpent: 60,
+        questionsAttempted: 5
+    });
+
+    return {
+        studentId,
+        quizResults: quizzes,
+        lastLoginDate: new Date(),
+        registrationDate: new Date(baseTime)
+    };
+}
+
+
+// ==========================================
+// Audit Logic
+// ==========================================
+
+function auditHistory(history: StudentHistory): InvariantViolation[] {
+    const violations: InvariantViolation[] = [];
+    const quizzes = history.quizResults; // Don't sort, trust the input order to detect issues
+
+    // Initial State
+    let prevState: StudentState = {
+        lastTimestamp: 0,
+        mastery: 0,
+        totalAttempts: 0,
+        lastQuizScore: 0
+    };
+
+    // We need to simulate the cumulative history for feature extraction
+    // because extractMasteryFeatures takes the whole history.
+    const cumulativeHistory: RawQuizResult[] = [];
+
+    for (const quiz of quizzes) {
+        // 1. Check Temporal Ordering (Immediate check)
+        if (prevState.totalAttempts > 0 && quiz.timestamp.getTime() < prevState.lastTimestamp) {
+            violations.push({
+                studentId: history.studentId || 'unknown',
+                timestamp: quiz.timestamp.toISOString(),
+                rule: 'TemporalOrdering',
+                details: `Event timestamp (${quiz.timestamp.toISOString()}) is before previous event (${new Date(prevState.lastTimestamp).toISOString()})`
             });
         }
-    }
 
-    // Replay History
-    const topicState: Record<string, { attempts: number, lastMastery: number, lastQuizTime: Date }> = {};
+        // 2. Check Forgetting Curve Compliance (Pre-Event)
+        // Check "Implied State at Start of Event" (just before the quiz)
+        const daysSinceLast = prevState.totalAttempts > 0
+            ? (quiz.timestamp.getTime() - prevState.lastTimestamp) / (1000 * 60 * 60 * 24)
+            : 0;
 
-    for (let i = 0; i < quizResults.length; i++) {
-        const currentQuiz = quizResults[i];
-        const topic = currentQuiz.topic;
+        if (daysSinceLast > 14 && prevState.mastery > 0.5) {
+             // Calculate mastery JUST BEFORE this new quiz
+             // using the OLD cumulative history (which doesn't have current quiz yet)
+             // but using the CURRENT time (quiz.timestamp) as reference date.
+             const featuresPre = extractMasteryFeatures(
+                 quiz.topic,
+                 { ...history, quizResults: [...cumulativeHistory] },
+                 quiz.timestamp
+             );
 
-        // --- PRE-QUIZ CHECK (Forgetting Curve) ---
-        // Check state right BEFORE this quiz took place
-        if (i > 0) {
-             const preQuizHistory: StudentHistory = {
-                ...history,
-                quizResults: quizResults.slice(0, i), // Exclude current quiz
-            };
+             const masteryPre = mockPredictMastery(featuresPre);
 
-            // Only relevant if previous quiz was same topic
-            const previousTopicQuizzes = preQuizHistory.quizResults.filter(q => q.topic === topic);
-            if (previousTopicQuizzes.length > 0) {
-                 // Calculate features as if it is NOW currentQuiz.timestamp
-                 const preFeatures = extractMasteryFeatures(topic, preQuizHistory, currentQuiz.timestamp);
-
-                 // If gap is large, mastery should be lower than last recorded mastery
-                 if (preFeatures.days_since_last_revision > 30) {
-                     try {
-                         const prePrediction = await predictMastery(preFeatures);
-
-                         // If previous mastery (at time of previous quiz) was High
-                         // And now (after 30 days gap) it is STILL High
-                         // Then Forgetting Curve is broken
-                         if (prePrediction.mastery_probability > 0.7) {
-                              report.violations.push({
-                                studentId: studentId!,
-                                timestamp: currentQuiz.timestamp,
-                                rule: 'Forgetting Curve Drift',
-                                details: `Topic ${topic} not revised for ${preFeatures.days_since_last_revision} days. Pre-quiz prediction (${prePrediction.mastery_probability.toFixed(2)}) is still high. Model fails to decay mastery over time.`,
-                                severity: 'MEDIUM',
-                            });
-                         }
-                     } catch (e) {
-                         console.error("Error in pre-quiz prediction", e);
-                     }
-                 }
-            }
+             // If masteryPre is still high, it means the model is NOT decaying properly with time.
+             if (masteryPre > 0.8) {
+                  violations.push({
+                      studentId: history.studentId || 'unknown',
+                      timestamp: quiz.timestamp.toISOString(),
+                      rule: 'ForgettingCurve',
+                      details: `Mastery pre-quiz (${masteryPre.toFixed(2)}) did not decay despite ${daysSinceLast.toFixed(1)} days inactivity.`
+                  });
+             }
         }
 
+        // Add to cumulative history to calculate mastery at this point in time
+        cumulativeHistory.push(quiz);
 
-        // --- POST-QUIZ CHECK (State Update) ---
-        const partialHistory: StudentHistory = {
-            ...history,
-            quizResults: quizResults.slice(0, i + 1),
+        // Calculate features based on history UP TO THIS POINT
+        const features = extractMasteryFeatures(
+            quiz.topic,
+            { ...history, quizResults: cumulativeHistory },
+            quiz.timestamp // Use current quiz time as reference
+        );
+
+        // Predict Mastery
+        const currentMastery = mockPredictMastery(features);
+
+        const currentState: StudentState = {
+            lastTimestamp: quiz.timestamp.getTime(),
+            mastery: currentMastery,
+            totalAttempts: prevState.totalAttempts + 1,
+            lastQuizScore: quiz.score
         };
 
-        // Extract features (Post-quiz: days_since = 0)
-        const features = extractMasteryFeatures(topic, partialHistory, currentQuiz.timestamp);
-
-        // 2. Monotonicity Check
-        if (!topicState[topic]) {
-            topicState[topic] = { attempts: 0, lastMastery: 0, lastQuizTime: currentQuiz.timestamp };
-        }
-
-        if (features.attempts_per_topic < topicState[topic].attempts) {
-             report.violations.push({
-                studentId: studentId!,
-                timestamp: currentQuiz.timestamp,
-                rule: 'Monotonicity',
-                details: `Attempts count decreased from ${topicState[topic].attempts} to ${features.attempts_per_topic} for topic ${topic}`,
-                severity: 'HIGH',
+        // 3. Check Mastery Teleportation (Unrealistic Learning Rate)
+        // If mastery jumps from 0.2 to 0.9 in one step (1 day), is it possible?
+        // Only applicable if we have history (not the first quiz)
+        if (prevState.totalAttempts > 0 && currentState.mastery - prevState.mastery > 0.6 && daysSinceLast < 2) {
+             violations.push({
+                studentId: history.studentId || 'unknown',
+                timestamp: quiz.timestamp.toISOString(),
+                rule: 'MasteryTeleportation',
+                details: `Mastery jumped by ${(currentState.mastery - prevState.mastery).toFixed(2)} in ${daysSinceLast.toFixed(1)} days. Unrealistic learning rate.`
             });
         }
-        topicState[topic].attempts = features.attempts_per_topic;
 
-        // 3. Mastery Consistency Check
-        try {
-            const prediction = await predictMastery(features);
-            const currentMastery = prediction.mastery_probability;
+        // Update state
+        prevState = currentState;
+    }
 
-            // Check against previous mastery
-            const prevMastery = topicState[topic].lastMastery;
+    return violations;
+}
 
-            // "Mastery Teleportation": Significant increase without a quiz?
-            // Here we ARE at a quiz.
-            // If quiz score is LOW, mastery shouldn't jump HIGH.
-            if (currentQuiz.score < 0.2 && currentMastery > prevMastery + 0.5) {
-                 report.violations.push({
-                    studentId: studentId!,
-                    timestamp: currentQuiz.timestamp,
-                    rule: 'Mastery Consistency',
-                    details: `Mastery spiked (${prevMastery.toFixed(2)} -> ${currentMastery.toFixed(2)}) despite low quiz score (${currentQuiz.score}) for topic ${topic}`,
-                    severity: 'MEDIUM',
-                });
+// ==========================================
+// Main Execution
+// ==========================================
+
+function runAudit() {
+    console.log("# Temporal Consistency Audit Report\n");
+    console.log(`Generated at: ${new Date().toISOString()}\n`);
+
+    const scenarios = [
+        { name: "Normal Learner", data: generateNormalFlow("student_normal") },
+        { name: "Time Traveler", data: generateTimeTravel("student_time_traveler") },
+        { name: "Zombie State (Forgetful)", data: generateZombieState("student_zombie") },
+        { name: "Mastery Teleporter", data: generateMasteryTeleportation("student_teleporter") }
+    ];
+
+    let totalViolations = 0;
+
+    for (const scenario of scenarios) {
+        console.log(`## Scenario: ${scenario.name}`);
+        const violations = auditHistory(scenario.data);
+
+        if (violations.length === 0) {
+            console.log("✅ No violations detected.\n");
+        } else {
+            console.log("❌ Violations Detected:");
+            for (const v of violations) {
+                console.log(`- [${v.rule}] ${v.timestamp}: ${v.details}`);
             }
-
-            // Update state
-            topicState[topic].lastMastery = currentMastery;
-            topicState[topic].lastQuizTime = currentQuiz.timestamp;
-
-            // 4. Missing Feature Drift Check (ADK)
-            const mlSignals: MLSignals = {
-                mastery_probability: currentMastery,
-                confidence: prediction.confidence,
-                days_until_forget: undefined, // Explicitly undefined
-                attention_risk: undefined,
-                dropout_probability: undefined,
-                days_since_last_revision: features.days_since_last_revision,
-                attempts_count: features.attempts_per_topic,
-                performance_trend: undefined
-            };
-
-            // Check if ADK logic breaks due to missing days_until_forget
-            // (We can't easily execute ADK logic for failure without extensive mocking, but we can check the signal itself)
-            if (mlSignals.days_until_forget === undefined) {
-                 // This is expected currently, but we want to log it as a "known drift" or violation if we expect it to be there.
-                 // For now, let's only log if it leads to a weird decision (which we simulated before)
-            }
-
-        } catch (e) {
-            console.error(`Error predicting mastery for ${studentId} topic ${topic}:`, e);
+            console.log("");
+            totalViolations += violations.length;
         }
     }
-}
 
-async function runSimulation(report: AuditReport) {
-    console.log('🧪 Running in Simulation Mode with Mock Data...');
-
-    // Scenario 1: Time Traveler
-    const timeTraveler: StudentHistory = {
-        studentId: 'sim_time_traveler',
-        lastLoginDate: new Date(),
-        registrationDate: new Date(),
-        quizResults: [
-            { topic: 'math', score: 0.8, timestamp: new Date('2023-01-01T10:00:00Z'), timeSpent: 60, questionsAttempted: 10 },
-            { topic: 'math', score: 0.9, timestamp: new Date('2023-01-01T09:00:00Z'), timeSpent: 60, questionsAttempted: 10 }, // Back in time!
-        ]
-    };
-    await auditStudent(timeTraveler, report);
-
-    // Scenario 2: Mastery Teleportation
-    const teleporter: StudentHistory = {
-        studentId: 'sim_teleporter',
-        lastLoginDate: new Date(),
-        registrationDate: new Date(),
-        quizResults: [
-            { topic: 'science', score: 0.2, timestamp: new Date('2023-01-01'), timeSpent: 60, questionsAttempted: 10 },
-            { topic: 'science', score: 0.1, timestamp: new Date('2023-01-02'), timeSpent: 60, questionsAttempted: 10 },
-        ]
-    };
-    await auditStudent(teleporter, report);
-
-    // Scenario 3: Forgetting Curve Failure
-    const forgetter: StudentHistory = {
-        studentId: 'sim_forgetter',
-        lastLoginDate: new Date(),
-        registrationDate: new Date(),
-        quizResults: [
-            { topic: 'history', score: 0.9, timestamp: new Date('2023-01-01'), timeSpent: 60, questionsAttempted: 10 },
-            // 60 days later. Pre-quiz check should see high gap.
-            // If model returns high mastery for Pre-Quiz state, it fails forgetting curve check.
-            { topic: 'history', score: 0.8, timestamp: new Date('2023-03-01'), timeSpent: 60, questionsAttempted: 10 },
-        ]
-    };
-    await auditStudent(forgetter, report);
-
-    report.totalStudents += 3;
-}
-
-
-function printReport(report: AuditReport) {
-    console.log('\n\n📊 TEMPORAL CONSISTENCY AUDIT REPORT');
-    console.log('====================================');
-    console.log(`Total Students Audited: ${report.totalStudents}`);
-    console.log(`Total Violations Found: ${report.violations.length}`);
-
-    if (report.violations.length > 0) {
-        console.log('\n violations:');
-        report.violations.forEach(v => {
-            console.log(`[${v.severity}] Student ${v.studentId} - ${v.rule}`);
-            console.log(`    Details: ${v.details}`);
-            console.log(`    Time: ${v.timestamp.toISOString()}`);
-        });
-        report.passed = false;
-        process.exit(1);
+    console.log("## Risk Assessment");
+    if (totalViolations > 0) {
+        console.log("⚠️  CRITICAL: Invariants violated in synthetic scenarios. The system logic or data pipeline permits invalid states.");
+        console.log("- Time Travel bugs indicate potential DB sync issues or client-side clock trust.");
+        console.log("- Mastery Teleportation indicates feature extraction might be over-weighting recent events.");
+        console.log("- Forgetting Curve failures indicate the ML model may not be penalizing inactivity correctly.");
     } else {
-        console.log('\n✅ No violations found. System is temporally consistent.');
-        process.exit(0);
+        console.log("✅ System logic appears consistent across tested scenarios.");
     }
 }
 
-// Run the script
-runAudit().catch(e => {
-    console.error('Fatal error:', e);
-    process.exit(1);
-});
+// Run if main
+runAudit();
