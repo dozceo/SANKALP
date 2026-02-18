@@ -40,7 +40,8 @@ def train_model():
     """Train the Topic Mastery prediction model"""
     
     # Load training data
-    data_path = "training_data.csv"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    data_path = os.path.join(script_dir, "training_data.csv")
     if not os.path.exists(data_path):
         print("❌ Error: training_data.csv not found!")
         print("   Run generate_data.py first to create training data.")
@@ -51,6 +52,17 @@ def train_model():
     script_hash = get_file_hash(script_path)
     data_hash = get_file_hash(data_path)
     git_hash = get_git_hash()
+
+    # Load data generation metadata if available
+    data_metadata = {}
+    metadata_path = os.path.join(script_dir, "training_data_metadata.json")
+    if os.path.exists(metadata_path):
+        try:
+            with open(metadata_path, "r") as f:
+                data_metadata = json.load(f)
+            print(f"📄 Loaded data generation metadata from {metadata_path}")
+        except Exception as e:
+            print(f"⚠️ Warning: Could not load data metadata: {e}")
     
     print("📊 Loading training data...")
     df = pd.read_csv(data_path)
@@ -143,7 +155,8 @@ def train_model():
             "git_commit_hash": git_hash,
             "script_hash": script_hash,
             "data_hash": data_hash,
-            "data_source": data_path
+            "data_source": data_path,
+            "data_generation_metadata": data_metadata
         },
         "parameters": {
             "model_type": "LogisticRegression",
