@@ -1,118 +1,199 @@
 
-import fs from 'fs';
+import { writeFileSync } from 'fs';
+import path from 'path';
 
-// Simulated Chatbot Data
-// In a real environment, this would come from monitoring logs or live querying.
-const chatbotSamples = [
-  {
-    id: 'Q-001',
-    query: 'What is the capital of France?',
-    response: 'The capital of France is Paris.',
-    groundTruth: 'Paris',
-    source: 'General Knowledge'
-  },
-  {
-    id: 'Q-002',
-    query: 'Explain the theory of relativity.',
-    response: 'The theory of relativity, proposed by Albert Einstein, encompasses two interrelated theories: special relativity and general relativity. Special relativity applies to all physical phenomena in the absence of gravity. General relativity explains the law of gravitation and its relation to other forces of nature.',
-    groundTruth: 'Einstein',
-    source: 'Physics Textbook'
-  },
-  {
-    id: 'Q-003', // Hallucination Example
-    query: 'Who was the first president of the United States on Mars?',
-    response: 'The first president of the United States on Mars was Elon Musk, who established the colony in 2024.',
-    groundTruth: 'None', // No president on Mars
-    source: 'N/A'
-  },
-  {
-    id: 'Q-004', // Factual Error Example
-    query: 'What is the boiling point of water at sea level?',
-    response: 'Water boils at 90 degrees Celsius at sea level.',
-    groundTruth: '100 degrees Celsius',
-    source: 'Chemistry Basics'
-  },
-  {
-    id: 'Q-005',
-    query: 'What is the powerhouse of the cell?',
-    response: 'The mitochondria is known as the powerhouse of the cell.',
-    groundTruth: 'mitochondria',
-    source: 'Biology 101'
-  }
+// --- Configuration ---
+
+interface ChatbotResponse {
+    id: string;
+    timestamp: string;
+    topic: string; // Internal topic label for the checker
+    question: string;
+    response: string;
+    source: "simulation" | "log";
+}
+
+interface FactCheckRule {
+    requiredKeywords: string[];
+    forbiddenKeywords: string[];
+    minLength?: number;
+}
+
+const KNOWLEDGE_BASE: Record<string, FactCheckRule> = {
+    "capital_france": {
+        requiredKeywords: ["Paris"],
+        forbiddenKeywords: ["London", "Berlin", "Madrid", "Rome"]
+    },
+    "photosynthesis": {
+        requiredKeywords: ["sunlight", "light", "energy"],
+        forbiddenKeywords: ["darkness", "moonlight"]
+    },
+    "water_boiling_point": {
+        requiredKeywords: ["100", "Celsius", "212", "Fahrenheit"],
+        forbiddenKeywords: ["0", "50", "frozen"]
+    },
+    "python_programming": {
+        requiredKeywords: ["programming", "language", "code"],
+        forbiddenKeywords: ["snake", "reptile", "zoo"] // Unless context is specific, but assuming educational context about coding
+    }
+};
+
+// --- Simulated History ---
+
+const HISTORY: ChatbotResponse[] = [
+    {
+        id: "msg_001",
+        timestamp: "2025-05-20T10:00:00Z",
+        topic: "capital_france",
+        question: "What is the capital of France?",
+        response: "The capital of France is Paris, a city known for its art and culture.",
+        source: "simulation"
+    },
+    {
+        id: "msg_002",
+        timestamp: "2025-05-20T10:05:00Z",
+        topic: "capital_france",
+        question: "Capital of France?",
+        response: "I believe the capital of France is London.", // Hallucination
+        source: "simulation"
+    },
+    {
+        id: "msg_003",
+        timestamp: "2025-05-21T14:00:00Z",
+        topic: "photosynthesis",
+        question: "Explain photosynthesis.",
+        response: "Photosynthesis is the process by which plants use sunlight, water, and carbon dioxide to create oxygen and energy in the form of sugar.",
+        source: "simulation"
+    },
+    {
+        id: "msg_004",
+        timestamp: "2025-05-21T14:05:00Z",
+        topic: "photosynthesis",
+        question: "How do plants eat?",
+        response: "Plants consume food through their roots from the soil, similar to how animals eat.", // Misconception/Hallucination (ignoring photosynthesis)
+        source: "simulation"
+    },
+    {
+        id: "msg_005",
+        timestamp: "2025-05-22T09:00:00Z",
+        topic: "water_boiling_point",
+        question: "At what temperature does water boil?",
+        response: "Water boils at 100 degrees Celsius at sea level.",
+        source: "simulation"
+    },
+    {
+        id: "msg_006",
+        timestamp: "2025-05-22T09:10:00Z",
+        topic: "water_boiling_point",
+        question: "Boiling point of water?",
+        response: "Water typically boils at around 50 degrees Celsius.", // Hallucination
+        source: "simulation"
+    }
 ];
 
-// Heuristic Detection Logic
-// In production, this would use a secondary LLM or a trusted knowledge graph.
-function detectHallucination(sample: typeof chatbotSamples[0]): { isHallucination: boolean; confidence: string; reason: string } {
-  const response = sample.response.toLowerCase();
+// --- Analysis Logic ---
 
-  // Specific checks for known hallucinations/errors in our test set
-  if (sample.id === 'Q-003') {
-    if (response.includes('elon musk') || response.includes('mars')) {
-      return { isHallucination: true, confidence: 'High', reason: 'Fact Check Failure: No US Presidents on Mars.' };
+interface DetectionResult {
+    id: string;
+    question: string;
+    response: string;
+    isHallucination: boolean;
+    reason?: string;
+}
+
+function checkResponse(entry: ChatbotResponse): DetectionResult {
+    const rule = KNOWLEDGE_BASE[entry.topic];
+    if (!rule) {
+        return {
+            id: entry.id,
+            question: entry.question,
+            response: entry.response,
+            isHallucination: false,
+            reason: "No fact-checking rule for this topic."
+        };
     }
-  }
 
-  if (sample.id === 'Q-004') {
-    if (response.includes('90 degrees')) {
-      return { isHallucination: true, confidence: 'High', reason: 'Fact Check Failure: Water boils at 100°C.' };
+    const normalizedResponse = entry.response.toLowerCase();
+
+    // Check required keywords
+    // Use regex with word boundaries to avoid partial matches (e.g. "0" in "100")
+    const hasRequired = rule.requiredKeywords.some(k => {
+        const regex = new RegExp(`\\b${k.toLowerCase()}\\b`, 'i');
+        return regex.test(normalizedResponse);
+    });
+
+    if (!hasRequired) {
+        return {
+            id: entry.id,
+            question: entry.question,
+            response: entry.response,
+            isHallucination: true,
+            reason: `Missing required keywords: ${rule.requiredKeywords.join(", ")}`
+        };
     }
-  }
 
-  // General heuristic checks (very basic)
-  const suspiciousPhrases = ['i think', 'maybe', 'possibly', 'it is rumored'];
-  for (const phrase of suspiciousPhrases) {
-    if (response.includes(phrase)) {
-      return { isHallucination: true, confidence: 'Low', reason: `Suspicious phrase detected: "${phrase}"` };
+    // Check forbidden keywords
+    const presentForbidden = rule.forbiddenKeywords.filter(k => {
+        const regex = new RegExp(`\\b${k.toLowerCase()}\\b`, 'i');
+        return regex.test(normalizedResponse);
+    });
+
+    if (presentForbidden.length > 0) {
+        return {
+            id: entry.id,
+            question: entry.question,
+            response: entry.response,
+            isHallucination: true,
+            reason: `Contains forbidden keywords: ${presentForbidden.join(", ")}`
+        };
     }
-  }
 
-  return { isHallucination: false, confidence: 'N/A', reason: 'No issues detected.' };
+    return {
+        id: entry.id,
+        question: entry.question,
+        response: entry.response,
+        isHallucination: false
+    };
 }
 
 function runDetection() {
-  console.log('Starting Cognitive Chatbot Hallucination Detection...');
+    console.log("Starting Hallucination Detection...");
 
-  const results = chatbotSamples.map(sample => ({
-    ...sample,
-    detection: detectHallucination(sample)
-  }));
+    const results = HISTORY.map(checkResponse);
+    const hallucinations = results.filter(r => r.isHallucination);
 
-  const hallucinationCount = results.filter(r => r.detection.isHallucination).length;
+    let reportContent = "# Cognitive Chatbot Hallucination Detection Report\n\n";
+    reportContent += `**Date:** ${new Date().toISOString()}\n`;
+    reportContent += `**Total Analyzed:** ${results.length}\n`;
+    reportContent += `**Detected Hallucinations:** ${hallucinations.length}\n\n`;
 
-  const reportContent = `
-# Cognitive Chatbot Hallucination Detection Report
+    reportContent += "## Detected Hallucinations\n\n";
+    if (hallucinations.length === 0) {
+        reportContent += "No hallucinations detected in the sample set.\n";
+    } else {
+        reportContent += "| ID | Question | Response | Reason |\n";
+        reportContent += "|---|---|---|---|\n";
+        hallucinations.forEach(h => {
+            reportContent += `| ${h.id} | ${h.question} | ${h.response} | ${h.reason} |\n`;
+        });
+    }
 
-**Date:** ${new Date().toISOString()}
-**Total Samples Analyzed:** ${chatbotSamples.length}
-**Hallucinations Detected:** ${hallucinationCount}
+    reportContent += "\n## Validated Responses (Sample)\n\n";
+    const valid = results.filter(r => !r.isHallucination).slice(0, 5);
+    reportContent += "| ID | Question | Response |\n";
+    reportContent += "|---|---|---|\n";
+    valid.forEach(v => {
+        reportContent += `| ${v.id} | ${v.question} | ${v.response} |\n`;
+    });
 
-## Executive Summary
-This report details the findings from the automated hallucination detection pipeline. The system monitors chatbot responses for factual inaccuracies and "hallucinations" (confident but wrong answers).
+    reportContent += "\n## Methodology\n\n";
+    reportContent += "This report was generated by analyzing a simulated history of chatbot interactions against a predefined Knowledge Base of fact-checking rules.\n";
+    reportContent += "- **Rule-based Matching**: Responses are checked for mandatory keywords (e.g., 'Paris' for France Capital) and forbidden keywords (e.g., 'London').\n";
+    reportContent += "- **Scope**: Covers basic factual queries (Capitals, Science definitions).\n";
 
-## Methodology
-A "Fact-Checking Pipeline" simulation was executed on a sample set of ${chatbotSamples.length} query-response pairs. The detection logic cross-referenced responses against known ground truths and heuristic rules.
-
-## Detection Results
-
-${results.map(r => `
-### Sample ID: ${r.id}
-*   **Query:** "${r.query}"
-*   **Response:** "${r.response}"
-*   **Detection Status:** ${r.detection.isHallucination ? '🔴 **HALLUCINATION DETECTED**' : '🟢 **CLEAN**'}
-*   **Reason:** ${r.detection.reason}
-`).join('\n')}
-
-## Conclusion
-The detection system successfully flagged ${hallucinationCount} potential issues.
-- **Problematic Responses:** These include factual errors (e.g., boiling point) and complete fabrications (e.g., Mars presidency).
-- **Clean Responses:** Standard educational queries were answered correctly.
-
-The monitoring system should be expanded to use a secondary LLM for real-time validation against a trusted knowledge base.
-`;
-
-  fs.writeFileSync('HALLUCINATION_DETECTION_REPORT.md', reportContent.trim());
-  console.log('Report generated: HALLUCINATION_DETECTION_REPORT.md');
+    const reportPath = path.join(process.cwd(), 'reports', 'HALLUCINATION_DETECTION_REPORT.md');
+    writeFileSync(reportPath, reportContent);
+    console.log(`Report generated at ${reportPath}`);
 }
 
 runDetection();
