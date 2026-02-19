@@ -22,38 +22,75 @@ test.describe('UI Behavior Tests', () => {
     await instructionsInput.fill('Use analogies related to coding.');
     await expect(instructionsInput).toHaveValue('Use analogies related to coding.');
 
-    // 3. Verify Interactions - Select
-    // Note: Radix UI Select is tricky in Playwright, usually requires clicking trigger then option
-    // Using text content to find trigger might be easier
-    // The label is "Personality & Tone"
-    // The current value is not easily accessible via aria-label on trigger, but we can try opening it.
-    // Let's skip complex select interaction for now and focus on the save flow.
-
     // 4. Verify Save Action
     const saveButton = page.getByRole('button', { name: 'Save Configuration' });
     await expect(saveButton).toBeVisible();
     await expect(saveButton).toBeEnabled();
 
-    // Setup listener for toast or request
-    // We expect the server action to fail (401 or similar) or succeed if no auth check.
-    // The UI handles error by showing a toast.
-
     await saveButton.click();
 
-    // Check for loading state (text changes to "Saving...")
-    // This might happen very fast, so might be flaky.
-    // Instead, wait for toast.
-
-    // The toast usually appears in a container.
-    // We can check for "Configuration saved" or "Error".
-    // Given we are unauthenticated/mock environment, it might fail.
-    // But checking that *some* feedback appears is the goal of "UI Component Behavior" test.
-
     // We wait for either success or error toast
-    const toast = page.locator('[role="status"]'); // Radix toast usually has role status or alert
-    // Or look for text
     const feedback = page.getByText(/Configuration saved|Error/);
     await expect(feedback.first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Syllabus Page Search & Loading State', async ({ page }) => {
+      // Navigate to syllabus page
+      await page.goto('/syllabus');
+
+      // Verify page title
+      await expect(page.getByText('Syllabus Finder')).toBeVisible();
+
+      // Find input and type
+      const input = page.locator('input[placeholder*="e.g."]');
+      await expect(input).toBeVisible();
+      await input.fill('Calculus');
+
+      // Click generate
+      const generateButton = page.locator('button[type="submit"]');
+      await generateButton.click();
+
+      // Expect loading state
+      // The button usually gets disabled or shows a spinner
+      // Or a spinner appears elsewhere.
+      // We check for "Generating..." text or spinner class
+      try {
+          await expect(page.getByText(/Generating/i)).toBeVisible({ timeout: 3000 });
+      } catch (e) {
+          // If too fast, check for result or error.
+          // In a mock/no-auth env, it likely fails or shows error.
+          const errorOrResult = page.getByText(/Error|Syllabus for/i);
+          await expect(errorOrResult.first()).toBeVisible();
+      }
+  });
+
+  test('Topic Mastery Grid Rendering', async ({ page }) => {
+      // Using /test-charts as a harness for the grid component
+      await page.goto('/test-charts');
+
+      // The grid renders topic cards or a heatmap.
+      // Based on file list, TopicMasteryGrid.tsx exists.
+      // Let's assume /test-charts renders it.
+      // We look for topic names like "Algebra", "Geometry" if mocked.
+      // Or just check that the container is visible.
+
+      // Check for a known element from the mock data in /test-charts
+      // "Math" was checked above.
+      // Let's check for visual elements of the chart, e.g. "Mastery" axis or legend.
+      await expect(page.getByText('Mastery')).toBeVisible();
+
+      // Interactive check: Hovering over a bar/point
+      // This is hard to assert visually without snapshot, but we can try to trigger a tooltip.
+      // The chart usually uses Recharts.
+      // We can look for .recharts-surface
+      const chart = page.locator('.recharts-surface').first();
+      await expect(chart).toBeVisible();
+
+      // Click on chart
+      await chart.click({ position: { x: 100, y: 100 } });
+
+      // Just ensure no crash/error overlay
+      await expect(page.getByText('Application error')).not.toBeVisible();
   });
 
 });

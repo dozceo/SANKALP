@@ -71,6 +71,28 @@ describe('LLM Schema Regression Tests', () => {
         const result = AdaptiveQuizOutputSchema.safeParse(payload);
         assert.strictEqual(result.success, true);
     });
+
+    test('Extra fields are stripped or allowed (default Zod behavior is strip)', () => {
+        const payload = {
+            quiz: [],
+            extraField: "should be ignored"
+        };
+        const result = AdaptiveQuizOutputSchema.safeParse(payload);
+        assert.strictEqual(result.success, true);
+        // If we want to test strictness, we'd check if output has extraField.
+        // Usually safeParse returns data with stripped fields unless .strict() is used.
+        if (result.success) {
+            assert.strictEqual((result.data as any).extraField, undefined);
+        }
+    });
+
+    test('Missing quiz array (should fail)', () => {
+        const payload = {
+            isFallback: true
+        };
+        const result = AdaptiveQuizOutputSchema.safeParse(payload);
+        assert.strictEqual(result.success, false);
+    });
   });
 
   describe('SyllabusOutputSchema', () => {
@@ -115,10 +137,6 @@ describe('LLM Schema Regression Tests', () => {
     });
 
     test('Edge case: Empty references array', () => {
-       // Is it valid? Zod schema says z.array(z.string().url()).
-       // Usually min length isn't enforced unless .min() is used.
-       // The prompt mentions "AT LEAST FIVE", but let's see if schema enforces it.
-       // If schema is just z.array(...), empty is valid.
       const payload = {
         title: "Calculus",
         structure: "...",
@@ -126,8 +144,6 @@ describe('LLM Schema Regression Tests', () => {
         references: []
       };
       const result = SyllabusOutputSchema.safeParse(payload);
-      // Based on typical Zod usage, this should be true unless .min() is present.
-      // Let's assume it passes schema validation even if prompt asks for 5.
       assert.strictEqual(result.success, true);
     });
   });
