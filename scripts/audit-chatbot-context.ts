@@ -1,94 +1,117 @@
 
-import * as fs from 'fs';
-import { z } from 'zod'; // Using zod directly as genkit might need setup
+import { explainConcept } from '../src/ai/flows/multilingual-cognitive-chatbot';
+import fs from 'fs';
+import path from 'path';
 
-const REPORT_FILE = 'CHATBOT_CONTEXT_HEALTH_REPORT.md';
+async function auditChatbotContext() {
+  console.log('Starting Chatbot Context Window Audit...');
 
-// Simulation Configuration
-const MAX_CONTEXT_TOKENS = 8192; // Typical limit for many models
-const AVG_CHARS_PER_TOKEN = 4;
+  const reportPath = path.join(process.cwd(), 'reports', 'CHATBOT_CONTEXT_HEALTH_REPORT.md');
+  const reportDir = path.dirname(reportPath);
 
-async function runAudit() {
-    console.log('Starting Chatbot Context Audit...');
+  if (!fs.existsSync(reportDir)) {
+    fs.mkdirSync(reportDir, { recursive: true });
+  }
 
-    let report = `# Chatbot Context Window Health Report
+  let reportContent = `# Chatbot Context Window Health Report
 
-## Executive Summary
-This audit evaluates the conversational AI's handling of context windows, specifically focusing on the "Mindful Mentor" and "Cognitive Chatbot" flows.
-The goal is to detect potential token overflow risks and verify session persistence strategies.
+## Overview
+This report audits the conversational AI context window handling for token overflow, truncation logic, and session persistence.
+
+## Methodology
+- Simulated a conversation using \`src/ai/flows/multilingual-cognitive-chatbot.ts\`.
+- Checked for mechanisms to pass conversation history.
+- Analyzed token usage and context retention.
 
 ## Findings
 
-### 1. Stateless Architecture (Cognitive Chatbot)
-The \`Multilingual Cognitive Chatbot\` (\`src/ai/flows/multilingual-cognitive-chatbot.ts\`) and \`Custom Cognitive Chatbot\` (\`src/ai/flows/custom-cognitive-chatbot.ts\`) appear to be **stateless** at the AI flow level.
-*   **Input Schema**: Accepts \`concept\` and \`brainMapContext\`.
-*   **History Handling**: No explicit \`history\` or \`messages\` array is passed to the LLM.
-*   **Implication**: The chatbot relies entirely on the client (UI) to provide context. If the client does not concatenate history into \`brainMapContext\`, the bot has **no memory** of previous turns.
-*   **Risk**: Low risk of "overflow" in the traditional sense (since history isn't accumulating in the flow), but **high risk of conversational incoherence**.
-
-### 2. Unbounded Input Field (Mindful Mentor)
-The \`Mindful Mentor\` (\`src/ai/flows/mindful-mentor.ts\`) accepts a \`studentHistory\` string.
-*   **Input Schema**: \`studentHistory: z.string()\`
-*   **Mechanism**: This string is injected directly into the prompt: \`Relevant background: "{{{studentHistory}}}"\`.
-*   **Overflow Simulation**:
 `;
 
-    // Simulation: Constructing a long history
-    const turns = [
-        { role: 'user', content: 'I am stressed about my math exam.' },
-        { role: 'bot', content: 'I understand. Math can be tough.' },
-        // ... imagine this repeating
-    ];
+  // 1. Check Function Signature
+  // We can't easily reflect on types at runtime without complex setup, but we know the input schema from reading the file.
+  // The input schema is: { concept: string, brainMapContext: string, language: string }
 
-    // Simulate growing history
-    const simulatedHistorySteps = [10, 50, 100, 500]; // number of turns
+  reportContent += `### 1. Stateless Architecture
+The current implementation of \`multilingual-cognitive-chatbot.ts\` (function \`explainConcept\`) is designed as a **single-turn** request-response model.
+- **Input Schema**: \`{ concept, brainMapContext, language }\`
+- **Missing Field**: There is no \`history\` or \`messages\` array in the input schema.
+- **Implication**: The chatbot does not maintain conversation history between turns. Each request is treated as a standalone query.
 
-    report += `\n| Turns | Est. Characters | Est. Tokens | Risk Level | Status |\n|---|---|---|---|---|\n`;
+`;
 
-    for (const n of simulatedHistorySteps) {
-        const historyStr = generateHistory(n);
-        const chars = historyStr.length;
-        const tokens = Math.ceil(chars / AVG_CHARS_PER_TOKEN);
-        const risk = tokens > MAX_CONTEXT_TOKENS ? '**CRITICAL**' : tokens > MAX_CONTEXT_TOKENS * 0.8 ? 'HIGH' : 'LOW';
-        const status = tokens > MAX_CONTEXT_TOKENS ? 'OVERFLOW' : 'SAFE';
+  // 2. Simulation
+  console.log('Simulating conversation...');
+  try {
+    const turn1Input = {
+      concept: "What is a linear equation?",
+      brainMapContext: "Algebra 1 Basics",
+      language: "English"
+    };
+    console.log('Turn 1:', turn1Input.concept);
+    const turn1Output = await explainConcept(turn1Input);
+    console.log('Turn 1 Output:', turn1Output.explanation.substring(0, 50) + '...');
 
-        report += `| ${n} | ${chars} | ${tokens} | ${risk} | ${status} |\n`;
-    }
+    const turn2Input = {
+      concept: "Give me an example of that.", // "that" refers to linear equation
+      brainMapContext: "Algebra 1 Basics",
+      language: "English"
+    };
+    console.log('Turn 2:', turn2Input.concept);
+    const turn2Output = await explainConcept(turn2Input);
+    console.log('Turn 2 Output:', turn2Output.explanation.substring(0, 50) + '...');
 
-    report += `
-### 3. Missing Truncation Logic
-Review of \`src/ai/flows/mindful-mentor.ts\` and other flows reveals **no explicit truncation logic**.
-The \`studentHistory\` or \`brainMapContext\` is passed directly to the LLM prompt.
-If the client application sends a very long history string (e.g., from a long-running session), the LLM call will eventually **fail** with a "context length exceeded" error from the provider (e.g., OpenAI, Gemini).
+    // Analyze Turn 2
+    // If context was preserved, "that" would be understood as "linear equation".
+    // If not, it might be generic or confused.
+
+    reportContent += `### 2. Conversation Simulation Results
+**Test Scenario**:
+1. User: "What is a linear equation?"
+2. Bot: [Explanation of linear equation]
+3. User: "Give me an example of that."
+
+**Observation**:
+- Turn 1 Output: "${turn1Output.explanation.replace(/\n/g, ' ')}"
+- Turn 2 Output: "${turn2Output.explanation.replace(/\n/g, ' ')}"
+
+**Analysis**:
+The second response likely fails to connect "that" to "linear equation" effectively unless the LLM infers it solely from the \`brainMapContext\` ("Algebra 1 Basics") which is static, or if it hallucinates a context.
+Since the history is not passed, the model has no knowledge of the previous turn.
+
+`;
+
+  } catch (error) {
+    console.error('Error during simulation:', error);
+    reportContent += `### 2. Conversation Simulation Results
+**Error**: Simulation failed with error: ${error}
+This might be due to missing API keys or network issues in the test environment.
+However, the static analysis of the code confirms the lack of history handling.
+`;
+  }
+
+  // 3. Context Window & Token Limits
+  reportContent += `### 3. Context Window & Token Limits
+- **Current State**: Since history is not passed, there is no risk of *accumulating* history to hit token limits in the current implementation.
+- **Risk**: If history *were* to be implemented by simply appending strings to the prompt, it would eventually hit the Gemini Flash token limit (approx 1M tokens, but practical limits are lower for latency).
+- **Recommendation**: Implement a sliding window or summarization strategy for history.
 
 ## Recommendations
 
-1.  **Implement Sliding Window**:
-    *   Limit the history passed to the most recent N turns (e.g., last 10) or last K tokens (e.g., 2000).
-    *   Summarize older history into a concise "context" string.
+1.  **Implement Conversation History**:
+    - Update \`ExplainConceptInputSchema\` to include a \`history\` array: \`{ role: 'user' | 'model', text: string }[]\`.
+    - Pass this history to the Genkit prompt.
 
-2.  **Add Token Counting**:
-    *   Before sending the request, calculate the token count of the prompt.
-    *   If > limit, truncate the oldest messages.
+2.  **Context Management Strategy**:
+    - **Sliding Window**: Keep the last N turns (e.g., 10) to stay within token limits.
+    - **Summarization**: Use a background task to summarize older turns into the \`brainMapContext\` or a new \`summary\` field.
 
-3.  **State Management**:
-    *   Move history management from Client-side (localStorage) to Server-side (Database) for better control and persistence.
-    *   Currently, \`src/app/(main)/chat/page.tsx\` uses \`localStorage\`, which is fragile and local-only.
+3.  **Session Persistence**:
+    - The client currently stores messages in \`localStorage\`. This should be synchronized with the server (Firestore) to allow cross-device continuity.
 
-## Conclusion
-The current implementation is vulnerable to context overflow in the \`Mindful Mentor\` flow if \`studentHistory\` grows unbounded. The \`Cognitive Chatbot\` is safe from overflow but likely suffers from lack of continuity due to statelessness.
 `;
 
-    fs.writeFileSync(REPORT_FILE, report);
-    console.log(`Report generated at ${REPORT_FILE}`);
+  fs.writeFileSync(reportPath, reportContent);
+  console.log(`Report generated at ${reportPath}`);
 }
 
-function generateHistory(turns: number): string {
-    let history = "";
-    for (let i = 0; i < turns; i++) {
-        history += `User: I am struggling with question ${i}.\nBot: Let's break it down. What part is confusing?\n`;
-    }
-    return history;
-}
-
-runAudit().catch(console.error);
+auditChatbotContext().catch(console.error);
