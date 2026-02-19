@@ -2,140 +2,136 @@
 import fs from 'fs';
 import path from 'path';
 
-const ACTION_MARKER = /['"]use server['"]/;
 const AUTH_CHECKS = [
-  /auth\(\)/,
-  /currentUser\(\)/,
-  /getSession\(\)/,
-  /getServerSession\(\)/,
-  /verifyIdToken\(\)/, // Firebase specific
-  /validateUser\(\)/
+    'auth(',
+    'currentUser(',
+    'getSession(',
+    'verifySession(',
+    'checkAuth(',
+    'requireAuth(',
+    'protect(',
+    'getUser(',
+    'validateUser('
 ];
 
-const IGNORE_DIRS = ['node_modules', '.git', '.next', 'dist', 'build', 'reports'];
-
-interface ActionFile {
-  filepath: string;
-  hasAuthCheck: boolean;
-  exportedFunctions: string[];
-  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
-  notes: string[];
+interface ActionFinding {
+    file: string;
+    functionName: string;
+    hasAuth: boolean;
+    riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+    line: number;
 }
 
-const findings: ActionFile[] = [];
+function scanFileForActions(filePath: string): ActionFinding[] {
+    const findings: ActionFinding[] = [];
+    try {
+        const content = fs.readFileSync(filePath, 'utf-8');
 
-function scanFile(filePath: string) {
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-
-    // Check if it's a server action file
-    if (!ACTION_MARKER.test(content)) return;
-
-    const lines = content.split('\n');
-    let hasAuthCheck = false;
-    const exportedFunctions: string[] = [];
-    const notes: string[] = [];
-
-    // Simple regex to find exported functions
-    // export async function functionName(...)
-    // export const functionName = async (...)
-    const funcRegex = /export\s+(?:async\s+)?function\s+([a-zA-Z0-9_]+)|export\s+const\s+([a-zA-Z0-9_]+)\s*=\s*(?:async)?/g;
-
-    let match;
-    while ((match = funcRegex.exec(content)) !== null) {
-      exportedFunctions.push(match[1] || match[2]);
-    }
-
-    // Check for auth patterns
-    if (AUTH_CHECKS.some(regex => regex.test(content))) {
-      hasAuthCheck = true;
-    }
-
-    // Heuristic for risk
-    let riskLevel: 'HIGH' | 'MEDIUM' | 'LOW' = 'HIGH';
-
-    if (hasAuthCheck) {
-        riskLevel = 'LOW';
-    } else {
-        // If no global auth check, look for specific patterns
-        // Maybe it's a public action?
-        if (filePath.includes('login') || filePath.includes('sign-up') || filePath.includes('auth')) {
-            riskLevel = 'LOW'; // Public auth actions don't need auth checks usually
-            notes.push('Likely public auth action');
-        } else {
-            notes.push('Missing explicit authentication check');
+        // Simple check for "use server" directive
+        if (!content.includes('"use server"') && !content.includes("'use server'")) {
+            return [];
         }
+
+        const lines = content.split('\n');
+
+        // Regex to find exported async functions
+        // export async function myAction(...)
+        // export const myAction = async (...)
+        const funcRegex = /export\s+(async\s+function\s+([a-zA-Z0-9_]+)|const\s+([a-zA-Z0-9_]+)\s*=\s*async)/g;
+
+        let match;
+        while ((match = funcRegex.exec(content)) !== null) {
+            const functionName = match[2] || match[3];
+            const startIndex = match.index;
+
+            // Find the function body (brace matching is hard with regex, so we use a heuristic)
+            // We search for the next "{" and then scan forward a bit (e.g., first 500 chars of body)
+            // to look for auth checks. Ideally we'd use an AST, but this is a heuristic scan.
+
+            const bodyStart = content.indexOf('{', startIndex);
+            if (bodyStart === -1) continue;
+
+            const bodySnippet = content.substring(bodyStart, bodyStart + 1000); // Check first 1000 chars
+
+            const hasAuth = AUTH_CHECKS.some(check => bodySnippet.includes(check));
+
+            // Determine line number
+            const line = content.substring(0, startIndex).split('\n').length;
+
+            findings.push({
+                file: filePath,
+                functionName,
+                hasAuth,
+                riskLevel: hasAuth ? 'LOW' : 'HIGH',
+                line
+            });
+        }
+
+    } catch (error) {
+        console.error(`Error reading file ${filePath}:`, error);
+    }
+    return findings;
+}
+
+function walkDir(dir: string, fileList: string[] = []) {
+    const files = fs.readdirSync(dir);
+    files.forEach((file) => {
+        const filePath = path.join(dir, file);
+        if (['node_modules', '.git', '.next'].includes(file)) return;
+
+        const stat = fs.statSync(filePath);
+        if (stat.isDirectory()) {
+            walkDir(filePath, fileList);
+        } else {
+            if (file.endsWith('.ts') || file.endsWith('.tsx')) {
+                fileList.push(filePath);
+            }
+        }
+    });
+    return fileList;
+}
+
+function main() {
+    console.log('Starting Server Action Audit...');
+    const srcDir = 'src/app';
+    if (!fs.existsSync(srcDir)) {
+        console.error('src/app directory not found.');
+        return;
     }
 
-    findings.push({
-      filepath: filePath,
-      hasAuthCheck,
-      exportedFunctions,
-      riskLevel,
-      notes
+    const files = walkDir(srcDir);
+    const findings: ActionFinding[] = [];
+
+    files.forEach(file => {
+        findings.push(...scanFileForActions(file));
     });
 
-  } catch (err) {
-    // ignore
-  }
-}
+    // Generate Report
+    const reportPath = 'SERVER_ACTION_SECURITY_MATRIX.md';
+    let reportContent = '# Server Action Security Matrix\n\n';
+    reportContent += `**Date:** ${new Date().toISOString()}\n\n`;
+    reportContent += `**Total Actions Scanned:** ${findings.length}\n\n`;
 
-function walkDir(dir: string) {
-  const files = fs.readdirSync(dir);
-  for (const file of files) {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
+    const highRisk = findings.filter(f => f.riskLevel === 'HIGH');
+    reportContent += `**High Risk Actions (Missing Auth):** ${highRisk.length}\n\n`;
 
-    if (stat.isDirectory()) {
-      if (!IGNORE_DIRS.includes(file)) {
-        walkDir(filePath);
-      }
-    } else {
-      if (file.endsWith('.ts') || file.endsWith('.tsx')) {
-        scanFile(filePath);
-      }
+    reportContent += '| File | Function | Risk Level | Auth Detected |\n';
+    reportContent += '|---|---|---|---|\n';
+
+    findings.sort((a, b) => (a.riskLevel === 'HIGH' ? -1 : 1)).forEach(f => {
+        const riskIcon = f.riskLevel === 'HIGH' ? '🔴' : '🟢';
+        reportContent += `| \`${f.file}\` | \`${f.functionName}\` | ${riskIcon} ${f.riskLevel} | ${f.hasAuth ? 'Yes' : 'No'} |\n`;
+    });
+
+    if (highRisk.length > 0) {
+        reportContent += '\n\n## Recommendations\n';
+        reportContent += '1. **Add Authentication:** Ensure all High Risk actions implement `auth()` or similar checks at the beginning of the function.\n';
+        reportContent += '2. **Validate Input:** Ensure all inputs are validated using Zod or similar libraries.\n';
+        reportContent += '3. **CSRF Protection:** Next.js Server Actions have built-in CSRF protection, but ensure sensitive actions are not exposed via GET requests (which they shouldn\'t be by default).\n';
     }
-  }
+
+    fs.writeFileSync(reportPath, reportContent);
+    console.log(`Report generated at ${reportPath}`);
 }
 
-// Main execution
-console.log('Starting Server Action Audit...');
-
-if (fs.existsSync('src')) {
-    walkDir('src');
-}
-
-// Generate Report
-let report = `# Server Action Security Matrix
-
-**Date:** ${new Date().toISOString()}
-**Scope:** \`src/**\` (Files with \`"use server"\`)
-
-## Summary
-Found ${findings.length} Server Action files.
-- High Risk: ${findings.filter(f => f.riskLevel === 'HIGH').length}
-- Medium Risk: ${findings.filter(f => f.riskLevel === 'MEDIUM').length}
-- Low Risk: ${findings.filter(f => f.riskLevel === 'LOW').length}
-
-## Detailed Matrix
-
-| File | Risk | Auth Check Found | Exported Actions | Notes |
-|------|------|------------------|------------------|-------|
-`;
-
-findings.sort((a, b) => (a.riskLevel === 'HIGH' ? -1 : 1)).forEach(f => {
-    const functions = f.exportedFunctions.length > 0 ? f.exportedFunctions.join(', ') : '(None found)';
-    report += `| \`${f.filepath}\` | **${f.riskLevel}** | ${f.hasAuthCheck ? '✅' : '❌'} | \`${functions}\` | ${f.notes.join('; ')} |\n`;
-});
-
-report += `\n## Recommendations
-1. **Implement Middleware:** Ensure strict middleware covers all Server Action routes.
-2. **Explicit Auth Checks:** Add \`await auth()\` or equivalent at the start of every protected Server Action.
-3. **Input Validation:** Use Zod to validate all inputs to Server Actions.
-`;
-
-const reportPath = path.join('reports', 'SERVER_ACTION_SECURITY_MATRIX.md');
-if (!fs.existsSync('reports')) fs.mkdirSync('reports');
-fs.writeFileSync(reportPath, report);
-
-console.log(`Audit complete. Report generated at ${reportPath}`);
+main();
