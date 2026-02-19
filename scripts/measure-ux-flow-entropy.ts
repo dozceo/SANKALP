@@ -6,6 +6,7 @@ import path from 'path';
 const APP_DIR = path.join(process.cwd(), 'src/app');
 const REPORT_FILE = path.join(process.cwd(), 'UX_FLOW_ENTROPY_REPORT.md');
 
+// Accurate Sidebar Links (from src/components/app/sidebar-nav.tsx & teacher-sidebar-nav.tsx)
 const STUDENT_SIDEBAR_LINKS = [
   '/home',
   '/classes',
@@ -18,18 +19,20 @@ const STUDENT_SIDEBAR_LINKS = [
   '/brain-map',
   '/settings',
 ];
+
 const TEACHER_SIDEBAR_LINKS = [
   '/teacher',
   '/teacher/students',
   '/teacher/classes',
-  '/teacher/analytics',
-  '/teacher/interventions',
+  // '/teacher/analytics', // Disabled
+  // '/teacher/interventions', // Disabled
   '/settings',
 ];
 
 // Goal States
-const STUDENT_GOALS = ['/quiz', '/planner', '/syllabus'];
-const TEACHER_GOALS = ['/teacher/interventions', '/teacher/analytics'];
+const STUDENT_GOALS = ['/quiz', '/planner', '/syllabus', '/rewards'];
+// Note: Interventions is technically unreachable via sidebar, but maybe via direct link?
+const TEACHER_GOALS = ['/teacher/students', '/teacher/classes'];
 
 // --- Types ---
 interface PageNode {
@@ -37,14 +40,19 @@ interface PageNode {
   routePath: string; // e.g. /classes/[id]
   content: string;
   metrics: {
-    interactiveElements: number;
+    interactiveElements: number; // Buttons, Links, Inputs
     wordCount: number;
-    decisionPoints: number;
+    decisionPoints: number; // Distinct choices (links)
     outgoingLinks: string[]; // Explicit links found in the file
     responsiveLinks: {
       mobileOnly: number;
       desktopOnly: number;
     };
+    chartCount: number;
+    paragraphCount: number;
+    buttonCount: number;
+    inputCount: number;
+    hasRouterBack: boolean;
   };
   analysis: {
     cognitiveLoad: number;
@@ -52,7 +60,6 @@ interface PageNode {
     decisionEntropy: number;
     attentionBudget: number;
     isDeadEnd: boolean;
-    distanceToGoal?: number;
     mobileDivergence: boolean;
   };
 }
@@ -63,7 +70,7 @@ function getRoutePath(filePath: string): string {
   // Convert src/app/(main)/classes/[id]/page.tsx -> /classes/[id]
   let relative = path.relative(APP_DIR, filePath);
   // Remove page.tsx
-  relative = path.dirname(relative);
+  if (relative.endsWith('page.tsx')) relative = path.dirname(relative);
   // Remove route groups (folders starting with parentheses)
   const parts = relative.split(path.sep).filter(p => !p.startsWith('(') && !p.endsWith(')'));
   const route = '/' + parts.join('/');
@@ -83,8 +90,20 @@ function extractLinks(content: string): string[] {
     links.push(match[1]);
   }
 
+  // href={`...`}
+  const linkJsxRegex = /href=\{`([^`]+)`\}/g;
+  while ((match = linkJsxRegex.exec(content)) !== null) {
+    links.push(match[1]);
+  }
+
+  // href={'...'}
+  const linkStrJsxRegex = /href=\{["']([^"']+)["']\}/g;
+  while ((match = linkStrJsxRegex.exec(content)) !== null) {
+      links.push(match[1]);
+  }
+
   // router.push("...")
-  const routerRegex = /router\.push\(["']([^"']+)["']\)/g;
+  const routerRegex = /router\.push\(["'`]?([^"'`)]+)["'`]?\)/g;
   while ((match = routerRegex.exec(content)) !== null) {
     links.push(match[1]);
   }
@@ -95,7 +114,11 @@ function extractLinks(content: string): string[] {
     links.push(match[1]);
   }
 
-  return links;
+  // Normalize links: replace ${...} with [param]
+  return links.map(l => {
+      if (l.includes('${')) return l.replace(/\$\{[^}]+\}/g, '[param]');
+      return l;
+  });
 }
 
 // --- Main Analysis Logic ---
@@ -108,12 +131,10 @@ function analyzePage(filePath: string): PageNode {
   const btnCount = countOccurrences(content, /<Button/g);
   const linkCount = countOccurrences(content, /<Link/g);
   const aCount = countOccurrences(content, /<a\s/g);
-  const inputCount = countOccurrences(content, /<Input/g);
-  const selectCount = countOccurrences(content, /<Select/g);
-  const textareaCount = countOccurrences(content, /<Textarea/g);
+  const inputCount = countOccurrences(content, /<Input|<Select|<Textarea|<RadioGroupItem|<TabsTrigger|<Checkbox|<Switch/g);
   const onClickCount = countOccurrences(content, /onClick=/g);
 
-  const interactiveElements = btnCount + linkCount + aCount + inputCount + selectCount + textareaCount + onClickCount;
+  const interactiveElements = btnCount + linkCount + aCount + inputCount + onClickCount;
 
   // Word count (very rough approximation)
   const cleanText = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
@@ -121,23 +142,27 @@ function analyzePage(filePath: string): PageNode {
 
   const outgoingLinks = extractLinks(content);
 
-  // Attention Budget:
-  // Button=1, Paragraph (approx 50 words)=5, Input=2, Chart=10 (heuristic check for "Chart" or "Recharts")
-  const chartCount = countOccurrences(content, /Chart/g) + countOccurrences(content, /Recharts/g);
-  // Assume every ~50 words is a paragraph unit
-  const paragraphUnits = Math.ceil(wordCount / 50);
+  // Has router.back()?
+  const hasRouterBack = countOccurrences(content, /router\.back\(\)/g) > 0;
 
+  // Chart detection
+  const chartCount = countOccurrences(content, /<Recharts|<LineChart|<BarChart|<PieChart|<AreaChart/g) + countOccurrences(content, /ChartContainer/g);
+
+  // Paragraph units (approx 50 words per paragraph)
+  const paragraphCount = Math.ceil(wordCount / 50);
+
+  // Attention Budget:
+  // Button=1, Paragraph=5, Input=2, Chart=10
+  // Note: Using prompt's Paragraph=5. Assuming input is similar to button but maybe slightly more cognitive load (typing).
   const attentionBudget =
     (btnCount * 1) +
-    (paragraphUnits * 5) +
+    (paragraphCount * 5) +
     (inputCount * 2) +
     (chartCount * 10);
 
   // Mobile/Desktop Divergence Check
   // Check for `md:hidden`, `lg:hidden` (hidden on desktop)
   // Check for `hidden md:block`, `hidden lg:block` (hidden on mobile)
-  // We count occurrences of these patterns near Link or Button components
-  // This is a rough heuristic.
   const mobileHiddenMatches = countOccurrences(content, /hidden\s+(sm:|md:|lg:|xl:)block/g) + countOccurrences(content, /hidden\s+(sm:|md:|lg:|xl:)flex/g);
   const desktopHiddenMatches = countOccurrences(content, /(sm:|md:|lg:|xl:)hidden/g);
 
@@ -150,12 +175,17 @@ function analyzePage(filePath: string): PageNode {
     metrics: {
       interactiveElements,
       wordCount,
-      decisionPoints: interactiveElements, // Simplified
+      decisionPoints: outgoingLinks.length, // Number of distinct navigation choices
       outgoingLinks,
       responsiveLinks: {
         mobileOnly: desktopHiddenMatches,
         desktopOnly: mobileHiddenMatches
-      }
+      },
+      chartCount,
+      paragraphCount,
+      buttonCount: btnCount,
+      inputCount,
+      hasRouterBack
     },
     analysis: {
       cognitiveLoad: 0, // Calculated later
@@ -196,41 +226,65 @@ const nodeMap = new Map<string, PageNode>();
 nodes.forEach(n => nodeMap.set(n.routePath, n));
 
 nodes.forEach(node => {
-  // 1. Determine Sidebar Context
+  // 1. Determine Sidebar Context (Implicit Links)
   let implicitLinks: string[] = [];
   if (node.routePath.startsWith('/teacher')) {
     implicitLinks = TEACHER_SIDEBAR_LINKS;
-  } else if (!node.routePath.startsWith('/(auth)') && !node.routePath.startsWith('/api')) {
+  } else if (!node.routePath.startsWith('/(auth)') && !node.routePath.startsWith('/api') && node.routePath !== '/login' && node.routePath !== '/register') {
     // Assume student for main app routes not in auth/api
     implicitLinks = STUDENT_SIDEBAR_LINKS;
   }
 
   // 2. Total Outgoing Edges
-  const explicitNavLinks = node.metrics.outgoingLinks.filter(l => l && l.startsWith('/'));
-  const allLinks = Array.from(new Set([...explicitNavLinks, ...implicitLinks]));
-  const validLinks = allLinks.filter(l => l && l.startsWith('/') && l !== node.routePath);
+  const explicitNavLinks = node.metrics.outgoingLinks.filter(l => l && l.startsWith('/') && l !== node.routePath);
+
+  // Combine explicit + implicit for decision entropy calculation
+  // But be careful: Sidebar links are always there, do they contribute to entropy of the *content*?
+  // Usually, Hick's Law applies to the choices relevant to the task.
+  // Sidebar is "global navigation". Content choices are "local navigation".
+  // High entropy in content is usually the problem (analysis paralysis).
+  // So we calculate entropy primarily on explicit links + maybe primary actions.
+  // But if the page is empty, the only choices are sidebar.
+
+  const relevantChoices = [...explicitNavLinks];
+  if (relevantChoices.length === 0 && implicitLinks.length > 0) {
+      // If no explicit choices, user falls back to sidebar
+      // But adding sidebar to EVERY page's entropy might dilute the signal.
+      // Let's count explicit links as primary decision points.
+  }
+
+  const uniqueChoices = new Set(relevantChoices).size;
 
   // 3. Calculate Metrics
-  // Cognitive Load: 0.05 per word (reading cost) + 2 per interactive element (action cost)
-  node.analysis.cognitiveLoad = (node.metrics.wordCount * 0.05) + (node.metrics.interactiveElements * 2);
+
+  // Cognitive Load: Words/50 + Interactive Elements * 2
+  node.analysis.cognitiveLoad = (node.metrics.wordCount / 50) + (node.metrics.interactiveElements * 2);
 
   // Hick's Law: Time T = b * log2(n + 1). We just calculate log2(n+1).
-  node.analysis.hicksComplexity = Math.log2(node.metrics.interactiveElements + 1);
+  // Including sidebar links here because they ARE choices on the screen.
+  const totalOnScreenChoices = uniqueChoices + implicitLinks.length;
+  node.analysis.hicksComplexity = Math.log2(totalOnScreenChoices + 1);
 
-  // Entropy: H = log2(N) where N is number of unique outgoing paths (validLinks)
-  // If 0 links, entropy is 0.
-  node.analysis.decisionEntropy = validLinks.length > 0 ? Math.log2(validLinks.length) : 0;
+  // Entropy: H = log2(N) where N is number of unique outgoing paths
+  // We focus on Content Entropy (explicit links) for "Analysis Paralysis" detection.
+  // If a page has 10 buttons to different places, that's high entropy.
+  node.analysis.decisionEntropy = uniqueChoices > 0 ? Math.log2(uniqueChoices) : 0;
 
   // Dead End Detection:
-  // A "Content Dead End" is one where the *explicit* links are empty (ignoring sidebar).
-  // We exclude auth pages as they might redirect via code.
-  if (!node.routePath.includes('(auth)')) {
-     node.analysis.isDeadEnd = explicitNavLinks.length === 0 && node.metrics.interactiveElements < 3;
+  // A "Content Dead End" is one where the *explicit* links are empty AND no router.back().
+  // We exclude auth pages.
+  if (!node.routePath.includes('(auth)') && !node.routePath.includes('login') && !node.routePath.includes('register')) {
+     // If sidebar exists, it's strictly not a dead end, but it's a "Flow Dead End" (user has to abandon current flow).
+     // We flag it if there are no content links AND no back button.
+     node.analysis.isDeadEnd = explicitNavLinks.length === 0 && !node.metrics.hasRouterBack;
   }
 });
 
 // Path Efficiency (BFS)
 function calculateShortestPath(startNodeRoute: string, goalRoutes: string[]): number {
+  // Simple BFS
+  // Note: This is an approximation because we don't have a real router.
+
   if (!nodeMap.has(startNodeRoute)) return -1;
 
   const queue: { route: string, dist: number }[] = [{ route: startNodeRoute, dist: 0 }];
@@ -238,7 +292,14 @@ function calculateShortestPath(startNodeRoute: string, goalRoutes: string[]): nu
 
   while (queue.length > 0) {
     const { route, dist } = queue.shift()!;
+
+    // Check if goal reached
+    // Handle dynamic routes in goal check too?
+    // Goals are usually static like /quiz, but could be /quiz/result
     if (goalRoutes.some(g => route === g || route.startsWith(g))) return dist;
+
+    // Limit depth
+    if (dist > 10) continue;
 
     const node = nodeMap.get(route);
     if (!node) continue;
@@ -248,15 +309,25 @@ function calculateShortestPath(startNodeRoute: string, goalRoutes: string[]): nu
     if (route.startsWith('/teacher')) implicitLinks = TEACHER_SIDEBAR_LINKS;
     else implicitLinks = STUDENT_SIDEBAR_LINKS;
 
+    // Neighbors are explicit links found in content + sidebar links
     const allLinks = Array.from(new Set([...node.metrics.outgoingLinks, ...implicitLinks]));
+
     const neighbors = allLinks
-      .filter(l => l.startsWith('/'))
+      .filter(l => l && l.startsWith('/'))
       .map(l => {
+         // Resolve dynamic segments if possible, or match to route keys
+         // If l is /classes/123, match to /classes/[id]
+         // If l is /classes/[id], match to /classes/[id]
+
+         // 1. Direct match
          if (nodeMap.has(l)) return l;
-         // Try to match dynamic routes
+
+         // 2. Dynamic match
          for (const key of nodeMap.keys()) {
-             if (key.includes('[') && l.match(new RegExp('^' + key.replace(/\[.*?\]/g, '[^/]+') + '$'))) {
-                 return key;
+             if (key.includes('[') && key !== l) {
+                 // Convert key /classes/[id] to regex /classes/[^/]+
+                 const regex = new RegExp('^' + key.replace(/\[.*?\]/g, '[^/]+') + '$');
+                 if (regex.test(l)) return key;
              }
          }
          return null;
@@ -298,19 +369,20 @@ const totalPages = nodes.length;
 const totalDeadEnds = nodes.filter(n => n.analysis.isDeadEnd).length;
 const avgCognitiveLoad = nodes.reduce((sum, n) => sum + n.analysis.cognitiveLoad, 0) / totalPages;
 const avgEntropy = nodes.reduce((sum, n) => sum + n.analysis.decisionEntropy, 0) / totalPages;
+const avgAttention = nodes.reduce((sum, n) => sum + n.analysis.attentionBudget, 0) / totalPages;
 
 report += `- **Total Pages Analyzed:** ${totalPages}\n`;
-report += `- **Dead Ends Detected:** ${totalDeadEnds}\n`;
-report += `- **Avg Cognitive Load:** ${avgCognitiveLoad.toFixed(2)} (Target < 50)\n`;
-report += `- **Avg Decision Entropy:** ${avgEntropy.toFixed(2)} bits (Target ~3 bits)\n\n`;
+report += `- **Flow Dead Ends:** ${totalDeadEnds} (Pages requiring sidebar rescue)\n`;
+report += `- **Avg Cognitive Load:** ${avgCognitiveLoad.toFixed(1)} (Target < 50)\n`;
+report += `- **Avg Decision Entropy:** ${avgEntropy.toFixed(2)} bits (Target ~3 bits)\n`;
+report += `- **Avg Attention Cost:** ${avgAttention.toFixed(0)} (Budget: Desktop 100, Mobile 50)\n\n`;
 
-// 1. Interactive Flow Graph Visualization (Mermaid)
+// 1. Interactive Flow Graph (Mermaid)
 report += `## 1. Interactive Flow Graph (Mermaid)\n\n`;
 report += `\`\`\`mermaid\ngraph TD\n`;
-// Limit edges to avoid massive graph. Only explicit edges or key sidebar edges.
-// We'll show explicit edges primarily.
+// Limit edges to avoid massive graph. Only explicit edges.
 nodes.forEach(node => {
-  const nodeId = node.routePath.replace(/\//g, '_').replace(/\[/g, '').replace(/\]/g, '').replace(/-/g, '_') || 'root';
+  const nodeId = node.routePath.replace(/\//g, '_').replace(/\[/g, 'I').replace(/\]/g, 'I').replace(/-/g, '_') || 'root';
   const label = node.routePath === '/' ? '/ (root)' : node.routePath;
 
   // Style nodes based on type
@@ -323,13 +395,13 @@ nodes.forEach(node => {
   // Edges
   const explicitLinks = node.metrics.outgoingLinks.filter(l => l && l.startsWith('/') && l !== node.routePath);
   explicitLinks.forEach(link => {
-     let targetId = link.replace(/\//g, '_').replace(/\[/g, '').replace(/\]/g, '').replace(/-/g, '_') || 'root';
+     let targetId = link.replace(/\//g, '_').replace(/\[/g, 'I').replace(/\]/g, 'I').replace(/-/g, '_') || 'root';
      // Handle dynamic routes in ID simply
      if (link.includes('[')) {
         // try to find matching node
          for (const key of nodeMap.keys()) {
              if (key.includes('[') && link.match(new RegExp('^' + key.replace(/\[.*?\]/g, '[^/]+') + '$'))) {
-                 targetId = key.replace(/\//g, '_').replace(/\[/g, '').replace(/\]/g, '').replace(/-/g, '_');
+                 targetId = key.replace(/\//g, '_').replace(/\[/g, 'I').replace(/\]/g, 'I').replace(/-/g, '_');
                  break;
              }
          }
@@ -343,28 +415,27 @@ report += `  classDef highLoad fill:#f00,stroke:#333,stroke-width:2px,color:#fff
 report += `\`\`\`\n\n`;
 
 // 2. Cognitive Load Heatmap
-report += `## 2. Cognitive Load Heatmap (Top 10 High Load)\n`;
+report += `## 2. Cognitive Load Heatmap\n`;
+report += `Formula: (Words / 50) + (Decisions * 2). Target < 50.\n\n`;
 report += `| Page | Score | Words | Interactive Elements | Status |\n`;
 report += `|---|---|---|---|---|\n`;
 const sortedByLoad = [...nodes].sort((a, b) => b.analysis.cognitiveLoad - a.analysis.cognitiveLoad);
-sortedByLoad.slice(0, 10).forEach(n => {
-  const status = n.analysis.cognitiveLoad > 80 ? '🔴 Overload' : n.analysis.cognitiveLoad > 50 ? 'qh Warning' : '🟢 Optimal';
+sortedByLoad.slice(0, 15).forEach(n => {
+  const status = n.analysis.cognitiveLoad > 80 ? '🔴 Overload' : n.analysis.cognitiveLoad > 50 ? '🟠 Warning' : '🟢 Optimal';
   report += `| \`${n.routePath}\` | ${n.analysis.cognitiveLoad.toFixed(1)} | ${n.metrics.wordCount} | ${n.metrics.interactiveElements} | ${status} |\n`;
 });
 report += `\n`;
 
 // 3. Decision Entropy Analysis
 report += `## 3. Decision Entropy Analysis (Analysis Paralysis)\n`;
-report += `Pages with high entropy (> 3.5 bits) indicate too many choices without guidance.\n\n`;
-report += `| Page | Entropy (bits) | Choices (Implicit + Explicit) |\n`;
+report += `Pages with high entropy (> 3.5 bits / > 11 choices) indicate too many choices without guidance.\n\n`;
+report += `| Page | Entropy (bits) | Distinct Choices |\n`;
 report += `|---|---|---|\n`;
 const sortedByEntropy = [...nodes].sort((a, b) => b.analysis.decisionEntropy - a.analysis.decisionEntropy);
-sortedByEntropy.slice(0, 10).filter(n => n.analysis.decisionEntropy > 3.0).forEach(n => {
-    let implicitLinks: string[] = [];
-    if (n.routePath.startsWith('/teacher')) implicitLinks = TEACHER_SIDEBAR_LINKS;
-    else implicitLinks = STUDENT_SIDEBAR_LINKS;
-    const choiceCount = new Set([...n.metrics.outgoingLinks, ...implicitLinks]).size;
-    report += `| \`${n.routePath}\` | ${n.analysis.decisionEntropy.toFixed(2)} | ${choiceCount} |\n`;
+sortedByEntropy.slice(0, 10).forEach(n => {
+    if (n.analysis.decisionEntropy > 2.5) { // Show meaningful ones
+        report += `| \`${n.routePath}\` | ${n.analysis.decisionEntropy.toFixed(2)} | ${n.metrics.decisionPoints} |\n`;
+    }
 });
 report += `\n`;
 
@@ -374,21 +445,21 @@ report += `### Student Journey (From /home)\n`;
 report += `| Goal | Steps | Status |\n`;
 report += `|---|---|---|\n`;
 studentPathEff.forEach(p => {
-    const status = p.steps === -1 ? '❌ Unreachable' : p.steps > 3 ? '⚠️ Inefficient' : '✅ Efficient';
+    const status = p.steps === -1 ? '❌ Unreachable' : p.steps > 4 ? '⚠️ Inefficient' : '✅ Efficient';
     report += `| \`${p.goal}\` | ${p.steps} | ${status} |\n`;
 });
 report += `\n### Teacher Journey (From /teacher)\n`;
 report += `| Goal | Steps | Status |\n`;
 report += `|---|---|---|\n`;
 teacherPathEff.forEach(p => {
-    const status = p.steps === -1 ? '❌ Unreachable' : p.steps > 3 ? '⚠️ Inefficient' : '✅ Efficient';
+    const status = p.steps === -1 ? '❌ Unreachable' : p.steps > 4 ? '⚠️ Inefficient' : '✅ Efficient';
     report += `| \`${p.goal}\` | ${p.steps} | ${status} |\n`;
 });
 report += `\n`;
 
 // 5. Dead-End Inventory
 report += `## 5. Dead-End Inventory\n`;
-report += `Pages with no explicit forward navigation (traps users).\n\n`;
+report += `Pages with no explicit forward navigation (traps users who miss the sidebar).\n\n`;
 const deadEnds = nodes.filter(n => n.analysis.isDeadEnd);
 if (deadEnds.length === 0) report += "None detected.\n";
 else {
@@ -402,21 +473,23 @@ report += `\n`;
 
 // 6. Attention Budget Violations
 report += `## 6. Attention Budget Violations\n`;
-report += `Pages exceeding attention budget (> 100 points).\n\n`;
-const budgetViolations = nodes.filter(n => n.analysis.attentionBudget > 100);
+report += `Pages exceeding attention budget (Desktop > 100, Mobile > 50).\n`;
+report += `Cost: Button=1, Paragraph=5, Input=2, Chart=10.\n\n`;
+const budgetViolations = nodes.filter(n => n.analysis.attentionBudget > 50); // Show mobile violations too
 if (budgetViolations.length === 0) report += "None detected.\n";
 else {
-    report += `| Page | Cost | Violation Source |\n`;
+    report += `| Page | Cost | Violation Type |\n`;
     report += `|---|---|---|\n`;
-    budgetViolations.forEach(n => {
-        report += `| \`${n.routePath}\` | ${n.analysis.attentionBudget} | Too many elements/charts |\n`;
+    budgetViolations.sort((a,b) => b.analysis.attentionBudget - a.analysis.attentionBudget).slice(0, 10).forEach(n => {
+        const type = n.analysis.attentionBudget > 100 ? '🔴 Desktop & Mobile' : '🟠 Mobile Only';
+        report += `| \`${n.routePath}\` | ${n.analysis.attentionBudget} | ${type} |\n`;
     });
 }
 report += `\n`;
 
 // 7. Mobile-Desktop Flow Divergence
 report += `## 7. Mobile-Desktop Flow Divergence\n`;
-report += `Pages with responsive visibility classes on interactive elements.\n\n`;
+report += `Pages with significant responsive visibility changes (hidden elements).\n\n`;
 const divergentPages = nodes.filter(n => n.analysis.mobileDivergence);
 if (divergentPages.length === 0) report += "No significant flow divergence detected.\n";
 else {
@@ -448,7 +521,7 @@ sortedByLoad.filter(n => n.analysis.cognitiveLoad > 80).forEach(n => {
 });
 
 // Low: Inefficient Paths
-[...studentPathEff, ...teacherPathEff].filter(p => p.steps > 3).forEach(p => {
+[...studentPathEff, ...teacherPathEff].filter(p => p.steps > 4).forEach(p => {
     report += `${priority++}. **[LOW] Optimize Path to \`${p.goal}\`**: Takes ${p.steps} steps. Consider adding a shortcut.\n`;
 });
 
