@@ -2,7 +2,14 @@ import fs from 'fs';
 import path from 'path';
 
 const SRC_DIR = path.join(process.cwd(), 'src');
-const REPORT_FILE = 'design-token-violations.md';
+const REPORT_DIR = path.join(process.cwd(), 'reports');
+const REPORT_FILE = path.join(REPORT_DIR, 'design-token-violations.md');
+
+// Ensure reports directory exists
+if (!fs.existsSync(REPORT_DIR)) {
+  fs.mkdirSync(REPORT_DIR, { recursive: true });
+}
+
 const IGNORED_FILES = [
   path.join(SRC_DIR, 'app', 'globals.css'),
   path.join(SRC_DIR, 'lib', 'styles', 'graph-tokens.ts'), // Tokens definition file
@@ -85,7 +92,9 @@ function getAllFiles(dir: string, fileList: string[] = []): string[] {
     const stat = fs.statSync(filePath);
 
     if (stat.isDirectory()) {
-      getAllFiles(filePath, fileList);
+      if (file !== 'node_modules' && file !== '.next' && file !== 'dist') {
+          getAllFiles(filePath, fileList);
+      }
     } else {
       if ((filePath.endsWith('.tsx') || filePath.endsWith('.css') || filePath.endsWith('.ts')) && !IGNORED_FILES.includes(filePath)) {
         fileList.push(filePath);
@@ -105,6 +114,9 @@ function scanFile(filePath: string): Violation[] {
     // Check for Hex
     let match;
     while ((match = HEX_REGEX.exec(lineContent)) !== null) {
+      // Ignore if inside a comment or string that looks like an ID or url
+      if (lineContent.includes('url(') || lineContent.trim().startsWith('//')) continue;
+
       violations.push({
         file: filePath,
         line: index + 1,
