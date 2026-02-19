@@ -1,19 +1,34 @@
 # Interaction Feedback Gap Report
 
-Audit of interactive components for missing visual feedback states (hover, focus, disabled).
-
-Total gaps found: 2
-
-| File | Element | Line | Missing States |
-| :--- | :--- | :--- | :--- |
-| `src/components/PersonalKnowledgeGraph.tsx` | `<button>` | 240 | disabled |
-| `src/components/planner/StudyLibrary.tsx` | `<a>` | 218 | focus |
-
-## Notes
-- **UI Library (`src/components/ui/`)**: Checked for presence of state modifiers in the file definition.
-- **Component Usage**: Checked for raw HTML tags (`<button>`, `<a>`, `<input>`) usage with inline Tailwind classes.
-- **States Checked**:
-  - Button: `hover`, `focus`, `disabled`
-  - Link: `hover`, `focus`
-  - Input/Textarea/Select: `focus`, `disabled`
-  - Checkbox/Switch: `focus`, `disabled`, `checked`
+| File | Element | Issue |
+|---|---|---|
+| src/app/(auth)/onboarding/page.tsx | button | Raw button without className (missing visual feedback check) |
+| src/app/(auth)/onboarding/page.tsx | button | Raw button without className (missing visual feedback check) |
+| src/app/(auth)/onboarding/page.tsx | button | Raw button without className (missing visual feedback check) |
+| src/app/(auth)/onboarding/page.tsx | button | Raw button without className (missing visual feedback check) |
+| src/app/(auth)/teacher-onboarding/page.tsx | button | Raw button without className (missing visual feedback check) |
+| src/app/(auth)/teacher-onboarding/page.tsx | button | Raw button without className (missing visual feedback check) |
+| src/app/(auth)/teacher-onboarding/page.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/ErrorBoundary.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/InteractiveGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/InteractiveGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/InteractiveGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/InteractiveGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/InteractiveGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/InteractiveGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/InteractiveGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/InteractiveGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/InteractiveGraph.tsx | div | Non-interactive element with onClick missing role="button" or tabIndex |
+| src/components/InteractiveGraph.tsx | div | Clickable div missing hover state or cursor-pointer |
+| src/components/PersonalKnowledgeGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/PersonalKnowledgeGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/PersonalKnowledgeGraph.tsx | button | Missing states: active, disabled |
+| src/components/PersonalKnowledgeGraph.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/StudentSelector.tsx | button | Missing states: active, disabled |
+| src/components/settings/StudentProfileForm.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/settings/StudentProfileForm.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/settings/StudentProfileForm.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/settings/TeacherProfileForm.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/settings/TeacherProfileForm.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/settings/TeacherProfileForm.tsx | button | Raw button without className (missing visual feedback check) |
+| src/components/ui/sidebar.tsx | button | Raw button without className (missing visual feedback check) |
