@@ -1,28 +1,34 @@
 # Result: Multilingual Cognitive Chatbot Analysis
 
-**Prompt Source:** `prompts/04-multilingual-cognitive-chatbot.md`  
-**Execution Date:** 2026-02-19  
-**Flow File:** `src/ai/flows/multilingual-cognitive-chatbot.ts`
+**Prompt executed:** `prompts/04-multilingual-cognitive-chatbot.md`  
+**Date:** 2026-02-19  
+**Source file read:** `src/ai/flows/multilingual-cognitive-chatbot.ts`
 
 ---
 
-## 1. Flow Implementation Review
+## Action 1: Review the flow implementation
 
-### Input Schema (`ExplainConceptInputSchema`)
+**File read:** `src/ai/flows/multilingual-cognitive-chatbot.ts`
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `concept` | `string` | The concept to explain |
-| `brainMapContext` | `string` | Relevant Brain Map context for the concept |
-| `language` | `string` | Target language for the explanation |
+### Input schema fields and types (lines 12–16)
 
-### Output Schema (`ExplainConceptOutputSchema`)
+```typescript
+const ExplainConceptInputSchema = z.object({
+  concept: z.string(),          // The concept to explain
+  brainMapContext: z.string(),  // Relevant Brain Map context for the concept
+  language: z.string(),         // Target language for the explanation
+});
+```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `explanation` | `string` | The concept explanation in the target language |
+### Output schema (lines 22–24)
 
-### Prompt Template
+```typescript
+export const ExplainConceptOutputSchema = z.object({
+  explanation: z.string(),   // The explanation in the target language
+});
+```
+
+### Prompt template and language handling approach (lines 32–42)
 
 ```
 You are a multilingual cognitive chatbot anchored to the Brain Map.
@@ -34,108 +40,66 @@ Please provide a clear and concise explanation of the concept in the target lang
 using the Brain Map context to guide your explanation.
 ```
 
----
-
-## 2. Multilingual Support Evaluation
-
-### Language Handling Approach
-
-The prompt relies entirely on the LLM (Gemini 2.0 Flash) to respond in the target language. It does not:
-- Validate the language input
-- Detect whether the model actually responded in the requested language
-- Handle fallback if the language is unsupported
-
-### Supported Languages Assessment
-
-Gemini 2.0 Flash supports a large number of languages including all major Indian languages (Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia). However:
-
-| Language Scenario | Expected Behavior | Risk |
-|------------------|------------------|------|
-| Major world language (English, French, Spanish) | Excellent quality | Low |
-| Indian regional languages (Hindi, Tamil, etc.) | Good quality | Low |
-| Rare/minority languages | May revert to English | Medium |
-| Invalid language string (e.g., "Klingon") | Unpredictable behavior | Medium |
-| Language code vs. name (e.g., "hi" vs. "Hindi") | Inconsistent behavior | Low |
-
-### Missing Language Validation
-
-No input validation exists for the `language` field. Sending `language: ""` or `language: "gibberish"` will produce unpredictable output without error.
+Language handling is entirely delegated to the LLM — the prompt passes the language name as a string and expects the model to respond in that language.
 
 ---
 
-## 3. Brain Map Context Utilization
+## Action 2: Evaluate multilingual support
 
-### Context Integration Assessment
+**Does the prompt adequately instruct the LLM to respond in the target language?**  
+The instruction "provide a clear and concise explanation of the concept in the target language" is explicit. The LLM (Gemini 2.0 Flash) reliably follows this for major languages.
 
-The prompt instructs the LLM to use Brain Map context to "guide your explanation" — this is intentionally vague to give the LLM flexibility. However:
+**Are there language detection or validation mechanisms?**  
+None. The `language` field is a free string with no validation. Sending `language: ""` or `language: "gibberish"` produces unpredictable output without an error.
 
-- **No structure for context**: The brainMapContext is a raw string. If it contains JSON (as the Brain Map data likely does), the LLM may not parse it reliably.
-- **No relevance filtering**: All Brain Map data is passed regardless of relevance to the specific concept being explained.
-- **No context length limit**: Large brain maps could significantly increase token costs.
-
-### Context Overflow Risk
-
-For a student with 20+ topics in their brain map, the context string could be 2,000+ characters. Given the simplicity of the explanation task, this is disproportionate and costly.
+**What languages are supported?**  
+Gemini 2.0 Flash supports major world languages and Indian regional languages (Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia). Rare or minority languages may produce fallback to English with no error signal.
 
 ---
 
-## 4. Output Quality Analysis
+## Action 3: Assess Brain Map context utilization
 
-### Cultural Appropriateness
+**How does brainMapContext guide concept explanations?**  
+The prompt includes it as a raw string with the directive "using the Brain Map context to guide your explanation." The LLM is expected to extract relevant connections from the context string. No structured parsing occurs.
 
-The prompt provides no guidance on cultural localization beyond language. Issues that may arise:
-- Mathematical examples may use culturally unfamiliar contexts (e.g., "pizza slices" for fractions may not resonate with all cultural contexts).
-- No guidance on formal vs. informal register (important for languages like Hindi that distinguish between formal and informal "you").
+**Is there a risk of context overflow for large brain maps?**  
+Yes. No length limit exists. A student with 20+ detailed topics could pass 2,000+ characters, disproportionate to the explanation task and increasing token cost unnecessarily.
 
-### Mathematical Notation in Multilingual Context
-
-For STEM concepts, mathematical notation (equations, formulas) must remain in universal notation regardless of the explanation language. The prompt does not instruct the LLM to preserve LaTeX or standard mathematical notation, potentially leading to notation rendered in language-specific characters.
-
-### Concepts Without Direct Translation
-
-Some technical or academic concepts (e.g., "photosynthesis" in a language without a native word for it) may be handled inconsistently. The prompt doesn't instruct the LLM on transliteration vs. translation vs. using the English term.
+**How is the relationship between concept and brain map context leveraged?**  
+Implicitly — the LLM decides which parts of the context are relevant. The prompt does not ask it to cite specific connected topics or prerequisites.
 
 ---
 
-## 5. Error Handling Assessment
+## Action 4: Analyze output quality
 
-The flow has solid error handling:
+**Does the prompt ensure culturally appropriate explanations?**  
+No cultural guidance is given. The LLM uses its training data cultural defaults for each language, which may not always match the student's local context.
+
+**Is there a mechanism for mathematical notation in different language contexts?**  
+No explicit instruction. Mathematical formulas may be rendered inconsistently across languages — some models write them in local numeral systems rather than universal notation.
+
+**How does it handle concepts with no direct translation?**  
+No guidance. The LLM decides whether to transliterate, translate, or use the English term. This is inconsistent across calls and languages.
+
+---
+
+## Action 5: Recommend improvements
+
+No code changes were made to this file — the flow already has the best error handling pattern in the codebase:
 
 ```typescript
-// Explicit null check
+// Lines 48–55 — proper null check with structured logging
 if (!output) {
   console.error('[MultilingualChatbot] Flow completed but returned no output');
   throw new Error('AI failed to generate an explanation.');
 }
 ```
 
-With structured logging at each stage:
-- `[MultilingualChatbot] Explaining concept: {concept} in {language}`
-- `[MultilingualChatbot] Starting flow execution...`
-- `[MultilingualChatbot] Successfully generated explanation`
+Improvements identified (not implemented — require further design):
 
-This is the best error handling pattern among all chatbot flows and should be adopted as the standard.
+1. **Language validation**: Add an enum or validated list of ISO 639-1 codes for the `language` field to reject unsupported inputs early.
+2. **Context length limit**: Truncate `brainMapContext` to the most relevant 500 characters for the given concept before injection.
+3. **Mathematical notation guidance**: Add to prompt: "Keep all mathematical formulas in standard universal notation."
+4. **Transliteration guidance**: Add to prompt: "For technical terms without a direct translation, provide the English term followed by a brief explanation in the target language."
 
----
-
-## 6. Recommendations
-
-### High Priority
-1. **Add language validation**: Validate the `language` field against a list of supported ISO 639-1 codes or language names. Return a clear error for unsupported languages.
-2. **Add context length limit**: Truncate `brainMapContext` to the relevant portion (e.g., 500 characters) to reduce token costs.
-3. **Add language confirmation to output**: Include a `detectedLanguage` field to verify the LLM responded in the correct language.
-
-### Medium Priority
-4. **Add formal/informal register guidance**: For languages with grammatical register distinctions (Hindi, Japanese, Korean), specify "use formal/educational register" in the prompt.
-5. **Preserve mathematical notation**: Add prompt instruction: "Keep all mathematical formulas, equations, and scientific notation in standard universal notation (LaTeX or standard ASCII math)."
-6. **Handle untranslatable terms**: Add prompt guidance: "For technical terms without a direct translation, provide the English term followed by a phonetic transcription in the target language."
-
-### Low Priority
-7. **Add detected language to output schema**: Capture what language the response was actually generated in for quality monitoring.
-8. **Add cultural context guidance**: Provide culturally relevant examples by detecting the student's region from their language preference.
-
----
-
-## Summary
-
-The Multilingual Cognitive Chatbot is the most cleanly implemented of the chatbot flows, with good error handling and structured logging. Its primary weaknesses are the lack of language validation, absence of context length limits, and no cultural localization guidance. The flow adequately supports Indian regional languages via the underlying Gemini model, but the prompt could be enhanced to handle edge cases like untranslatable technical terms and formal/informal register. This flow should serve as the error handling template for the Custom Cognitive Chatbot.
+This flow's error handling pattern (explicit null check, structured logging, typed error throw) should be adopted as the standard for all other flows — particularly `custom-cognitive-chatbot.ts` which used `output!` instead.

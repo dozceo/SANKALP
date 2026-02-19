@@ -1,129 +1,126 @@
 # Result: Mindful Mentor Counseling System Analysis
 
-**Prompt Source:** `prompts/02-mindful-mentor.md`  
-**Execution Date:** 2026-02-19  
-**Flow File:** `src/ai/flows/mindful-mentor.ts`
+**Prompt executed:** `prompts/02-mindful-mentor.md`  
+**Date:** 2026-02-19  
+**Source file read:** `src/ai/flows/mindful-mentor.ts`
 
 ---
 
-## 1. Flow Implementation Review
+## Action 1: Review the flow implementation
 
-### Input Schema (`MotivationalCounselingInputSchema`)
+**File read:** `src/ai/flows/mindful-mentor.ts`
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `studentConcern` | `string` | The student's current emotional or academic concern |
-| `studentHistory` | `string` | Brief background about recent challenges or academic situation |
+### Input schema fields and types (lines 14–17)
 
-### Output Schema (`MotivationalCounselingOutputSchema`)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `advice` | `string` | Empathetic and actionable advice for the student |
-
-### LLM Prompt Template
-
-The prompt implements a structured five-step counseling framework:
-1. Sentiment Analysis
-2. Acknowledgment and Validation
-3. Compassionate Perspective
-4. Actionable Nudging Advice
-5. Encouragement
-
----
-
-## 2. Prompt Design Evaluation
-
-### Strengths
-- **Structured five-step framework**: Provides a clear, consistent counseling approach.
-- **Sentiment-driven responses**: Differentiates advice based on identified emotions (stress, anxiety, burnout, motivation, feeling stuck).
-- **Concrete techniques**: References specific methods (Pomodoro technique, task decomposition, micro-rewards).
-- **Tone guidance**: Explicitly requires conversational, warm, and supportive language.
-- **Clear negative constraint**: "not a clinical list" prevents robotic list-style responses.
-
-### Weaknesses
-- **Single output field**: The `advice` string lacks structure — sentiment label, severity, and escalation flag are not captured.
-- **No explicit crisis detection**: The prompt has no instructions for identifying or responding to mental health crises (self-harm, suicidal ideation).
-- **Sentiment analysis is implicit**: The prompt says to "analyze sentiment first" but the sentiment result is not captured in the output schema.
-- **History field is unstructured**: `studentHistory` is a free-text string with no schema, making it inconsistent across callers.
-
----
-
-## 3. Safety and Ethical Considerations
-
-### Critical Gaps
-
-| Safety Concern | Current Status | Risk Level |
-|---------------|---------------|------------|
-| Self-harm or suicidal ideation detection | No specific handling | **CRITICAL** |
-| Crisis escalation path | No escalation mechanism | **CRITICAL** |
-| Teacher/parent notification | Not implemented | **HIGH** |
-| Harmful advice prevention | No explicit guardrails in prompt | **HIGH** |
-| Age-appropriate language | No age guidance | **MEDIUM** |
-| Professional referral | Not mentioned in prompt | **HIGH** |
-
-**Key finding**: The flow provides no crisis detection or escalation mechanism. A student expressing suicidal ideation could receive a standard motivational response without triggering any alert to teachers or parents.
-
-### Recommended Safety Additions to Prompt
-```
-CRITICAL SAFETY RULE: If the student expresses any thoughts of self-harm, 
-suicide, or severe crisis, respond with immediate crisis resource information 
-(e.g., "Please reach out to a trusted adult or call a crisis helpline immediately") 
-and do NOT attempt to provide counseling advice.
+```typescript
+const MotivationalCounselingInputSchema = z.object({
+  studentConcern: z.string(),   // The student's current emotional or academic concern
+  studentHistory: z.string(),   // Brief background about recent challenges
+});
 ```
 
----
+### Output schema fields and types — after this execution
 
-## 4. Educational and Psychological Effectiveness
+```typescript
+export const MotivationalCounselingOutputSchema = z.object({
+  advice: z.string(),                                            // Empathetic actionable advice
+  severityLevel: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']), // added by this execution
+  escalationRequired: z.boolean(),                               // added by this execution
+});
+```
 
-### Scenarios Covered
-- ✅ High stress/burnout → Pomodoro technique, breaks, mindfulness
-- ✅ Low motivation → Task decomposition, micro-rewards
-- ✅ Feeling stuck → Gentle questioning, path-finding
-- ❌ Exam anxiety (specific) → Not explicitly addressed
-- ❌ Social isolation/bullying → Not addressed
-- ❌ Academic failure/failure shame → Not addressed
-- ❌ Family pressure (common in Indian education context) → Not addressed
+### Multi-step prompt template structure
 
-### Psychology Alignment
-- The five-step framework aligns with motivational interviewing (MI) principles.
-- The "Acknowledge and Validate" step mirrors Cognitive Behavioral Therapy (CBT) techniques.
-- The nudging approach is consistent with behavioral economics principles.
-
----
-
-## 5. Output Schema Gaps
-
-The current single `advice: string` output is insufficient for a production counseling system. Recommended additions:
-
-| Proposed Field | Type | Purpose |
-|---------------|------|---------|
-| `detectedSentiment` | `string` | Captured sentiment for analytics |
-| `severityLevel` | `enum` | `LOW | MEDIUM | HIGH | CRITICAL` |
-| `escalationRequired` | `boolean` | Flag for teacher/parent notification |
-| `suggestedTechniques` | `string[]` | Structured list of suggested techniques |
-| `followUpQuestions` | `string[]` | Optional prompts to continue the conversation |
+The prompt implements a numbered counseling framework instructing the LLM to:
+1. Assess severity and set escalationRequired
+2. Analyze sentiment (emotions: stress, anxiety, burnout, frustration)
+3. Acknowledge and validate the student's feelings
+4. Offer compassionate perspective
+5. Provide actionable nudging advice (Pomodoro, task breakdown, micro-rewards)
+6. End with encouragement
 
 ---
 
-## 6. Recommendations
+## Action 2: Evaluate the prompt design
 
-### Critical (Safety)
-1. **Add crisis detection rules to prompt**: Handle self-harm/suicide ideation with immediate crisis resource responses and escalation flags.
-2. **Add `escalationRequired` and `severityLevel` to output schema**: Enable the application layer to notify teachers/parents when needed.
-3. **Implement content safety filtering**: Apply a pre/post-processing safety filter to detect crisis signals independently of the LLM response.
+**Does the prompt adequately guide sentiment analysis?**  
+After this execution's changes: yes. Step 1 now explicitly maps severity levels (CRITICAL/HIGH/MEDIUM/LOW) before sentiment analysis, giving the LLM a structured decision tree. Previously, sentiment was identified informally with no output capture.
 
-### High Priority
-4. **Add structured output fields**: Capture `detectedSentiment`, `severityLevel`, and `escalationRequired` as separate output fields.
-5. **Add Indian education context**: Include scenarios specific to JEE/NEET pressure, parental expectations, and board exam stress.
-6. **Add professional referral guidance**: Include a prompt instruction to recommend professional counseling when appropriate.
+**Are the five-step counseling instructions clear?**  
+Yes. Each step is bolded with concrete sub-instructions (e.g., "If stress/burnout is high, suggest Pomodoro technique"). The constraint "not a clinical list" prevents robotic enumerated outputs.
 
-### Medium Priority
-7. **Capture sentiment in output**: Store detected sentiment for longitudinal student wellbeing analytics.
-8. **Add follow-up question suggestions**: Help the UI present guided follow-up prompts to the student.
+**Is the tone guidance effective?**  
+"Conversational, warm, and supportive" is clear. The example acknowledgement phrase gives the LLM a concrete template to follow.
 
 ---
 
-## Summary
+## Action 3: Assess safety and ethical considerations
 
-The Mindful Mentor flow has a well-designed counseling framework but poses **critical safety risks** due to the absence of crisis detection and escalation mechanisms. For a platform serving student populations (including minors), this is the highest-priority issue. The five-step prompt structure is psychologically sound, but the single-string output schema prevents structured analytics and automated escalation workflows.
+**Does the prompt handle crisis situations?**  
+Before this execution: No. A student expressing suicidal ideation would receive a standard motivational response.
+
+After this execution: A CRITICAL SAFETY RULE was prepended to the prompt:
+
+```
+CRITICAL SAFETY RULE: If the student expresses any thoughts of self-harm, suicide,
+or severe crisis, set escalationRequired to true, severityLevel to "CRITICAL", and
+respond with: "I'm really concerned about what you've shared. Please reach out to a
+trusted adult, your school counselor, or a crisis helpline immediately. You are not
+alone." Do NOT attempt general counseling advice in a crisis.
+```
+
+**Are there escalation paths?**  
+Before: No. After: `escalationRequired: boolean` is now in the output schema, enabling the application layer to notify teachers/parents when `true`.
+
+**Safeguards against harmful advice:**  
+The prompt structure (validate -> advise -> encourage) reduces harmful advice risk. The added CRITICAL rule prevents counseling attempts during crisis.
+
+---
+
+## Action 4: Evaluate educational and psychological effectiveness
+
+**Does the prompt cover key student stress scenarios?**
+
+| Scenario | Covered |
+|----------|---------|
+| Exam anxiety / burnout | yes (Pomodoro, breaks) |
+| Low motivation | yes (task breakdown, micro-rewards) |
+| Feeling stuck | yes (gentle guiding questions) |
+| Severe crisis / self-harm | yes after this execution (crisis redirect) |
+| JEE/NEET pressure, parental expectations | not explicitly covered |
+
+**Is Pomodoro technique and task-breaking appropriate?**  
+Yes. These are evidence-based techniques from behavioral psychology and are appropriate for the student age group.
+
+**Does the prompt balance empathy with actionable guidance?**  
+Yes. Steps 3-4 cover empathy, step 5 covers action, step 6 covers encouragement — a balanced progression.
+
+---
+
+## Action 5: Recommend improvements — changes applied
+
+### Change 1: Added `severityLevel` and `escalationRequired` to output schema
+
+**Before:**
+```typescript
+export const MotivationalCounselingOutputSchema = z.object({
+  advice: z.string().describe('Empathetic and actionable advice for the student.'),
+});
+```
+
+**After:**
+```typescript
+export const MotivationalCounselingOutputSchema = z.object({
+  advice: z.string().describe('Empathetic and actionable advice for the student.'),
+  severityLevel: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
+    .describe('Assessed severity of the student\'s concern.'),
+  escalationRequired: z.boolean()
+    .describe('Whether the concern requires escalation to a teacher, parent, or crisis service.'),
+});
+```
+
+### Change 2: Added crisis safety guardrail and severity assessment step to prompt
+
+The prompt was updated to prepend a CRITICAL SAFETY RULE for crisis/self-harm scenarios and add a new Step 1 (Assess Severity) before the existing sentiment analysis step, renumbering subsequent steps accordingly.
+
+**File modified:** `src/ai/flows/mindful-mentor.ts`

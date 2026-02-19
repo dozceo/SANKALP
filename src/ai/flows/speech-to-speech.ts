@@ -10,8 +10,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import wav from 'wav';
 import {googleAI} from '@genkit-ai/googleai';
+import {toWav} from '@/lib/audio-utils';
 
 const SpeechToSpeechInputSchema = z.string().describe(
   "A user's speech recording, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
@@ -25,30 +25,6 @@ export type SpeechToSpeechOutput = z.infer<typeof SpeechToSpeechOutputSchema>;
 
 export async function speechToSpeech(input: SpeechToSpeechInput): Promise<SpeechToSpeechOutput> {
   return speechToSpeechFlow(input);
-}
-
-// Helper function to convert PCM audio data to WAV format
-async function toWav(
-  pcmData: Buffer,
-  channels = 1,
-  rate = 24000,
-  sampleWidth = 2
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
-
-    let bufs: any[] = [];
-    writer.on('error', reject);
-    writer.on('data', (d) => bufs.push(d));
-    writer.on('end', () => resolve(Buffer.concat(bufs).toString('base64')));
-
-    writer.write(pcmData);
-    writer.end();
-  });
 }
 
 const speechToSpeechFlow = ai.defineFlow(

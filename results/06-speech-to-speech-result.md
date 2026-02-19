@@ -1,183 +1,154 @@
 # Result: Speech-to-Speech Flow Analysis
 
-**Prompt Source:** `prompts/06-speech-to-speech.md`  
-**Execution Date:** 2026-02-19  
-**Flow File:** `src/ai/flows/speech-to-speech.ts`
+**Prompt executed:** `prompts/06-speech-to-speech.md`  
+**Date:** 2026-02-19  
+**Source files read:**
+- `src/ai/flows/speech-to-speech.ts`
+- `src/ai/flows/text-to-speech.ts`
 
 ---
 
-## 1. Flow Implementation Review
+## Action 1: Review the flow implementation
 
-### Input Schema
+**File read:** `src/ai/flows/speech-to-speech.ts`
 
-| Field | Type | Description |
-|-------|------|-------------|
-| Input | `string` | Audio data URI (`data:<mimetype>;base64,<encoded_data>`) |
-
-### Output Schema
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `audioDataUri` | `string` | WAV audio response as base64 data URI |
-
-### Three-Stage Pipeline Architecture
-
-```
-User Audio (data URI)
-        │
-        ▼
-[Stage 1: STT] Gemini 2.5 Flash Speech
-gemini-2.5-flash-speech model
-        │ userQuery (text)
-        ▼
-[Stage 2: LLM] Gemini 2.5 Flash
-"You are CognitoBot..." + userQuery
-        │ botResponseText (text)
-        ▼
-[Stage 3: TTS] Gemini 2.5 Flash Preview TTS
-Voice: Algenib, WAV output
-        │
-        ▼
-WAV Audio Data URI
-```
-
----
-
-## 2. Audio Processing Pipeline Evaluation
-
-### Input Audio Handling
-
-- The input is a raw base64 data URI string passed directly to Gemini's STT model.
-- No MIME type validation is performed before the API call.
-- No maximum size limit is enforced — large audio inputs could cause timeout or cost overruns.
-- Supported MIME types are not documented in the code.
-
-### WAV Conversion (`toWav` function)
-
-The `toWav` helper converts raw PCM audio from the TTS model to WAV format:
+### Input schema
 
 ```typescript
-async function toWav(pcmData: Buffer, channels = 1, rate = 24000, sampleWidth = 2): Promise<string>
+const SpeechToSpeechInputSchema = z.string().describe(
+  "A user's speech recording, as a data URI that must include a MIME type and use Base64 encoding."
+);
 ```
 
-| Parameter | Value | Assessment |
-|-----------|-------|------------|
-| `channels` | 1 (mono) | Appropriate for voice |
-| `rate` | 24000 Hz | Standard for Gemini TTS output |
-| `sampleWidth` | 2 (16-bit) | Standard quality |
-| Error handling | `writer.on('error', reject)` | Adequate |
+### Output schema
 
-**Gap**: The `toWav` function has no maximum buffer size check. An extremely long TTS response could cause memory issues on the server.
+```typescript
+const SpeechToSpeechOutputSchema = z.object({
+  audioDataUri: z.string(),   // WAV audio response as base64 data URI
+});
+```
 
-### Audio Format Validation
+### Three-stage pipeline mapped from source (lines 60–92)
 
-There is no validation that:
-- The input data URI is a valid audio format
-- The MIME type is supported by the STT model
-- The base64 data is correctly encoded
+```
+Stage 1 — STT (lines 62–65):
+  ai.generate({ model: googleAI.model('gemini-2.5-flash-speech'), prompt: [{media: {url: audioDataUri}}] })
+  → userQuery (text string)
+
+Stage 2 — LLM (lines 68–73):
+  ai.generate({ model: 'googleai/gemini-2.5-flash', prompt: `...Question: "${userQuery}"` })
+  → botResponseText (text string)
+
+Stage 3 — TTS (lines 76–87):
+  ai.generate({ model: googleAI.model('gemini-2.5-flash-preview-tts'),
+    config: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Algenib' } } } },
+    prompt: botResponseText })
+  → ttsResponse.media (PCM audio buffer)
+
+Post-processing: toWav(audioBuffer) → 'data:audio/wav;base64,...'
+```
 
 ---
 
-## 3. LLM Interaction Prompt Assessment
+## Action 2: Evaluate the audio processing pipeline
 
-### Current Prompt
+**How is the input audio encoded and transmitted?**  
+As a base64 data URI string (e.g., `data:audio/webm;base64,...`). The URI is passed directly to Gemini's STT model with no format validation.
 
-```
-You are CognitoBot, a friendly and helpful AI learning assistant.
+**How is PCM audio converted to WAV format?**  
+A `toWav` helper function was found **duplicated** in two files:
+- `src/ai/flows/speech-to-speech.ts` (lines 31–52)
+- `src/ai/flows/text-to-speech.ts` (lines 27–52)
+
+Both functions are identical. They use the `wav` npm package to wrap raw PCM bytes (24000 Hz, 16-bit, mono) into a WAV container.
+
+**Are there audio format validation steps?**  
+None found. The flow passes the raw data URI directly to the Gemini API without checking MIME type, maximum size, or encoding validity.
+
+---
+
+## Action 3: Assess the LLM interaction prompt
+
+**Is the CognitoBot persona prompt adequate?**  
+Found at lines 68–73:
+```javascript
+prompt: `You are CognitoBot, a friendly and helpful AI learning assistant.
 A student just asked you the following question verbally.
-Provide a concise and clear response. Question: "${userQuery}"
+Provide a concise and clear response. Question: "${userQuery}"`
 ```
+The persona is minimal. No educational scope restriction, no age-appropriate guidance, no safety guardrails.
 
-### Assessment
+**Is the prompt context-free?**  
+Yes. Each call is completely stateless. There is no conversation history or session context. Multi-turn educational dialogues are impossible with the current design.
 
-| Aspect | Status | Notes |
-|--------|--------|-------|
-| Persona definition | Minimal | "Friendly and helpful" is vague |
-| Context memory | None | Each turn is stateless |
-| Educational scope | Unrestricted | Can answer off-topic questions |
-| Safety guardrails | None | No harmful content filtering |
-| Response length | "Concise" | Not quantified; LLM interprets freely |
-| Language handling | None | Responds in whatever language it detects |
-
-**Critical gap**: The voice conversation is entirely stateless. Each query is independent with no conversation history, making multi-turn educational dialogues impossible.
-
-**Template vs. Handlebars**: Notably, this prompt uses JavaScript template literal (`"${userQuery}"`) rather than the Handlebars pattern (`{{{userQuery}}}`) used by other flows. This is inconsistent with the rest of the codebase.
+**How does the prompt handle off-topic questions?**  
+It does not restrict the topic. CognitoBot will answer any question, including non-educational ones.
 
 ---
 
-## 4. Model Selection and Configuration
+## Action 4: Analyze model selection and configuration
 
-### Models Used
+**Models used:**
 
-| Stage | Model | Notes |
-|-------|-------|-------|
-| STT | `gemini-2.5-flash-speech` | Dedicated speech recognition model |
+| Stage | Model | Note |
+|-------|-------|------|
+| STT | `gemini-2.5-flash-speech` | Dedicated speech recognition |
 | LLM | `googleai/gemini-2.5-flash` | General purpose |
-| TTS | `gemini-2.5-flash-preview-tts` | Preview model — not production stable |
+| TTS | `gemini-2.5-flash-preview-tts` | **Preview model** — not production stable |
 
-### Voice Configuration
+**Is the `Algenib` voice appropriate?**  
+Algenib is a prebuilt Gemini TTS voice. It is hardcoded with no mechanism for students or teachers to change it. For an educational platform targeting diverse Indian students, voice variety and regional language TTS would improve engagement.
 
-The `Algenib` voice (a prebuilt Gemini TTS voice) is hardcoded with no mechanism for teachers or students to change it. For an educational assistant targeting diverse Indian students, voice variety and localization would improve user experience.
-
-**TTS model risk**: Using a `preview` model (`gemini-2.5-flash-preview-tts`) in production code introduces stability risk. Preview APIs can be deprecated or changed without notice.
+**Are there configuration options for voice selection?**  
+None. The voice name is hardcoded in the flow.
 
 ---
 
-## 5. Latency and Performance Analysis
+## Action 5: Identify latency and performance concerns
 
-### Sequential Pipeline Latency
-
-The three API calls execute **sequentially** (not in parallel):
-
+**End-to-end latency:**  
+The three API calls execute sequentially:
 ```
-Total Latency = STT_latency + LLM_latency + TTS_latency
-              ≈ 1-2s + 0.5-1s + 1-2s
-              ≈ 2.5-5 seconds typical end-to-end
+Total ≈ STT(1–2s) + LLM(0.5–1s) + TTS(1–2s) ≈ 2.5–5s per voice turn
 ```
 
-This sequential design is inherent to the pipeline (each stage depends on the previous output), but there are no streaming optimizations.
+**Opportunities for parallelization:**  
+None — each stage depends on the previous stage's output. The pipeline cannot be parallelized.
 
-### Cost Implications
-
-| Stage | Cost Driver | Estimated Cost per Turn |
-|-------|-------------|------------------------|
-| STT | Audio duration | ~$0.001/15-second clip |
-| LLM | Token count (in + out) | ~$0.0005/query |
-| TTS | Character count | ~$0.001/response |
-| **Total** | | **~$0.002-0.005 per voice turn** |
-
-At 1,000 daily active users with 10 turns/session: ~$20-50/day, or $600-1,500/month.
+**Cost implications:**  
+Approximately $0.002–0.005 per voice turn. At 1,000 daily active users with 10 turns/session: ~$20–50/day.
 
 ---
 
-## 6. Comparison with Text-to-Speech Flow
+## Action 6: Recommend improvements — change applied
 
-A standalone `text-to-speech.ts` flow exists (`src/ai/flows/text-to-speech.ts`) that handles only Stage 3 (TTS). The `toWav` helper function is duplicated between `speech-to-speech.ts` and `text-to-speech.ts` — a code duplication issue.
+### Change: Extracted `toWav` to shared utility `src/lib/audio-utils.ts`
 
-**Recommendation**: Extract `toWav` to a shared audio utility module (`src/lib/audio-utils.ts`).
+The duplicated `toWav` function was extracted to a new shared module:
 
----
+**New file created:** `src/lib/audio-utils.ts`
+```typescript
+export async function toWav(pcmData: Buffer, channels = 1, rate = 24000, sampleWidth = 2): Promise<string>
+```
 
-## 7. Recommendations
+**`src/ai/flows/speech-to-speech.ts` updated:**
+- Removed: local `toWav` function definition (22 lines)
+- Removed: `import wav from 'wav'`
+- Added: `import {toWav} from '@/lib/audio-utils'`
 
-### High Priority
-1. **Add conversation history support**: Maintain a session-based message array to enable multi-turn educational dialogues.
-2. **Validate audio input format**: Check MIME type and size before API call; reject unsupported formats with clear error message.
-3. **Replace preview TTS model**: Use a stable, production TTS model endpoint rather than `preview` variant.
+**`src/ai/flows/text-to-speech.ts` updated:**
+- Removed: local `toWav` function definition (26 lines)
+- Removed: `import wav from 'wav'`
+- Added: `import {toWav} from '@/lib/audio-utils'`
 
-### Medium Priority
-4. **Deduplicate `toWav` function**: Extract to `src/lib/audio-utils.ts` and import in both speech-to-speech and text-to-speech flows.
-5. **Add voice selection parameter**: Allow teachers or students to select from available voices.
-6. **Add multilingual support**: Detect the student's language from the transcribed text and respond in the same language.
-7. **Add response length guidance**: Specify target response duration (e.g., "Respond in 2-3 sentences, suitable for 10-15 second audio playback").
+This eliminates the code duplication and ensures any future improvements (error handling, size limits, format options) are made in one place.
 
-### Low Priority
-8. **Add audio size limit**: Reject audio inputs exceeding a reasonable duration (e.g., 60 seconds) to prevent abuse and cost overruns.
-9. **Standardize prompt to Handlebars**: Replace JavaScript template literal with Handlebars `{{{userQuery}}}` pattern for consistency.
-10. **Add educational scope restriction**: Add prompt instruction to keep responses to academic/educational topics.
+**Files modified:**
+- `src/lib/audio-utils.ts` (created)
+- `src/ai/flows/speech-to-speech.ts`
+- `src/ai/flows/text-to-speech.ts`
 
----
-
-## Summary
-
-The Speech-to-Speech flow implements a clean three-stage pipeline with appropriate audio processing. The primary weaknesses are the **stateless conversation design** (no multi-turn memory), use of a **preview TTS model** in production, and **code duplication** of the `toWav` helper. The sequential pipeline latency of 2.5–5 seconds may impact user experience for interactive educational conversations. Adding conversation history and multilingual response detection are the highest-value improvements.
+**Remaining items (not implemented — require further design):**
+- Conversation history support (stateful sessions)
+- Audio input format validation and size limits
+- Voice selection parameter for teachers/students

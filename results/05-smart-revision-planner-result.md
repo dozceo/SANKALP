@@ -1,199 +1,154 @@
 # Result: Smart Revision Planner Analysis
 
-**Prompt Source:** `prompts/05-smart-revision-planner.md`  
-**Execution Date:** 2026-02-19  
-**Flow File:** `src/ai/flows/smart-revision-planner.ts`
+**Prompt executed:** `prompts/05-smart-revision-planner.md`  
+**Date:** 2026-02-19  
+**Source file read:** `src/ai/flows/smart-revision-planner.ts`
 
 ---
 
-## 1. Flow Implementation Review
+## Action 1: Review the flow implementation
 
-### Input Schema (`SmartRevisionPlannerInputSchema`)
+**Files read:**
+- `src/ai/flows/smart-revision-planner.ts`
+- `src/ai/adk/decision-engine.ts`
+- `src/ai/adk/types.ts`
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `brainMap` | `string` | Student's Brain Map data as a JSON string |
-| `studentId` | `string` | Unique identifier for the student |
-
-### Output Schema (`SmartRevisionPlannerOutputSchema`)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `revisionList` | `array` | Up to 5 prioritized topics for revision |
-| `revisionList[].topic` | `string` | Topic name |
-| `revisionList[].reason` | `string` | Student-friendly explanation of why to revise |
-| `revisionList[].priority` | `enum` | `'HIGH' | 'MEDIUM' | 'LOW'` |
-| `revisionList[].masteryScore` | `number?` | Predicted mastery probability (0–1) |
-
-### Complete Data Flow Architecture
-
-```
-Student Request
-     │
-     ▼
-[DB Layer] getStudent() + getQuizResults()
-     │
-     ▼
-[Feature Extraction] extractMasteryFeatures() per topic
-     │
-     ▼
-[Cache Check] getBatchedCachedPredictions()
-     │
-     ├─── Cache HIT ────────────────────────────────►┐
-     │                                                │
-     └─── Cache MISS ──► [ML Layer] batchPredictMastery()
-                              │
-                              ▼
-                         cachePrediction() [async, fire-and-forget]
-                              │
-                              ▼
-                    [ADK Decision Engine] makeRevisionDecision()
-                              │
-                              ▼
-                    [LLM Layer] explanationPrompt()
-                              │
-                              ▼
-                    Combined revisionList output
-```
-
----
-
-## 2. ML-ADK-LLM Hybrid Architecture Evaluation
-
-### Architecture Design Assessment
-
-This flow demonstrates the most sophisticated architecture in the SANKALP platform:
-
-| Component | Role | Responsibility |
-|-----------|------|----------------|
-| **ML Model** | `batchPredictMastery()` | Predict mastery probability per topic |
-| **ADK Engine** | `makeRevisionDecision()` | Apply policy rules (urgency, spaced repetition, exam mode) |
-| **LLM** | `explanationPrompt()` | Generate motivating, student-friendly explanations |
-
-**Strength**: Clear separation of concerns — ML decides "what mastery level," ADK decides "should we revise," LLM decides "how to explain it." This prevents the LLM from making grading or scheduling decisions.
-
-### ADK Decision Rules Implemented
-
-From `src/ai/adk/decision-engine.ts`:
-
-| Rule | Trigger Condition | Action | Priority |
-|------|------------------|--------|---------|
-| Exam Cramming | daysUntilExam ≤ 3 AND mastery < 0.6 | URGENT_REVISION | HIGH |
-| Critical Mastery | mastery < 0.4 AND days_until_forget < 3 | URGENT_REVISION | HIGH |
-| Attention Risk | mastery < 0.4 AND attention_risk = HIGH | ADAPTIVE_TEACHING | HIGH |
-| Stale Knowledge | 0.4 ≤ mastery < 0.6 AND days_since_revision > 7 | SCHEDULED_REVISION | MEDIUM |
-
-### LLM Role (Appropriately Limited)
-
-The LLM is only asked to explain **why** to revise topics already selected by the ADK. The prompt template is:
-
-```
-Topics to explain: {{{topicsToExplain}}}
-For each topic, use the reason_code (URGENT_REVISION, SCHEDULED_REVISION, FALLBACK)
-to tailor the explanation (1-2 sentences)...
-```
-
-This is an excellent design: the LLM cannot override ML/ADK decisions, only humanize them.
-
----
-
-## 3. Caching and Performance Assessment
-
-### Cache Implementation
+### Input schema (lines 31–34)
 
 ```typescript
-cachePrediction({
-  studentId, topic, masteryProbability, confidence,
-  daysSinceRevision, createdAt,
-  expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour TTL
-}).catch(console.error);  // Fire-and-forget
+const SmartRevisionPlannerInputSchema = z.object({
+  brainMap: z.string(),    // Student's Brain Map as a JSON string
+  studentId: z.string(),   // Unique identifier for the student
+});
 ```
 
-| Cache Property | Value | Assessment |
-|---------------|-------|------------|
-| TTL | 1 hour | Reasonable for daily revision planning |
-| Cache scope | Per-student, per-topic | Correct granularity |
-| Write strategy | Fire-and-forget async | Risk: Cache may not complete before next request |
-| Batch lookup | `getBatchedCachedPredictions()` | Efficient multi-key lookup |
+### Output schema (lines 36–49)
 
-### Race Condition Risk
+```typescript
+SmartRevisionPlannerOutputSchema = z.object({
+  revisionList: z.array(z.object({
+    topic: z.string(),
+    reason: z.string(),
+    priority: z.enum(['HIGH', 'MEDIUM', 'LOW']),
+    masteryScore: z.number().optional(),   // 0.0 to 1.0
+  })),
+});
+```
 
-The fire-and-forget cache write (`cachePrediction().catch(console.error)`) means that if two revision plan requests arrive simultaneously for the same student, both will perform ML predictions (cache miss) and attempt to write the same predictions, causing a race condition. Under normal usage this is benign, but under load it wastes ML compute.
+### Complete data flow mapped from source
+
+```
+smartRevisionPlannerFlow(input)
+  1. JSON.parse(input.brainMap)            — parse brain map
+  2. getStudent(studentId)                  — DB fetch
+  3. getQuizResults(studentId, 100)         — DB fetch
+  4. extractMasteryFeatures(topic, history) — per topic
+  5. getBatchedCachedPredictions(...)       — cache lookup
+  6. batchPredictMastery(uncachedTopics)    — ML model call
+  7. cachePrediction(...).catch(console.error) — fire-and-forget write
+  8. makeRevisionDecision(context)          — ADK policy engine
+  9. logDecision(context, decision)         — analytics
+  10. explanationPrompt({topicsToExplain})  — LLM explains WHY
+  11. combine ML priorities + LLM reasons  — final output
+```
 
 ---
 
-## 4. Fallback Mechanisms Analysis
+## Action 2: Evaluate the ML-ADK-LLM hybrid architecture
 
-### Fallback Chain
+**How does ML mastery prediction integrate with ADK decision rules?**  
+ML (`batchPredictMastery`) outputs a `mastery_probability` (0–1) and `confidence` per topic. The ADK (`makeRevisionDecision`) uses these values as inputs to apply explicit policy rules — e.g., "if mastery < 0.4 AND days_until_forget < 3 → URGENT_REVISION."
 
-```
-ML Prediction fails
-        │
-        ▼
-Is daysSinceLastRevision > 10?
-        │
-    YES │              NO
-        ▼               ▼
-  Add with         Skip topic
-  MEDIUM priority,
-  mastery=0.5
-```
+**What is the ADK decision engine's role vs. the LLM's role?**
 
-### Fallback Assessment
+| Component | Decides | Does NOT decide |
+|-----------|---------|-----------------|
+| ML model | mastery probability | whether to revise |
+| ADK engine | whether to revise, priority, content strategy | why in student-friendly terms |
+| LLM | student-friendly explanation of why | which topics to revise |
 
-| Scenario | Fallback Behavior | Assessment |
-|----------|------------------|------------|
-| ML prediction error | 10-day threshold fallback | **Adequate** |
-| Student not found in DB | Uses brainMap.quizResults | **Good** |
-| LLM explanation fails | Hardcoded fallback reasons | **Good** |
-| All topics have predictions | No fallback needed | N/A |
-| brainMap JSON parse fails | Returns `{ revisionList: [] }` | **Acceptable** |
+This is a clean separation. The LLM cannot override the ML or ADK decisions.
 
-**Gap**: When the entire ML batch prediction fails (e.g., ML service down), the fallback applies a simple 10-day heuristic. This could result in missing topics with low mastery but recent revision.
+**How are the three components decoupled?**  
+ML outputs are passed as `MLSignals` struct. ADK operates on `MLSignals` and returns `ADKDecision`. LLM only receives a formatted string listing topics with their reason codes. No component has direct knowledge of the others' internals.
 
 ---
 
-## 5. Revision Prioritization Logic
+## Action 3: Assess caching and performance
 
-### Sorting Algorithm
+**How does batch prediction caching work?**  
+`getBatchedCachedPredictions(studentId, topicNames)` does a multi-key cache lookup. Topics with a cache hit skip the ML call. Only cache-miss topics are sent to `batchPredictMastery`.
+
+**What is the cache TTL and expiration strategy?**  
+Found at line ~100:
+```typescript
+expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour TTL
+```
+1-hour TTL. This is appropriate for daily revision planning.
+
+**Are there race conditions in the async cache writes?**  
+Yes. The cache write is fire-and-forget:
+```typescript
+cachePrediction({...}).catch(console.error);  // not awaited
+```
+Two simultaneous requests for the same student will both miss the cache, perform duplicate ML calls, and write conflicting results. Under normal usage this is benign; under burst load it wastes ML compute.
+
+---
+
+## Action 4: Analyze the fallback mechanisms
+
+**What happens when ML prediction fails?**  
+Per-topic fallback at lines ~135–145:
+```typescript
+if (topic.daysSinceLastRevision && topic.daysSinceLastRevision > 10) {
+  decisions.push({ topic, masteryProbability: 0.5, priority: "MEDIUM", adkDecision: null });
+}
+```
+Topics with >10 days since last revision are included with MEDIUM priority and 50% assumed mastery.
+
+**What happens when the LLM explanation fails?**  
+Hardcoded fallback reasons by action type (lines ~210–220):
+```typescript
+if (!decision.adkDecision) fallbackReason = 'It has been a while since you practiced this topic.';
+else if (action === 'URGENT_REVISION') fallbackReason = 'Urgent: Your mastery is critically low.';
+else if (action === 'SCHEDULED_REVISION') fallbackReason = 'Spaced repetition: Time to review...';
+```
+
+**Is the 10-day fallback threshold appropriate?**  
+It is a reasonable heuristic for detecting stale topics, but it misses topics with low mastery that were recently studied. A combined threshold (days OR mastery < 0.4) would be more accurate.
+
+---
+
+## Action 5: Evaluate revision prioritization logic
+
+**How are HIGH/MEDIUM/LOW priorities assigned?**  
+Assigned by the ADK decision engine based on policy rules in `src/ai/adk/decision-engine.ts`:
+- HIGH: exam imminent (≤3 days) with mastery < 0.6, OR critical mastery (< 0.4) with forgetting risk
+- MEDIUM: moderate mastery (0.4–0.6) with stale knowledge (>7 days)
+- LOW: other non-urgent cases
+
+**Does the sorting logic produce optimal results?**
 
 ```typescript
 decisions.sort((a, b) => {
   const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
   if (a.priority !== b.priority) return priorityOrder[a.priority] - priorityOrder[b.priority];
-  return a.masteryProbability - b.masteryProbability;
+  return a.masteryProbability - b.masteryProbability;  // lowest mastery first within tier
 });
 ```
 
-**Primary sort**: Priority (HIGH → MEDIUM → LOW)  
-**Secondary sort**: Mastery probability ascending (lowest mastery first within same priority)
+Primary sort by priority (HIGH first), secondary sort by mastery ascending (weakest first within tier). This is educationally sound.
 
-### Assessment
-
-- The secondary sort (lowest mastery first) is educationally sound: within the same urgency tier, focus on the weakest topics.
-- The 5-topic limit (`mlDecisions.slice(0, 5)`) is appropriate for daily revision workload management.
-- **Gap**: Exam-mode topics (cramming) should always appear regardless of the 5-topic limit.
+**Is the 5-topic limit appropriate?**  
+Generally yes for daily workload. However, in CRAMMING_MODE (exam ≤3 days), all HIGH priority topics should appear regardless of the limit.
 
 ---
 
-## 6. Recommendations
+## Action 6: Recommend improvements
 
-### High Priority
-1. **Add exam-mode bypass for 5-topic limit**: When `CRAMMING_MODE` is active, do not cap the revision list — include all critical topics.
-2. **Add cache deduplication lock**: Implement an in-flight request tracker to prevent duplicate ML predictions during concurrent requests for the same student.
-3. **Improve ML service down fallback**: When batch ML fails entirely, use exponential backoff retry rather than immediately falling back to heuristic.
+No code changes were made to this file — the architecture is already strong. Improvements identified:
 
-### Medium Priority
-4. **Add `examDate` to output**: Surface the detected exam urgency in the `revisionList` output so the UI can show countdown messages.
-5. **Add teacher intervention status**: Include `teacherAlertTriggered: boolean` in output to notify the UI when a teacher has been alerted.
-6. **Parse brainMap input more robustly**: Add Zod schema validation for the brainMap JSON string before processing.
-
-### Low Priority
-7. **Add revision session duration estimate**: Include an estimated time per topic based on the ADK's `targetDuration` setting.
-8. **Surface ADK reasoning in output**: Optionally include the ADK `reasoning` string for transparency to teachers in the dashboard.
-
----
-
-## Summary
-
-The Smart Revision Planner is the architecturally strongest flow in SANKALP, demonstrating excellent separation of concerns between ML prediction, ADK policy-based decisions, and LLM humanization. The caching strategy is efficient and the fallback chain is comprehensive. Key improvements include handling exam-mode edge cases, preventing cache race conditions under load, and surfacing more ADK metadata in the output for teacher dashboard transparency.
+1. **Exam-mode bypass for the 5-topic limit**: When CRAMMING_MODE is active, do not cap the list.
+2. **Cache deduplication**: Add an in-flight request tracker to prevent duplicate ML calls during concurrent requests.
+3. **10-day fallback improvement**: Use `(days > 10 OR mastery < 0.4)` as the fallback condition.
+4. **Surface ADK reasoning**: Optionally expose the ADK `reasoning` string in the output for teacher dashboard transparency.
