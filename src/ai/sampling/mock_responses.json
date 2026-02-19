@@ -60,12 +60,27 @@
         {
           "question": "Capital of France?",
           "options": ["London", "Berlin", "Paris", "Madrid"]
-
         }
       ]
     },
     "expectedStatus": "invalid",
     "description": "missing correctAnswer"
+  },
+  {
+    "flow": "adaptiveQuizFlow",
+    "timestamp": "2025-05-21T10:00:00Z",
+    "response": {
+      "quiz": [
+        {
+          "question": "What is the speed of light?",
+          "options": ["3e8", "3e5", "3e6", "3e7"],
+          "correctAnswer": "3e8",
+          "explanation": "Light travels at approx 300,000 km/s"
+        }
+      ]
+    },
+    "expectedStatus": "drift",
+    "description": "extra field 'explanation' in question object"
   },
   {
     "flow": "smartRevisionPlannerFlow",
