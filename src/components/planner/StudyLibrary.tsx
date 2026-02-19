@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useStudent } from "@/hooks/useStudent";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,20 +42,6 @@ export function StudyLibrary() {
         const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
         return matchesSearch && matchesFilter;
     }), [studyMaterials, searchTerm, filterSubject]);
-
-    // Status badge styles
-    const getStatusVariant = (status: string) => {
-        switch (status) {
-            case 'Due':
-                return 'destructive';
-            case 'Upcoming':
-                return 'default';
-            case 'Reviewed':
-                return 'secondary';
-            default:
-                return 'outline';
-        }
-    };
 
     if (!currentStudent) {
         return <div>Loading...</div>;
@@ -124,52 +110,11 @@ export function StudyLibrary() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {filteredMaterials.map(material => (
-                                <Card key={material.id} className="hover:border-primary transition-colors">
-                                    <CardHeader>
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <div className="text-sm text-muted-foreground mb-1">
-                                                    {material.subject}
-                                                </div>
-                                                <CardTitle className="text-lg">{material.topic}</CardTitle>
-                                                {material.chapter && (
-                                                    <p className="text-sm text-muted-foreground mt-1">
-                                                        {material.chapter}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <Badge variant={getStatusVariant(material.status)}>
-                                                {material.status}
-                                            </Badge>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-2">
-                                            <div className="text-sm">
-                                                <span className="text-muted-foreground">Next Review:</span>{" "}
-                                                <span className="font-medium">
-                                                    {new Date(material.nextReview).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            {material.lastReviewed && (
-                                                <div className="text-sm">
-                                                    <span className="text-muted-foreground">Last Reviewed:</span>{" "}
-                                                    <span className="font-medium">
-                                                        {new Date(material.lastReviewed).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-full mt-4"
-                                                onClick={() => setSelectedMaterial(material)}
-                                            >
-                                                View Details
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                <MaterialCard
+                                    key={material.id}
+                                    material={material}
+                                    onSelect={setSelectedMaterial}
+                                />
                             ))}
                         </div>
                     )}
@@ -251,3 +196,74 @@ export function StudyLibrary() {
         </div>
     );
 }
+
+// Helper for status badge styles
+const getStatusVariant = (status: string) => {
+    switch (status) {
+        case 'Due':
+            return 'destructive';
+        case 'Upcoming':
+            return 'default';
+        case 'Reviewed':
+            return 'secondary';
+        default:
+            return 'outline';
+    }
+};
+
+const MaterialCard = memo(function MaterialCard({
+    material,
+    onSelect
+}: {
+    material: StudyMaterial;
+    onSelect: (m: StudyMaterial) => void;
+}) {
+    return (
+        <Card className="hover:border-primary transition-colors">
+            <CardHeader>
+                <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                        <div className="text-sm text-muted-foreground mb-1">
+                            {material.subject}
+                        </div>
+                        <CardTitle className="text-lg">{material.topic}</CardTitle>
+                        {material.chapter && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                                {material.chapter}
+                            </p>
+                        )}
+                    </div>
+                    <Badge variant={getStatusVariant(material.status) as any}>
+                        {material.status}
+                    </Badge>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <div className="text-sm">
+                        <span className="text-muted-foreground">Next Review:</span>{" "}
+                        <span className="font-medium">
+                            {new Date(material.nextReview).toLocaleDateString()}
+                        </span>
+                    </div>
+                    {material.lastReviewed && (
+                        <div className="text-sm">
+                            <span className="text-muted-foreground">Last Reviewed:</span>{" "}
+                            <span className="font-medium">
+                                {new Date(material.lastReviewed).toLocaleDateString()}
+                            </span>
+                        </div>
+                    )}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-4"
+                        onClick={() => onSelect(material)}
+                    >
+                        View Details
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+});

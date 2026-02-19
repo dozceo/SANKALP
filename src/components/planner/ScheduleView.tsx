@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { useStudent } from "@/hooks/useStudent";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Lightbulb, BookCheck, Calendar, AlertTriangle, Loader2 } from "lucide-react";
 import { getRevisionPlan } from "@/app/(main)/planner/actions";
 import type { SmartRevisionPlannerOutput } from "@/ai/flows/smart-revision-planner";
+import type { StudyMaterial } from "@/data/docsData";
 
 export function ScheduleView() {
     const { currentStudent } = useStudent();
@@ -125,41 +126,9 @@ export function ScheduleView() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {upcomingDeadlines.map(material => {
-                                    const daysUntil = Math.ceil(
-                                        (new Date(material.nextReview).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-                                    );
-                                    const isOverdue = daysUntil < 0;
-
-                                    return (
-                                        <div
-                                            key={material.id}
-                                            className="p-4 rounded-lg border hover:border-primary transition-colors"
-                                        >
-                                            <div className="flex items-start justify-between mb-2">
-                                                <div>
-                                                    <div className="font-medium">{material.topic}</div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        {material.subject}
-                                                    </div>
-                                                </div>
-                                                <Badge variant={isOverdue ? "destructive" : "default"}>
-                                                    {isOverdue ? "Overdue" : material.status}
-                                                </Badge>
-                                            </div>
-                                            <div className="text-sm text-muted-foreground">
-                                                {isOverdue
-                                                    ? `${Math.abs(daysUntil)} days overdue`
-                                                    : daysUntil === 0
-                                                        ? "Due today"
-                                                        : `Due in ${daysUntil} ${daysUntil === 1 ? "day" : "days"}`}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                                {new Date(material.nextReview).toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                {upcomingDeadlines.map(material => (
+                                    <ScheduleCard key={material.id} material={material} />
+                                ))}
                             </div>
                         )}
                     </CardContent>
@@ -168,3 +137,36 @@ export function ScheduleView() {
         </div>
     );
 }
+
+const ScheduleCard = memo(function ScheduleCard({ material }: { material: StudyMaterial }) {
+    const daysUntil = Math.ceil(
+        (new Date(material.nextReview).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    );
+    const isOverdue = daysUntil < 0;
+
+    return (
+        <div className="p-4 rounded-lg border hover:border-primary transition-colors">
+            <div className="flex items-start justify-between mb-2">
+                <div>
+                    <div className="font-medium">{material.topic}</div>
+                    <div className="text-sm text-muted-foreground">
+                        {material.subject}
+                    </div>
+                </div>
+                <Badge variant={isOverdue ? "destructive" : "default"}>
+                    {isOverdue ? "Overdue" : material.status}
+                </Badge>
+            </div>
+            <div className="text-sm text-muted-foreground">
+                {isOverdue
+                    ? `${Math.abs(daysUntil)} days overdue`
+                    : daysUntil === 0
+                        ? "Due today"
+                        : `Due in ${daysUntil} ${daysUntil === 1 ? "day" : "days"}`}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+                {new Date(material.nextReview).toLocaleDateString()}
+            </div>
+        </div>
+    );
+});

@@ -5,6 +5,28 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Get initials for avatar
+const getInitials = (name: string) => {
+    return name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+};
+
+// Get color based on student grade
+const getAvatarColor = (grade?: number) => {
+    const colors = [
+        'bg-blue-500',
+        'bg-purple-500',
+        'bg-green-500',
+        'bg-orange-500',
+        'bg-pink-500',
+    ];
+    return colors[(grade || 0) % colors.length];
+};
+
 export function StudentSelector() {
     const { currentStudent, loading } = useStudent();
 
@@ -17,28 +39,6 @@ export function StudentSelector() {
     if (!currentStudent) {
         return null;
     }
-
-    // Get initials for avatar
-    const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    };
-
-    // Get color based on student grade
-    const getAvatarColor = (grade?: number) => {
-        const colors = [
-            'bg-blue-500',
-            'bg-purple-500',
-            'bg-green-500',
-            'bg-orange-500',
-            'bg-pink-500',
-        ];
-        return colors[(grade || 0) % colors.length];
-    };
 
     return (
         <Link href="/profile" passHref>

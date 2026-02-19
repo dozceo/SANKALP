@@ -32,6 +32,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
     const [dimensions, setDimensions] = useState({ width: 800, height });
     const [isExpanded, setIsExpanded] = useState(false);
     const hoveredNodeRef = useRef<string | null>(null);
+    const gradientCache = useRef(new Map<string, CanvasGradient>());
 
     // Generate graph data for this student
     const graphData = useMemo(() => generatePersonalGraph(student), [student]);
@@ -110,48 +111,72 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             }
         }
 
+        // Draw operations using translation for better caching
+        ctx.save();
+        ctx.translate(node.x, node.y);
+
         // Glow effect for center/hovered nodes
         if (isCenter || isHovered) {
-            const gradient = ctx.createRadialGradient(
-                node.x, node.y, 0,
-                node.x, node.y, nodeSize * 3
-            );
-            // Use baseColor for glow, but transparent
-            gradient.addColorStop(0, `${baseColor}66`); // Hex opacity
-            gradient.addColorStop(1, `${baseColor}00`);
+            let glowGradient: CanvasGradient;
+            const glowKey = `glow-${baseColor}`;
+
+            if (gradientCache.current.has(glowKey)) {
+                glowGradient = gradientCache.current.get(glowKey)!;
+            } else {
+                // Create gradient at (0,0)
+                glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+                // Use baseColor for glow, but transparent
+                glowGradient.addColorStop(0, `${baseColor}66`); // Hex opacity
+                glowGradient.addColorStop(1, `${baseColor}00`);
+                gradientCache.current.set(glowKey, glowGradient);
+            }
+
+            ctx.save();
+            ctx.scale(nodeSize * 3, nodeSize * 3);
             ctx.beginPath();
-            ctx.arc(node.x, node.y, nodeSize * 3, 0, 2 * Math.PI);
-            ctx.fillStyle = gradient;
+            ctx.arc(0, 0, 1, 0, 2 * Math.PI);
+            ctx.fillStyle = glowGradient;
             ctx.fill();
+            ctx.restore();
         }
 
         // Optimization: Skip expensive gradient for small nodes or when zoomed out
         // Use simple flat color for better performance
         if (globalScale < 1.5 && !isCenter && !isHovered) {
             ctx.beginPath();
-            ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+            ctx.arc(0, 0, nodeSize, 0, 2 * Math.PI);
             ctx.fillStyle = baseColor;
             ctx.fill();
         } else {
             // Node circle with gradient
-            const nodeGradient = ctx.createRadialGradient(
-                node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
-                node.x, node.y, nodeSize
-            );
+            let nodeGradient: CanvasGradient;
+            const gradientKey = `node-${lightColor}-${baseColor}`;
 
-            nodeGradient.addColorStop(0, lightColor);
-            nodeGradient.addColorStop(1, baseColor);
+            if (gradientCache.current.has(gradientKey)) {
+                nodeGradient = gradientCache.current.get(gradientKey)!;
+            } else {
+                // Create unit gradient with offset center (-0.3, -0.3)
+                nodeGradient = ctx.createRadialGradient(-0.3, -0.3, 0, 0, 0, 1);
+                nodeGradient.addColorStop(0, lightColor);
+                nodeGradient.addColorStop(1, baseColor);
+                gradientCache.current.set(gradientKey, nodeGradient);
+            }
 
+            ctx.save();
+            ctx.scale(nodeSize, nodeSize);
             ctx.beginPath();
-            ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+            ctx.arc(0, 0, 1, 0, 2 * Math.PI);
             ctx.fillStyle = nodeGradient;
             ctx.fill();
+            ctx.restore();
         }
 
         // Border for center node
         if (isCenter) {
             ctx.strokeStyle = GRAPH_COLORS_HEX.hoverLight;
             ctx.lineWidth = 2.5 / globalScale;
+            ctx.beginPath();
+            ctx.arc(0, 0, nodeSize, 0, 2 * Math.PI);
             ctx.stroke();
         }
 
@@ -165,11 +190,13 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
             // Text shadow for better readability
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.fillText(label, node.x + 0.5, node.y + nodeSize + 3.5);
+            ctx.fillText(label, 0.5, nodeSize + 3.5);
 
             ctx.fillStyle = isCenter ? '#ffffff' : isHovered ? GRAPH_COLORS_HEX.hoverLight : '#d1d5db';
-            ctx.fillText(label, node.x, node.y + nodeSize + 3);
+            ctx.fillText(label, 0, nodeSize + 3);
         }
+
+        ctx.restore();
     }, [student.id]); // Removed hoveredNode dependency
 
     const linkCanvasObject = useCallback((link: ExtendedLinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {

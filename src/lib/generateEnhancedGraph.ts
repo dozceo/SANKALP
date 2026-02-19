@@ -1,5 +1,18 @@
 import { StudentNode, GraphData, GraphNode, GraphLink, NodeType } from '@/data/docsData';
 import { lightenColor } from '@/lib/color-utils';
+import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
+
+// Node colors by type
+const colors: Record<NodeType, string> = {
+    student: GRAPH_COLORS_HEX.student,
+    subject: GRAPH_COLORS_HEX.subject,
+    chapter: GRAPH_COLORS_HEX.chapter,
+    topic: GRAPH_COLORS_HEX.topic,
+    weakness: GRAPH_COLORS_HEX.weakness,
+    strength: GRAPH_COLORS_HEX.strength,
+    skill: GRAPH_COLORS_HEX.skill,
+    peer: GRAPH_COLORS_HEX.peer,
+};
 
 /**
  * Enhanced graph generation with hierarchical node support
@@ -12,18 +25,6 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
     // Optimization: Use Sets for O(1) lookups instead of O(N) array searches
     const existingNodeIds = new Set<string>();
     const existingLinkKeys = new Set<string>();
-
-    // Node colors by type
-    const colors: Record<NodeType, string> = {
-        student: GRAPH_COLORS_HEX.student,
-        subject: GRAPH_COLORS_HEX.subject,
-        chapter: GRAPH_COLORS_HEX.chapter,
-        topic: GRAPH_COLORS_HEX.topic,
-        weakness: GRAPH_COLORS_HEX.weakness,
-        strength: GRAPH_COLORS_HEX.strength,
-        skill: GRAPH_COLORS_HEX.skill,
-        peer: GRAPH_COLORS_HEX.peer,
-    };
 
     const addNode = (node: GraphNode) => {
         // Optimization: Prevent duplicate nodes
