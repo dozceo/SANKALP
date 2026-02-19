@@ -2,12 +2,11 @@
 
 Audit of interactive components for missing visual feedback states (hover, focus, disabled).
 
-Total gaps found: 2
+Total gaps found: 1
 
 | File | Element | Line | Missing States |
 | :--- | :--- | :--- | :--- |
 | `src/components/PersonalKnowledgeGraph.tsx` | `<button>` | 240 | disabled |
-| `src/components/planner/StudyLibrary.tsx` | `<a>` | 218 | focus |
 
 ## Notes
 - **UI Library (`src/components/ui/`)**: Checked for presence of state modifiers in the file definition.
