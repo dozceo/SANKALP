@@ -1,12 +1,9 @@
 # Distributed Tracing & Observability Infrastructure Spec
 
 ## Executive Summary
-This specification details the architectural strategy for implementing end-to-end distributed tracing across the SANKALP platform. The goal is to make every request's journey through the system fully observable, enabling precise latency tracking, bottleneck detection, and cross-service error correlation.
+This specification outlines the architectural strategy for implementing end-to-end distributed tracing across the SANKALP platform. The objective is to transform system observability from opaque "black box" operations into a transparent, measurable pipeline. This infrastructure will enable precise latency tracking, bottleneck detection, and cross-service error correlation, specifically targeting the complex interactions between Next.js, Python ML services, and LLM providers.
 
-Based on collected benchmarks, the system exhibits distinct performance characteristics:
--   **ML Inference**: Extremely fast steady-state performance (~0.7ms) but suffers from a significant cold start penalty (~2.5s).
--   **LLM Generation**: The primary latency driver (~2s), necessitating careful monitoring and cost attribution.
--   **ADK Decision Logic**: Negligible latency (<1ms), confirming its efficiency as a synchronous orchestration layer.
+Based on initial benchmarks, the primary latency contributor is LLM generation (~2s), while ML inference is highly performant (~4ms) after an initial cold start (~2.6s). This specification prioritizes visualizing these latencies and correlating errors across the Next.js/Python boundary.
 
 ## Architecture & Service Boundaries
 
