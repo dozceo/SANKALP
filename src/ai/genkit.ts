@@ -9,7 +9,9 @@ import { chaos } from '@/lib/chaos-config';
  * Robustly handles API key aliasing for seamless deployment.
  */
 
-const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
+const envApiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
+const isAdversarialTest = process.env.ADVERSARIAL_TEST === 'true';
+const apiKey = envApiKey || (isAdversarialTest ? 'mock-key' : undefined);
 
 if (typeof window === 'undefined') {
   console.log('[Genkit Init] Initializing Genkit with Gemini 2.0 Flash...');
@@ -34,6 +36,23 @@ export const ai = new Proxy(realAi, {
 
     if (prop === 'generate') {
       return async (...args: any[]) => {
+        if (process.env.ADVERSARIAL_TEST === 'true') {
+          const logEntry = {
+            promptName: 'ai.generate',
+            input: args[0],
+            timestamp: Date.now()
+          };
+          const g = global as any;
+          g.__ADVERSARIAL_LOGS__ = g.__ADVERSARIAL_LOGS__ || [];
+          g.__ADVERSARIAL_LOGS__.push(logEntry);
+          console.log(`[AdversarialTest] Captured input for ai.generate`);
+
+          if (g.__ADVERSARIAL_MOCK_RESOLVER__) {
+            return g.__ADVERSARIAL_MOCK_RESOLVER__('ai.generate', args[0]);
+          }
+          return { text: "MOCKED GENERATE RESPONSE" };
+        }
+
         await chaos.checkChaos('genkit');
         return (value as Function).apply(target, args);
       };
