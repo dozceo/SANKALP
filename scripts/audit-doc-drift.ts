@@ -1,166 +1,165 @@
+
 import fs from 'fs';
 import path from 'path';
 
-// --- Configuration ---
-const README_PATH = 'README.md';
-const OUTPUT_REPORT = 'DOC_DRIFT_REPORT.md';
+const REPORT_FILE = 'DOC_DRIFT_REPORT.md';
 
-const FEATURE_CHECKS = [
-  {
-    feature: 'Mindful Mentor',
-    claim: 'Implements AI tutor functionality',
-    evidenceFile: 'src/ai/flows/mindful-mentor.ts',
-    expectedContent: 'mindfulMentorFlow',
-    type: 'existence',
-  },
-  {
-    feature: 'Teacher Dashboard',
-    claim: 'Provides teacher analytics and class management',
-    evidenceFile: 'src/app/(main)/teacher',
-    expectedContent: '', // Directory check
-    type: 'directory',
-  },
-  {
-    feature: 'Syllabus Generator',
-    claim: 'Generates structured syllabi based on exam names',
-    evidenceFile: 'src/ai/flows/syllabus-generator.ts',
-    expectedContent: 'syllabusGeneratorFlow',
-    type: 'existence',
-  },
-  {
-    feature: 'Adaptive Quiz Engine',
-    claim: 'Generates quizzes adapted to student weak areas',
-    evidenceFile: 'src/ai/flows/adaptive-quiz-engine.ts',
-    expectedContent: 'adaptiveQuizFlow',
-    type: 'existence',
-  },
-  {
-    feature: 'Database Integration',
-    claim: 'Firebase integration for data persistence',
-    evidenceFile: 'src/lib/firebase.ts',
-    expectedContent: 'getFirestore',
-    type: 'existence',
-  },
-  {
-    feature: 'ML Inference Bridge',
-    claim: 'Python scripts executed via Node.js subprocess',
-    evidenceFile: 'src/ml/inference/ml-bridge.ts',
-    expectedContent: 'spawn',
-    type: 'existence',
-  }
-];
-
-// --- Helper Functions ---
-
-function checkFileExists(filepath: string): boolean {
-  return fs.existsSync(filepath);
+interface FeatureClaim {
+  source: string;
+  featureName: string;
+  claimedLocation?: string;
+  status?: string;
 }
 
-function analyzeFileContent(filepath: string, pattern: string): { valid: boolean, skeletal: boolean, reason?: string } {
-  try {
-    const content = fs.readFileSync(filepath, 'utf-8');
+function extractClaimsFromFeaturesOverview(content: string): FeatureClaim[] {
+  const claims: FeatureClaim[] = [];
+  const lines = content.split('\n');
+  let currentFeature = '';
+  let currentStatus = '';
 
-    // Check for skeletal indicators
-    if (content.length < 100) {
-        return { valid: true, skeletal: true, reason: 'File is too small (< 100 bytes)' };
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Detect feature header
+    if (line.startsWith('#### ')) {
+      currentFeature = line.replace(/####\s*\d*\.?\s*/, '').trim();
+      currentStatus = ''; // Reset
     }
 
-    if (pattern && !content.includes(pattern)) {
-        return { valid: false, skeletal: false, reason: `Pattern '${pattern}' not found` };
+    // Detect Status
+    if (line.startsWith('- **Status**:')) {
+        const parts = line.split('**Status**:');
+        if (parts.length > 1) {
+            currentStatus = parts[1].trim();
+        }
     }
 
-    return { valid: true, skeletal: false };
-  } catch (e) {
-    return { valid: false, skeletal: false, reason: 'Read error' };
+    // Detect Location claim
+    if (line.startsWith('- **Location**:')) {
+      const parts = line.split('**Location**:');
+      if (parts.length > 1) {
+          let location = parts[1].trim();
+          // Remove backticks if present
+          location = location.replace(/`/g, '');
+
+          if (currentFeature) {
+            claims.push({
+              source: 'docs/Features Overview.md',
+              featureName: currentFeature,
+              claimedLocation: location,
+              status: currentStatus
+            });
+          }
+      }
+    }
   }
+  return claims;
 }
 
-function generateReport(results: any[]) {
-  let report = `# Documentation Drift Report\n\nGenerated on: ${new Date().toISOString()}\n\n`;
-  report += `This report identifies discrepancies between documentation claims (README.md) and the actual codebase state.\n\n`;
+function extractClaimsFromReadme(content: string): FeatureClaim[] {
+    const claims: FeatureClaim[] = [];
+    // Regex for: ### 1. Feature Name (`path/to/file`)
+    const regex = /###\s*\d+\.\s*(.*?)\s*\(`(.*?)`\)/g;
+    let match;
 
-  report += `| Feature | Doc Claim | Code Reality | Status |\n`;
-  report += `|---|---|---|---|\n`;
+    while ((match = regex.exec(content)) !== null) {
+        claims.push({
+            source: 'README.md',
+            featureName: match[1].trim(),
+            claimedLocation: match[2].trim(),
+            status: 'Implied Complete' // README usually describes existing features
+        });
+    }
+    return claims;
+}
+
+function verifyLocation(location: string): boolean {
+  if (!location || location === 'TBD' || location.toLowerCase().includes('not started')) return false;
+
+  // Resolve path relative to root
+  const resolvedPath = path.resolve(process.cwd(), location);
+  return fs.existsSync(resolvedPath);
+}
+
+function generateReport(claims: FeatureClaim[]) {
+  let report = '# Documentation Drift Report\n\n';
+  report += `Generated on: ${new Date().toISOString()}\n\n`;
 
   let driftCount = 0;
+  let tableRows = '';
 
-  results.forEach(res => {
-    if (res.status === 'DRIFT DETECTED') driftCount++;
-    report += `| ${res.feature} | ${res.claim} | ${res.reality} | ${res.status} |\n`;
-  });
+  for (const claim of claims) {
+    let exists = false;
+    let verdict = '✅ Verified';
+    let isDrift = false;
 
-  report += `\n## Detailed Findings\n\n`;
-  results.forEach(res => {
-    if (res.status === 'DRIFT DETECTED') {
-      report += `### ${res.feature}\n`;
-      report += `- **Claim**: ${res.claim}\n`;
-      report += `- **Reality**: ${res.reality}\n`;
-      report += `- **Evidence**: Checked \`${res.evidenceFile}\`\n\n`;
-    }
-  });
+    if (claim.claimedLocation && claim.claimedLocation !== 'TBD') {
+      exists = verifyLocation(claim.claimedLocation);
 
-  report += `\n**Summary:**\n- Features Checked: ${results.length}\n- Drifts Detected: ${driftCount}\n`;
+      const isPlanned = claim.status?.toLowerCase().includes('planned') || claim.status?.toLowerCase().includes('not started');
+      const isProgress = claim.status?.toLowerCase().includes('in progress');
+      const isComplete = claim.status?.toLowerCase().includes('complete') || claim.status === 'Implied Complete';
 
-  fs.writeFileSync(OUTPUT_REPORT, report);
-  console.log(`Report generated at ${OUTPUT_REPORT}`);
-}
-
-// --- Main Execution ---
-
-function main() {
-  console.log('Starting Documentation Drift Audit...');
-
-  const results = [];
-
-  for (const check of FEATURE_CHECKS) {
-    let reality = '';
-    let status = 'VERIFIED';
-
-    const exists = checkFileExists(check.evidenceFile);
-
-    if (check.type === 'existence') {
-        if (exists) {
-            const analysis = analyzeFileContent(check.evidenceFile, check.expectedContent);
-            if (analysis.skeletal) {
-                reality = `Implemented but Skeletal (${analysis.reason})`;
-                status = 'DRIFT DETECTED';
-            } else if (analysis.valid) {
-                reality = 'Implemented & Functional';
-            } else {
-                reality = `File exists but content missing pattern: '${check.expectedContent}'`;
-                status = 'DRIFT DETECTED';
-            }
+      if (!exists) {
+        if (isComplete || isProgress) {
+             verdict = '❌ DRIFT (Missing Code)';
+             isDrift = true;
+        } else if (isPlanned) {
+            verdict = '⚠️ Planned (No Code)';
         } else {
-            reality = 'File missing';
-            status = 'DRIFT DETECTED';
+            // Default assumption if status is ambiguous but location is claimed: it should exist
+            verdict = '❌ DRIFT (Missing Code)';
+            isDrift = true;
         }
-    } else if (check.type === 'directory') {
-         if (exists) {
-             // For directory, we just check existence for now.
-             // Could verify it's not empty.
-             const files = fs.readdirSync(check.evidenceFile);
-             if (files.length > 0) {
-                 reality = `Implemented (Directory with ${files.length} files)`;
-             } else {
-                 reality = 'Directory empty';
-                 status = 'DRIFT DETECTED';
-             }
-         } else {
-             reality = 'Directory missing';
-             status = 'DRIFT DETECTED';
-         }
+      }
+    } else {
+        const isPlanned = claim.status?.toLowerCase().includes('planned');
+        if (!isPlanned) {
+             verdict = '❓ No Location Claimed';
+        } else {
+             verdict = '📝 Planned';
+        }
     }
 
-    results.push({
-      feature: check.feature,
-      claim: check.claim,
-      reality: reality,
-      status: status,
-      evidenceFile: check.evidenceFile
-    });
+    if (isDrift) driftCount++;
+
+    const locationDisplay = claim.claimedLocation ? `\`${claim.claimedLocation}\`` : 'N/A';
+    const existsDisplay = exists ? '✅ Yes' : '❌ No';
+
+    tableRows += `| ${claim.featureName} | ${claim.source} | ${locationDisplay} | ${claim.status || 'Unknown'} | ${existsDisplay} | ${verdict} |\n`;
   }
 
-  generateReport(results);
+  report += `**Summary**: Found ${driftCount} instances of documentation drift.\n\n`;
+  report += '| Feature | Source | Claimed Location | Status | Code Exists | Verdict |\n';
+  report += '| :--- | :--- | :--- | :--- | :--- | :--- |\n';
+  report += tableRows;
+
+  fs.writeFileSync(REPORT_FILE, report);
+  console.log(`Report generated at ${REPORT_FILE}`);
+}
+
+function main() {
+  let allClaims: FeatureClaim[] = [];
+
+  // 1. Scan docs/Features Overview.md
+  const overviewPath = 'docs/Features Overview.md';
+  if (fs.existsSync(overviewPath)) {
+    const content = fs.readFileSync(overviewPath, 'utf-8');
+    allClaims = allClaims.concat(extractClaimsFromFeaturesOverview(content));
+  } else {
+      console.warn(`Warning: ${overviewPath} not found.`);
+  }
+
+  // 2. Scan README.md
+  const readmePath = 'README.md';
+  if (fs.existsSync(readmePath)) {
+    const content = fs.readFileSync(readmePath, 'utf-8');
+    allClaims = allClaims.concat(extractClaimsFromReadme(content));
+  } else {
+      console.warn(`Warning: ${readmePath} not found.`);
+  }
+
+  generateReport(allClaims);
 }
 
 main();

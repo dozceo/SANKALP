@@ -1,9 +1,12 @@
+
 import { execSync } from 'child_process';
 import fs from 'fs';
 
-const OUTPUT_REPORT = 'COMMIT_QUALITY_REPORT.md';
-const CONVENTIONAL_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert'];
-const TYPE_REGEX = new RegExp(`^(${CONVENTIONAL_TYPES.join('|')})(\\(.+\\))?: .+`);
+const REPORT_FILE = 'COMMIT_QUALITY_REPORT.md';
+const MAX_COMMITS = 50;
+
+// Conventional Commits Regex
+const CONVENTIONAL_REGEX = /^(feat|fix|docs|style|refactor|perf|test|chore|revert|build|ci)(\([a-z0-9-]+\))?: .+$/;
 
 interface Commit {
   hash: string;
@@ -12,58 +15,58 @@ interface Commit {
 
 function getCommits(): Commit[] {
   try {
-    const output = execSync('git log --pretty=format:"%h - %s" -n 50', { encoding: 'utf-8' });
-    return output.split('\n').filter(Boolean).map(line => {
-      const parts = line.split(' - ');
-      return { hash: parts[0], message: parts.slice(1).join(' - ') };
+    const stdout = execSync(`git log --pretty=format:"%h|%s" -n ${MAX_COMMITS}`).toString();
+    return stdout.split('\n').filter(line => line.trim()).map(line => {
+      const [hash, ...msgParts] = line.split('|');
+      return { hash, message: msgParts.join('|') };
     });
-  } catch (error) {
-    console.error('Error fetching git log:', error);
+  } catch (e) {
+    console.error('Error reading git log:', e);
     return [];
   }
 }
 
-function analyzeCommit(commit: Commit) {
-  const issues: string[] = [];
-
-  if (commit.message.length < 10) {
-    issues.push('Too short (< 10 chars)');
-  }
-
-  if (!TYPE_REGEX.test(commit.message)) {
-    issues.push('Non-conventional format (expected "type: description")');
-  }
-
-  // Check for vague words
-  const vague = ['fix', 'update', 'stuff', 'wip', 'change'];
-  if (vague.includes(commit.message.toLowerCase())) {
-      issues.push('Vague message content');
-  }
-
-  return issues;
-}
-
-function generateReport(commits: Commit[]) {
-  let report = `# Commit Message Quality Report\n\nGenerated on: ${new Date().toISOString()}\n\n`;
-  report += `Analyzed the last ${commits.length} commits.\n\n`;
-  report += `| Hash | Message | Issues | Status |\n`;
-  report += `|---|---|---|---|\n`;
+function analyzeCommits(commits: Commit[]) {
+  let report = '# Git Commit Message Quality Report\n\n';
+  report += `Generated on: ${new Date().toISOString()}\n\n`;
+  report += `Analyzed last ${commits.length} commits.\n\n`;
+  report += '| Hash | Message | Conventional? | Descriptive? | Verdict |\n';
+  report += '| :--- | :--- | :--- | :--- | :--- |\n';
 
   let violationCount = 0;
 
-  commits.forEach(commit => {
-    const issues = analyzeCommit(commit);
-    const status = issues.length === 0 ? 'PASS' : 'FAIL';
-    if (status === 'FAIL') violationCount++;
+  for (const commit of commits) {
+    const isConventional = CONVENTIONAL_REGEX.test(commit.message);
+    const isDescriptive = commit.message.length >= 10 && !commit.message.toLowerCase().match(/^(fix|update|wip|temp)$/);
 
-    report += `| ${commit.hash} | ${commit.message} | ${issues.join(', ') || '-'} | ${status} |\n`;
-  });
+    let verdict = '✅ Pass';
+    if (!isConventional || !isDescriptive) {
+      verdict = '❌ Violation';
+      violationCount++;
+    }
 
-  report += `\n**Summary:**\n- Total Commits: ${commits.length}\n- Violations: ${violationCount}\n- Compliance Rate: ${((commits.length - violationCount) / commits.length * 100).toFixed(1)}%\n`;
+    const convIcon = isConventional ? '✅' : '❌';
+    const descIcon = isDescriptive ? '✅' : '❌';
 
-  fs.writeFileSync(OUTPUT_REPORT, report);
-  console.log(`Report generated at ${OUTPUT_REPORT}`);
+    report += `| ${commit.hash} | ${commit.message} | ${convIcon} | ${descIcon} | ${verdict} |\n`;
+  }
+
+  report += `\n**Summary**: Found ${violationCount} violations in the last ${commits.length} commits.\n`;
+
+  if (violationCount > 0) {
+      report += '\n### Recommendations\n';
+      report += '- Use Conventional Commits format: `type(scope): description`\n';
+      report += '- Avoid vague messages like "fix" or "update"\n';
+      report += '- Provide context in the description\n';
+  }
+
+  fs.writeFileSync(REPORT_FILE, report);
+  console.log(`Report generated at ${REPORT_FILE}`);
 }
 
-const commits = getCommits();
-generateReport(commits);
+function main() {
+  const commits = getCommits();
+  analyzeCommits(commits);
+}
+
+main();
