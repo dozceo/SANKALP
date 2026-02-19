@@ -1,127 +1,182 @@
 
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const SRC_DIR = path.join(process.cwd(), 'src');
-const COMPONENTS_DIR = path.join(SRC_DIR, 'components');
-const LIB_DIR = path.join(SRC_DIR, 'lib');
-const OUTPUT_FILE = path.join(process.cwd(), 'DEAD_CODE_INVENTORY.md');
 
-// Heuristic regex to find exports
-const EXPORT_REGEX = /export\s+(?:const|function|class|type|interface|enum)\s+([a-zA-Z0-9_]+)/g;
-// Specific regex for default exports (harder to track by name, often file name is used)
-// We will focus on named exports for now as default exports are usually imported with any name.
-// However, for components, default export is common. We can use the file name as a proxy for the component name.
+// Helper to resolve aliases
+function resolveImport(importPath: string, currentFile: string): string | null {
+  // Remove query parameters or hash if any (though unlikely in imports)
+  importPath = importPath.split('?')[0];
 
-interface ExportItem {
-  name: string;
-  filePath: string;
-  type: 'component' | 'lib';
+  if (importPath.startsWith('@/')) {
+    return path.join(process.cwd(), 'src', importPath.substring(2));
+  }
+  if (importPath.startsWith('.')) {
+    return path.resolve(path.dirname(currentFile), importPath);
+  }
+  return null; // Node module or absolute path we don't care about
 }
 
-function getAllFiles(dir: string, extension: string[] = ['.ts', '.tsx']): string[] {
-  let results: string[] = [];
-  if (!fs.existsSync(dir)) return results;
-  const list = fs.readdirSync(dir);
-  list.forEach(file => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat && stat.isDirectory()) {
-      results = results.concat(getAllFiles(filePath, extension));
+// Helper to find file with extensions
+function resolveFile(filePath: string): string | null {
+  const extensions = ['.ts', '.tsx', '.d.ts', '/index.ts', '/index.tsx', '.js', '.jsx', '/index.js', '/index.jsx'];
+
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    return filePath;
+  }
+
+  for (const ext of extensions) {
+    const p = filePath + ext;
+    if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+      return p;
+    }
+  }
+  return null;
+}
+
+// Collect all files
+function getAllFiles(dir: string, fileList: string[] = []): string[] {
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const fullPath = path.join(dir, file);
+    const stat = fs.statSync(fullPath);
+    if (stat.isDirectory()) {
+      getAllFiles(fullPath, fileList);
     } else {
-      if (extension.includes(path.extname(file))) {
-        results.push(filePath);
+      if (/\.(ts|tsx|js|jsx)$/.test(file)) {
+        fileList.push(fullPath);
+      }
+    }
+  }
+  return fileList;
+}
+
+interface FileInfo {
+  path: string;
+  imports: string[];
+}
+
+const fileMap = new Map<string, FileInfo>();
+
+function parseFile(filePath: string) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const imports: string[] = [];
+
+  // Regex for imports
+  // import ... from '...'
+  const importFromRegex = /import\s+.*?from\s+['"]([^'"]+)['"]/g;
+  // import '...'
+  const importSideEffectRegex = /import\s+['"]([^'"]+)['"]/g;
+  // require('...')
+  const requireRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+  // dynamic import('...')
+  const dynamicImportRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+  // export ... from '...'
+  const exportFromRegex = /export\s+.*?from\s+['"]([^'"]+)['"]/g;
+
+  const regexes = [importFromRegex, importSideEffectRegex, requireRegex, dynamicImportRegex, exportFromRegex];
+
+  regexes.forEach(regex => {
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      const moduleSpecifier = match[1];
+      const resolved = resolveImport(moduleSpecifier, filePath);
+      if (resolved) {
+        const actualFile = resolveFile(resolved);
+        if (actualFile) {
+          imports.push(actualFile);
+        }
       }
     }
   });
-  return results;
+
+  fileMap.set(filePath, { path: filePath, imports });
 }
 
-function getExports(filePath: string): string[] {
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const exports: string[] = [];
-  let match;
-  while ((match = EXPORT_REGEX.exec(content)) !== null) {
-    exports.push(match[1]);
-  }
+// 1. Build Graph
+const allFiles = getAllFiles(SRC_DIR);
+allFiles.forEach(f => parseFile(f));
 
-  // Check for default export
-  if (content.match(/export\s+default/)) {
-    // changing logic: for default export, we assume the file name (without ext) is the "name" to search for
-    const fileName = path.basename(filePath, path.extname(filePath));
-    // If index.ts, use parent folder name
-    if (fileName === 'index') {
-       const parentDir = path.basename(path.dirname(filePath));
-       exports.push(parentDir);
-    } else {
-       exports.push(fileName);
-    }
+// 2. Identify Entry Points
+const entryPoints = allFiles.filter(f => {
+  const rel = path.relative(SRC_DIR, f);
+  // Next.js App Router
+  if (rel.startsWith('app/') || rel.startsWith('app\\')) {
+    const base = path.basename(f);
+    if (['page.tsx', 'layout.tsx', 'route.ts', 'template.tsx', 'not-found.tsx', 'error.tsx', 'loading.tsx', 'global-error.tsx', 'default.tsx', 'sitemap.ts', 'robots.ts', 'manifest.ts'].includes(base)) return true;
+    if (rel.includes('/actions/')) return true;
   }
+  // Instrumentation and Middleware
+  if (rel === 'instrumentation.ts') return true;
+  if (rel === 'middleware.ts') return true;
+  if (rel === 'sentry.client.config.ts') return true;
+  if (rel === 'sentry.server.config.ts') return true;
+  if (rel === 'sentry.edge.config.ts') return true;
 
-  return exports;
-}
+  // Genkit
+  if (rel === 'ai/dev.ts') return true;
+  if (rel.includes('ml/inference/ml-bridge.ts')) return true;
 
-function checkUsage(exportName: string, definedInFile: string, allFiles: string[]): boolean {
-  for (const file of allFiles) {
-    if (file === definedInFile) continue; // Skip definition file
-    const content = fs.readFileSync(file, 'utf-8');
-    // Simple check: is the name present?
-    // This can have false positives (comments, strings), but better than false negatives.
-    // We try to match strictly as a word boundary to avoid partial matches
-    const regex = new RegExp(`\\b${exportName}\\b`);
-    if (regex.test(content)) {
-      return true;
-    }
-  }
+  // Scripts logic (if scripts import src files directly, we might miss them if we don't count scripts as entry points,
+  // but scripts are outside src usually.
+  // Wait, if a script in root imports src/lib/x, and we only scan src, x might seem dead.
+  // But typically scripts are dev-only.
+  // However, the prompt asks for "Unused component detection" in "src/components, src/lib".
+  // If only a script uses it, is it dead code for the *app*? Yes.
+  // But strictly, it's used.
+  // I will assume if it's only used by external scripts, it's effectively dead for the app bundle, but maybe useful utility.
+  // I'll stick to scanning src.
+
   return false;
-}
+});
 
-async function main() {
-  console.log('Starting Dead Code Detection...');
+// 3. BFS to find reachable files
+const reachableFiles = new Set<string>();
+const queue = [...entryPoints];
+entryPoints.forEach(f => reachableFiles.add(f));
 
-  const componentFiles = getAllFiles(COMPONENTS_DIR);
-  const libFiles = getAllFiles(LIB_DIR);
-  const allSourceFiles = getAllFiles(SRC_DIR);
+while (queue.length > 0) {
+  const current = queue.shift()!;
+  const info = fileMap.get(current);
+  if (!info) continue;
 
-  const inventory: ExportItem[] = [];
-
-  // Analyze Components
-  for (const file of componentFiles) {
-    const exports = getExports(file);
-    for (const exp of exports) {
-      if (!checkUsage(exp, file, allSourceFiles)) {
-        inventory.push({ name: exp, filePath: file, type: 'component' });
-      }
+  for (const imp of info.imports) {
+    if (!reachableFiles.has(imp)) {
+      reachableFiles.add(imp);
+      queue.push(imp);
     }
   }
-
-  // Analyze Lib
-  for (const file of libFiles) {
-    const exports = getExports(file);
-    for (const exp of exports) {
-      if (!checkUsage(exp, file, allSourceFiles)) {
-        inventory.push({ name: exp, filePath: file, type: 'lib' });
-      }
-    }
-  }
-
-  // Generate Report
-  let report = `# Dead Code Inventory\n\nGenerated on: ${new Date().toISOString()}\n\n`;
-  report += `This report lists exported components and utilities from \`src/components\` and \`src/lib\` that do not appear to be used elsewhere in the \`src\` directory. **Note:** This is a heuristic analysis (string search). Manual verification is recommended before deletion.\n\n`;
-
-  if (inventory.length === 0) {
-    report += `No dead code detected!\n`;
-  } else {
-    report += `## Potential Dead Code (${inventory.length} items)\n\n`;
-    report += `| Type | Name | File Path |\n|---|---|---|\n`;
-    inventory.forEach(item => {
-      const relativePath = path.relative(process.cwd(), item.filePath);
-      report += `| ${item.type} | \`${item.name}\` | \`${relativePath}\` |\n`;
-    });
-  }
-
-  fs.writeFileSync(OUTPUT_FILE, report);
-  console.log(`Report generated at ${OUTPUT_FILE}`);
 }
 
-main().catch(console.error);
+// 4. Identify Dead Files (Unreachable) in components and lib
+const deadFiles = allFiles.filter(f => {
+  const rel = path.relative(SRC_DIR, f);
+  // Normalize path separators
+  const relNorm = rel.split(path.sep).join('/');
+  const isInTarget = relNorm.startsWith('components/') || relNorm.startsWith('lib/');
+  return isInTarget && !reachableFiles.has(f);
+});
+
+const reportPath = path.join(process.cwd(), 'DEAD_CODE_INVENTORY.md');
+const reportContent = `# Dead Code Inventory
+
+Generated on: ${new Date().toISOString()}
+
+This report lists files in \`src/components\` and \`src/lib\` that are **never imported** by any entry point (Next.js pages, API routes, etc.).
+
+**Total Unreachable Files:** ${deadFiles.length}
+
+| File Path |
+|---|
+${deadFiles.map(f => `| \`${path.relative(process.cwd(), f)}\` |`).join('\n')}
+
+## Analysis Method
+1. **Entry Points:** \`page.tsx\`, \`layout.tsx\`, \`route.ts\`, \`actions/\`, \`instrumentation.ts\`, \`ai/dev.ts\`, Sentry configs.
+2. **Graph Traversal:** Built import graph using Regex parsing (independent of TypeScript compiler).
+3. **Reachability:** Marked all files reachable from entry points.
+4. **Scope:** Only files in \`src/components\` and \`src/lib\` are reported as dead.
+`;
+
+fs.writeFileSync(reportPath, reportContent);
+console.log(`Generated ${reportPath}`);
