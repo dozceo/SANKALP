@@ -1,129 +1,63 @@
 # LLM Token Usage Cost Projection
 
-**Domain**: Performance & Cost (Financial Engineering)
-**Scope**: `src/ai/flows/` (Genkit LLM Calls)
-**Date**: October 26, 2023
-**Author**: Jules (AI Engineer)
+**Generated on:** 2026-02-19
+**Scope:** `src/ai/flows/` (Genkit LLM calls)
+**Model Basis:** Gemini 1.5 Flash
+**Pricing Assumptions:**
+- Input: $0.0750 / 1M tokens
+- Output: $0.3000 / 1M tokens
 
 ---
 
-## 1. Executive Summary
+## 1. Per-Feature Token Analysis
 
-This report provides a detailed cost projection for LLM usage within the application. Based on current prompt structures and model pricing (Gemini 1.5/2.0 Flash Tier), the system is generally cost-efficient for text-based operations. However, **audio-based features (Speech-to-Speech, Text-to-Speech)** represent a significant cost multiplier, potentially accounting for >70% of AI costs at scale.
+Estimates based on prompt templates and typical usage patterns.
 
-**Projected Monthly Costs**:
--   **100 Active Users**: ~$17 / month
--   **1,000 Active Users**: ~$170 / month
--   **10,000 Active Users**: ~$1,700 / month
+| Feature | Input Tokens | Output Tokens | Total Tokens | Est. Cost / Call |
+| :--- | :---: | :---: | :---: | :---: |
+| **Adaptive Quiz** | 200 | 600 | 800 | $0.000195 |
+| **Syllabus Generator** | 300 | 1200 | 1500 | $0.000382 |
+| **Smart Revision Planner** | 500 | 250 | 750 | $0.000112 |
+| **Cognitive Chatbot (Custom & Multilingual)** | 800 | 400 | 1200 | $0.000180 |
+| **Mindful Mentor** | 600 | 350 | 950 | $0.000150 |
+| **Speech-to-Speech (LLM Only)** | 150 | 150 | 300 | $0.000056 |
 
-**Key Recommendation**: Implement strict caching for TTS (Text-to-Speech) and consider limiting speech features to premium tiers or specific quotas to prevent cost blowouts.
-
----
-
-## 2. Methodology & Assumptions
-
-### Model Pricing (Estimated)
-We assume usage of **Gemini 1.5 Flash** (or equivalent 2.0 Flash) as the primary model, known for high speed and low cost.
--   **Input**: $0.075 / 1M tokens
--   **Output**: $0.30 / 1M tokens
--   **Context Window**: < 128k tokens
-
-### Audio Pricing (Standard Google Cloud Rates)
--   **Speech-to-Text (STT)**: $0.006 / minute (rounded to 15s increments).
--   **Text-to-Speech (TTS)**: $15.00 / 1M characters (Standard WaveNet/Neural).
-
-### User Behavior Profile (Daily Average per Active User)
--   **Quizzes**: 2 per day.
--   **Chat/Explain**: 10 interactions per day.
--   **Syllabus**: 0.1 per day (infrequent).
--   **Speech/Audio**: 1 interaction per day (high variance).
--   **Revision Planning**: 1 per day.
 
 ---
 
-## 3. Per-Flow Cost Analysis
+## 2. Monthly Usage Profile (Active Student)
 
-### A. Adaptive Quiz Engine (`adaptive-quiz-engine.ts`)
-*   **Model**: Gemini 2.0 Flash
-*   **Input**: ~500 tokens (System prompt + JSON Schema).
-*   **Output**: ~550 tokens (10 questions + options + JSON overhead).
-*   **Unit Cost**: **$0.00020** / call
-*   **Risk**: Medium. High output token count relative to input.
+Assumed frequency of feature usage per active student per month.
 
-### B. Custom & Multilingual Chatbot (`custom-cognitive-chatbot.ts`, `multilingual...`)
-*   **Model**: Gemini 2.0 Flash
-*   **Input**: ~400 tokens (Persona + Context + Query).
-*   **Output**: ~200 tokens (Concise explanation).
-*   **Unit Cost**: **$0.00010** / call
-*   **Risk**: Low. Very efficient.
-
-### C. Mindful Mentor (`mindful-mentor.ts`)
-*   **Model**: Gemini 2.0 Flash
-*   **Input**: ~650 tokens (Longer system prompt + student history).
-*   **Output**: ~250 tokens (Empathetic advice).
-*   **Unit Cost**: **$0.00012** / call
-*   **Risk**: Low.
-
-### D. Smart Revision Planner (`smart-revision-planner.ts`)
-*   **Model**: Gemini 2.0 Flash (Explanation only)
-*   **Input**: ~250 tokens (List of topics + metadata).
-*   **Output**: ~150 tokens (Short explanations).
-*   **Unit Cost**: **$0.00006** / call
-*   **Risk**: Low. The heavy lifting is done by ML (free/fixed compute), LLM is just for gloss.
-
-### E. Syllabus Generator (`syllabus-generator.ts`)
-*   **Model**: Gemini 2.0 Flash
-*   **Input**: ~200 tokens.
-*   **Output**: ~1,100 tokens (Detailed structure + 5 references + strategy).
-*   **Unit Cost**: **$0.00035** / call
-*   **Risk**: Medium-High. Large output generation.
-
-### F. Speech-to-Speech (`speech-to-speech.ts`)
-*   **Components**: STT (10s) + LLM + TTS (200 chars).
-*   **STT Cost**: ~$0.0010 (10s audio).
-*   **LLM Cost**: ~$0.0001.
-*   **TTS Cost**: ~$0.0030 (200 chars).
-*   **Total Unit Cost**: **$0.00410** / call
-*   **Risk**: **CRITICAL**. This flow is **40x more expensive** than a standard chat message.
+| Feature | Monthly Frequency | Total Monthly Tokens | Monthly Cost / User |
+| :--- | :---: | :---: | :---: |
+| Adaptive Quiz | 10 | 8,000 | $0.0019 |
+| Syllabus Generator | 2 | 3,000 | $0.0008 |
+| Smart Revision Planner | 30 | 22,500 | $0.0034 |
+| Cognitive Chatbot (Custom & Multilingual) | 50 | 60,000 | $0.0090 |
+| Mindful Mentor | 5 | 4,750 | $0.0007 |
+| Speech-to-Speech (LLM Only) | 10 | 3,000 | $0.0006 |
+| **TOTAL** | - | **101,250** | **$0.0164** |
 
 ---
 
-## 4. Scaled Cost Projections (Monthly)
+## 3. Cost Projection by Scale
 
-| Feature | Unit Cost | 100 Users | 1,000 Users | 10,000 Users |
-| :--- | :--- | :--- | :--- | :--- |
-| **Adaptive Quiz** (2/day) | $0.00020 | $1.20 | $12.00 | $120.00 |
-| **Chatbot / Mentor** (10/day) | $0.00010 | $3.00 | $30.00 | $300.00 |
-| **Syllabus** (0.1/day) | $0.00035 | $0.10 | $1.00 | $10.00 |
-| **Revision Planner** (1/day) | $0.00006 | $0.18 | $1.80 | $18.00 |
-| **Speech-to-Speech** (1/day) | $0.00410 | **$12.30** | **$123.00** | **$1,230.00** |
-| **Total Monthly Cost** | | **~$16.78** | **~$167.80** | **~$1,678.00** |
+Projected monthly infrastructure costs at different user scales.
 
-*Note: Costs are estimates and do not include free tier benefits or enterprise volume discounts.*
+| Scale (Active Users) | Monthly Token Volume | Monthly Cost | Yearly Run Rate |
+| :--- | :---: | :---: | :---: |
+| **100** | 10,125,000 | **$1.64** | $19.68 |
+| **1,000** | 101,250,000 | **$16.40** | $196.83 |
+| **10,000** | 1,012,500,000 | **$164.03** | $1,968.30 |
+| **100,000** | 10,125,000,000 | **$1,640.25** | $19,683.00 |
 
----
 
-## 5. Optimization Recommendations
+## 4. Recommendations for Cost Control
 
-1.  **Cache TTS Output (High Impact)**
-    *   **Issue**: Generating audio for common phrases or repeated explanations is wasteful ($3 per 1M chars).
-    *   **Fix**: Store generated audio files in Cloud Storage with a hash of the text as the filename. Serve static files for subsequent requests.
+1.  **Cache Heavy Responses:** Implement caching for immutable generations like Syllabi (already partly implemented).
+2.  **Optimize System Prompts:** Reduce verbose instructions in frequent flows like *Smart Revision Planner*.
+3.  **Tiered Usage:** Limit expensive features (e.g., unlimited Chatbot) to premium tiers.
+4.  **Token Budgeting:** Implement per-user daily token quotas to prevent abuse.
+5.  **Model Distillation:** Fine-tune smaller models for specific high-volume tasks (e.g., Quiz Generation) to reduce latency and potentially cost (though Flash is already very cheap).
 
-2.  **Limit Speech Features (Policy)**
-    *   **Issue**: Speech-to-Speech is disproportionately expensive.
-    *   **Fix**: Make this a "Pro" feature or limit to 5 mins/day for free users.
-
-3.  **Optimize Syllabus Prompt (Medium Impact)**
-    *   **Issue**: Asking for "5 references" and "detailed structure" generates massive text blocks.
-    *   **Fix**: Reduce to "3 references" and "outline" for the initial request. Allow users to "expand" sections on demand (lazy loading).
-
-4.  **JSON Schema Efficiency (Low Impact)**
-    *   **Issue**: Verbose field descriptions in Zod schemas consume input tokens.
-    *   **Fix**: Shorten descriptions in `z.describe()` for production schemas (e.g., "The user's query" -> "User query").
-
-5.  **Monitor "Gemini 2.5" Usage**
-    *   **Issue**: Code references `gemini-2.5-flash-speech`. If this model has higher pricing than standard Flash, costs could double.
-    *   **Fix**: Verify pricing for experimental/preview models before broad rollout.
-
----
-*Report generated by Jules (AI Engineer)*
