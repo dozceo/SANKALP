@@ -104,7 +104,7 @@ export default function SyllabusPage() {
   const today = new Date();
   const timeDiff = examDate.getTime() - today.getTime();
   const daysUntilExam = Math.ceil(timeDiff / (1000 * 3600 * 24));
-  const isCrammingTime = daysUntilExam <= 3 && daysUntilExam >= 1;
+  const isCrammingTime = daysUntilExam <= 3 && daysUntilExam >= 0;
 
   return (
     <div className="space-y-6">
