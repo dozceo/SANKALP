@@ -1,75 +1,65 @@
 
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const SRC_DIR = path.join(process.cwd(), 'src');
 const DEV_FILE = path.join(SRC_DIR, 'ai/dev.ts');
-const OUTPUT_FILE = path.join(process.cwd(), 'GENKIT_SECURITY_ASSESSMENT.md');
+const REPORT_PATH = path.join(process.cwd(), 'GENKIT_SECURITY_ASSESSMENT.md');
 
-function checkDevFileGuards(): string[] {
-  const issues: string[] = [];
-  if (!fs.existsSync(DEV_FILE)) {
-    return ['`src/ai/dev.ts` not found. Assuming secure configuration (or file moved).'];
-  }
-  const content = fs.readFileSync(DEV_FILE, 'utf-8');
-  if (!content.includes('process.env.NODE_ENV') && !content.includes('if (typeof window === \'undefined\')')) {
-    issues.push('⚠️ No explicit environment guard found in `src/ai/dev.ts`. Ensure it is not bundled in production.');
-  }
-  return issues;
-}
-
-function checkDevImports(dir: string): string[] {
-  let imports: string[] = [];
-  const list = fs.readdirSync(dir);
-
-  for (const file of list) {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-
+function scanForImports(dir: string, targetFile: string, issues: string[]) {
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const fullPath = path.join(dir, file);
+    const stat = fs.statSync(fullPath);
     if (stat.isDirectory()) {
-      imports = imports.concat(checkDevImports(filePath));
-    } else {
-      if ((file.endsWith('.ts') || file.endsWith('.tsx')) && filePath !== DEV_FILE) {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        // Check for imports
-        if (content.match(/from\s+['"]@\/ai\/dev['"]/) || content.match(/from\s+['"]\.\.?\/ai\/dev['"]/)) {
-           imports.push(filePath);
-        }
+      scanForImports(fullPath, targetFile, issues);
+    } else if (/\.(ts|tsx|js|jsx)$/.test(file)) {
+      if (fullPath === targetFile) continue; // Skip self
+
+      const content = fs.readFileSync(fullPath, 'utf-8');
+      // Check for import of ai/dev
+      // Pattern: import ... from '@/ai/dev' or './ai/dev' etc.
+      // This is hard with relative paths.
+      // But we can search for the string "ai/dev" in imports.
+      if (/from\s+['"].*ai\/dev['"]/.test(content) || /import\s+['"].*ai\/dev['"]/.test(content)) {
+        issues.push(`- **CRITICAL**: \`${path.relative(process.cwd(), fullPath)}\` imports \`ai/dev\`. This file is for development only and must not be included in production builds.`);
       }
     }
   }
-  return imports;
 }
 
-function main() {
-  console.log('Auditing Genkit Security...');
+const issues: string[] = [];
 
-  const guardIssues = checkDevFileGuards();
-  const importIssues = checkDevImports(SRC_DIR);
+// Check 1: File existence
+if (fs.existsSync(DEV_FILE)) {
+  const content = fs.readFileSync(DEV_FILE, 'utf-8');
 
-  let report = `# Genkit Dev Server Security Assessment\n\nGenerated on: ${new Date().toISOString()}\n\n`;
-
-  report += `## Environment Guards\n\n`;
-  if (guardIssues.length === 0) {
-      report += `✅ \`src/ai/dev.ts\` appears to have environment checks or is safe.\n`;
-  } else {
-      report += `⚠️ Issues Found:\n`;
-      guardIssues.forEach(issue => report += `- ${issue}\n`);
+  // Check 2: Environment Guard
+  if (!content.includes('process.env.NODE_ENV') && !content.includes('!production')) {
+    issues.push(`- **Warning**: \`src/ai/dev.ts\` lacks an explicit \`process.env.NODE_ENV\` check. While safe if not imported, adding a runtime guard is recommended.`);
   }
 
-  report += `\n## Production Code Exposure\n\n`;
-  if (importIssues.length === 0) {
-      report += `✅ No production code imports \`src/ai/dev.ts\`.\n`;
-  } else {
-      report += `⚠️ The following files import the dev server configuration, which may expose it in production:\n\n`;
-      importIssues.forEach(file => {
-          report += `- \`${path.relative(process.cwd(), file)}\`\n`;
-      });
-      report += `\n**Recommendation**: Remove these imports or ensure they are wrapped in \`process.env.NODE_ENV !== 'production'\` checks and tree-shaken.\n`;
-  }
-
-  fs.writeFileSync(OUTPUT_FILE, report);
-  console.log(`Report generated at ${OUTPUT_FILE}`);
+  // Check 3: Usage
+  scanForImports(SRC_DIR, DEV_FILE, issues);
+} else {
+  issues.push(`- **Info**: \`src/ai/dev.ts\` not found. Skipping security check.`);
 }
 
-main();
+const reportContent = `# Genkit Security Assessment
+
+Generated on: ${new Date().toISOString()}
+
+## Assessment Target
+- **File**: \`src/ai/dev.ts\`
+- **Purpose**: Development server for Genkit flows.
+
+## Findings
+${issues.length === 0 ? 'No security issues found. The dev server appears isolated from production code.' : issues.join('\n')}
+
+## Recommendations
+- Ensure \`src/ai/dev.ts\` is excluded from the build output (Next.js automatically excludes files not imported by pages/components).
+- Do not import \`src/ai/dev.ts\` in any file under \`src/app\` or \`src/components\`.
+`;
+
+fs.writeFileSync(REPORT_PATH, reportContent);
+console.log(`Generated ${REPORT_PATH}`);

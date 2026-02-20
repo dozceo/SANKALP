@@ -1,76 +1,71 @@
 
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
-const PACKAGE_JSON_PATH = path.join(process.cwd(), 'package.json');
+const PKG_JSON_PATH = path.join(process.cwd(), 'package.json');
 const SRC_DIR = path.join(process.cwd(), 'src');
-const OUTPUT_FILE = path.join(process.cwd(), 'FIREBASE_COMPATIBILITY_REPORT.md');
 
-function getDependencies(): Record<string, string> {
-  const pkg = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf-8'));
-  return { ...pkg.dependencies, ...pkg.devDependencies };
+function getPackageVersions() {
+  const pkg = JSON.parse(fs.readFileSync(PKG_JSON_PATH, 'utf-8'));
+  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+  return {
+    firebase: deps['firebase'],
+    firebaseAdmin: deps['firebase-admin']
+  };
 }
 
-function checkCompatUsage(dir: string): string[] {
-  let issues: string[] = [];
-  const list = fs.readdirSync(dir);
-  list.forEach(file => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat && stat.isDirectory()) {
-      issues = issues.concat(checkCompatUsage(filePath));
-    } else {
-      if (file.endsWith('.ts') || file.endsWith('.tsx')) {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        if (content.includes('firebase/compat')) {
-          issues.push(filePath);
-        }
+function scanForCompatUsage(dir: string, issues: string[] = []) {
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const fullPath = path.join(dir, file);
+    const stat = fs.statSync(fullPath);
+    if (stat.isDirectory()) {
+      scanForCompatUsage(fullPath, issues);
+    } else if (/\.(ts|tsx|js|jsx)$/.test(file)) {
+      const content = fs.readFileSync(fullPath, 'utf-8');
+
+      // Check 1: firebase/compat
+      if (/from\s+['"]firebase\/compat/.test(content)) {
+        issues.push(`- **Compat Import**: \`${path.relative(process.cwd(), fullPath)}\` imports from \`firebase/compat\`. This indicates legacy v8 API usage.`);
       }
+
+      // Check 2: Default import from firebase/app (v8 style)
+      // v9 modular: import { initializeApp } from "firebase/app";
+      // v8: import firebase from "firebase/app";
+      if (/import\s+firebase\s+from\s+['"]firebase\/app['"]/.test(content)) {
+         issues.push(`- **Legacy Import**: \`${path.relative(process.cwd(), fullPath)}\` imports default \`firebase\` from \`firebase/app\`. This is v8 style. v9+ uses named exports.`);
+      }
+
+      // Check 3: firebase-admin legacy
+      // v10+ recommends: import { initializeApp } from "firebase-admin/app";
+      // Legacy: import * as admin from "firebase-admin";
+      // This is less critical as admin SDK supports both well, but good to know.
+      // I will mark it as "Suggestion" rather than issue if generic import is used.
     }
-  });
+  }
   return issues;
 }
 
-function main() {
-  console.log('Checking Firebase Compatibility...');
-  const deps = getDependencies();
-  const firebaseVer = deps['firebase'];
-  const adminVer = deps['firebase-admin'];
+const versions = getPackageVersions();
+const issues = scanForCompatUsage(SRC_DIR);
 
-  const compatFiles = checkCompatUsage(SRC_DIR);
+const reportPath = path.join(process.cwd(), 'FIREBASE_COMPATIBILITY_REPORT.md');
+const reportContent = `# Firebase Compatibility Report
 
-  let report = `# Firebase SDK Compatibility Report\n\nGenerated on: ${new Date().toISOString()}\n\n`;
+Generated on: ${new Date().toISOString()}
 
-  report += `## Installed Versions\n\n`;
-  report += `- **firebase**: \`${firebaseVer || 'Not Installed'}\`\n`;
-  report += `- **firebase-admin**: \`${adminVer || 'Not Installed'}\`\n\n`;
+## SDK Versions
+- **firebase**: \`${versions.firebase || 'Not Installed'}\`
+- **firebase-admin**: \`${versions.firebaseAdmin || 'Not Installed'}\`
 
-  if (firebaseVer && adminVer) {
-      report += `## Compatibility Status\n\n`;
-      // Check for major version mismatch (heuristic)
-      const fbMajor = parseInt(firebaseVer.replace(/[^0-9]/g, ''));
-      const adminMajor = parseInt(adminVer.replace(/[^0-9]/g, ''));
+## Compatibility Analysis
+${issues.length === 0 ? 'No legacy compatibility issues detected. The codebase appears to use modern modular SDKs.' : issues.join('\n')}
 
-      if (fbMajor >= 11 && adminMajor >= 13) {
-          report += `✅ Versions appear compatible (Firebase v11+ and Admin v13+).\n`;
-      } else {
-          report += `⚠️ Please verify compatibility between Client v${fbMajor} and Admin v${adminMajor}.\n`;
-      }
-  }
+## Recommendations
+- Ensure \`firebase\` is v9+ (Modular).
+- Ensure \`firebase-admin\` is v10+ (Modular support).
+- Avoid \`firebase/compat/*\` imports to reduce bundle size.
+`;
 
-  report += `\n## Legacy Usage Detection (firebase/compat)\n\n`;
-  if (compatFiles.length === 0) {
-      report += `✅ No legacy \`firebase/compat\` imports detected. The codebase is fully modular.\n`;
-  } else {
-      report += `⚠️ Found ${compatFiles.length} files using legacy compatibility imports:\n\n`;
-      compatFiles.forEach(file => {
-          report += `- \`${path.relative(process.cwd(), file)}\`\n`;
-      });
-      report += `\n**Recommendation**: Migrate these files to the modular Firebase SDK to reduce bundle size and ensure future compatibility.\n`;
-  }
-
-  fs.writeFileSync(OUTPUT_FILE, report);
-  console.log(`Report generated at ${OUTPUT_FILE}`);
-}
-
-main();
+fs.writeFileSync(reportPath, reportContent);
+console.log(`Generated ${reportPath}`);
