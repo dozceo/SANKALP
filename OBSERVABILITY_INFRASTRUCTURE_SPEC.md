@@ -1,199 +1,210 @@
-# Distributed Tracing & Observability Infrastructure Spec
+# Observability Infrastructure Specification
 
-## Executive Summary
-This specification details the architectural strategy for implementing end-to-end distributed tracing across the SANKALP platform. The goal is to make every request's journey through the system fully observable, enabling precise latency tracking, bottleneck detection, and cross-service error correlation.
+## 1. Trace Instrumentation Plan
 
-Based on collected benchmarks, the system exhibits distinct performance characteristics:
--   **ML Inference**: Extremely fast steady-state performance (~0.7ms) but suffers from a significant cold start penalty (~2.5s).
--   **LLM Generation**: The primary latency driver (~2s), necessitating careful monitoring and cost attribution.
--   **ADK Decision Logic**: Negligible latency (<1ms), confirming its efficiency as a synchronous orchestration layer.
+This specification outlines the strategy to implement end-to-end distributed tracing across the SANKALP platform, covering Frontend, Next.js Backend, ML Services, and LLM Integrations. The goal is to provide visibility into request lifecycles, identify performance bottlenecks, and correlate errors across service boundaries.
 
-## Architecture & Service Boundaries
+### 1.1 Trace Context Propagation
 
-The observability pipeline spans the following boundaries where trace context must be propagated:
+To ensure a continuous trace across all services, a unique `Trace ID` must be generated at the entry point (Frontend) and propagated to all downstream services.
 
-```mermaid
-graph TD
-    User[User Action] -->|Trace ID Generated| Frontend[Next.js Client]
-    Frontend -->|HTTP Headers (traceparent)| ServerAction[Next.js Server Action]
-
-    subgraph "Backend Services"
-        ServerAction -->|Internal Span| MLBridge[ML Bridge (Node.js)]
-        MLBridge -->|JSON Payload (_trace_id)| Python[Python Inference Process]
-        ServerAction -->|Internal Span| ADK[ADK Decision Engine]
-        ServerAction -->|Genkit Metadata| LLM[Genkit / LLM Provider]
-        ServerAction -->|DB Call| Firestore[Firebase Firestore]
-    end
-```
-
-### Trace Context Propagation
-
-1.  **Frontend → Server Action**:
-    -   **Mechanism**: W3C Trace Context (`traceparent` header).
-    -   **Implementation**: Ensure `fetch` calls from client components include the header. Server Actions automatically participate if wrapped with OpenTelemetry instrumentation.
-
-2.  **Node.js → Python Subprocess (ML Bridge)**:
-    -   **Mechanism**: Explicit JSON Payload field.
-    -   **Implementation**:
-        -   **Node.js**: In `src/ml/inference/ml-bridge.ts`, append `_trace_id` to the input features object before writing to `stdin`.
-        -   **Python**: In `src/ml/inference/predict_mastery.py`, extract `_trace_id` and start a new span with this ID as the parent context.
-
-3.  **Node.js → LLM (Genkit)**:
-    -   **Mechanism**: Metadata / Context Injection.
-    -   **Implementation**: Use Genkit's telemetry hooks to attach the current active span context to the request metadata sent to the model provider (Google AI).
-
-## Trace Instrumentation Plan
-
-### 1. Instrumentation Setup
-Update `src/instrumentation.ts` to initialize the OpenTelemetry Node.js SDK.
--   **SDK**: `@opentelemetry/sdk-node`
--   **Exporters**: OTLP Trace Exporter (sending to Jaeger/Honeycomb/etc).
--   **Auto-instrumentation**: Enable HTTP and Express instrumentations for automatic request capture.
-
-### 2. Span Definitions & Metadata
-
-#### A. Smart Revision Planner Flow (`src/ai/flows/smart-revision-planner.ts`)
-This critical flow orchestrates multiple services.
-
-| Span Name | Parent | Start Trigger | End Trigger | Metadata (Tags) |
-| :--- | :--- | :--- | :--- | :--- |
-| `revision.plan.generate` | Root | `smartRevisionPlanner` invoked | Function returns | `student_id`, `topic_count` |
-| `data.fetch.history` | `revision.plan.generate` | `getStudent` call | Data returned | `history_length`, `cache_hit` |
-| `topic.process` | `revision.plan.generate` | Loop start for topic | Loop end | `topic_name` |
-| `feature.extraction` | `topic.process` | `extractMasteryFeatures` start | Features returned | `attempts`, `days_since_revision` |
-| `ml.predict.mastery` | `topic.process` | `predictMastery` call | Prediction returned | `model_version`, `prediction_source` (API/Process) |
-| `adk.decision` | `topic.process` | `makeRevisionDecision` call | Decision returned | `decision_action`, `priority` |
-| `llm.generate.explanation` | `revision.plan.generate` | `explanationPrompt` call | Response received | `llm_model`, `prompt_tokens`, `completion_tokens` |
-
-#### B. ML Bridge (`src/ml/inference/ml-bridge.ts`)
-*   **Span Name**: `ml.bridge.invoke`
-*   **Attributes**:
-    *   `method`: `subprocess` (default) or `api` (fallback)
-    *   `python_script_path`: Path to `predict_mastery.py`
-    *   `retry_count`: Number of retries if failure occurred.
-
-### 3. Python Instrumentation (`src/ml/inference/predict_mastery.py`)
-*   **Span Name**: `ml.inference.python`
-*   **Attributes**:
-    *   `model_load_time_ms`: Time to load `.pkl` (if applicable).
-    *   `inference_time_ms`: Pure model prediction time.
-    *   `input_features`: JSON string of input features (for debugging).
-
-## Performance Baseline Report
-
-Measurements collected via `scripts/measure-latency.ts` on steady-state environment:
-
-| Operation | P50 (Median) | P90 | P99 | Analysis |
-| :--- | :--- | :--- | :--- | :--- |
-| **ML Inference (Steady)** | **0.68 ms** | **~1.0 ms** | **~1.5 ms** | Extremely performant due to persistent process architecture. |
-| **ML Inference (Cold)** | **2,514 ms** | N/A | N/A | High latency on first request due to Python interpreter startup and library imports (`joblib`, `sklearn`). |
-| **ADK Decision** | **0.001 ms** | **0.006 ms** | **0.33 ms** | Negligible overhead; CPU-bound synchronous logic. |
-| **LLM Response** | **~1,924 ms** | **~1,967 ms** | **~2,000 ms** | The dominant latency factor. |
-
-## Bottleneck Detection & Analysis
-
-### 1. ML Cold Start (2.5s)
-*   **Root Cause**: Spawning a new Python process and importing heavy libraries (`pandas`, `sklearn`) takes significant time.
-*   **Impact**: First user after deployment/restart experiences a 2-3s delay.
-*   **Mitigation Strategy**:
-    *   **Pre-warming**: Trigger a dummy prediction during server startup (`instrumentation.ts`).
-    *   **Keep-Alive**: Ensure the persistent process doesn't exit prematurely.
-
-### 2. LLM Latency (~2s)
-*   **Root Cause**: Network RTT to Google AI and token generation time.
-*   **Impact**: User perceives the application as "slow" during complex tasks like revision planning.
-*   **Mitigation Strategy**:
-    *   **Streaming**: Implement streaming responses for LLM outputs to improve perceived performance.
-    *   **Caching**: Cache common explanations for standard topics.
-
-## Error Correlation Strategy
-
-Connecting failures across the Node.js / Python boundary is critical.
-
-### Scenario: ML Prediction Failure
-**Symptom**: User sees fallback logic ("Recommended based on history") instead of ML prediction.
-**Trace Flow**:
-1.  **Trace ID**: `a1b2c3d4` generated at Server Action.
-2.  **Node.js Log**: `[Error] ML Prediction failed for trace a1b2c3d4: Python process exited with code 1`.
-3.  **Python Log**: `[Error] Trace a1b2c3d4: ModuleNotFoundError: No module named 'joblib'`.
-4.  **Correlation**: Searching for `trace_id=a1b2c3d4` in the logging backend (e.g., Loki, Cloud Logging) reveals both the high-level application error and the low-level Python stack trace.
-
-## Alerting Threshold Recommendations
-
-| Metric | Condition | Severity | Recommended Action |
+| Source Service | Destination Service | Propagation Mechanism | Implementation Detail |
 | :--- | :--- | :--- | :--- |
-| **Global Error Rate** | > 1% of requests | HIGH | Page On-Call. Indicates potential deployment failure or API outage. |
-| **LLM Latency** | P90 > 5s for 5m | MEDIUM | Check Status Page / Switch to backup model. |
-| **ML Cold Start Freq** | > 10 / hour | MEDIUM | Investigate process stability. Frequent restarts indicate crashes. |
-| **Trace Duration** | P99 > 8s | LOW | Log for weekly performance review. |
+| **Frontend (React)** | **Next.js API / Server Actions** | HTTP Headers | `traceparent` header (W3C Trace Context standard). |
+| **Next.js Backend** | **ML Service (Python)** | JSON Payload | Inject `trace_id` and `span_id` into the JSON object sent to `stdin` of the Python subprocess. |
+| **Next.js Backend** | **Genkit (LLM)** | Metadata | Pass `trace_id` in `ai.run` options or Genkit context to correlate LLM spans. |
+| **Next.js Backend** | **Firestore** | SDK Instrumentation | Use `@opentelemetry/instrumentation-firestore` to automatically attach context. |
 
-## Cost Attribution Model
+### 1.2 Instrumentation Points & Spans
 
-To enable financial observability ("FinOps"), spans must carry cost-drivers as attributes.
+We will use OpenTelemetry (OTEL) auto-instrumentation where possible, supplemented by manual instrumentation for custom logic.
 
-### 1. LLM Cost Tracking
-*   **Span**: `llm.generate.explanation`
-*   **Attributes**:
-    *   `llm.provider`: `google-ai`
-    *   `llm.model`: `gemini-1.5-flash`
-    *   `llm.usage.prompt_tokens`: `150`
-    *   `llm.usage.completion_tokens`: `50`
-*   **Calculation**: `(prompt_tokens * $0.075/1M) + (completion_tokens * $0.30/1M)`
+#### A. Frontend (Browser)
+*   **Library**: `@opentelemetry/sdk-trace-web`, `@opentelemetry/instrumentation-fetch`
+*   **Spans**:
+    *   `navigation`: Tracks page loads (e.g., `/home`, `/quiz`).
+    *   `user_interaction`: Tracks clicks on key buttons (e.g., "Submit Quiz", "Generate Syllabus").
+    *   `http_request`: Tracks `fetch` calls to `/api/*`.
 
-### 2. Database Cost Tracking
-*   **Span**: `firestore.read` / `firestore.write`
-*   **Attributes**:
-    *   `db.collection`: `quizResults`
-    *   `db.operation`: `read`
-    *   `db.documents_read`: `10`
-*   **Calculation**: `documents_read * $0.06/100k`
+#### B. Backend (Next.js Node.js)
+*   **Library**: `@opentelemetry/sdk-node`, `@opentelemetry/instrumentation-http`, `@opentelemetry/instrumentation-fs`
+*   **Spans**:
+    *   `api_handler`: Wraps API routes (e.g., `GET /api/intelligence/student`).
+    *   `server_action`: Wraps Server Actions (e.g., `createQuiz` in `src/app/(main)/quiz/actions.ts`).
+    *   `db_operation`: Wraps Firestore calls in `src/lib/db-helpers.ts` (e.g., `getStudent`, `saveQuizResult`).
 
-### 3. Example Cost Query
-```sql
-SELECT
-  sum(attributes['llm.usage.prompt_tokens']) as total_input,
-  sum(attributes['llm.usage.completion_tokens']) as total_output
-FROM spans
-WHERE service = 'sankalp-ai'
-  AND attributes['student_id'] = 'student-123'
+#### C. ML Service (Node.js <-> Python Bridge)
+*   **Location**: `src/ml/inference/ml-bridge.ts`
+*   **Span**: `ml_inference_request`
+    *   **Start**: When `bridge.predict()` is called.
+    *   **End**: When the promise resolves.
+    *   **Metadata**: `student_id`, `topic`, `model_version`.
+    *   **Context Injection**:
+        ```typescript
+        // In bridge.predict(features)
+        const traceId = trace.getSpan(context.active()).spanContext().traceId;
+        const payload = { ...features, _id: id, _trace_id: traceId };
+        proc.stdin.write(JSON.stringify(payload) + "\n");
+        ```
+
+#### D. Python Inference Service
+*   **Location**: `src/ml/inference/predict_mastery.py`
+*   **Span**: `model_prediction`
+    *   **Start**: After reading a line from `stdin` and parsing JSON.
+    *   **End**: Before writing the result to `stdout`.
+    *   **Metadata**: `input_features_hash`, `confidence_score`.
+    *   **Implementation**: Use `opentelemetry-api` and `opentelemetry-sdk` in Python. Extract `_trace_id` from input JSON to create a child span.
+
+#### E. Genkit / LLM (AI Service)
+*   **Location**: `src/ai/genkit.ts`
+*   **Span**: `llm_generation`
+    *   **Start**: Inside `ai.defineFlow` or `ai.generate`.
+    *   **End**: When the LLM response is received.
+    *   **Metadata**: `prompt_name` (e.g., `adaptiveQuizPrompt`), `model` (`gemini-2.0-flash`), `token_usage_input`, `token_usage_output`.
+
+---
+
+## 2. Service Boundary Documentation
+
+| Boundary | Type | Location in Code | Trace Requirements |
+| :--- | :--- | :--- | :--- |
+| **Frontend → API** | HTTP/Fetch | `src/app/(main)/home/page.tsx` (fetch intelligence) | Ensure `traceparent` header is included in `fetch` options. |
+| **Frontend → Server Action** | RPC (Next.js) | `src/app/(main)/quiz/page.tsx` calls `createQuiz` | Next.js experimentally supports OTEL; verify context propagation for Server Actions. |
+| **Node.js → Python** | Stdio Pipe | `src/ml/inference/ml-bridge.ts` (`proc.stdin.write`) | **Critical**: Must manually inject `_trace_id` into the JSON payload. |
+| **Python → Node.js** | Stdio Pipe | `src/ml/inference/ml-bridge.ts` (`rl.on("line")`) | Correlate the response log with the request span using the `_id` (and implicitly the active trace if context is preserved). |
+| **Node.js → Gemini API** | HTTP/REST | `src/ai/genkit.ts` | usage of `@genkit-ai/googleai` should automatically be traced if `http` instrumentation is enabled, but adding custom attributes for prompts is recommended. |
+| **Node.js → Firestore** | gRPC/HTTP | `src/lib/db-helpers.ts` | `@opentelemetry/instrumentation-firestore` handles this automatically. |
+
+---
+
+## 3. Example Flame Graphs (Conceptual)
+
+### 3.1 Scenario: Dashboard Load (`/home`)
+
+**User Story**: Student logs in and views their dashboard. The system fetches intelligence data which triggers ML predictions.
+
+```text
+[Trace: 4bf92f3577b34da6a3ce929d0e0e4736]
+|-- [span: navigation /home] (Frontend) -----------------------------------------------------> 1200ms
+    |-- [span: fetch /api/intelligence/student] (Frontend HTTP) -----------------------------> 950ms
+        |-- [span: GET /api/intelligence/student] (Backend API) -----------------------------> 900ms
+            |-- [span: getStudent] (Firestore Read) ----------------------------------> 50ms
+            |-- [span: getQuizResults] (Firestore Read) ------------------------------> 80ms
+            |-- [span: batchPredictMastery] (Node.js) --------------------------------------> 600ms
+                |-- [span: ml_inference_request topic="Algebra"] --------------------> 150ms
+                    |-- [span: model_prediction] (Python) ----------------------> 140ms
+                |-- [span: ml_inference_request topic="Calculus"] -------------------> 155ms (Sequential Wait)
+                    |-- [span: model_prediction] (Python) ----------------------> 145ms
+                |-- [span: ml_inference_request topic="Physics"] --------------------> 160ms (Sequential Wait)
+                    |-- [span: model_prediction] (Python) ----------------------> 150ms
+            |-- [span: makeRevisionDecision] (ADK Logic) -----------------------------> 10ms
+            |-- [span: saveADKDecision] (Firestore Write) ----------------------------> 40ms
 ```
 
-## Visualization: Flame Graph Concepts
+**Insight**: The flame graph reveals that `batchPredictMastery` takes 600ms because the Python `model_prediction` spans are executing sequentially (non-overlapping), despite `Promise.all` in Node.js, due to the single-threaded nature of the standard input loop in `predict_mastery.py`.
 
-### Optimised Request Flow (Warm Cache)
-```mermaid
-gantt
-    title Request Trace: Smart Revision Plan (Warm)
-    dateFormat  s
-    axisFormat %S
+### 3.2 Scenario: Quiz Generation (`/quiz/create`)
 
-    section Server Action
-    revision.plan.generate :active, 0, 2.5
+**User Story**: Student requests a new quiz on "Photosynthesis".
 
-    section Processing
-    ml.predict.mastery (Topic A) : 0.1, 0.101
-    adk.decision (Topic A) : 0.101, 0.102
-    ml.predict.mastery (Topic B) : 0.102, 0.103
-    adk.decision (Topic B) : 0.103, 0.104
-
-    section LLM
-    llm.generate.explanation : 0.2, 2.2
+```text
+[Trace: 8a5b2c1d...]
+|-- [span: click "Start Quiz"] (Frontend) ---------------------------------------------------> 3500ms
+    |-- [span: server_action createQuiz] (Backend) ------------------------------------------> 3400ms
+        |-- [span: generateQuiz] (AI Flow) --------------------------------------------------> 3350ms
+            |-- [span: llm_generation prompt="adaptiveQuizPrompt"] (Genkit) -----------------> 3300ms
+                |-- [span: http_post googleapis.com] (External API) -------------------> 3250ms
 ```
 
-### Bottleneck Request Flow (Cold Start)
-```mermaid
-gantt
-    title Request Trace: Smart Revision Plan (Cold Start)
-    dateFormat  s
-    axisFormat %S
+**Insight**: The entire latency is dominated by the LLM generation call.
 
-    section Server Action
-    revision.plan.generate :active, 0, 5.0
+---
 
-    section ML Cold Start
-    ml.bridge.spawn_process : 0.1, 2.6
-    ml.predict.mastery : 2.6, 2.601
+## 4. Bottleneck Analysis
 
-    section LLM
-    llm.generate.explanation : 2.7, 4.7
-```
+Based on the architectural review and conceptual traces, the following bottlenecks are identified:
+
+### Rank 1: Sequential ML Inference (High Latency)
+*   **Location**: `src/ml/inference/ml-bridge.ts` and `src/ml/inference/predict_mastery.py`
+*   **Issue**: `ml-bridge.ts` sends batch requests concurrently using `Promise.all`, but `predict_mastery.py` reads `sys.stdin` synchronously in a loop. This effectively serializes parallel requests.
+*   **Impact**: Dashboard load time increases linearly with the number of topics (N * InferenceTime).
+*   **Detection**: Flame graph shows "staircase" pattern for `ml_inference_request` spans.
+*   **Fix**: Update `predict_mastery.py` to accept batch inputs (JSON array) in a single line or implement a multi-threaded request handler in Python.
+
+### Rank 2: LLM Latency (High Variance)
+*   **Location**: `src/ai/genkit.ts`
+*   **Issue**: Calls to Gemini 2.0 Flash can take 1-5 seconds.
+*   **Impact**: Quiz generation and explanation features feel sluggish.
+*   **Detection**: Long `llm_generation` spans with no internal activity.
+*   **Fix**: Implement streaming responses for Quiz generation so the user sees questions appear one by one.
+
+### Rank 3: Firestore Read Amplification
+*   **Location**: `src/lib/db-helpers.ts` -> `getBatchedCachedPredictions`
+*   **Issue**: Using `IN` queries with small chunks (size 10) is good, but frequent dashboard reloads trigger these reads every time.
+*   **Impact**: Increased Firestore costs and latency.
+*   **Detection**: High count of `firestore_read` spans per trace.
+
+---
+
+## 5. Performance Baselines & Alerting
+
+We will establish the following baselines for "Normal" operation. Deviations trigger alerts.
+
+| Operation | Metric | Target (P90) | Alert Threshold | Severity |
+| :--- | :--- | :--- | :--- | :--- |
+| **Dashboard Load** | Latency | < 1.5s | > 3.0s | Medium |
+| **Quiz Submission** | Latency | < 500ms | > 1.5s | Low |
+| **Smart Revision** | Latency | < 2.0s | > 5.0s | High |
+| **ML Inference (Single)** | Latency | < 100ms | > 300ms | Medium |
+| **ML Inference (Batch)** | Latency | < 800ms | > 2.0s | Medium |
+| **LLM Generation** | Latency | < 4.0s | > 8.0s | Low (User Expectation) |
+| **Error Rate** | % Errors | < 0.5% | > 2.0% | Critical |
+
+---
+
+## 6. Cost Attribution Model
+
+To monitor unit economics, every trace involving paid resources (LLM, Database) will be tagged with cost metrics.
+
+### 6.1 LLM Costs (Genkit)
+*   **Metric**: `llm.token_count.input`, `llm.token_count.output`
+*   **Tagging**: Add `model_id` (e.g., `gemini-2.0-flash`) to the span.
+*   **Calculation**:
+    *   Input Cost: `span.attributes['llm.token_count.input'] * $0.0001 / 1k`
+    *   Output Cost: `span.attributes['llm.token_count.output'] * $0.0004 / 1k`
+
+### 6.2 Database Costs (Firestore)
+*   **Metric**: `db.operation.count`
+*   **Tagging**: Add `db.collection` and `db.operation` (read/write) to the span.
+*   **Calculation**:
+    *   Read Cost: `count * $0.038 / 100k`
+    *   Write Cost: `count * $0.115 / 100k`
+
+### 6.3 Per-User Cost Analysis
+By propagating `user_id` as a baggage item in the trace context, we can aggregate total costs per user per month.
+*   **Query**: `sum(cost) where user_id = 'student_123'`
+
+---
+
+## 7. Error Correlation Examples
+
+### Scenario: "ML Prediction Failed"
+**Symptom**: User sees "Prediction unavailable" on the dashboard.
+
+**Trace View**:
+1.  **Frontend**: `GET /api/intelligence/student` (Status: 200 OK, but partial content)
+2.  **Backend**: `batchPredictMastery` (Status: OK)
+    *   **Span**: `ml_inference_request` (Status: ERROR)
+        *   **Event**: `exception` -> "Timeout waiting for Python inference"
+        *   **Log**: "Python process stderr: MemoryError"
+3.  **Root Cause**: The trace links the generic API fallback response directly to a specific `MemoryError` in the Python subprocess, which would otherwise be hidden in detached logs.
+
+### Scenario: "Quiz Save Failed"
+**Symptom**: User completes quiz, but results are lost.
+
+**Trace View**:
+1.  **Frontend**: `POST /api/quiz/submit` (Status: 500)
+2.  **Backend**: `saveQuizResult` (Status: ERROR)
+    *   **Span**: `firestore_write` (Status: ERROR)
+        *   **Attributes**: `code=PERMISSION_DENIED`, `collection=quizResults`
+3.  **Root Cause**: Trace immediately identifies that the user's auth token was invalid or expired when attempting the write, rather than a logic error.
