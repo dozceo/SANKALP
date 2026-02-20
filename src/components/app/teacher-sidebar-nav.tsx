@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -11,6 +12,7 @@ import {
     Settings,
     BrainCircuit,
     Copy,
+    Check,
 } from "lucide-react";
 
 import {
@@ -36,6 +38,7 @@ const teacherNavItems = [
 export function TeacherSidebarNav() {
     const pathname = usePathname();
     const { user } = useAuth();
+    const [isCopied, setIsCopied] = useState(false);
 
     return (
         <>
@@ -98,10 +101,17 @@ export function TeacherSidebarNav() {
                                     className="h-6 w-6"
                                     onClick={() => {
                                         navigator.clipboard.writeText(user.uid);
+                                        setIsCopied(true);
+                                        setTimeout(() => setIsCopied(false), 2000);
                                     }}
-                                    title="Copy ID"
+                                    title={isCopied ? "Copied" : "Copy ID"}
+                                    aria-label={isCopied ? "Copied User ID" : "Copy User ID"}
                                 >
-                                    <Copy className="h-3 w-3" />
+                                    {isCopied ? (
+                                        <Check className="h-3 w-3" />
+                                    ) : (
+                                        <Copy className="h-3 w-3" />
+                                    )}
                                 </Button>
                             </div>
                             <div className="text-xs font-mono truncate text-foreground/80">
