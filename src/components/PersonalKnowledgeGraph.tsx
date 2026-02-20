@@ -23,6 +23,8 @@ interface PersonalKnowledgeGraphProps {
 type ExtendedNodeObject = NodeObject & GraphNode & {
     _cachedLightColor?: string;
     _cachedBaseColor?: string;
+    _cachedGradient?: CanvasGradient;
+    _cachedGradientKey?: string;
 };
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
@@ -110,17 +112,17 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             }
         }
 
+        ctx.save();
+        ctx.translate(node.x, node.y);
+
         // Glow effect for center/hovered nodes
         if (isCenter || isHovered) {
-            const gradient = ctx.createRadialGradient(
-                node.x, node.y, 0,
-                node.x, node.y, nodeSize * 3
-            );
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, nodeSize * 3);
             // Use baseColor for glow, but transparent
             gradient.addColorStop(0, `${baseColor}66`); // Hex opacity
             gradient.addColorStop(1, `${baseColor}00`);
             ctx.beginPath();
-            ctx.arc(node.x, node.y, nodeSize * 3, 0, 2 * Math.PI);
+            ctx.arc(0, 0, nodeSize * 3, 0, 2 * Math.PI);
             ctx.fillStyle = gradient;
             ctx.fill();
         }
@@ -129,24 +131,39 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         // Use simple flat color for better performance
         if (globalScale < 1.5 && !isCenter && !isHovered) {
             ctx.beginPath();
-            ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+            ctx.arc(0, 0, nodeSize, 0, 2 * Math.PI);
             ctx.fillStyle = baseColor;
             ctx.fill();
         } else {
-            // Node circle with gradient
-            const nodeGradient = ctx.createRadialGradient(
-                node.x - nodeSize * 0.3, node.y - nodeSize * 0.3, 0,
-                node.x, node.y, nodeSize
-            );
+            // Node circle with gradient using caching
+            let nodeGradient: CanvasGradient;
+            const gradientKey = `${lightColor}-${baseColor}`;
 
-            nodeGradient.addColorStop(0, lightColor);
-            nodeGradient.addColorStop(1, baseColor);
+            // Scale to unit size to allow gradient caching
+            ctx.save();
+            ctx.scale(nodeSize, nodeSize);
+
+            // Optimization: Cache gradient directly on the node object
+            if (node._cachedGradient && node._cachedGradientKey === gradientKey) {
+                nodeGradient = node._cachedGradient;
+            } else {
+                // Create unit gradient with offset center (-0.3, -0.3)
+                nodeGradient = ctx.createRadialGradient(-0.3, -0.3, 0, 0, 0, 1);
+                nodeGradient.addColorStop(0, lightColor);
+                nodeGradient.addColorStop(1, baseColor);
+
+                node._cachedGradient = nodeGradient;
+                node._cachedGradientKey = gradientKey;
+            }
 
             ctx.beginPath();
-            ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+            ctx.arc(0, 0, 1, 0, 2 * Math.PI);
             ctx.fillStyle = nodeGradient;
             ctx.fill();
+            ctx.restore(); // Restore scale
         }
+
+        ctx.restore(); // Restore translation
 
         // Border for center node
         if (isCenter) {
