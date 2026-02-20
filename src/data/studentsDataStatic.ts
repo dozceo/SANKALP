@@ -1,3 +1,8 @@
+/**
+ * @deprecated This file exports an empty `studentsData` array and duplicates
+ * functions already available in `docsData.ts`. Prefer importing from
+ * `@/data/docsData` instead. This file will be removed in a future cleanup.
+ */
 // Static student data export for client-side use
 // This file is generated from the markdown files in data/students/
 

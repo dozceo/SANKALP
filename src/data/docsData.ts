@@ -134,6 +134,10 @@ export function parseStudentMarkdown(filePath: string): StudentNode | null {
             connections: data.connections || [],
             lastActive: data.lastActive,
             masteryScores: data.masteryScores || {},
+            badges: Array.isArray(data.badges) ? data.badges : [],
+            streak: typeof data.streak === 'number' ? data.streak : 0,
+            subjects: Array.isArray(data.subjects) ? data.subjects : [],
+            studyMaterials: Array.isArray(data.studyMaterials) ? data.studyMaterials : [],
         };
     } catch (error) {
         console.error(`Error parsing student file ${filePath}:`, error);

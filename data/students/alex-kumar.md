@@ -5,6 +5,26 @@ grade: 10
 email: alex.kumar@school.edu
 registrationDate: 2026-01-15
 lastActive: 2026-01-25
+streak: 5
+badges:
+  - id: first-quiz
+    title: First Steps
+    description: Completed your first quiz
+    icon: "🎯"
+    earnedAt: "2026-01-16T10:00:00Z"
+    color: "hsl(200, 70%, 50%)"
+  - id: quiz-5
+    title: Quiz Enthusiast
+    description: Completed 5 quizzes
+    icon: "📝"
+    earnedAt: "2026-01-20T14:30:00Z"
+    color: "hsl(160, 70%, 45%)"
+  - id: streak-3
+    title: On a Roll
+    description: Maintained a 3-day streak
+    icon: "🔥"
+    earnedAt: "2026-01-18T09:00:00Z"
+    color: "hsl(20, 90%, 55%)"
 topics:
   - Algebra
   - Geometry
@@ -27,6 +47,7 @@ masteryScores:
   Physics: 0.68
   Trigonometry: 0.45
 ---
+
 
 # Alex Kumar - Student Profile
 
