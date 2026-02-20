@@ -1,89 +1,123 @@
+
 import fs from 'fs';
 import path from 'path';
 
-const TARGET_DIR = 'src/app';
-const REPORT_FILE = 'STATE_PERSISTENCE_GAP_REPORT.md';
+const TARGET_DIR = path.join(process.cwd(), 'src/app');
+const REPORT_FILE = path.join(process.cwd(), 'reports', 'STATE_PERSISTENCE_GAP_REPORT.md');
 
-function scanDirectory(dir: string, fileList: string[] = []) {
-  const files = fs.readdirSync(dir);
-  files.forEach((file) => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat.isDirectory()) {
-      scanDirectory(filePath, fileList);
-    } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
-      fileList.push(filePath);
-    }
-  });
-  return fileList;
+interface FileReport {
+  filepath: string;
+  states: string[];
+  hasLocalStorage: boolean;
+  hasSessionStorage: boolean;
 }
 
-function analyzeFile(filePath: string) {
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const hasUseState = content.includes('useState');
-  const hasUseReducer = content.includes('useReducer');
+function scanDirectory(dir: string): string[] {
+  let results: string[] = [];
+  const list = fs.readdirSync(dir);
+  list.forEach(file => {
+    file = path.join(dir, file);
+    const stat = fs.statSync(file);
+    if (stat && stat.isDirectory()) {
+      results = results.concat(scanDirectory(file));
+    } else {
+      if (file.endsWith('.tsx') || file.endsWith('.ts')) {
+        results.push(file);
+      }
+    }
+  });
+  return results;
+}
 
-  if (!hasUseState && !hasUseReducer) return null;
+function analyzeFile(filepath: string): FileReport | null {
+  const content = fs.readFileSync(filepath, 'utf-8');
 
-  const hasLocalStorage = content.includes('localStorage');
-  const hasSessionStorage = content.includes('sessionStorage');
-  const hasIndexedDB = content.includes('indexedDB');
-  const hasCookie = content.includes('cookie');
+  // Regex to find useState
+  // const [stateName, setStateName] = useState(...)
+  const stateRegex = /const\s+\[(\w+),\s*set\w+\]\s*=\s*useState/g;
+  const states: string[] = [];
+  let match;
+  while ((match = stateRegex.exec(content)) !== null) {
+    states.push(match[1]);
+  }
 
-  // Basic heuristic: if state is used but no storage mechanism is found in the same file, it's a potential gap.
-  // This is a naive check but sufficient for an initial audit.
-  const isPersisted = hasLocalStorage || hasSessionStorage || hasIndexedDB || hasCookie;
+  if (states.length === 0) return null;
+
+  const hasLocalStorage = content.includes('localStorage.setItem');
+  const hasSessionStorage = content.includes('sessionStorage.setItem');
 
   return {
-    filePath,
-    hasUseState,
-    hasUseReducer,
-    isPersisted,
-    persistenceMethods: [
-        hasLocalStorage ? 'localStorage' : '',
-        hasSessionStorage ? 'sessionStorage' : '',
-        hasIndexedDB ? 'indexedDB' : '',
-        hasCookie ? 'cookie' : ''
-    ].filter(Boolean)
+    filepath: path.relative(process.cwd(), filepath),
+    states,
+    hasLocalStorage,
+    hasSessionStorage
   };
 }
 
-function generateReport(results: any[], totalFilesScanned: number) {
-  let report = '# State Persistence Gap Report\n\n';
-  report += 'This report identifies components using local state (`useState`, `useReducer`) without obvious client-side persistence mechanisms (`localStorage`, `sessionStorage`, etc.).\n\n';
+function generateReport(reports: FileReport[]) {
+  let markdown = '# State Persistence Gap Report\n\n';
+  markdown += 'This report identifies components with local state (`useState`) that may not be persisted to `localStorage` or `sessionStorage`, potentially leading to data loss on refresh.\n\n';
 
-  const riskyFiles = results.filter(r => (r.hasUseState || r.hasUseReducer) && !r.isPersisted);
+  const riskyFiles = reports.filter(r => !r.hasLocalStorage && !r.hasSessionStorage);
+  const safeFiles = reports.filter(r => r.hasLocalStorage || r.hasSessionStorage);
 
-  report += `## Summary\n`;
-  report += `- Total Files Scanned: ${totalFilesScanned}\n`;
-  report += `- Files with State: ${results.length}\n`;
-  report += `- Potential Persistence Gaps: ${riskyFiles.length}\n\n`;
+  markdown += `## Summary\n`;
+  markdown += `- Total Files Scanned: ${reports.length}\n`;
+  markdown += `- Files with Unpersisted State: ${riskyFiles.length}\n`;
+  markdown += `- Files with Persisted State: ${safeFiles.length}\n\n`;
 
-  report += `## High Risk Components (State without Persistence)\n`;
+  markdown += `## High Risk: Unpersisted State\n`;
+  markdown += `The following files contain state but no detected client-side persistence mechanisms.\n\n`;
+
   if (riskyFiles.length === 0) {
-      report += "No obvious gaps found.\n";
+    markdown += "_No high risk files detected._\n";
   } else {
-      riskyFiles.forEach(file => {
-        report += `- **${file.filePath}**\n`;
-        if (file.hasUseState) report += `  - Uses \`useState\`\n`;
-        if (file.hasUseReducer) report += `  - Uses \`useReducer\`\n`;
-      });
+    markdown += `| Filepath | State Variables |\n`;
+    markdown += `| :--- | :--- |\n`;
+    riskyFiles.forEach(r => {
+      markdown += `| \`${r.filepath}\` | \`${r.states.join(', ')}\` |\n`;
+    });
   }
 
-  report += `\n## Components with Persistence\n`;
-  const persistedFiles = results.filter(r => r.isPersisted);
-   if (persistedFiles.length === 0) {
-      report += "No client-side persistence found in stateful components.\n";
+  markdown += `\n## Low Risk: Persisted State (or Partial)\n`;
+  markdown += `The following files contain state and use storage APIs.\n\n`;
+
+  if (safeFiles.length === 0) {
+    markdown += "_No persisted state detected._\n";
   } else {
-      persistedFiles.forEach(file => {
-        report += `- **${file.filePath}** (${file.persistenceMethods.join(', ')})\n`;
-      });
+    markdown += `| Filepath | Storage Type |\n`;
+    markdown += `| :--- | :--- |\n`;
+    safeFiles.forEach(r => {
+      const types = [];
+      if (r.hasLocalStorage) types.push('localStorage');
+      if (r.hasSessionStorage) types.push('sessionStorage');
+      markdown += `| \`${r.filepath}\` | ${types.join(', ')} |\n`;
+    });
   }
 
-  fs.writeFileSync(REPORT_FILE, report);
+  markdown += `\n## Recommendations\n`;
+  markdown += `1. **Review High Risk Files**: Check if the identified state variables (e.g., form data, progress) should persist across reloads.\n`;
+  markdown += `2. **Implement Persistence**: Use a custom hook like \`useLocalStorage\` for critical state.\n`;
+  markdown += `3. **Database Sync**: Ensure critical data is also synced to the backend via API calls (not covered in this client-side audit).\n`;
+
+  // Ensure directory exists
+  const reportDir = path.dirname(REPORT_FILE);
+  if (!fs.existsSync(reportDir)) {
+    fs.mkdirSync(reportDir, { recursive: true });
+  }
+
+  fs.writeFileSync(REPORT_FILE, markdown);
   console.log(`Report generated at ${REPORT_FILE}`);
 }
 
 const files = scanDirectory(TARGET_DIR);
-const results = files.map(analyzeFile).filter(Boolean);
-generateReport(results, files.length);
+const reports: FileReport[] = [];
+
+files.forEach(file => {
+  const report = analyzeFile(file);
+  if (report) {
+    reports.push(report);
+  }
+});
+
+generateReport(reports);
