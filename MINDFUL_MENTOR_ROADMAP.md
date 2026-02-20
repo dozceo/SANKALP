@@ -9,7 +9,7 @@ The "Mindful Mentor" feature is currently a functional prototype consisting of a
 | :--- | :--- | :--- |
 | **AI Flow** | **Prototype** | `mindfulMentorFlow` wraps a structured prompt but lacks memory/context window management. |
 | **User Interface** | **Basic** | Simple chat UI (`mentor/page.tsx`) with ephemeral local state. History is lost on refresh. |
-| **Context Integration** | **Hardcoded** | Currently feeds a static string ("The student has been feeling overwhelmed...") to the AI, ignoring real student data. |
+| **Context Integration** | **Hardcoded** | `src/app/(main)/mentor/actions.ts` feeds a static string ("The student has been feeling overwhelmed with their chemistry coursework...") to the AI, completely ignoring real student data. |
 | **Persistence** | **None** | Chat logs are not saved to the database. |
 
 ## Gap Analysis
@@ -19,8 +19,8 @@ The "Mindful Mentor" feature is currently a functional prototype consisting of a
 *   **Requirement:** Implement a `chatSessions` collection in Firestore to store message history.
 
 ### 2. Context Blindness
-*   **Gap:** The AI does not know the student's actual grades, recent quiz failures, or study habits.
-*   **Requirement:** Fetch `StudentNode` (mastery, recent activity) and inject a summary into the AI prompt (e.g., "Student failed Algebra quiz yesterday").
+*   **Gap:** The AI does not know the student's actual grades, recent quiz failures, or study habits. It relies on a hardcoded string.
+*   **Requirement:** Fetch `StudentNode` (mastery, recent activity) in `actions.ts` and inject a summary into the AI prompt (e.g., "Student failed Algebra quiz yesterday").
 
 ### 3. Reactive Only
 *   **Gap:** The mentor only responds when messaged. It does not proactively reach out (e.g., "I noticed you struggled with Calculus...").
@@ -30,7 +30,7 @@ The "Mindful Mentor" feature is currently a functional prototype consisting of a
 
 ### Phase 1: Foundation (MVP)
 *   [ ] **Database Schema:** Create `chat_sessions` and `messages` collections.
-*   [ ] **Context Injection:** Update `getMotivationalCounseling` to fetch real student data (grades, recent struggles) and pass it to the prompt.
+*   [ ] **Context Injection:** Update `getMotivationalAdvice` in `actions.ts` to fetch real student data (grades, recent struggles) via `db-helpers.ts` and pass it to the prompt, replacing the hardcoded string.
 *   [ ] **Persistence:** Save user and bot messages to Firestore.
 
 ### Phase 2: Enhanced Intelligence
