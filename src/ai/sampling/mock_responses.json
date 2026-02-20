@@ -101,7 +101,9 @@
     "flow": "mindfulMentorFlow",
     "timestamp": "2025-05-23T14:00:00Z",
     "response": {
-      "advice": "Take a deep breath."
+      "advice": "Take a deep breath.",
+      "severityLevel": "LOW",
+      "escalationRequired": false
     },
     "expectedStatus": "valid"
   },

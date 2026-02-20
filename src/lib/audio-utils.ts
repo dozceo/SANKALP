@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Shared audio utility for converting raw PCM audio data to WAV format.
  * Used by speech-to-speech and text-to-speech flows.

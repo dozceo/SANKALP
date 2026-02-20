@@ -17,7 +17,9 @@ export async function getMotivationalAdvice(studentConcern: string) {
 
         return {
             content: response.advice,
-            source: 'ai'
+            source: 'ai' as const,
+            escalationRequired: response.escalationRequired,
+            severityLevel: response.severityLevel,
         };
     } catch (e) {
         console.error('[MENTOR_ERROR] Flow execution failed:', {
@@ -28,7 +30,9 @@ export async function getMotivationalAdvice(studentConcern: string) {
         // Serve an empathetic randomized fallback
         return {
             content: getMentorFallback(),
-            source: 'fallback'
+            source: 'fallback' as const,
+            escalationRequired: false,
+            severityLevel: 'LOW' as const,
         };
     }
 }

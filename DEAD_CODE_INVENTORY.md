@@ -1,6 +1,6 @@
 # Dead Code Inventory
 
-Generated on: 2026-02-17T19:19:27.962Z
+Generated on: 2026-02-20T02:19:47.389Z
 
 This report lists exported components and utilities from `src/components` and `src/lib` that do not appear to be used elsewhere in the `src` directory. **Note:** This is a heuristic analysis (string search). Manual verification is recommended before deletion.
 
