@@ -1,133 +1,86 @@
 
-import { spawn } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
+import fs from 'fs';
+import path from 'path';
 
-const REPORT_FILE = 'FORGETTING_CURVE_AUDIT.md';
-const PY_SCRIPT = 'src/ml/inference/predict_mastery.py';
+async function auditForgettingCurve() {
+  console.log('Starting Forgetting Curve Audit...');
 
-// Standard Ebbinghaus Forgetting Curve: R = e^(-t/S)
-// days_until_forget (t) for R=0.5 => t = S * ln(2) approx 0.693 * S
-// Where S is stability (memory strength).
-// S typically increases with successful repetitions.
-function calculateExpectedDaysUntilForget(s: number): number {
-    return Math.round(s * 0.693);
-}
+  const reportPath = path.join(process.cwd(), 'reports', 'FORGETTING_CURVE_AUDIT.md');
+  const reportDir = path.dirname(reportPath);
 
-async function runAudit() {
-    console.log('Starting Forgetting Curve Audit...');
+  if (!fs.existsSync(reportDir)) {
+    fs.mkdirSync(reportDir, { recursive: true });
+  }
 
-    // Sample input mimicking a student who has practiced a topic
-    // "attempts_per_topic" is a proxy for repetitions (N)
-    // "avg_quiz_score" is a proxy for performance
-    // S could be modeled as k * N * score
-    const sampleInput = {
-        avg_quiz_score: 0.8,
-        attempts_per_topic: 5,
-        days_since_last_revision: 2,
-        quiz_score_variance: 0.1,
-        time_spent_per_question: 30
-    };
+  const modelPath = path.join(process.cwd(), 'src/ml/models/forgetting_model.pkl');
+  const inferenceScriptPath = path.join(process.cwd(), 'src/ml/inference/predict_mastery.py');
 
-    console.log('Running inference with input:', JSON.stringify(sampleInput));
+  let reportContent = `# Forgetting Curve Model Implementation Audit
 
-    const output = await runPythonScript(sampleInput);
-
-    generateReport(sampleInput, output);
-}
-
-function runPythonScript(input: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python3', [PY_SCRIPT]);
-
-        let stdoutData = '';
-        let stderrData = '';
-
-        pythonProcess.stdout.on('data', (data) => {
-            stdoutData += data.toString();
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            stderrData += data.toString();
-        });
-
-        pythonProcess.on('close', (code) => {
-            if (code !== 0) {
-                console.error(`Python script exited with code ${code}`);
-                console.error(`Stderr: ${stderrData}`);
-                // Instead of rejecting, we return the error as the output to report it
-                resolve({ error: stderrData || 'Unknown error' });
-            } else {
-                try {
-                    // Python script prints JSON lines. We take the last one.
-                    const lines = stdoutData.trim().split('\n');
-                    const lastLine = lines[lines.length - 1];
-                    const result = JSON.parse(lastLine);
-                    resolve(result);
-                } catch (e) {
-                    console.error('Failed to parse JSON output:', stdoutData);
-                    resolve({ error: 'JSON parse error', raw: stdoutData });
-                }
-            }
-        });
-
-        pythonProcess.stdin.write(JSON.stringify(input) + '\n');
-        pythonProcess.stdin.end();
-    });
-}
-
-function generateReport(input: any, output: any) {
-    let report = `# Forgetting Curve Model Mathematical Correctness Audit
-
-## Executive Summary
-The ADK decision engine relies on a \`days_until_forget\` metric to schedule revisions based on the forgetting curve.
-This audit verified whether the ML inference layer correctly calculates and returns this metric.
+## Overview
+This report audits the mathematical correctness and implementation status of the Forgetting Curve model, which is critical for the Smart Revision Planner.
 
 ## Methodology
-1.  **Input Simulation**: Provided student feature data to \`src/ml/inference/predict_mastery.py\`.
-    *   Attempts: ${input.attempts_per_topic}
-    *   Avg Score: ${input.avg_quiz_score}
-    *   Time Since Last Revision: ${input.days_since_last_revision} days
-2.  **Reference Model**: Ebbinghaus Forgetting Curve ($R = e^{-t/S}$).
-    *   Expected Behavior: As memory strength (S) increases with repetitions/score, \`days_until_forget\` (t where R < threshold) should increase.
-3.  **Comparison**: Checked if the ML output contains \`days_until_forget\` and if it aligns with the reference model.
+- Checked for the existence of the trained model file: \`src/ml/models/forgetting_model.pkl\`.
+- Analyzed the inference script: \`src/ml/inference/predict_mastery.py\`.
+- Verified if \`days_until_forget\` is being calculated or returned.
 
 ## Findings
 
-### ML Output Analysis
-\`\`\`json
-${JSON.stringify(output, null, 2)}
-\`\`\`
 `;
 
-    if (output.days_until_forget === undefined) {
-        report += `
-**CRITICAL FINDING: Missing Metric**
-The ML inference script **does not return** \`days_until_forget\`.
-The ADK logic in \`src/ai/adk/decision-engine.ts\` attempts to use this value:
-\`\`\`typescript
-if (mastery_probability < 0.4 && (mlSignals.days_until_forget ?? 999) < 3)
-\`\`\`
-Because the value is missing, it defaults to \`999\` (perfect memory), effectively **disabling** the forgetting-curve-based intervention logic.
+  // Check Model File
+  if (fs.existsSync(modelPath)) {
+    reportContent += `- ✅ **Model File Found**: \`src/ml/models/forgetting_model.pkl\` exists.\n`;
+  } else {
+    reportContent += `- ❌ **MISSING**: Model file \`src/ml/models/forgetting_model.pkl\` does not exist. This confirms the feature is not deployed.\n`;
+  }
 
-### Deviation from Reference Model
-- **Theoretical Prediction**: For a student with 5 attempts and 80% score, memory stability (S) should be high, and \`days_until_forget\` should be calculable (e.g., > 7 days).
-- **Actual Implementation**: No calculation exists. Deviation is **Total (Feature Missing)**.
+  // Check Inference Script
+  if (fs.existsSync(inferenceScriptPath)) {
+    const content = fs.readFileSync(inferenceScriptPath, 'utf-8');
+    if (content.includes('days_until_forget')) {
+      reportContent += `- ✅ **Inference Logic**: The script references \`days_until_forget\`.\n`;
+    } else {
+      reportContent += `- ❌ **MISSING LOGIC**: The inference script \`predict_mastery.py\` does **not** contain logic for \`days_until_forget\`. It only predicts mastery probability.\n`;
+    }
+  } else {
+    reportContent += `- ⚠️ Inference script not found at expected path.\n`;
+  }
+
+  // Impact Analysis
+  reportContent += `
+## Impact Analysis
+The ADK Decision Engine (\`src/ai/adk/decision-engine.ts\`) relies on \`days_until_forget\` for scheduling urgent revisions:
+\`\`\`typescript
+    if (mastery_probability < 0.4 && (mlSignals.days_until_forget ?? 999) < 3) {
+        return { action: DecisionAction.URGENT_REVISION, ... };
+    }
+\`\`\`
+Since the model is missing, \`days_until_forget\` is undefined, defaulting to \`999\`.
+**Result**: The "Urgent Revision" condition based on imminent forgetting will **never trigger**. This degrades the efficacy of the Smart Revision Planner.
 
 ## Recommendations
-1.  **Implement Calculation**: Add logic to \`src/ml/inference/predict_mastery.py\` (or a new script) to calculate \`days_until_forget\`.
-    *   *Proposed Formula*: $S = \\text{attempts} \\times \\text{score} \\times 2$ (simplified Leitner)
-    *   $\\text{days\_until\_forget} = S \\times \\ln(2)$
-2.  **Update ADK Logic**: Ensure the default fallback in ADK is safe (e.g., fallback to a standard decay curve based on time only) rather than \`999\`.
-`;
-    } else {
-        report += `
-The metric was found. (This branch should not be reached given current codebase analysis).
-`;
-    }
 
-    fs.writeFileSync(REPORT_FILE, report);
-    console.log(`Report generated at ${REPORT_FILE}`);
+1.  **Implement the Forgetting Curve Model**:
+    - Train a regression model (e.g., Ebbinghaus Forgetting Curve: $R = e^{-t/S}$) using historical quiz data.
+    - $t$: Time since last review.
+    - $S$: Strength of memory (based on previous scores).
+
+2.  **Update Inference Pipeline**:
+    - Add \`predict_forgetting.py\` or update \`predict_mastery.py\` to output \`days_until_forget\`.
+    - Update \`ml-bridge.ts\` to handle this new output.
+
+3.  **Temporary Heuristic Fallback**:
+    - Until the ML model is ready, implement a Leitner System heuristic in the ADK or a utility function:
+    - If mastery < 0.5, days_until_forget = 1
+    - If mastery < 0.7, days_until_forget = 3
+    - Else days_until_forget = 7 * (attempts + 1)
+
+`;
+
+  fs.writeFileSync(reportPath, reportContent);
+  console.log(`Report generated at ${reportPath}`);
 }
 
-runAudit().catch(err => console.error(err));
+auditForgettingCurve().catch(console.error);

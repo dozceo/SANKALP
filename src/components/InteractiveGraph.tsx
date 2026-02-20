@@ -28,7 +28,11 @@ interface InteractiveGraphProps {
   graphData?: GraphData;
 }
 
-type ExtendedNodeObject = NodeObject & GraphNode & { _cachedLightColor?: string };
+type ExtendedNodeObject = NodeObject & GraphNode & {
+    _cachedLightColor?: string;
+    _cachedGradient?: CanvasGradient;
+    _cachedGradientKey?: string;
+};
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
 // Optimization: Move constant outside component to prevent re-creation
@@ -312,16 +316,19 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     } else {
       // Node circle with gradient using caching
       let nodeGradient: CanvasGradient;
+      // Optimization: Cache gradient directly on the node object to avoid map lookup and string allocation
       const gradientKey = `${lightColor}-${baseColor}`;
 
-      if (gradientCache.current.has(gradientKey)) {
-        nodeGradient = gradientCache.current.get(gradientKey)!;
+      if (node._cachedGradient && node._cachedGradientKey === gradientKey) {
+        nodeGradient = node._cachedGradient;
       } else {
         // Create unit gradient with offset center (-0.3, -0.3)
         nodeGradient = ctx.createRadialGradient(-0.3, -0.3, 0, 0, 0, 1);
         nodeGradient.addColorStop(0, lightColor);
         nodeGradient.addColorStop(1, baseColor);
-        gradientCache.current.set(gradientKey, nodeGradient);
+
+        node._cachedGradient = nodeGradient;
+        node._cachedGradientKey = gradientKey;
       }
 
       ctx.save();

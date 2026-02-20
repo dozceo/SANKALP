@@ -6,17 +6,24 @@ test.describe('Visual Regression Tests', () => {
     const response = await page.goto('/test-charts');
     expect(response?.status()).toBe(200);
 
-    // Wait for charts to load (they might have animation)
-    // We can wait for a specific element. Recharts renders SVGs inside a responsive container.
-    // We look for any recharts surface to ensure at least one chart rendered.
+    // Wait for Recharts to load
     try {
       await page.waitForSelector('.recharts-surface', { state: 'visible', timeout: 15000 });
     } catch (e) {
-      console.log('Charts might not have rendered or selector not found, proceeding to screenshot anyway to capture state.');
+      console.log('Recharts might not have rendered or selector not found.');
     }
 
-    // Give a little more time for animations to settle
-    await page.waitForTimeout(2000);
+    // Wait for Interactive Graph canvas to load
+    try {
+      // ForceGraph2D renders a canvas element
+      await page.waitForSelector('.graph-container canvas', { state: 'visible', timeout: 15000 });
+    } catch (e) {
+        console.log('Graph canvas might not have rendered or selector not found.');
+    }
+
+    // Give a little more time for animations (both recharts and force graph) to settle
+    // The force graph has cooldownTicks, so we wait a bit for it to stabilize layout
+    await page.waitForTimeout(3000);
 
     // Take screenshot and compare
     // This will generate a new screenshot on the first run.

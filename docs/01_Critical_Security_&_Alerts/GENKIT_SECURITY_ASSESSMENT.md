@@ -1,12 +1,14 @@
-# Genkit Dev Server Security Assessment
+# Genkit Security Assessment
 
-Generated on: 2026-02-17T19:19:35.188Z
+Generated on: 2026-02-19T19:11:39.415Z
 
-## Environment Guards
+## Assessment Target
+- **File**: `src/ai/dev.ts`
+- **Purpose**: Development server for Genkit flows.
 
-⚠️ Issues Found:
-- ⚠️ No explicit environment guard found in `src/ai/dev.ts`. Ensure it is not bundled in production.
+## Findings
+- **Warning**: `src/ai/dev.ts` lacks an explicit `process.env.NODE_ENV` check. While safe if not imported, adding a runtime guard is recommended.
 
-## Production Code Exposure
-
-✅ No production code imports `src/ai/dev.ts`.
+## Recommendations
+- Ensure `src/ai/dev.ts` is excluded from the build output (Next.js automatically excludes files not imported by pages/components).
+- Do not import `src/ai/dev.ts` in any file under `src/app` or `src/components`.

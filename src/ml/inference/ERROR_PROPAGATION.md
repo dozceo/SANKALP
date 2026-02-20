@@ -4,7 +4,7 @@ This document details the handling of errors in the communication bridge between
 
 ## Scope & Methodology
 
-This audit was conducted under a strict "non-conflict guarantee" to ensure no production code modifications were made during the analysis. The goal was to map the existing error handling behavior of the `ml-bridge.ts` without altering the system's logic. All findings are based on fault injection testing using an isolated subprocess harness.
+This audit was conducted to verify and harden error propagation mechanisms. Fault injection testing was performed using a mock subprocess harness (`mock_predict.py`) to simulate various failure modes (crashes, timeouts, malformed data, logic errors).
 
 ## Error Propagation Matrix
 
@@ -17,18 +17,18 @@ The following matrix maps failure modes simulated in the Python subprocess to th
 | **PROCESS_CRASH** | Python script exits during processing (e.g., Segfault) | `process.on('close')` fires with non-zero code. `cleanup` rejects pending requests. | **Rejection** with `Error: Python process exited with code 1` | High (Recoverable) |
 | **STDERR_NOISE** | Python script writes to stderr but continues | `process.stderr.on('data')` logs message to `console.error`. | **Success** (Logs only) | Low (Informational) |
 | **MALFORMED_JSON** | Python script outputs invalid JSON | `JSON.parse` throws error. `catch` block logs error and calls `process.kill()`. | **Rejection** with `Error: Python process exited with code null` (signal kill) | Critical (Fail-fast) |
-| **TIMEOUT** | Python script hangs indefinitely | `setTimeout` triggers after 5000ms. | **Rejection** with `Error: Timeout waiting for Python inference` | Medium (Degraded) |
-| **LOGICAL_ERROR** | Python script returns JSON with `error` field | `handleLine` detects `error` field in JSON. Resolves promise with error object. | **Resolution** with `{ predicted_class: "error", error: "..." }` | Medium (Application Logic) |
+| **TIMEOUT** | Python script hangs indefinitely | `setTimeout` triggers after 10000ms. Calls `process.kill()` to unblock queue. | **Rejection** with `Error: Timeout waiting for Python inference` | Medium (Recoverable) |
+| **LOGICAL_ERROR** | Python script returns JSON with `error` field | `handleLine` detects `error` field in JSON. Rejects promise with error. | **Rejection** with `Error: <error_message>` | Medium (Application Logic) |
 
-## Implementation Notes
+## Implementation Improvements (Audit Findings)
 
-1.  **Fail-Fast on Protocol Errors**: When the Python script outputs malformed JSON, the bridge deliberately kills the process. This is a safety mechanism to prevent state corruption (e.g., desynchronization of request/response pairs if `_id` cannot be parsed).
-2.  **Request Isolation**: Each request is tracked via a UUID (`_id`). If the process crashes or is killed, all pending requests are rejected immediately.
-3.  **Timeout Protection**: A strict 5000ms timeout prevents the Node.js event loop from hanging on unresponsive Python processes.
-4.  **Logging**: All stderr output from Python is piped to Node.js `console.error`, ensuring visibility into Python-side warnings and errors.
+Following the audit, the following improvements were implemented to ensure operational safety:
+
+1.  **Fail-Fast on Timeout**: Previously, a timeout merely rejected the specific request but left the Python process running (potentially in a hung state), which could block subsequent requests in the queue. The bridge now explicitly kills the process on timeout (`this.process.kill()`) to force a fresh start for the next request.
+2.  **Explicit Rejection on Logic Errors**: Previously, if the Python script returned a JSON object with an `error` field (e.g., model loading failure), the bridge resolved the promise with an error object (`{ predicted_class: "error", ... }`). This silent failure risk has been eliminated by changing the bridge to explicitly **reject** the promise, ensuring the error is caught and logged by consumers (like `batchPredictMastery`).
 
 ## Recommendations
 
--   The current implementation is robust against process failures.
--   Consider structured logging for Python stderr to differentiate between warnings (e.g., DeprecationWarning) and critical errors.
--   The "Python process exited with code null" error for malformed JSON is technically correct (signal kill) but could be more descriptive if the bridge stored the last error before killing.
+-   The current implementation is robust against process failures and hangs.
+-   Consumers of `predictMastery` should always implement `try/catch` blocks (or use `batchPredictMastery` which handles it).
+-   Structured logging for Python stderr is recommended for production observability.

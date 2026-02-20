@@ -13,6 +13,10 @@ function serialize(data: any): any {
     if (data instanceof Date) {
         return { __type__: 'Date', value: data.toISOString() };
     }
+    // Handle Firestore FieldValue.serverTimestamp() (basic check)
+    if (typeof data === 'object' && (data.methodName === 'FieldValue.serverTimestamp' || data._methodName === 'serverTimestamp')) {
+         return { __type__: 'Date', value: new Date().toISOString() };
+    }
     // Handle Mock Date Object (from previous read)
     if (data && typeof data === 'object' && typeof data.toDate === 'function') {
         try {
@@ -43,6 +47,7 @@ function deserialize(data: any): any {
             toMillis: () => d.getTime(),
             seconds: Math.floor(d.getTime() / 1000),
             nanoseconds: (d.getTime() % 1000) * 1000000,
+            toISOString: () => d.toISOString(),
         };
     }
     if (Array.isArray(data)) {
@@ -58,8 +63,12 @@ function deserialize(data: any): any {
     return data;
 }
 
-class MockDocumentReference {
+export class MockDocumentReference {
   constructor(public path: string, private db: MockFirestore) {}
+
+  get id() {
+      return this.path.split('/').pop() || '';
+  }
 
   async get() {
     // Reload data before read to ensure consistency across processes
@@ -70,7 +79,7 @@ class MockDocumentReference {
     return {
       exists: !!rawData,
       data: () => data,
-      id: this.path.split('/').pop(),
+      id: this.id,
     };
   }
 
@@ -83,14 +92,19 @@ class MockDocumentReference {
 
   async update(data: any) {
     this.db.load();
-    const existing = this.db.data[this.path] || {};
-    // Merge only top level? Firestore update merges.
-    // We need to deserialize existing, merge, then serialize back?
-    // Or just merge serialized structure?
-    // Deep merge is safer if structure is simple.
-    // For simplicity, we assume shallow merge of top keys.
-    const serializedData = serialize(data);
-    this.db.data[this.path] = { ...existing, ...serializedData };
+    const existingRaw = this.db.data[this.path];
+
+    if (!existingRaw) {
+        throw new Error(`Document ${this.path} does not exist for update`);
+    }
+
+    const existing = deserialize(existingRaw);
+    // Shallow merge for now as per previous implementation logic
+    // But we need to handle "FieldValue.delete()" etc in a real impl.
+    // Here we just merge.
+    const merged = { ...existing, ...data };
+
+    this.db.data[this.path] = serialize(merged);
     this.db.save();
     return { writeTime: new Date() };
   }
@@ -103,7 +117,7 @@ class MockDocumentReference {
   }
 }
 
-class MockQuerySnapshot {
+export class MockQuerySnapshot {
   constructor(public docs: any[]) {}
 
   get empty() { return this.docs.length === 0; }
@@ -112,59 +126,36 @@ class MockQuerySnapshot {
   forEach(callback: (doc: any) => void) {
     this.docs.forEach(callback);
   }
+
+  map(callback: (doc: any) => any) {
+      return this.docs.map(callback);
+  }
 }
 
-class MockCollectionReference {
-  constructor(public path: string, private db: MockFirestore) {}
-
-  doc(id?: string) {
-    const docId = id || `mock_id_${Math.random().toString(36).substr(2, 9)}`;
-    return new MockDocumentReference(`${this.path}/${docId}`, this.db);
-  }
-
-  async get() {
-    this.db.load();
-    // Return all docs in this collection
-    const docs = Object.keys(this.db.data)
-      .filter(key => key.startsWith(this.path + '/') && key.split('/').length === this.path.split('/').length + 1)
-      .map(key => ({
-        id: key.split('/').pop(),
-        data: () => deserialize(this.db.data[key]),
-      }));
-    return new MockQuerySnapshot(docs);
-  }
-
-  async add(data: any) {
-    const doc = this.doc();
-    await doc.set(data);
-    return doc;
-  }
-
-  where(field: string, op: string, value: any) {
-      // Return a query that filters
-      return new MockQuery(this.path, this.db, [{field, op, value}]);
-  }
-
-  orderBy() { return this; }
-  limit() { return this; }
-}
-
-class MockQuery {
-    constructor(public path: string, private db: MockFirestore, public filters: any[]) {}
+export class MockQuery {
+    constructor(public path: string, private db: MockFirestore, public filters: any[] = []) {}
 
     where(field: string, op: string, value: any) {
-        this.filters.push({field, op, value});
-        return this;
+        // Return a new query with added filter
+        return new MockQuery(this.path, this.db, [...this.filters, {field, op, value}]);
     }
 
     orderBy() { return this; }
     limit() { return this; }
+    select() { return this; }
 
     async get() {
         this.db.load();
         // Filter docs
         let docs = Object.keys(this.db.data)
-          .filter(key => key.startsWith(this.path + '/') && key.split('/').length === this.path.split('/').length + 1)
+          .filter(key => {
+              // Check if key is a direct child of path
+              // e.g. path="users", key="users/123" -> yes
+              // key="users/123/posts/456" -> no
+              if (!key.startsWith(this.path + '/')) return false;
+              const relative = key.slice(this.path.length + 1);
+              return !relative.includes('/');
+          })
           .map(key => ({
              id: key.split('/').pop(),
              data: deserialize(this.db.data[key])
@@ -173,15 +164,7 @@ class MockQuery {
         for (const filter of this.filters) {
             docs = docs.filter(d => {
                 const val = d.data[filter.field];
-                // Handle deserialized dates comparison?
-                // If val is object with toDate(), and filter.value is Date...
-                // MockQuery logic needs to be smart.
-                // But typically we filter by primitives (string, number).
-                // If filtering by date, Firestore expects Date object.
-                // d.data[field] is { toDate: ... }
-                // So comparison fails.
 
-                // Fix: if val has toDate, use it for comparison?
                 let actualVal = val;
                 if (val && typeof val === 'object' && val.toDate) {
                     actualVal = val.toDate();
@@ -197,6 +180,7 @@ class MockQuery {
                 if (filter.op === '<=') return actualVal <= filter.value;
                 if (filter.op === '>') return actualVal > filter.value;
                 if (filter.op === '<') return actualVal < filter.value;
+                if (filter.op === 'in') return Array.isArray(filter.value) && filter.value.includes(actualVal);
                 if (filter.op === 'array-contains') return Array.isArray(actualVal) && actualVal.includes(filter.value);
 
                 return true;
@@ -209,6 +193,33 @@ class MockQuery {
             exists: true
         })));
     }
+}
+
+export class MockCollectionReference {
+  constructor(public path: string, private db: MockFirestore) {}
+
+  doc(id?: string) {
+    const docId = id || `mock_id_${Math.random().toString(36).substr(2, 9)}`;
+    return new MockDocumentReference(`${this.path}/${docId}`, this.db);
+  }
+
+  async get() {
+      return new MockQuery(this.path, this.db).get();
+  }
+
+  async add(data: any) {
+    const doc = this.doc();
+    await doc.set(data);
+    return doc;
+  }
+
+  where(field: string, op: string, value: any) {
+      return new MockQuery(this.path, this.db).where(field, op, value);
+  }
+
+  orderBy() { return new MockQuery(this.path, this.db); }
+  limit() { return new MockQuery(this.path, this.db); }
+  select() { return new MockQuery(this.path, this.db); }
 }
 
 export class MockFirestore {
@@ -224,7 +235,6 @@ export class MockFirestore {
               const content = fs.readFileSync(DB_FILE, 'utf-8');
               this.data = JSON.parse(content);
           } catch (e) {
-              // Ignore read errors (e.g. invalid json)
               this.data = {};
           }
       }
@@ -257,11 +267,25 @@ export class MockFirestore {
   }
 
   batch() {
+      const operations: (() => Promise<any>)[] = [];
       return {
-          set: (ref: any, data: any) => ref.set(data),
-          update: (ref: any, data: any) => ref.update(data),
-          delete: (ref: any) => ref.delete(),
-          commit: async () => {},
+          set: (ref: any, data: any) => {
+              operations.push(() => ref.set(data));
+              return this;
+          },
+          update: (ref: any, data: any) => {
+              operations.push(() => ref.update(data));
+              return this;
+          },
+          delete: (ref: any) => {
+              operations.push(() => ref.delete());
+              return this;
+          },
+          commit: async () => {
+              for (const op of operations) {
+                  await op();
+              }
+          },
       }
   }
 }

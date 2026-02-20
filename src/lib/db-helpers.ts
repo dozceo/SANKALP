@@ -1354,20 +1354,18 @@ export async function getBatchedCachedPredictions(
 
         // Process chunks in parallel
         await Promise.all(chunks.map(async (chunk) => {
+            // Optimization: Filter by expiration in query to reduce data transfer
+            // Supports existing index: studentId ASC, topic ASC, expiresAt DESC
             const snapshot = await db
                 .collection('mlPredictions')
                 .where('studentId', '==', studentId)
                 .where('topic', 'in', chunk)
+                .where('expiresAt', '>', now)
                 .get();
 
             snapshot.docs.forEach(doc => {
                 const data = doc.data();
                 const expiresAt = data.expiresAt?.toDate() || new Date();
-
-                // Filter expired predictions
-                if (expiresAt <= now) {
-                    return;
-                }
 
                 const prediction: MLPrediction = {
                     id: doc.id,

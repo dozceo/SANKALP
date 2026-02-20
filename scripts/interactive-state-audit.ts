@@ -1,8 +1,9 @@
+
 import fs from 'fs';
 import path from 'path';
 
 const TARGET_DIRS = ['src/components'];
-const OUTPUT_FILE = 'interaction-feedback-gap-report.md';
+const OUTPUT_FILE = 'reports/INTERACTION_FEEDBACK_GAP_REPORT.md';
 
 interface Gap {
   file: string;
@@ -12,6 +13,7 @@ interface Gap {
 }
 
 const gaps: Gap[] = [];
+let totalComponentsChecked = 0;
 
 // Helper to check if a class string has state modifiers
 function checkStates(classString: string, required: string[]): string[] {
@@ -28,12 +30,14 @@ function checkStates(classString: string, required: string[]): string[] {
     }
     if (state === 'disabled') {
       if (classString.includes('aria-disabled:') || classString.includes('data-[disabled]') || classString.includes('disabled:')) hasState = true;
-      // Also check if opacity is reduced which implies disabled state visual
-      if (classString.includes('opacity-')) hasState = true; // weak check but maybe
+      if (classString.includes('opacity-')) hasState = true;
     }
     if (state === 'checked') {
         if (classString.includes('data-[state=checked]') || classString.includes('aria-checked')) hasState = true;
     }
+
+    // Loading state is often handled via disabled state visually, but let's check if there's any indication of loading handling in code?
+    // Hard to check visually via static analysis. We assume `disabled` covers loading interaction blocking.
 
     if (!hasState) missing.push(state);
   });
@@ -49,9 +53,6 @@ function scanFile(filePath: string) {
 
   // 1. Check UI Component definitions (in src/components/ui)
   if (isUiComponent) {
-    // Heuristic: Check if the whole file (or cva definition) contains state modifiers
-    // This assumes the component is implemented in this file
-    // Mapping filename to requirements
     let requirements: string[] = [];
     if (fileName === 'button') requirements = ['hover', 'focus', 'disabled'];
     else if (fileName === 'input') requirements = ['focus', 'disabled'];
@@ -61,7 +62,7 @@ function scanFile(filePath: string) {
     else if (fileName === 'switch') requirements = ['focus', 'disabled', 'checked'];
 
     if (requirements.length > 0) {
-        // Simple check: scan entire content for these states
+        totalComponentsChecked++;
         const missing = checkStates(content, requirements);
         if (missing.length > 0) {
             gaps.push({
@@ -92,14 +93,17 @@ function scanFile(filePath: string) {
     if (tag === 'textarea') reqs = ['focus', 'disabled'];
     if (tag === 'select') reqs = ['focus', 'disabled'];
 
-    const missing = checkStates(classes, reqs);
-    if (missing.length > 0) {
-        gaps.push({
-            file: filePath,
-            element: `<${tag}>`,
-            line: lineNumber,
-            missingStates: missing
-        });
+    if (reqs.length > 0) {
+        totalComponentsChecked++;
+        const missing = checkStates(classes, reqs);
+        if (missing.length > 0) {
+            gaps.push({
+                file: filePath,
+                element: `<${tag}>`,
+                line: lineNumber,
+                missingStates: missing
+            });
+        }
     }
   }
 }
@@ -123,22 +127,21 @@ TARGET_DIRS.forEach(dir => traverseDir(dir));
 // Generate Report
 let report = `# Interaction Feedback Gap Report
 
+## Executive Summary
 Audit of interactive components for missing visual feedback states (hover, focus, disabled).
 
-Total gaps found: ${gaps.length}
+- **Total Elements Checked**: ${totalComponentsChecked}
+- **Gaps Found**: ${gaps.length}
 
+## Recommendations
+1. **Ensure Visual Feedback**: All interactive elements must show visual changes on hover, focus, and disabled states.
+2. **Use UI Components**: Prefer using \`src/components/ui\` components (Button, Input) which handle these states centrally, rather than raw HTML tags.
+3. **Check Accessibility**: Ensure focus states are visible for keyboard navigation.
+
+## Detailed Gaps
 | File | Element | Line | Missing States |
 | :--- | :--- | :--- | :--- |
 ${gaps.map(g => `| \`${g.file}\` | \`${g.element}\` | ${g.line} | ${g.missingStates.join(', ')} |`).join('\n')}
-
-## Notes
-- **UI Library (\`src/components/ui/\`)**: Checked for presence of state modifiers in the file definition.
-- **Component Usage**: Checked for raw HTML tags (\`<button>\`, \`<a>\`, \`<input>\`) usage with inline Tailwind classes.
-- **States Checked**:
-  - Button: \`hover\`, \`focus\`, \`disabled\`
-  - Link: \`hover\`, \`focus\`
-  - Input/Textarea/Select: \`focus\`, \`disabled\`
-  - Checkbox/Switch: \`focus\`, \`disabled\`, \`checked\`
 `;
 
 fs.writeFileSync(OUTPUT_FILE, report);

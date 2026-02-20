@@ -1,5 +1,5 @@
 
-import './drift-env-setup'; // Must be first to mock env vars
+import './drift-env-setup';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'genkit';
@@ -38,10 +38,54 @@ interface ValidationResult {
   details?: string;
   expectedStatus: 'valid' | 'invalid' | 'drift';
   match: boolean;
+  errors?: any[];
+  extraFields?: string[];
+}
+
+function detectExtraFields(original: any, parsed: any, path: string[] = []): string[] {
+    const extraFields: string[] = [];
+
+    if (original === null || parsed === null || typeof original !== 'object' || typeof parsed !== 'object') {
+        return [];
+    }
+
+    // If parsed is date, treat as primitive match if original matches (not drilling down)
+    if (parsed instanceof Date) return [];
+
+    if (Array.isArray(original)) {
+        if (!Array.isArray(parsed)) return [];
+        for (let i = 0; i < original.length; i++) {
+            if (i < parsed.length) {
+                extraFields.push(...detectExtraFields(original[i], parsed[i], [...path, `[${i}]`]));
+            }
+        }
+    } else {
+        // Object
+        const originalKeys = Object.keys(original);
+        // We only care about keys present in original that are missing in parsed (stripped)
+        // Parsed might have transformed keys or values, but for strict drift detection we look for stripped data.
+
+        // Note: parsed object from Zod usually only contains known keys.
+        // If parsed has keys that original doesn't, that's transformation/default values (not drift).
+        // If original has keys that parsed doesn't, that's EXTRA data (drift).
+
+        const parsedKeys = new Set(Object.keys(parsed));
+
+        for (const key of originalKeys) {
+            if (!parsedKeys.has(key)) {
+                // Key in original but not in parsed -> STRIPPED -> Extra Field
+                extraFields.push([...path, key].join('.'));
+            } else {
+                extraFields.push(...detectExtraFields(original[key], parsed[key], [...path, key]));
+            }
+        }
+    }
+
+    return extraFields;
 }
 
 async function main() {
-  console.log('Starting Schema Drift Detection (with Imports)...');
+  console.log('Starting Schema Drift Detection (Deep Comparison)...');
 
   if (!fs.existsSync(MOCK_RESPONSES_PATH)) {
     console.error(`Mock responses file not found at ${MOCK_RESPONSES_PATH}`);
@@ -63,28 +107,21 @@ async function main() {
 
     let status: 'valid' | 'invalid_schema' | 'drift_extra_fields' = 'valid';
     let details = '';
+    let errors: any[] = [];
+    let extraFields: string[] = [];
 
     if (!standardResult.success) {
       status = 'invalid_schema';
-      details = standardResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      errors = standardResult.error.errors;
+      details = errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
     } else {
-      // 2. Strict Validation (Check for extra fields)
-      let strictResult;
-      try {
-         if (schema instanceof z.ZodObject) {
-             strictResult = schema.strict().safeParse(item.response);
-         } else {
-             // For non-object schemas, assuming strict check is not applicable or done differently
-             strictResult = { success: true };
-         }
-      } catch (e) {
-          // If strict() fails (e.g. chaining issues on some Zod versions or types), ignore
-          strictResult = { success: true };
-      }
+      // 2. Deep Drift Detection (Compare Input vs Parsed Output)
+      const parsed = standardResult.data;
+      extraFields = detectExtraFields(item.response, parsed);
 
-      if (schema instanceof z.ZodObject && !strictResult.success) {
+      if (extraFields.length > 0) {
         status = 'drift_extra_fields';
-        details = strictResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+        details = `Extra fields detected: ${extraFields.join(', ')}`;
       }
     }
 
@@ -99,7 +136,9 @@ async function main() {
       status,
       details,
       expectedStatus: item.expectedStatus,
-      match
+      match,
+      errors,
+      extraFields
     });
   }
 
@@ -129,20 +168,46 @@ Unexpected Results: ${results.filter(r => !r.match).length}
   }
 
   report += `
-## Recommendations
-
-### 1. Handling Extra Fields (Drift)
-For responses marked as **drift_extra_fields**, the LLM is returning more data than defined in the Zod schema.
-- **Recommendation:** If the extra fields are useful (e.g., \`metadata\`, \`reasoning\`), update the Zod schema to include them as optional fields.
-- **Recommendation:** If the extra fields are irrelevant, use \`.passthrough()\` in the schema to allow them without validation errors (if strict validation is enforced elsewhere), or explicitly strip them (default Zod behavior).
-
-### 2. Handling Invalid Schemas
-For responses marked as **invalid_schema**, the LLM output violates the contract.
-- **Recommendation:** Loosen constraints if the drift is acceptable (e.g., change \`z.array()\` to \`z.array().or(z.string())\` if the LLM sometimes returns a single string).
-- **Recommendation:** Improve prompt engineering to enforce the schema more strictly.
-- **Recommendation:** Add fallback logic or retry mechanisms in the flow.
+## Automated Recommendations
 
 `;
+
+  // Group recommendations by Flow
+  const flows = [...new Set(results.map(r => r.flow))];
+
+  for (const flow of flows) {
+      const flowResults = results.filter(r => r.flow === flow && (r.status === 'drift_extra_fields' || r.status === 'invalid_schema'));
+
+      if (flowResults.length > 0) {
+          report += `### ${flow}\n`;
+
+          const issues = new Set<string>();
+
+          for (const res of flowResults) {
+             if (res.status === 'drift_extra_fields') {
+                 // Suggest adding optional fields
+                 res.extraFields?.forEach((field: string) => {
+                      const lastKey = field.split('.').pop();
+                      issues.add(`- **Extra Field Detected:** \`${field}\`. \n  - *Suggestion:* Update schema to include \`${lastKey}: z.any().optional()\``);
+                 });
+             } else if (res.status === 'invalid_schema') {
+                 res.errors?.forEach((err: any) => {
+                     const path = err.path.join('.');
+                     if (err.code === 'invalid_type') {
+                         issues.add(`- **Type Mismatch:** \`${path}\` expected \`${err.expected}\`, received \`${err.received}\`. \n  - *Suggestion:* Use \`z.union([z.${err.expected}(), z.${err.received}()])\` or relax strictness.`);
+                     } else if (err.code === 'invalid_enum_value') {
+                         issues.add(`- **Invalid Enum:** \`${path}\` received invalid value \`${err.received}\`. \n  - *Suggestion:* Add \`${err.received}\` to \`z.enum([...])\`.`);
+                     } else {
+                         issues.add(`- **Error:** \`${path}\`: ${err.message}`);
+                     }
+                 });
+             }
+          }
+
+          issues.forEach(issue => report += `${issue}\n`);
+          report += '\n';
+      }
+  }
 
   fs.writeFileSync(REPORT_PATH, report);
   console.log(`Report generated at ${REPORT_PATH}`);

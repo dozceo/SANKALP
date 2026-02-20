@@ -1,4 +1,5 @@
 import StudentAnalyticsClient from "@/app/(main)/teacher/student/[studentId]/StudentAnalyticsClient";
+import { InteractiveGraph } from "@/components/InteractiveGraph";
 
 const MOCK_STUDENT = {
   id: "student-123",
@@ -24,14 +25,39 @@ const MOCK_PERFORMANCE = {
   riskLevel: "Low" as const,
 };
 
+const MOCK_GRAPH_DATA = {
+  nodes: [
+    { id: "student-1", name: "Student A", type: "student", val: 20 },
+    { id: "student-2", name: "Student B", type: "student", val: 20 },
+    { id: "topic-1", name: "Algebra", type: "topic", val: 10 },
+    { id: "topic-2", name: "Physics", type: "topic", val: 10 },
+  ],
+  links: [
+    { source: "student-1", target: "topic-1" },
+    { source: "student-1", target: "topic-2" },
+    { source: "student-2", target: "topic-1" },
+  ]
+};
+
 export default function ChartsTestPage() {
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Charts Visual Regression Test Page</h1>
-      <StudentAnalyticsClient
-        student={MOCK_STUDENT}
-        performance={MOCK_PERFORMANCE}
-      />
+    <div className="p-8 space-y-12">
+      <div>
+        <h1 className="text-2xl font-bold mb-6">Student Analytics Charts</h1>
+        <StudentAnalyticsClient
+          student={MOCK_STUDENT}
+          performance={MOCK_PERFORMANCE}
+        />
+      </div>
+
+      <div>
+        <h1 className="text-2xl font-bold mb-6">Teacher Network Graph</h1>
+        <div className="border rounded-lg h-[500px] w-full bg-card overflow-hidden">
+             <InteractiveGraph
+                graphData={MOCK_GRAPH_DATA}
+             />
+        </div>
+      </div>
     </div>
   );
 }

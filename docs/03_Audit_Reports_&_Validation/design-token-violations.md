@@ -1,8 +1,8 @@
 # Design Token Violation Report
 
-Generated on: 2/17/2026, 7:07:55 PM
+Generated on: 2/19/2026, 7:11:34 PM
 
-Total Violations: 43
+Total Violations: 44
 
 | File | Line | Value | Recommendation | Context |
 |---|---|---|---|---|
@@ -26,15 +26,16 @@ Total Violations: 43
 | src/app/(main)/teacher/student/[studentId]/StudentAnalyticsClient.tsx | 159 | `min-h-[300px]` | Use nearest spacing token | `<ChartContainer config={chartConfig} className="mi...` |
 | src/app/(main)/teacher/student/[studentId]/StudentAnalyticsClient.tsx | 175 | `h-[200px]` | Use nearest spacing token | `<div className="flex items-center justify-center h...` |
 | src/app/(main)/teacher/student/[studentId]/page.tsx | 18 | `min-h-[400px]` | Use nearest spacing token | `<div className="flex items-center justify-center m...` |
-| src/components/InteractiveGraph.tsx | 336 | `#ffffff` | Use a Tailwind color token (e.g., text-primary, bg-muted) | `ctx.fillStyle = isHighlighted ? '#ffffff' : isHove...` |
-| src/components/InteractiveGraph.tsx | 336 | `#a1a1aa` | Use a Tailwind color token (e.g., text-primary, bg-muted) | `ctx.fillStyle = isHighlighted ? '#ffffff' : isHove...` |
+| src/components/InteractiveGraph.tsx | 356 | `#ffffff` | Use a Tailwind color token (e.g., text-primary, bg-muted) | `ctx.fillStyle = isHighlighted ? '#ffffff' : isHove...` |
+| src/components/InteractiveGraph.tsx | 356 | `#a1a1aa` | Use a Tailwind color token (e.g., text-primary, bg-muted) | `ctx.fillStyle = isHighlighted ? '#ffffff' : isHove...` |
 | src/components/PersonalKnowledgeGraph.tsx | 170 | `#ffffff` | Use a Tailwind color token (e.g., text-primary, bg-muted) | `ctx.fillStyle = isCenter ? '#ffffff' : isHovered ?...` |
 | src/components/PersonalKnowledgeGraph.tsx | 170 | `#d1d5db` | Use a Tailwind color token (e.g., text-primary, bg-muted) | `ctx.fillStyle = isCenter ? '#ffffff' : isHovered ?...` |
 | src/components/PersonalKnowledgeGraph.tsx | 263 | `text-[10px]` | Use nearest text size token | `<span className="text-[10px] text-muted-foreground...` |
 | src/components/app/sidebar-nav.tsx | 84 | `text-[10px]` | Use nearest text size token | `<span className="text-[10px] font-medium text-mute...` |
-| src/components/app/teacher-sidebar-nav.tsx | 46 | `text-[10px]` | Use nearest text size token | `<p className="text-[10px] text-muted-foreground up...` |
-| src/components/app/teacher-sidebar-nav.tsx | 73 | `text-[10px]` | Use nearest text size token | `<span className="text-[10px] font-medium text-mute...` |
-| src/components/planner/StudyLibrary.tsx | 85 | `w-[200px]` | Use nearest spacing token | `<SelectTrigger className="w-full sm:w-[200px]">` |
+| src/components/app/teacher-sidebar-nav.tsx | 47 | `text-[10px]` | Use nearest text size token | `<p className="text-[10px] text-muted-foreground up...` |
+| src/components/app/teacher-sidebar-nav.tsx | 66 | `text-[10px]` | Use nearest text size token | `className="ml-auto text-[10px] h-5 px-1.5 text-mut...` |
+| src/components/app/teacher-sidebar-nav.tsx | 92 | `text-[10px]` | Use nearest text size token | `<span className="text-[10px] font-medium text-mute...` |
+| src/components/planner/StudyLibrary.tsx | 86 | `w-[200px]` | Use nearest spacing token | `<SelectTrigger className="w-full sm:w-[200px]" ari...` |
 | src/components/rewards/RewardsSkeleton.tsx | 72 | `h-[300px]` | Use nearest spacing token | `<Skeleton className="h-[300px] w-full" />` |
 | src/components/ui/chart.tsx | 55 | `#ccc` | Use a Tailwind color token (e.g., text-primary, bg-muted) | `"flex aspect-video justify-center text-xs [&_.rech...` |
 | src/components/ui/chart.tsx | 55 | `#fff` | Use a Tailwind color token (e.g., text-primary, bg-muted) | `"flex aspect-video justify-center text-xs [&_.rech...` |

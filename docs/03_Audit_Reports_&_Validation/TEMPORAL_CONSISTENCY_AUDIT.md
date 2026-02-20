@@ -1,66 +1,45 @@
-
 # Temporal Consistency Audit Report
 
-**Date:** 2026-02-18T06:32:15.840Z
+Generated at: 2026-02-20T06:32:38.018Z
 
-## Executive Summary
-This audit enforces invariants on the student state machine across session boundaries. It simulates historical replay to detect anomalies such as time travel, causality violations, and mastery teleportation.
+## Synthetic Data Stress Test
 
-## Dataset Overview
-- **Clean Dataset**: 91 events (Expect 0 violations)
-- **Corrupted Dataset**: 94 events (Injected faults)
+### Scenario: Valid Student
+- ✅ PASSED: No violations detected.
 
-## Violation Log
+### Scenario: Time Traveler
+- ❌ FAILED: 1 violations detected.
+  - **[CRITICAL] TEMPORAL_ORDER_VIOLATION**: Time Travel Detected: Event at 2023-12-31T10:00:00.000Z occurred after global last active 2024-01-02T11:00:00.000Z (Topic: Geometry)
 
-### Clean Dataset
-✅ No violations found.
+### Scenario: Teleporter
+- ❌ FAILED: 1 violations detected.
+  - **[HIGH] MASTERY_TELEPORTATION**: Mastery spiked from 0.10 to 0.95 despite low quiz score 0.2 (Topic: Physics)
 
-### Corrupted Dataset
-- [HIGH] **Temporal Ordering**: Event evt_student_corrupted_3_check timestamp (2023-01-05T23:00:00.000Z) is earlier than previous event evt_student_corrupted_2_check (2023-02-15T01:59:34.635Z) (Topic: History)
-- [HIGH] **Temporal Ordering**: Event evt_corruption_causality timestamp (2023-01-08T00:14:29.100Z) is earlier than previous event evt_student_corrupted_6_check (2023-01-08T23:00:00.000Z) (Topic: Math)
-- [MEDIUM] **Causality Violation**: Revision session for topic 'Math' occurred before any learning activity (attempts=0, mastery=0). (Topic: Math)
-- [HIGH] **Temporal Ordering**: Event evt_student_corrupted_23_quiz timestamp (2023-01-25T00:32:20.037Z) is earlier than previous event evt_corruption_teleport (2023-01-25T00:32:21.037Z) (Topic: Geography)
-- [HIGH] **Temporal Ordering**: Event evt_student_corrupted_44_rev timestamp (2023-01-04T23:00:00.000Z) is earlier than previous event evt_student_corrupted_44_quiz (2023-02-15T00:38:23.452Z) (Topic: Science)
+### Scenario: Causality Breaker
+- ❌ FAILED: 1 violations detected.
+  - **[MEDIUM] CAUSALITY_VIOLATION**: Revision recommended/performed for Topic 'Calculus' before any learning activity (Topic: Calculus)
 
-## Detailed Analysis of Violations
+## Static Student Data Audit
 
+### File: alex-kumar.md
+- ✅ PASSED: Consistent history derived from markdown.
 
-### Temporal Ordering
-- **Severity**: HIGH
-- **Timestamp**: 2023-01-05T23:00:00.000Z
-- **Description**: Event evt_student_corrupted_3_check timestamp (2023-01-05T23:00:00.000Z) is earlier than previous event evt_student_corrupted_2_check (2023-02-15T01:59:34.635Z)
-- **Root Cause Analysis**: Event timestamps are out of sequence. Likely caused by client-side clock drift or unsorted log ingestion.
+### File: arjun-reddy.md
+- ✅ PASSED: Consistent history derived from markdown.
 
+### File: meera-patel.md
+- ✅ PASSED: Consistent history derived from markdown.
 
-### Temporal Ordering
-- **Severity**: HIGH
-- **Timestamp**: 2023-01-08T00:14:29.100Z
-- **Description**: Event evt_corruption_causality timestamp (2023-01-08T00:14:29.100Z) is earlier than previous event evt_student_corrupted_6_check (2023-01-08T23:00:00.000Z)
-- **Root Cause Analysis**: Event timestamps are out of sequence. Likely caused by client-side clock drift or unsorted log ingestion.
+### File: priya-sharma.md
+- ✅ PASSED: Consistent history derived from markdown.
 
+### File: rahul-singh.md
+- ✅ PASSED: Consistent history derived from markdown.
 
-### Causality Violation
-- **Severity**: MEDIUM
-- **Timestamp**: 2023-01-08T00:14:29.100Z
-- **Description**: Revision session for topic 'Math' occurred before any learning activity (attempts=0, mastery=0).
-- **Root Cause Analysis**: Revision occurred before learning. Likely caused by race condition in event logging or manual DB edits.
-
-
-### Temporal Ordering
-- **Severity**: HIGH
-- **Timestamp**: 2023-01-25T00:32:20.037Z
-- **Description**: Event evt_student_corrupted_23_quiz timestamp (2023-01-25T00:32:20.037Z) is earlier than previous event evt_corruption_teleport (2023-01-25T00:32:21.037Z)
-- **Root Cause Analysis**: Event timestamps are out of sequence. Likely caused by client-side clock drift or unsorted log ingestion.
-
-
-### Temporal Ordering
-- **Severity**: HIGH
-- **Timestamp**: 2023-01-04T23:00:00.000Z
-- **Description**: Event evt_student_corrupted_44_rev timestamp (2023-01-04T23:00:00.000Z) is earlier than previous event evt_student_corrupted_44_quiz (2023-02-15T00:38:23.452Z)
-- **Root Cause Analysis**: Event timestamps are out of sequence. Likely caused by client-side clock drift or unsorted log ingestion.
-
-
-## Recommendations
-1. **Strict Ordering**: Enforce server-side timestamping for all critical learning events.
-2. **Causality Guards**: Reject 'Revision' events for topics with 0 mastery/attempts at API level.
-3. **Anomaly Detection**: Run this temporal audit as a nightly batch job on production data.
+## Violation Summary
+| Severity | Count |
+|---|---|
+| CRITICAL | 1 |
+| HIGH | 1 |
+| MEDIUM | 1 |
+| LOW | 0 |

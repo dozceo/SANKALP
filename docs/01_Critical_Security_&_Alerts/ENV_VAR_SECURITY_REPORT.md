@@ -1,9 +1,9 @@
 # Environment Variable Security Audit Report
 
-**Date:** 2026-02-17T19:17:47.518Z
-**Files Scanned:** 183
-**Total Usages Found:** 39
-**Issues Identified:** 31
+**Date:** 2026-02-18T19:04:51.731Z
+**Files Scanned:** 187
+**Total Usages Found:** 41
+**Issues Identified:** 33
 
 ## Executive Summary
 This report identifies potential security risks in environment variable usage across the codebase.
@@ -27,6 +27,18 @@ Specifically, it flags:
 - **Context:** `console.log('[Genkit Init] GEMINI_API_KEY present:', !!process.env.GEMINI_API_KEY);`
 
 
+### ADVERSARIAL_TEST
+- **Location:** `src/ai/genkit.ts:47`
+- **Issue Type:** 🟡 **MISSING FALLBACK**
+- **Context:** `if (process.env.ADVERSARIAL_TEST === 'true') {`
+
+
+### USE_MOCK_DB
+- **Location:** `src/app/api/chaos/route.ts:29`
+- **Issue Type:** 🟡 **MISSING FALLBACK**
+- **Context:** `if (process.env.USE_MOCK_DB !== 'true') {`
+
+
 ### NODE_ENV
 - **Location:** `src/components/ErrorBoundary.tsx:72`
 - **Issue Type:** 🟡 **MISSING FALLBACK**
@@ -46,7 +58,7 @@ Specifically, it flags:
 
 
 ### NODE_ENV
-- **Location:** `src/lib/chaos-config.ts:94`
+- **Location:** `src/lib/chaos-config.ts:128`
 - **Issue Type:** 🟡 **MISSING FALLBACK**
 - **Context:** `if (process.env.NODE_ENV === 'production' && !process.env.ENABLE_CHAOS) return;`
 

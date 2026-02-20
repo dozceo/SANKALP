@@ -67,7 +67,35 @@ export const ai = new Proxy(realAi, {
           }
 
           await chaos.checkChaos('genkit');
-          return promptFn(...pArgs);
+
+          const startTime = Date.now();
+          let result;
+          try {
+            result = await promptFn(...pArgs);
+          } catch (error: any) {
+            if ((global as any).__ADVERSARIAL_COLLECTOR__) {
+              (global as any).__ADVERSARIAL_COLLECTOR__.push({
+                type: 'prompt-error',
+                name: args[0]?.name,
+                input: pArgs[0],
+                error: error.message,
+                duration: Date.now() - startTime,
+              });
+            }
+            throw error;
+          }
+
+          if ((global as any).__ADVERSARIAL_COLLECTOR__) {
+            (global as any).__ADVERSARIAL_COLLECTOR__.push({
+              type: 'prompt-success',
+              name: args[0]?.name,
+              input: pArgs[0],
+              output: result,
+              duration: Date.now() - startTime,
+            });
+          }
+
+          return result;
         };
         // Copy static properties (like .asTool, metadata) from the original prompt function
         Object.assign(wrappedPrompt, promptFn);

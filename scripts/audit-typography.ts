@@ -23,17 +23,19 @@ interface TypographyIssue {
   line: number;
   issue: string;
   element?: string;
+  recommendation?: string;
 }
 
 const issues: TypographyIssue[] = [];
+const stats = {
+  adHocCount: 0,
+  headingConsistency: 0,
+  inlineStyles: 0
+};
 
 function scanFile(filePath: string) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const lines = content.split('\n');
-
-  // Regex to find className attributes (simple, handles single/double quotes)
-  // We scan line by line for simplicity but also look for specific patterns.
-  // For better accuracy, we should parse, but regex is sufficient for audit.
 
   lines.forEach((line, index) => {
     // 1. Check for inline styles affecting font size
@@ -41,59 +43,54 @@ function scanFile(filePath: string) {
       issues.push({
         file: filePath,
         line: index + 1,
-        issue: 'Inline style used for fontSize. Use Tailwind classes instead.'
+        issue: 'Inline style used for fontSize.',
+        recommendation: 'Use Tailwind classes (e.g., text-sm, text-base).'
       });
+      stats.inlineStyles++;
     }
 
     // 2. Check for arbitrary text sizes in className
     const arbitraryMatch = line.match(/text-\[([^\]]+)\]/);
     if (arbitraryMatch) {
-       // Filter out known valid arbitrary values if any (e.g. strict design tokens)
-       // But generally text-[12px] is what we want to catch.
+       const val = arbitraryMatch[1];
+       let rec = 'Use standard token';
+       // Suggest closest token if pixel value
+       if (val.endsWith('px')) {
+         const px = parseInt(val, 10);
+         if (px < 14) rec = 'Consider text-xs or text-sm';
+         else if (px < 16) rec = 'Consider text-sm';
+         else if (px < 18) rec = 'Consider text-base';
+         else if (px < 20) rec = 'Consider text-lg';
+         else rec = 'Consider text-xl+';
+       }
+
        issues.push({
          file: filePath,
          line: index + 1,
-         issue: `Arbitrary text size used: ${arbitraryMatch[0]}`
+         issue: `Arbitrary text size used: ${arbitraryMatch[0]}`,
+         recommendation: rec
        });
-    }
-
-    // 3. Check for standard text sizes
-    // Regex to match whole words starting with text-
-    const textClasses = line.match(/\btext-(xs|sm|base|lg|[0-9]+xl)\b/g);
-    if (textClasses) {
-      // These are valid, so we don't flag them unless we want to enforce specific restrictions.
-      // But we want to flag if they are used inconsistently with headings.
+       stats.adHocCount++;
     }
 
     // 4. Check for Heading consistency
-    // Simple regex for <h1 ... className="...">
-    // This assumes opening tag and className are on the same line, which is common but not guaranteed.
-    // To handle multiline, we'd need a state machine or full file scan.
-    // For this audit, line-by-line is a reasonable approximation for "drift".
     const headingMatch = line.match(/<(h[1-6])\b[^>]*className=["']([^"']+)["']/);
     if (headingMatch) {
       const tag = headingMatch[1] as keyof typeof ALLOWED_HEADINGS;
       const classes = headingMatch[2].split(/\s+/);
 
-      // Check if any allowed size class is present
       const hasAllowedSize = classes.some(c => ALLOWED_HEADINGS[tag].includes(c));
-
-      // If no size class is present, maybe it inherits?
-      // But we want explicit hierarchy.
-      // If a size class is present but not in allowed list?
       const sizeClass = classes.find(c => c.startsWith('text-') && ALLOWED_SIZES.includes(c));
 
       if (sizeClass && !ALLOWED_HEADINGS[tag].includes(sizeClass)) {
          issues.push({
             file: filePath,
             line: index + 1,
-            issue: `Heading <${tag}> uses inconsistent size: ${sizeClass}. Expected one of: ${ALLOWED_HEADINGS[tag].join(', ')}`,
-            element: tag
+            issue: `Heading <${tag}> uses inconsistent size: ${sizeClass}.`,
+            element: tag,
+            recommendation: `Expected one of: ${ALLOWED_HEADINGS[tag].join(', ')}`
          });
-      } else if (!sizeClass && !classes.some(c => c.startsWith('text-'))) {
-          // No text size class. Might be okay if styled by parent or global, but risky.
-          // We can flag it as "Unsized heading".
-          // But maybe too noisy.
+         stats.headingConsistency++;
       }
     }
   });
@@ -118,16 +115,28 @@ traverseDir('src/app');
 traverseDir('src/components');
 
 let report = '# Typography Drift Report\n\n';
+
+report += '## Executive Summary\n';
+report += `- **Ad-hoc Font Sizes**: ${stats.adHocCount} instances (Use of arbitrary values like \`text-[12px]\`)\n`;
+report += `- **Heading Inconsistencies**: ${stats.headingConsistency} instances (Headings violating type scale)\n`;
+report += `- **Inline Styles**: ${stats.inlineStyles} instances\n\n`;
+
+report += '## Recommendations\n';
+report += '1. **Standardize Headings**: Ensure all headings follow the design system (H1 -> text-4xl+, H2 -> text-3xl, etc.).\n';
+report += '2. **Eliminate Arbitrary Values**: Replace `text-[...]` with standard Tailwind classes (`text-sm`, `text-base`, etc.) to maintain rhythm.\n';
+report += '3. **Remove Inline Styles**: Move all font styling to Tailwind classes.\n\n';
+
 if (issues.length === 0) {
   report += 'No typography issues found.\n';
 } else {
-  report += '| File | Line | Issue |\n|---|---|---|\n';
-  // Sort by file and line
+  report += '## Detailed Findings\n';
+  report += '| File | Line | Issue | Recommendation |\n|---|---|---|---|\n';
   issues.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
   issues.forEach(i => {
-    report += `| ${i.file} | ${i.line} | ${i.issue} |\n`;
+    report += `| ${i.file} | ${i.line} | ${i.issue} | ${i.recommendation || ''} |\n`;
   });
 }
 
-fs.writeFileSync('typography-drift-report.md', report);
-console.log('Typography Audit Complete. Report saved to typography-drift-report.md');
+const outputPath = 'reports/TYPOGRAPHY_DRIFT_REPORT.md';
+fs.writeFileSync(outputPath, report);
+console.log(`Typography Audit Complete. Report saved to ${outputPath}`);
