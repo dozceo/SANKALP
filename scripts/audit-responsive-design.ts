@@ -2,162 +2,104 @@
 import fs from 'fs';
 import path from 'path';
 
-const SRC_DIR = path.join(process.cwd(), 'src');
-const APP_DIR = path.join(SRC_DIR, 'app');
-const COMPONENT_DIR = path.join(SRC_DIR, 'components');
-const REPORT_FILE = path.join(process.cwd(), 'RESPONSIVE_COVERAGE_REPORT.md');
+const REPORT_PATH = 'reports/RESPONSIVE_DESIGN_COVERAGE.md';
 
-// Heuristic definitions
-const SUSPICIOUS_PATTERNS = [
-  {
-    regex: /^w-(\d+|\d+\/\d+|\[.*\])$/,
-    exclude: ['w-full', 'w-screen', 'w-fit', 'w-auto', 'w-min', 'w-max'],
-    category: 'Fixed Width',
-    checkResponsive: (tokens: string[]) => tokens.some(t => /^(sm|md|lg|xl|2xl):w-/.test(t))
-  },
-  {
-    regex: /^h-(\d+|\[.*\])$/,
-    exclude: ['h-full', 'h-screen', 'h-fit', 'h-auto', 'h-min', 'h-max'],
-    category: 'Fixed Height',
-    checkResponsive: (tokens: string[]) => tokens.some(t => /^(sm|md|lg|xl|2xl):h-/.test(t))
-  },
-  {
-    regex: /^p[axy]?-(\d+)$/,
-    filter: (match: RegExpMatchArray) => parseInt(match[1]) >= 8, // padding >= 8 (2rem)
-    category: 'Large Padding',
-    checkResponsive: (tokens: string[]) => tokens.some(t => /^(sm|md|lg|xl|2xl):p[axy]?-/.test(t))
-  },
-  {
-    regex: /^m[axy]?-(\d+)$/,
-    filter: (match: RegExpMatchArray) => parseInt(match[1]) >= 8, // margin >= 8 (2rem)
-    category: 'Large Margin',
-    checkResponsive: (tokens: string[]) => tokens.some(t => /^(sm|md|lg|xl|2xl):m[axy]?-/.test(t))
-  },
-  {
-    regex: /^grid-cols-(\d+)$/,
-    filter: (match: RegExpMatchArray) => parseInt(match[1]) > 1, // multiple columns
-    category: 'Multi-column Grid',
-    checkResponsive: (tokens: string[]) => tokens.some(t => /^(sm|md|lg|xl|2xl):grid-cols-/.test(t))
-  },
-  {
-    regex: /^flex-row$/,
-    category: 'Flex Row',
-    checkResponsive: (tokens: string[]) => tokens.some(t => /^(sm|md|lg|xl|2xl):flex-col/.test(t) || /^(sm|md|lg|xl|2xl):flex-row/.test(t))
-    // If it's flex-row by default, we expect maybe flex-col on mobile?
-    // Actually Tailwind is mobile-first. So flex-row means it's flex-row on mobile.
-    // If we want stack on mobile, it should be flex-col md:flex-row.
-    // So if we see flex-row without responsive prefix, it means it's ALWAYS row.
-    // That's suspicious for mobile.
-    // So we check if there is ANY flex direction responsive override?
-    // Wait, if it is flex-col md:flex-row, then 'flex-col' is the base class.
-    // If we see 'flex-row' as base class, it means it is row on mobile.
-    // So check if there is a responsive class that changes direction?
-  }
-];
+// Heuristic: Fixed dimensions without responsive prefixes
+const FIXED_DIMENSION_REGEX = /\b(w-\[\d+px\]|h-\[\d+px\]|w-\d+|h-\d+|w-[1-9]\/\d|grid-cols-\d+)\b/g;
+const RESPONSIVE_PREFIX_REGEX = /\b(sm:|md:|lg:|xl:|2xl:)/;
 
-function getAllFiles(dir: string, fileList: string[] = []) {
-  if (!fs.existsSync(dir)) return fileList;
-  const files = fs.readdirSync(dir);
-  files.forEach(file => {
-    const filePath = path.join(dir, file);
-    if (fs.statSync(filePath).isDirectory()) {
-      getAllFiles(filePath, fileList);
-    } else {
-      if (file.endsWith('.tsx') || file.endsWith('.jsx')) {
-        fileList.push(filePath);
-      }
-    }
-  });
-  return fileList;
-}
+function getAllTsxFiles(dir: string): string[] {
+    let results: string[] = [];
+    if (!fs.existsSync(dir)) return [];
 
-function processFile(filePath: string) {
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const classNameRegex = /className=["']([^"']*)["']|className=\{`([^`]*)`\}/g;
-
-  const issues: { line: number, class: string, category: string }[] = [];
-
-  let match;
-  while ((match = classNameRegex.exec(content)) !== null) {
-    const classString = match[1] || match[2];
-    if (!classString) continue;
-
-    const tokens = classString.split(/\s+/).filter(t => t.trim() !== '');
-
-    // Determine line number
-    const line = content.substring(0, match.index).split('\n').length;
-
-    tokens.forEach(token => {
-      // Check each pattern
-      for (const pattern of SUSPICIOUS_PATTERNS) {
-        const m = token.match(pattern.regex);
-        if (m) {
-          if (pattern.exclude && pattern.exclude.includes(token)) continue;
-          if (pattern.filter && !pattern.filter(m)) continue;
-
-          // Check responsive
-          if (!pattern.checkResponsive(tokens)) {
-             // Special case for flex-row: check if flex-col exists as responsive?
-             // No, the checkResponsive logic handles it.
-
-             // Avoid duplicates
-             if (!issues.find(i => i.line === line && i.class === token)) {
-                 issues.push({
-                   line,
-                   class: token,
-                   category: pattern.category
-                 });
-             }
-          }
+    const list = fs.readdirSync(dir);
+    list.forEach(file => {
+        file = path.join(dir, file);
+        const stat = fs.statSync(file);
+        if (stat && stat.isDirectory()) {
+            results = results.concat(getAllTsxFiles(file));
+        } else if (file.endsWith('.tsx')) {
+            results.push(file);
         }
-      }
     });
-  }
-  return issues;
+    return results;
 }
 
-function main() {
-  console.log("Scanning for mobile responsiveness issues...");
-  const files = [...getAllFiles(APP_DIR), ...getAllFiles(COMPONENT_DIR)];
+async function auditResponsiveDesign() {
+    console.log('Starting Responsive Design Audit...');
 
-  let report = `# Mobile Responsive Breakpoint Coverage Audit Report\n\n`;
-  report += `**Generated:** ${new Date().toLocaleString()}\n\n`;
-  report += `**Scope:** \`src/app\`, \`src/components\`\n\n`;
+    // We can use the find command from the previous step, or just walk the directories.
+    // Let's walk 'src/app' and 'src/components'
+    const files = [
+        ...getAllTsxFiles('src/app'),
+        ...getAllTsxFiles('src/components')
+    ];
 
-  let totalIssues = 0;
-  let filesWithIssues = 0;
+    let report = `# Mobile Responsive Breakpoint Coverage Audit\n\n`;
+    report += `**Date:** ${new Date().toISOString()}\n\n`;
+    report += `## Methodology\n`;
+    report += `- Scanned ${files.length} files.\n`;
+    report += `- Flagged usage of fixed width/height/grid classes (e.g., \`w-96\`, \`grid-cols-3\`) that appear without responsive prefixes (\`sm:\`, \`md:\`, etc.) on the same line.\n`;
+    report += `- **Note**: This is a heuristic. Some fixed widths are intentional (e.g., icons, avatars).\n\n`;
 
-  report += `## Findings\n\n`;
+    report += `## Potential Violations\n\n`;
 
-  files.forEach(file => {
-    const issues = processFile(file);
-    if (issues.length > 0) {
-      filesWithIssues++;
-      totalIssues += issues.length;
-      const relativePath = path.relative(process.cwd(), file);
-      report += `### \`${relativePath}\`\n`;
-      report += `| Line | Class | Category | Suggestion |\n`;
-      report += `|---|---|---|---|\n`;
-      issues.forEach(issue => {
-        report += `| ${issue.line} | \`${issue.class}\` | ${issue.category} | Add \`sm:\`, \`md:\`, or \`lg:\` variant |\n`;
-      });
-      report += `\n`;
+    let violationsCount = 0;
+
+    files.forEach(file => {
+        const content = fs.readFileSync(file, 'utf-8');
+        const lines = content.split('\n');
+
+        const fileViolations: { line: number, match: string, content: string }[] = [];
+
+        lines.forEach((lineContent, index) => {
+            // Find all fixed dimension classes
+            let match;
+            while ((match = FIXED_DIMENSION_REGEX.exec(lineContent)) !== null) {
+                const className = match[0];
+
+                // Check if this line has responsive prefixes (simplified check)
+                // Ideally we check if *this specific class* has an override, but that requires full class parsing.
+                // Fallback: if the line contains NO responsive prefixes, it's a higher risk.
+                if (!RESPONSIVE_PREFIX_REGEX.test(lineContent)) {
+                    // Filter out likely safe cases: icons (w-4, w-5, h-4, h-5)
+                    if (!['w-4', 'w-5', 'w-6', 'h-4', 'h-5', 'h-6', 'w-full', 'h-full'].includes(className)) {
+                         fileViolations.push({
+                            line: index + 1,
+                            match: className,
+                            content: lineContent.trim().substring(0, 100) + '...'
+                        });
+                    }
+                }
+            }
+        });
+
+        if (fileViolations.length > 0) {
+            report += `### \`${file}\`\n`;
+            fileViolations.forEach(v => {
+                report += `- **Line ${v.line}**: \`${v.match}\` - No responsive prefix detected.\n`;
+                // Escape backticks in content for safety in MD report
+                const safeContent = v.content.replace(/`/g, "'");
+                report += `  - Context: \`${safeContent}\`\n`;
+                violationsCount++;
+            });
+            report += `\n`;
+        }
+    });
+
+    if (violationsCount === 0) {
+        report += `No obvious responsive violations found (clean scan).\n`;
+    } else {
+        report += `**Total Potential Violations:** ${violationsCount}\n`;
     }
-  });
 
-  report += `## Summary\n`;
-  report += `- **Files Scanned:** ${files.length}\n`;
-  report += `- **Files with Issues:** ${filesWithIssues}\n`;
-  report += `- **Total Potential Issues:** ${totalIssues}\n`;
+    // Ensure reports directory exists
+    if (!fs.existsSync('reports')) {
+        fs.mkdirSync('reports');
+    }
 
-  if (totalIssues > 0) {
-      report += `\n**Status:** ⚠️ RESPONSIVE GAPS DETECTED\n`;
-  } else {
-      report += `\n**Status:** ✅ EXCELLENT COVERAGE\n`;
-  }
-
-  fs.writeFileSync(REPORT_FILE, report);
-  console.log(`Report generated at ${REPORT_FILE}`);
+    fs.writeFileSync(REPORT_PATH, report);
+    console.log(`Report generated at ${REPORT_PATH}`);
 }
 
-main();
+auditResponsiveDesign();
