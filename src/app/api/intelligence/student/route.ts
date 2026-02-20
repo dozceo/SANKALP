@@ -75,8 +75,15 @@ export async function GET(request: NextRequest) {
             registrationDate: student.registrationDate,
         };
 
-        // Get unique topics
-        const topics = [...new Set(studentHistory.quizResults.map((r) => r.topic))];
+        // Get unique topics and group quizzes by topic
+        // Optimization: Create map once to avoid O(N*M) filtering inside the loop
+        const quizzesByTopic = new Map<string, typeof studentHistory.quizResults>();
+        studentHistory.quizResults.forEach(r => {
+            const existing = quizzesByTopic.get(r.topic) || [];
+            existing.push(r);
+            quizzesByTopic.set(r.topic, existing);
+        });
+        const topics = Array.from(quizzesByTopic.keys());
 
         // Process each topic through ML → ADK pipeline
         const mastery: Record<string, MasterySignal> = {};
@@ -200,7 +207,8 @@ export async function GET(request: NextRequest) {
             allAdkFlags.push(...adkDecision.adkFlags);
 
             // Calculate trend for this topic
-            const topicQuizzes = studentHistory.quizResults.filter(q => q.topic === topic);
+            // Optimization: Use pre-grouped results (O(1) lookup)
+            const topicQuizzes = quizzesByTopic.get(topic) || [];
             // Already sorted by timestamp desc from DB
             const trend = calculateTrend(topicQuizzes, true);
 

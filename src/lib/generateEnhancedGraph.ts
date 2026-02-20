@@ -1,5 +1,18 @@
 import { StudentNode, GraphData, GraphNode, GraphLink, NodeType } from '@/data/docsData';
 import { lightenColor } from '@/lib/color-utils';
+import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
+
+// Node colors by type (Moved outside to avoid re-creation)
+const NODE_COLORS: Record<NodeType, string> = {
+    student: GRAPH_COLORS_HEX.student,
+    subject: GRAPH_COLORS_HEX.subject,
+    chapter: GRAPH_COLORS_HEX.chapter,
+    topic: GRAPH_COLORS_HEX.topic,
+    weakness: GRAPH_COLORS_HEX.weakness,
+    strength: GRAPH_COLORS_HEX.strength,
+    skill: GRAPH_COLORS_HEX.skill,
+    peer: GRAPH_COLORS_HEX.peer,
+};
 
 /**
  * Enhanced graph generation with hierarchical node support
@@ -12,18 +25,6 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
     // Optimization: Use Sets for O(1) lookups instead of O(N) array searches
     const existingNodeIds = new Set<string>();
     const existingLinkKeys = new Set<string>();
-
-    // Node colors by type
-    const colors: Record<NodeType, string> = {
-        student: GRAPH_COLORS_HEX.student,
-        subject: GRAPH_COLORS_HEX.subject,
-        chapter: GRAPH_COLORS_HEX.chapter,
-        topic: GRAPH_COLORS_HEX.topic,
-        weakness: GRAPH_COLORS_HEX.weakness,
-        strength: GRAPH_COLORS_HEX.strength,
-        skill: GRAPH_COLORS_HEX.skill,
-        peer: GRAPH_COLORS_HEX.peer,
-    };
 
     const addNode = (node: GraphNode) => {
         // Optimization: Prevent duplicate nodes
@@ -57,7 +58,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
             name: student.name,
             val: 20,                // Largest node
             type: 'student',
-            color: colors.student,
+            color: NODE_COLORS.student,
         });
 
         // If student has hierarchical subjects data, use it
@@ -71,7 +72,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                     name: subject.name,
                     val: 15,
                     type: 'subject',
-                    color: subject.color || colors.subject,
+                    color: subject.color || NODE_COLORS.subject,
                     parent: student.id,
                 });
 
@@ -92,7 +93,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                         name: chapter.name,
                         val: 12,
                         type: 'chapter',
-                        color: colors.chapter,
+                        color: NODE_COLORS.chapter,
                         parent: subjectId,
                     });
 
@@ -113,7 +114,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                             name: topic.name,
                             val: 10,
                             type: 'topic',
-                            color: colors.topic,
+                            color: NODE_COLORS.topic,
                             mastery: topic.mastery,
                             parent: chapterId,
                         });
@@ -133,7 +134,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                                 name: `⚠️ ${topic.name}`,
                                 val: 8,
                                 type: 'weakness',
-                                color: colors.weakness,
+                                color: NODE_COLORS.weakness,
                                 parent: topicId,
                             });
 
@@ -152,7 +153,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                                 name: `✓ ${topic.name}`,
                                 val: 8,
                                 type: 'strength',
-                                color: colors.strength,
+                                color: NODE_COLORS.strength,
                                 parent: topicId,
                             });
 
@@ -184,7 +185,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                     name: topic,
                     val: 10,
                     type: 'topic',
-                    color: colors.topic,
+                    color: NODE_COLORS.topic,
                 });
 
                 addLink({
@@ -203,7 +204,7 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
                     name: skill,
                     val: 7,
                     type: 'skill',
-                    color: colors.skill,
+                    color: NODE_COLORS.skill,
                 });
 
                 addLink({
