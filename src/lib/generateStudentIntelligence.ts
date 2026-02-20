@@ -7,13 +7,9 @@ import type { StudentIntelligence, MasterySignal } from '@/types/intelligence';
  */
 export function generateStudentIntelligence(student: StudentNode): StudentIntelligence {
     const mastery: Record<string, MasterySignal> = {};
-    let totalScore = 0;
-    let topicCount = 0;
-    let highPriorityCount = 0;
 
     // Convert mastery scores to intelligence signals
     if (student.masteryScores) {
-        // Optimization: Single pass loop for aggregations
         Object.entries(student.masteryScores).forEach(([topic, score]) => {
             // Simulate days since revision (random for demo, should come from quiz history)
             const daysSinceRevision = Math.floor(Math.random() * 14);
@@ -41,21 +37,18 @@ export function generateStudentIntelligence(student: StudentNode): StudentIntell
                 priority: priority,
                 needsRevision: score < 0.7 || daysSinceRevision > 7,
             };
-
-            // Aggregate metrics in the same loop
-            totalScore += score;
-            topicCount++;
-            if (priority === 'HIGH') {
-                highPriorityCount++;
-            }
         });
     }
 
     // Calculate average mastery
-    const avgMastery = topicCount > 0 ? totalScore / topicCount : 0.5;
+    const scores = Object.values(mastery).map(m => m.score);
+    const avgMastery = scores.length > 0
+        ? scores.reduce((a, b) => a + b, 0) / scores.length
+        : 0.5;
 
     // Determine revision urgency
     let revisionUrgency: 'URGENT' | 'SCHEDULED' | 'NONE' = 'NONE';
+    const highPriorityCount = Object.values(mastery).filter(m => m.priority === 'HIGH').length;
 
     if (avgMastery < 0.5 || highPriorityCount >= 2) {
         revisionUrgency = 'URGENT';
@@ -92,3 +85,32 @@ export function generateStudentIntelligence(student: StudentNode): StudentIntell
     };
 }
 
+/**
+ * Calculate student risk level for teacher dashboard
+ */
+export function calculateStudentRisk(student: StudentNode): {
+    avgMastery: number;
+    riskLevel: 'Low' | 'Medium' | 'High';
+    topWeaknesses: string[];
+} {
+    const scores = student.masteryScores
+        ? Object.values(student.masteryScores)
+        : [];
+
+    const avgMastery = scores.length > 0
+        ? scores.reduce((a, b) => a + b, 0) / scores.length
+        : 0.5;
+
+    let riskLevel: 'Low' | 'Medium' | 'High' = 'Low';
+    if (avgMastery < 0.5) {
+        riskLevel = 'High';
+    } else if (avgMastery < 0.7) {
+        riskLevel = 'Medium';
+    }
+
+    return {
+        avgMastery: Math.round(avgMastery * 100),
+        riskLevel,
+        topWeaknesses: student.weaknesses?.slice(0, 3) || [],
+    };
+}

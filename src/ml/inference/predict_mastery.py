@@ -26,10 +26,7 @@ def load_model():
             f"Model not found at {MODEL_PATH}. "
             "Run train_mastery_model.py first."
         )
-    loaded = joblib.load(MODEL_PATH)
-    if isinstance(loaded, dict) and 'model' in loaded:
-        return loaded['model']
-    return loaded
+    return joblib.load(MODEL_PATH)
 
 # Global model instance
 model = None

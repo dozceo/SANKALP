@@ -13,19 +13,14 @@ import type {
     MasteryPredictionInput,
     MasteryPredictionOutput,
 } from "./types";
-import { chaos } from "@/lib/chaos-config";
 
-const PYTHON_SCRIPT_PATH = process.env.ML_PYTHON_SCRIPT || path.join(
+const PYTHON_SCRIPT_PATH = path.join(
     process.cwd(),
     "src",
     "ml",
     "inference",
     "predict_mastery.py"
 );
-
-// Circuit Breaker State
-let lastApiFailureTime = 0;
-const CIRCUIT_OPEN_DURATION = 60000; // 60 seconds
 
 interface PendingRequest {
     resolve: (value: MasteryPredictionOutput) => void;
@@ -46,8 +41,8 @@ class PythonBridge {
     }
 
     private startProcess() {
-        // Spawn Python process with unbuffered output to avoid IPC hangs
-        this.process = spawn("python", ["-u", PYTHON_SCRIPT_PATH]);
+        // Spawn Python process
+        this.process = spawn("python", [PYTHON_SCRIPT_PATH]);
 
         // Setup Readline interface for stdout
         if (this.process.stdout) {
@@ -124,9 +119,6 @@ class PythonBridge {
             }
         } catch (e) {
             console.error("Error parsing Python output:", line, e);
-            // If the output is not valid JSON, it's a critical protocol error.
-            // Kill the process to fail fast and reset the state.
-            this.process?.kill();
         }
     }
 
@@ -148,7 +140,7 @@ class PythonBridge {
                     this.pendingRequests.delete(id);
                     reject(new Error("Timeout waiting for Python inference"));
                 }
-            }, 10000);
+            }, 5000);
 
             this.pendingRequests.set(id, { resolve, reject, timeout });
 
@@ -180,37 +172,26 @@ const API_URL = process.env.ML_API_URL || "http://localhost:8000/predict/mastery
 export async function predictMastery(
     features: MasteryPredictionInput
 ): Promise<MasteryPredictionOutput> {
-    // Chaos Injection
-    await chaos.checkChaos('ml');
+    // Optimization: Try to call the API first (persistent server is much faster)
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1000); // 1s timeout for API
 
-    // Optimization: Circuit Breaker Pattern
-    // If the API failed recently, skip the fetch attempt to avoid latency penalty.
-    if (Date.now() - lastApiFailureTime > CIRCUIT_OPEN_DURATION) {
-        // Optimization: Try to call the API first (persistent server is much faster)
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1000); // 1s timeout for API
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(features),
+            signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
 
-            const response = await fetch(API_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(features),
-                signal: controller.signal,
-            });
-            clearTimeout(timeoutId);
-
-            if (response.ok) {
-                return (await response.json()) as MasteryPredictionOutput;
-            } else {
-                // If response is not OK (eg. 500), consider it a failure for circuit breaker
-                lastApiFailureTime = Date.now();
-            }
-        } catch (error) {
-            // API not available or timeout, fall back to subprocess
-            lastApiFailureTime = Date.now();
+        if (response.ok) {
+            return (await response.json()) as MasteryPredictionOutput;
         }
+    } catch (error) {
+        // API not available or timeout, fall back to subprocess
     }
 
     return bridge.predict(features);
@@ -225,32 +206,76 @@ export async function predictMastery(
 export async function batchPredictMastery(
     topicFeatures: Array<{ topic: string; features: MasteryPredictionInput }>
 ): Promise<Array<{ topic: string; prediction: MasteryPredictionOutput }>> {
-    // Chaos Injection
-    await chaos.checkChaos('ml');
-
     if (topicFeatures.length === 0) {
         return [];
     }
 
-    // Optimization: Use the persistent bridge for all predictions in parallel
-    // This avoids spawning a new Python process for every batch request
-    const promises = topicFeatures.map(async ({ topic, features }) => {
-        try {
-            const prediction = await bridge.predict(features);
-            return { topic, prediction };
-        } catch (error) {
-            console.error(`Prediction failed for topic ${topic}:`, error);
-            return {
+    return new Promise((resolve) => {
+        // Spawn Python process
+        const pythonProcess = spawn("python", [PYTHON_SCRIPT_PATH]);
+
+        let outputData = "";
+        let errorData = "";
+
+        // Collect stdout
+        pythonProcess.stdout.on("data", (data) => {
+            outputData += data.toString();
+        });
+
+        // Collect stderr
+        pythonProcess.stderr.on("data", (data) => {
+            errorData += data.toString();
+        });
+
+        const handleFailure = (errorMessage: string) => {
+            const errorResults = topicFeatures.map(({ topic }) => ({
                 topic,
                 prediction: {
                     mastery_probability: 0,
                     confidence: 0,
                     predicted_class: "error" as const,
-                    error: error instanceof Error ? error.message : String(error),
+                    error: errorMessage,
                 },
-            };
-        }
-    });
+            }));
+            resolve(errorResults);
+        };
 
-    return Promise.all(promises);
+        // Handle process completion
+        pythonProcess.on("close", (code) => {
+            if (code !== 0) {
+                console.error("Python inference error:", errorData);
+                handleFailure(`Python process exited with code ${code}: ${errorData}`);
+                return;
+            }
+
+            try {
+                const results: MasteryPredictionOutput[] = JSON.parse(outputData);
+
+                if (!Array.isArray(results) || results.length !== topicFeatures.length) {
+                    handleFailure(`Invalid output format or count mismatch. Expected ${topicFeatures.length}, got ${Array.isArray(results) ? results.length : "not array"}`);
+                    return;
+                }
+
+                const mappedResults = results.map((prediction, index) => ({
+                    topic: topicFeatures[index].topic,
+                    prediction,
+                }));
+
+                resolve(mappedResults);
+            } catch (parseError) {
+                handleFailure(`Failed to parse Python output: ${outputData}`);
+            }
+        });
+
+        // Send input to Python via stdin
+        const featuresList = topicFeatures.map((tf) => tf.features);
+        pythonProcess.stdin.write(JSON.stringify(featuresList));
+        pythonProcess.stdin.end();
+
+        // Set timeout (prevent hanging)
+        setTimeout(() => {
+            pythonProcess.kill();
+            handleFailure("ML inference timeout after 10 seconds");
+        }, 10000);
+    });
 }

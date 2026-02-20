@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useStudent } from "@/hooks/useStudent";
+import { useState, useEffect } from "react";
+import { useStudent } from "@/contexts/StudentContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +18,9 @@ export function ScheduleView() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get upcoming deadlines (Due or upcoming soon)
-    const upcomingDeadlines = useMemo(() => studyMaterials
+    const upcomingDeadlines = studyMaterials
         .filter(m => m.status === 'Due' || m.status === 'Upcoming')
-        .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime()), [studyMaterials]);
+        .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime());
 
     const handleGeneratePlan = async () => {
         setLoading(true);

@@ -21,15 +21,14 @@ import {
     SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 
 const teacherNavItems = [
     { href: "/teacher", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/teacher/students", icon: Users, label: "Students" },
     { href: "/teacher/classes", icon: BookOpen, label: "Classes" },
-    { href: "/teacher/analytics", icon: BarChart3, label: "Analytics", disabled: true },
-    { href: "/teacher/interventions", icon: AlertTriangle, label: "Interventions", disabled: true },
+    { href: "/teacher/analytics", icon: BarChart3, label: "Analytics" },
+    { href: "/teacher/interventions", icon: AlertTriangle, label: "Interventions" },
     { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
@@ -52,34 +51,16 @@ export function TeacherSidebarNav() {
                 <SidebarMenu className="p-2">
                     {teacherNavItems.map((item) => (
                         <SidebarMenuItem key={item.href}>
-                            {item.disabled ? (
-                                <SidebarMenuButton
-                                    isActive={false}
-                                    tooltip={item.label + " (Coming Soon)"}
-                                    className="cursor-not-allowed hover:bg-transparent hover:text-muted-foreground"
-                                    onClick={(e) => e.preventDefault()}
-                                >
-                                    <item.icon className="text-muted-foreground" />
-                                    <span className="text-muted-foreground">{item.label}</span>
-                                    <Badge
-                                        variant="outline"
-                                        className="ml-auto text-[10px] h-5 px-1.5 text-muted-foreground border-muted-foreground/40"
-                                    >
-                                        Soon
-                                    </Badge>
-                                </SidebarMenuButton>
-                            ) : (
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={pathname === item.href}
-                                    tooltip={{ children: item.label }}
-                                >
-                                    <Link href={item.href}>
-                                        <item.icon />
-                                        <span>{item.label}</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            )}
+                            <SidebarMenuButton
+                                asChild
+                                isActive={pathname === item.href}
+                                tooltip={{ children: item.label }}
+                            >
+                                <Link href={item.href}>
+                                    <item.icon />
+                                    <span>{item.label}</span>
+                                </Link>
+                            </SidebarMenuButton>
                         </SidebarMenuItem>
                     ))}
                 </SidebarMenu>

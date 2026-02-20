@@ -7,7 +7,6 @@
 
 "use client";
 
-import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, TrendingUp, Brain, Info } from "lucide-react";
@@ -15,6 +14,7 @@ import type { StudentIntelligence } from "@/types/intelligence";
 import {
     Tooltip,
     TooltipContent,
+    TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -23,21 +23,10 @@ interface LearningStateCardProps {
 }
 
 export function LearningStateCard({ intelligence }: LearningStateCardProps) {
-    const overallMastery = useMemo(() => {
-        const values = Object.values(intelligence.mastery);
-        if (values.length === 0) return 0;
-        let sum = 0;
-        for (let i = 0; i < values.length; i++) {
-            sum += values[i].score;
-        }
-        return sum / values.length;
-    }, [intelligence.mastery]);
-
-    const tooltipText = useMemo(() => {
-        if (intelligence.attentionRisk === 'HIGH') return "High attention risk detected. Consider taking shorter, more frequent sessions.";
-        if (overallMastery < 0.6) return "Mastery levels are below optimal. Prioritize reviewing weak topics.";
-        return "Based on your recent quiz performance, revision gaps, and ML predictions.";
-    }, [intelligence.attentionRisk, overallMastery]);
+    const overallMastery = Object.values(intelligence.mastery).reduce(
+        (sum, m) => sum + m.score,
+        0
+    ) / Object.keys(intelligence.mastery).length;
 
     return (
         <Card>
@@ -45,19 +34,19 @@ export function LearningStateCard({ intelligence }: LearningStateCardProps) {
                 <CardTitle className="flex items-center gap-2">
                     <Brain className="h-5 w-5" />
                     Learning State
-                    <Tooltip>
-                        <TooltipTrigger aria-label="More information about learning state">
-                            <Info className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                            <p className="text-sm">
-                                {tooltipText}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Updated: {new Date(intelligence.generatedAt).toLocaleString()}
-                            </p>
-                        </TooltipContent>
-                    </Tooltip>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                                <p className="text-sm">
+                                    Based on your recent quiz performance, revision gaps, and ML predictions.
+                                    Updated: {new Date(intelligence.generatedAt).toLocaleString()}
+                                </p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">

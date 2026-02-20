@@ -203,8 +203,7 @@ export async function GET(request: NextRequest) {
 
             // Calculate trend for this topic
             const topicQuizzes = studentHistory.quizResults.filter(q => q.topic === topic);
-            // Already sorted by timestamp desc from DB
-            const trend = calculateTrend(topicQuizzes, true);
+            const trend = calculateTrend(topicQuizzes);
 
             // Store mastery signal
             mastery[topic] = {

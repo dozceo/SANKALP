@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useStudent } from "@/hooks/useStudent";
+import { useState } from "react";
+import { useStudent } from "@/contexts/StudentContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,35 +13,26 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { BookOpen, Search, Filter, ExternalLink } from "lucide-react";
-import type { StudyMaterial } from "@/data/docsData";
+import { BookOpen, Search, Filter } from "lucide-react";
 
 export function StudyLibrary() {
     const { currentStudent } = useStudent();
     const [searchTerm, setSearchTerm] = useState("");
     const [filterSubject, setFilterSubject] = useState("all");
-    const [selectedMaterial, setSelectedMaterial] = useState<StudyMaterial | null>(null);
 
     // Get study materials from current student
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get unique subjects
-    const subjects = useMemo(() => Array.from(new Set(studyMaterials.map(m => m.subject))), [studyMaterials]);
+    const subjects = Array.from(new Set(studyMaterials.map(m => m.subject)));
 
     // Filter materials
-    const filteredMaterials = useMemo(() => studyMaterials.filter(material => {
+    const filteredMaterials = studyMaterials.filter(material => {
         const matchesSearch = material.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
             material.subject.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
         return matchesSearch && matchesFilter;
-    }), [studyMaterials, searchTerm, filterSubject]);
+    });
 
     // Status badge styles
     const getStatusVariant = (status: string) => {
@@ -71,7 +62,7 @@ export function StudyLibrary() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                    <div className="flex gap-4 mb-6">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -82,7 +73,7 @@ export function StudyLibrary() {
                             />
                         </div>
                         <Select value={filterSubject} onValueChange={setFilterSubject}>
-                            <SelectTrigger className="w-full sm:w-[200px]">
+                            <SelectTrigger className="w-[200px]">
                                 <Filter className="h-4 w-4 mr-2" />
                                 <SelectValue placeholder="Filter by subject" />
                             </SelectTrigger>
@@ -145,12 +136,7 @@ export function StudyLibrary() {
                                                     </span>
                                                 </div>
                                             )}
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-full mt-4"
-                                                onClick={() => setSelectedMaterial(material)}
-                                            >
+                                            <Button variant="outline" size="sm" className="w-full mt-4">
                                                 View Details
                                             </Button>
                                         </div>
@@ -161,79 +147,6 @@ export function StudyLibrary() {
                     )}
                 </CardContent>
             </Card>
-
-            {/* Detail Dialog */}
-            <Dialog open={!!selectedMaterial} onOpenChange={(open: boolean) => !open && setSelectedMaterial(null)}>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                    {selectedMaterial && (
-                        <>
-                            <DialogHeader>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <Badge variant={getStatusVariant(selectedMaterial.status)}>
-                                        {selectedMaterial.status}
-                                    </Badge>
-                                    <span className="text-sm text-muted-foreground">{selectedMaterial.subject}</span>
-                                </div>
-                                <DialogTitle className="text-xl">{selectedMaterial.topic}</DialogTitle>
-                                {selectedMaterial.chapter && (
-                                    <DialogDescription>{selectedMaterial.chapter}</DialogDescription>
-                                )}
-                            </DialogHeader>
-
-                            <div className="space-y-4 mt-4">
-                                {/* Notes */}
-                                {selectedMaterial.detailedNotes && (
-                                    <div>
-                                        <h4 className="text-sm font-semibold mb-2">Notes</h4>
-                                        <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap">
-                                            {selectedMaterial.detailedNotes}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Review Info */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-muted/30 rounded-lg p-3">
-                                        <div className="text-xs text-muted-foreground mb-1">Next Review</div>
-                                        <div className="text-sm font-medium">
-                                            {new Date(selectedMaterial.nextReview).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                    {selectedMaterial.lastReviewed && (
-                                        <div className="bg-muted/30 rounded-lg p-3">
-                                            <div className="text-xs text-muted-foreground mb-1">Last Reviewed</div>
-                                            <div className="text-sm font-medium">
-                                                {new Date(selectedMaterial.lastReviewed).toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Reference Links */}
-                                {selectedMaterial.referenceLinks && selectedMaterial.referenceLinks.length > 0 && (
-                                    <div>
-                                        <h4 className="text-sm font-semibold mb-2">Reference Links</h4>
-                                        <div className="space-y-2">
-                                            {selectedMaterial.referenceLinks.map((link, i) => (
-                                                <a
-                                                    key={i}
-                                                    href={link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center gap-2 text-sm text-primary hover:underline"
-                                                >
-                                                    <ExternalLink className="h-3 w-3" />
-                                                    {link}
-                                                </a>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

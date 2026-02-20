@@ -1,77 +1,51 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { BrainCircuit, Loader2, Eye, EyeOff } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
-const signUpSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["student", "teacher"]),
-});
-
-type SignUpFormData = z.infer<typeof signUpSchema>;
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { BrainCircuit, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SignUpPage() {
-  const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<SignUpFormData>({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: {
-      role: "student",
-      name: "",
-      email: "",
-      password: "",
-    },
-  });
-
-  const selectedRole = watch("role");
-
-  const onSubmit = async (data: SignUpFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
 
     try {
       // Pass empty additional data as we will collect it during onboarding
-      await signUp(data.email, data.password, data.name, data.role, {});
+      await signUp(email, password, name, role, {});
 
       toast({
-        title: "Account created!",
-        description: "Welcome to SANKALP.",
+        title: 'Account created!',
+        description: 'Welcome to SANKALP.',
       });
 
       // Redirect to onboarding based on role
-      if (data.role === "teacher") {
-        router.push("/teacher-onboarding");
+      if (role === 'teacher') {
+        router.push('/teacher-onboarding');
       } else {
-        router.push("/onboarding");
+        router.push('/onboarding');
       }
     } catch (error: any) {
       toast({
-        title: "Sign up failed",
-        description: error.message || "Could not create account",
-        variant: "destructive",
+        title: 'Sign up failed',
+        description: error.message || 'Could not create account',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -79,40 +53,27 @@ export default function SignUpPage() {
   };
 
   return (
-    <Card className="w-full max-w-sm shadow-md border-border/60">
-      <CardHeader className="text-center space-y-1">
-        <div className="flex justify-center mb-2">
-          <div className="p-3 rounded-full bg-primary/10">
-            <BrainCircuit className="h-10 w-10 text-primary" />
-          </div>
-        </div>
-        <CardTitle className="text-3xl font-headline tracking-tight">Create an Account</CardTitle>
-        <CardDescription className="text-base">Enter your information to get started.</CardDescription>
+    <Card className="w-full max-w-sm">
+      <CardHeader className="text-center">
+        <BrainCircuit className="mx-auto h-10 w-10 text-primary" />
+        <CardTitle className="text-2xl font-headline mt-2">Create an Account</CardTitle>
+        <CardDescription>Enter your information to get started.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Role Selection */}
           <div className="space-y-2">
             <Label>I am a</Label>
-            <RadioGroup
-              value={selectedRole}
-              onValueChange={(val) => setValue("role", val as "student" | "teacher")}
-              className="flex gap-4"
-            >
+            <RadioGroup value={role} onValueChange={(val) => setRole(val as 'student' | 'teacher')}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="student" id="student" />
-                <Label htmlFor="student" className="font-normal cursor-pointer">
-                  Student
-                </Label>
+                <Label htmlFor="student" className="font-normal cursor-pointer">Student</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="teacher" id="teacher" />
-                <Label htmlFor="teacher" className="font-normal cursor-pointer">
-                  Teacher
-                </Label>
+                <Label htmlFor="teacher" className="font-normal cursor-pointer">Teacher</Label>
               </div>
             </RadioGroup>
-            {errors.role && <p className="text-sm text-destructive">{errors.role.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -120,10 +81,10 @@ export default function SignUpPage() {
             <Input
               id="full-name"
               placeholder="Alex Doe"
-              {...register("name")}
-              aria-invalid={!!errors.name}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
             />
-            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -132,39 +93,21 @@ export default function SignUpPage() {
               id="email"
               type="email"
               placeholder="m@example.com"
-              {...register("email")}
-              aria-invalid={!!errors.email}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                className="pr-10"
-                {...register("password")}
-                aria-invalid={!!errors.password}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                ) : (
-                  <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                )}
-              </Button>
-            </div>
-            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
@@ -174,7 +117,7 @@ export default function SignUpPage() {
         </form>
 
         <div className="mt-4 text-center text-sm">
-          Already have an account?{" "}
+          Already have an account?{' '}
           <Link href="/login" className="underline">
             Sign in
           </Link>

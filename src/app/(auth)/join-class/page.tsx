@@ -1,147 +1,114 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, ArrowRight } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
-const joinClassSchema = z.object({
-  classCode: z
-    .string()
-    .length(6, "Class code must be exactly 6 characters")
-    .regex(/^[A-Z0-9]+$/, "Class code must contain only uppercase letters and numbers"),
-});
-
-type JoinClassFormData = z.infer<typeof joinClassSchema>;
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { BrainCircuit, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function JoinClassPage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+    const [classCode, setClassCode] = useState('');
+    const [loading, setLoading] = useState(false);
+    const { user } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors, isValid },
-  } = useForm<JoinClassFormData>({
-    resolver: zodResolver(joinClassSchema),
-    mode: "onChange",
-  });
+    const handleJoin = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-  const onSubmit = async (data: JoinClassFormData) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in first to join a class.",
-        variant: "destructive",
-      });
-      return;
-    }
+        if (!user) {
+            toast({
+                title: 'Not authenticated',
+                description: 'Please sign in first',
+                variant: 'destructive',
+            });
+            router.push('/login');
+            return;
+        }
 
-    setLoading(true);
+        setLoading(true);
 
-    try {
-      const response = await fetch("/api/classes/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.uid,
-          classCode: data.classCode,
-        }),
-      });
+        try {
+            const response = await fetch('/api/classes/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    studentId: user.uid,
+                    classCode: classCode.toUpperCase(),
+                }),
+            });
 
-      const result = await response.json();
+            const data = await response.json();
 
-      if (response.ok) {
-        toast({
-          title: "Class Joined!",
-          description: `Successfully joined ${result.className}`,
-        });
-        router.push("/home");
-      } else {
-        toast({
-          title: "Failed to join",
-          description: result.error || "Please verify the code and try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to join class');
+            }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase();
-    if (value.length <= 6) {
-      setValue("classCode", value, { shouldValidate: true });
-    }
-  };
+            toast({
+                title: 'Success!',
+                description: `Joined ${data.class.className}`,
+            });
 
-  if (authLoading) {
+            router.push('/home');
+        } catch (error: any) {
+            toast({
+                title: 'Failed to join class',
+                description: error.message || 'Invalid class code',
+                variant: 'destructive',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+        <div className="flex min-h-screen items-center justify-center">
+            <Card className="w-full max-w-md">
+                <CardHeader className="text-center">
+                    <BrainCircuit className="mx-auto h-12 w-12 text-primary" />
+                    <CardTitle className="text-2xl font-headline mt-2">Join Your Class</CardTitle>
+                    <CardDescription>
+                        Enter the 6-character class code provided by your teacher
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleJoin} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="classCode">Class Code</Label>
+                            <Input
+                                id="classCode"
+                                maxLength={6}
+                                value={classCode}
+                                onChange={(e) => setClassCode(e.target.value.toUpperCase())}
+                                placeholder="ABC123"
+                                className="text-center text-xl tracking-widest font-mono"
+                                required
+                            />
+                            <p className="text-sm text-muted-foreground">
+                                Example: MTH001, SCI9B2
+                            </p>
+                        </div>
+
+                        <Button type="submit" className="w-full" disabled={loading || classCode.length !== 6}>
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Join Class
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="w-full"
+                            onClick={() => router.push('/home')}
+                        >
+                            Skip for now
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
+        </div>
     );
-  }
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <Card className="w-full max-w-md border-border/60 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl font-headline text-center">Join a Class</CardTitle>
-          <CardDescription className="text-center">
-            Enter the 6-character code provided by your teacher.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="flex flex-col items-center gap-4">
-              <Input
-                placeholder="X Y Z 1 2 3"
-                className="text-center text-3xl tracking-[0.5em] font-mono h-16 uppercase placeholder:tracking-normal"
-                maxLength={6}
-                {...register("classCode")}
-                onChange={handleInputChange}
-                aria-invalid={!!errors.classCode}
-              />
-              {errors.classCode && <p className="text-sm text-destructive">{errors.classCode.message}</p>}
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full h-12 text-lg"
-              disabled={loading || !isValid}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Joining...
-                </>
-              ) : (
-                <>
-                  Join Class <ArrowRight className="ml-2 h-5 w-5" />
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
 }

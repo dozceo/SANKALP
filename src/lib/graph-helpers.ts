@@ -1,7 +1,6 @@
 import { db } from './firebase-admin';
 import { GraphData, GraphNode, GraphLink, NodeType } from '@/data/docsData';
-import { getQuizResults, getTeacherStudents, getBatchedQuizResults } from './db-helpers';
-import { GRAPH_COLORS_HEX } from '@/lib/styles/graph-tokens';
+import { getQuizResults, getTeacherStudents } from './db-helpers';
 
 /**
  * Fetch and generate personal graph data for a student
@@ -10,14 +9,9 @@ export async function fetchStudentGraphData(studentId: string): Promise<GraphDat
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
     const colors: Record<NodeType, string> = {
-        student: GRAPH_COLORS_HEX.student,
-        subject: GRAPH_COLORS_HEX.subject,
-        chapter: GRAPH_COLORS_HEX.chapter,
-        topic: GRAPH_COLORS_HEX.topic,
-        weakness: GRAPH_COLORS_HEX.weakness,
-        strength: GRAPH_COLORS_HEX.strength,
-        skill: GRAPH_COLORS_HEX.skill,
-        peer: GRAPH_COLORS_HEX.peer,
+        student: '#9333EA', subject: '#3B82F6', chapter: '#06B6D4',
+        topic: '#6B7280', weakness: '#EF4444', strength: '#10B981',
+        skill: '#F59E0B', peer: '#8B5CF6'
     };
 
     try {
@@ -47,16 +41,10 @@ export async function fetchStudentGraphData(studentId: string): Promise<GraphDat
             });
         });
 
-        // Track IDs we've already added to avoid duplicates
-        const addedNodeIds = new Set<string>([studentId]);
-
-        // 3. Generate Nodes from Quiz Topics
+        // 3. Generate Nodes from Topics
         topicStats.forEach((stats, topic) => {
             const avgScore = stats.total / stats.count;
             const topicId = `topic-${topic.replace(/\s+/g, '-').toLowerCase()}`;
-
-            if (addedNodeIds.has(topicId)) return;
-            addedNodeIds.add(topicId);
 
             // Topic Node
             nodes.push({
@@ -87,68 +75,6 @@ export async function fetchStudentGraphData(studentId: string): Promise<GraphDat
             }
         });
 
-        // 4. Fetch Brain Map Nodes (from study materials converted to brain map)
-        try {
-            const brainMapSnapshot = await db.collection('brainMapNodes')
-                .where('studentId', '==', studentId)
-                .get();
-
-            const subjectNodes = new Map<string, string>(); // subject -> node ID
-
-            brainMapSnapshot.docs.forEach((doc: any) => {
-                const data = doc.data();
-                const bmNodeId = `bm-${doc.id}`;
-
-                if (addedNodeIds.has(bmNodeId)) return;
-                addedNodeIds.add(bmNodeId);
-
-                // Subject root nodes
-                if (!data.parentNodeId && data.subject) {
-                    const subjectId = `subject-${data.subject.replace(/\s+/g, '-').toLowerCase()}`;
-                    if (!addedNodeIds.has(subjectId)) {
-                        addedNodeIds.add(subjectId);
-                        subjectNodes.set(data.subject, subjectId);
-                        nodes.push({
-                            id: subjectId,
-                            name: data.subject,
-                            val: 15,
-                            type: 'subject',
-                            color: colors.subject
-                        });
-                        links.push({
-                            source: studentId,
-                            target: subjectId,
-                            type: 'hierarchy'
-                        });
-                    }
-                }
-
-                // Topic nodes from brain map
-                if (data.topic && data.topic !== 'Root') {
-                    nodes.push({
-                        id: bmNodeId,
-                        name: data.title || data.topic,
-                        val: 8 + (data.masteryLevel || 0) * 4,
-                        type: 'topic',
-                        color: (data.masteryLevel || 0) > 0.8 ? colors.strength :
-                            (data.masteryLevel || 0) < 0.4 ? colors.weakness : colors.chapter,
-                        mastery: data.masteryLevel || 0
-                    });
-
-                    // Link to parent subject or student
-                    const parentSubjectId = subjectNodes.get(data.subject);
-                    links.push({
-                        source: parentSubjectId || studentId,
-                        target: bmNodeId,
-                        type: 'topic'
-                    });
-                }
-            });
-        } catch (bmError) {
-            console.warn('Could not fetch brain map nodes:', bmError);
-            // Non-fatal: graph still shows quiz-based nodes
-        }
-
         return { nodes, links };
     } catch (error) {
         console.error('Error generating student graph:', error);
@@ -163,26 +89,14 @@ export async function fetchTeacherGraphData(teacherId: string): Promise<GraphDat
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
     const colors: Record<NodeType, string> = {
-        student: GRAPH_COLORS_HEX.student,
-        subject: GRAPH_COLORS_HEX.subject,
-        chapter: GRAPH_COLORS_HEX.chapter,
-        topic: GRAPH_COLORS_HEX.topic,
-        weakness: GRAPH_COLORS_HEX.weakness,
-        strength: GRAPH_COLORS_HEX.strength,
-        skill: GRAPH_COLORS_HEX.skill,
-        peer: GRAPH_COLORS_HEX.peer,
+        student: '#9333EA', subject: '#3B82F6', chapter: '#06B6D4',
+        topic: '#6B7280', weakness: '#EF4444', strength: '#10B981',
+        skill: '#F59E0B', peer: '#8B5CF6'
     };
 
     try {
-        const students = await getTeacherStudents(teacherId, {
-            select: ['userId', 'name']
-        });
+        const students = await getTeacherStudents(teacherId);
         const topicNodes = new Map<string, string>(); // Name -> ID
-
-        // Batch fetch quiz results
-        const studentIds = students.map(s => s.id);
-        const quizResultsMap = await getBatchedQuizResults(studentIds, 20);
-        const existingLinks = new Set<string>();
 
         // Create Student Nodes
         for (const student of students) {
@@ -194,8 +108,8 @@ export async function fetchTeacherGraphData(teacherId: string): Promise<GraphDat
                 color: colors.student
             });
 
-            // Get their recent activity
-            const results = quizResultsMap.get(student.id) || [];
+            // Fetch their recent activity
+            const results = await getQuizResults(student.id, 20);
 
             // Link to Topics
             results.forEach(r => {
@@ -213,13 +127,12 @@ export async function fetchTeacherGraphData(teacherId: string): Promise<GraphDat
                 }
 
                 // Avoid duplicate links
-                // Use a sorted key to handle undirected edges efficiently
-                const s = student.id;
-                const t = topicId;
-                const key = s < t ? `${s}-${t}` : `${t}-${s}`;
+                const linkExists = links.some(l =>
+                    (l.source === student.id && l.target === topicId) ||
+                    (l.source === topicId && l.target === student.id)
+                );
 
-                if (!existingLinks.has(key)) {
-                    existingLinks.add(key);
+                if (!linkExists) {
                     links.push({
                         source: student.id,
                         target: topicId,

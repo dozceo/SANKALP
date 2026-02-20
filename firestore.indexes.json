@@ -1,25 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "brainMapNodes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "studentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
       "collectionGroup": "adkDecisions",
       "queryScope": "COLLECTION",
       "fields": [

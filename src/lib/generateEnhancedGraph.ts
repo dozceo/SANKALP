@@ -1,5 +1,4 @@
-import { StudentNode, GraphData, GraphNode, GraphLink, NodeType } from '@/data/docsData';
-import { lightenColor } from '@/lib/color-utils';
+import { StudentNode, GraphData, GraphNode, GraphLink, NodeType } from './docsData';
 
 /**
  * Enhanced graph generation with hierarchical node support
@@ -15,43 +14,35 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
 
     // Node colors by type
     const colors: Record<NodeType, string> = {
-        student: GRAPH_COLORS_HEX.student,
-        subject: GRAPH_COLORS_HEX.subject,
-        chapter: GRAPH_COLORS_HEX.chapter,
-        topic: GRAPH_COLORS_HEX.topic,
-        weakness: GRAPH_COLORS_HEX.weakness,
-        strength: GRAPH_COLORS_HEX.strength,
-        skill: GRAPH_COLORS_HEX.skill,
-        peer: GRAPH_COLORS_HEX.peer,
+        student: '#9333EA',      // Purple
+        subject: '#3B82F6',      // Blue
+        chapter: '#06B6D4',      // Cyan
+        topic: '#6B7280',        // Gray
+        weakness: '#EF4444',     // Red
+        strength: '#10B981',     // Green
+        skill: '#F59E0B',        // Amber
     };
 
     const addNode = (node: GraphNode) => {
-        // Optimization: Prevent duplicate nodes
-        if (!existingNodeIds.has(node.id)) {
-            // Optimization: Pre-calculate light color to avoid runtime calculation during render
-            if (node.color && !node.lightColor) {
-                node.lightColor = lightenColor(node.color, 20);
-            }
-            nodes.push(node);
-            existingNodeIds.add(node.id);
-        }
+        nodes.push(node);
+        existingNodeIds.add(node.id);
     };
 
-    const addLink = (link: GraphLink, checkExists = false) => {
-        if (checkExists) {
-            // Store link key as "minId-maxId" to handle undirected check
-            const s = String(link.source);
-            const t = String(link.target);
-            const key = s < t ? `${s}-${t}` : `${t}-${s}`;
-
-            if (existingLinkKeys.has(key)) return;
-            existingLinkKeys.add(key);
-        }
+    const addLink = (link: GraphLink) => {
         links.push(link);
+        // Store link key as "minId-maxId" to handle undirected check
+        const s = String(link.source);
+        const t = String(link.target);
+        const key = s < t ? `${s}-${t}` : `${t}-${s}`;
+        existingLinkKeys.add(key);
     };
 
     students.forEach(student => {
         // Create student node
+        const avgMastery = student.masteryScores
+            ? Object.values(student.masteryScores).reduce((a, b) => a + b, 0) / Object.values(student.masteryScores).length
+            : 0.5;
+
         addNode({
             id: student.id,
             name: student.name,
@@ -178,14 +169,15 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
             // Create topic nodes
             topicSet.forEach(topic => {
                 const topicId = `topic-${topic.toLowerCase().replace(/\s+/g, '-')}`;
-                // Check handled by addNode
-                addNode({
-                    id: topicId,
-                    name: topic,
-                    val: 10,
-                    type: 'topic',
-                    color: colors.topic,
-                });
+                if (!existingNodeIds.has(topicId)) {
+                    addNode({
+                        id: topicId,
+                        name: topic,
+                        val: 10,
+                        type: 'topic',
+                        color: colors.topic,
+                    });
+                }
 
                 addLink({
                     source: student.id,
@@ -197,14 +189,15 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
             // Create skill nodes
             skillSet.forEach(skill => {
                 const skillId = `skill-${skill.toLowerCase().replace(/\s+/g, '-')}`;
-                // Check handled by addNode
-                addNode({
-                    id: skillId,
-                    name: skill,
-                    val: 7,
-                    type: 'skill',
-                    color: colors.skill,
-                });
+                if (!existingNodeIds.has(skillId)) {
+                    addNode({
+                        id: skillId,
+                        name: skill,
+                        val: 7,
+                        type: 'skill',
+                        color: colors.skill,
+                    });
+                }
 
                 addLink({
                     source: student.id,
@@ -216,12 +209,17 @@ export function generateEnhancedGraphData(students: StudentNode[]): GraphData {
 
         // Create peer connections
         student.connections?.forEach(connectionId => {
-            // Optimization: Only generate key for peer connections where duplication is possible
-            addLink({
-                source: student.id,
-                target: connectionId,
-                type: 'peer',
-            }, true); // Enable existence check
+            const s = String(student.id);
+            const t = String(connectionId);
+            const key = s < t ? `${s}-${t}` : `${t}-${s}`;
+
+            if (!existingLinkKeys.has(key)) {
+                addLink({
+                    source: student.id,
+                    target: connectionId,
+                    type: 'peer',
+                });
+            }
         });
     });
 

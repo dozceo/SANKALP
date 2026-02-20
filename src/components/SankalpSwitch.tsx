@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Clock, PlayCircle, StopCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { generateFriendlyErrorMessage } from '@/app/actions/ai-error';
 
 interface SankalpSession {
     id: string;
@@ -86,14 +87,7 @@ export function SankalpSwitch() {
                 description: `${duration} minute session begun!`,
             });
         } catch (error: any) {
-            const errorMsg = error.message || 'Something went wrong';
-            // Map common errors to friendly messages without AI
-            let friendlyMessage = 'Something went wrong. Please check your connection and try again.';
-            if (errorMsg.includes('Active session already exists')) {
-                friendlyMessage = 'You already have an active session. Please end it before starting a new one.';
-            } else if (errorMsg.includes('Missing required fields')) {
-                friendlyMessage = 'Please make sure you are signed in and have selected a duration.';
-            }
+            const friendlyMessage = await generateFriendlyErrorMessage(error.message, 'Starting a Focus Session');
             toast({
                 title: 'Failed to start',
                 description: friendlyMessage,
@@ -162,11 +156,8 @@ export function SankalpSwitch() {
                             {isActive ? 'Session in progress' : 'Start a focused study session'}
                         </CardDescription>
                     </div>
-                    <div
-                        role="status"
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                            }`}>
-                        <span className="sr-only">Session status: </span>
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                        }`}>
                         {isActive ? 'Active' : 'Inactive'}
                     </div>
                 </div>
@@ -175,12 +166,12 @@ export function SankalpSwitch() {
                 {!isActive ? (
                     <>
                         <div className="space-y-2">
-                            <label htmlFor="session-duration" className="text-sm font-medium">Session Duration</label>
+                            <label className="text-sm font-medium">Session Duration</label>
                             <Select
                                 value={duration.toString()}
                                 onValueChange={(val) => setDuration(parseInt(val))}
                             >
-                                <SelectTrigger id="session-duration" aria-label="Select session duration">
+                                <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -205,7 +196,7 @@ export function SankalpSwitch() {
                     </>
                 ) : (
                     <>
-                        <div className="text-center py-6" role="timer" aria-live="off">
+                        <div className="text-center py-6">
                             <div className="text-5xl font-mono font-bold text-primary">
                                 {formatTime(timeRemaining)}
                             </div>

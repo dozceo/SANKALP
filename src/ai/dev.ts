@@ -1,7 +1,6 @@
 
 import { config } from 'dotenv';
-// Load environment variables from .env.local to match Next.js development environment
-config({ path: '.env.local' });
+config();
 
 import '@/ai/flows/multilingual-cognitive-chatbot.ts';
 import '@/ai/flows/smart-revision-planner.ts';
