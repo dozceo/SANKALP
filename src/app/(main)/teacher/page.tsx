@@ -16,11 +16,16 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Download, ChevronRight, Loader2 } from "lucide-react";
-import { InteractiveGraph } from "@/components/InteractiveGraph";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from 'next-intl';
+
+const InteractiveGraph = dynamic(
+  () => import("@/components/InteractiveGraph").then(mod => mod.InteractiveGraph),
+  { ssr: false, loading: () => <div className="flex h-[400px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div> }
+);
 
 // Get initials for avatar
 const getInitials = (name: string) => {

@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { InteractiveGraph } from '@/components/InteractiveGraph';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { GraphData } from '@/data/docsData';
 
+const InteractiveGraph = dynamic(
+    () => import('@/components/InteractiveGraph').then(mod => mod.InteractiveGraph),
+    { ssr: false, loading: () => <div className="flex h-[500px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div> }
+);
+
 export default function BrainMapPage() {
+
     const { user } = useAuth();
     const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
     const [loading, setLoading] = useState(true);
