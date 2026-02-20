@@ -1,4 +1,10 @@
 
+// ─── Production Guard ────────────────────────────────────────────────
+if (process.env.NODE_ENV === 'production') {
+    console.error('❌ FATAL: Genkit dev server must not run in production.');
+    process.exit(1);
+}
+
 import { config } from 'dotenv';
 // Load environment variables from .env.local to match Next.js development environment
 config({ path: '.env.local' });
