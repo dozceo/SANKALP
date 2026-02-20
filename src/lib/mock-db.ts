@@ -13,6 +13,10 @@ function serialize(data: any): any {
     if (data instanceof Date) {
         return { __type__: 'Date', value: data.toISOString() };
     }
+    // Handle Firestore FieldValue.serverTimestamp() (basic check)
+    if (typeof data === 'object' && (data.methodName === 'FieldValue.serverTimestamp' || data._methodName === 'serverTimestamp')) {
+         return { __type__: 'Date', value: new Date().toISOString() };
+    }
     // Handle Mock Date Object (from previous read)
     if (data && typeof data === 'object' && typeof data.toDate === 'function') {
         try {
