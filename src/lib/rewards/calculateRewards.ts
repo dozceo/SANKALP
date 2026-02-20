@@ -1,5 +1,14 @@
 import { StudentNode, Badge } from '@/data/docsData';
 
+// Re-export gamification logic for convenient access
+export {
+    calculateStreak,
+    checkAndAwardBadges,
+    processGamificationUpdate,
+    BADGE_CATALOG,
+} from './gamificationService';
+export type { GamificationContext, GamificationUpdate, BadgeDefinition } from './gamificationService';
+
 export interface SubjectProgress {
     subject: string;
     value: number;
