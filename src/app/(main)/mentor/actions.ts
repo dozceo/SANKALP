@@ -65,12 +65,22 @@ async function buildStudentHistory(studentId?: string): Promise<string> {
 }
 
 export async function getMotivationalAdvice(studentConcern: string, studentId?: string) {
+    // Truncation guard — prevent context window overflow (Gemini 2.0 Flash: 1M tokens, but keep prompts lean)
+    const MAX_CONCERN_CHARS = 2000;
+    const MAX_HISTORY_CHARS = 3000;
+    const safeConcern = studentConcern.length > MAX_CONCERN_CHARS
+        ? studentConcern.slice(0, MAX_CONCERN_CHARS) + "..."
+        : studentConcern;
+
     try {
-        const studentHistory = await buildStudentHistory(studentId);
+        const rawHistory = await buildStudentHistory(studentId);
+        const safeHistory = rawHistory.length > MAX_HISTORY_CHARS
+            ? rawHistory.slice(0, MAX_HISTORY_CHARS) + "..."
+            : rawHistory;
 
         const response = await getMotivationalCounseling({
-            studentConcern,
-            studentHistory,
+            studentConcern: safeConcern,
+            studentHistory: safeHistory,
         });
 
         if (!response || !response.advice) {

@@ -7,9 +7,15 @@ import { speechToSpeech } from "@/ai/flows/speech-to-speech";
 import { getChatbotFallback } from "@/lib/chat-fallback";
 
 export async function getExplanation(concept: string, language: string) {
+    // Truncation guard — keep prompts lean and prevent overflow
+    const MAX_CONCEPT_CHARS = 2000;
+    const safeConcept = concept.length > MAX_CONCEPT_CHARS
+        ? concept.slice(0, MAX_CONCEPT_CHARS) + "..."
+        : concept;
+
     try {
         const response = await explainConcept({
-            concept,
+            concept: safeConcept,
             language,
             brainMapContext: "This concept is part of the introductory algebra syllabus, focusing on solving linear equations."
         });
