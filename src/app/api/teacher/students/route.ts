@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTeacherStudents, getTeacherClasses, getBatchedQuizResults } from '@/lib/db-helpers';
+import { auth } from '@/lib/firebase-admin';
 
 export async function GET(req: NextRequest) {
     try {
@@ -10,6 +11,29 @@ export async function GET(req: NextRequest) {
             return NextResponse.json(
                 { error: 'Missing teacherId parameter' },
                 { status: 400 }
+            );
+        }
+
+        // ─── Authentication Guard ─────────────────────────────────
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json(
+                { error: 'Unauthorized: Missing or invalid token' },
+                { status: 401 }
+            );
+        }
+        try {
+            const decodedToken = await auth!.verifyIdToken(authHeader.split('Bearer ')[1]);
+            if (decodedToken.uid !== teacherId) {
+                return NextResponse.json(
+                    { error: 'Forbidden: You can only access your own students' },
+                    { status: 403 }
+                );
+            }
+        } catch {
+            return NextResponse.json(
+                { error: 'Unauthorized: Invalid token' },
+                { status: 401 }
             );
         }
 

@@ -15,6 +15,29 @@ export async function GET(req: NextRequest) {
             );
         }
 
+        // ─── Authentication Guard ─────────────────────────────────
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json(
+                { error: 'Unauthorized: Missing or invalid token' },
+                { status: 401 }
+            );
+        }
+        try {
+            const decodedToken = await auth!.verifyIdToken(authHeader.split('Bearer ')[1]);
+            if (decodedToken.uid !== teacherId) {
+                return NextResponse.json(
+                    { error: 'Forbidden: You can only access your own profile' },
+                    { status: 403 }
+                );
+            }
+        } catch {
+            return NextResponse.json(
+                { error: 'Unauthorized: Invalid token' },
+                { status: 401 }
+            );
+        }
+
         const teacher = await getTeacher(teacherId);
 
         if (!teacher) {
@@ -55,7 +78,7 @@ export async function PUT(req: NextRequest) {
 
         let decodedToken;
         try {
-            decodedToken = await auth.verifyIdToken(token);
+            decodedToken = await auth!.verifyIdToken(token);
         } catch (error) {
             console.error('Token verification failed:', error);
             return NextResponse.json(
@@ -66,7 +89,7 @@ export async function PUT(req: NextRequest) {
 
         // Verify ownership
         if (teacherId !== decodedToken.uid) {
-             return NextResponse.json(
+            return NextResponse.json(
                 { error: 'Forbidden: You can only update your own profile' },
                 { status: 403 }
             );
