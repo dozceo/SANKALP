@@ -3,12 +3,74 @@
 
 import { getMotivationalCounseling } from "@/ai/flows/mindful-mentor";
 import { getMentorFallback } from "@/lib/chat-fallback";
+import { db } from "@/lib/firebase-admin";
 
-export async function getMotivationalAdvice(studentConcern: string) {
+/**
+ * Build a dynamic student history string from real Firestore data.
+ * Falls back to a generic message if no data is available.
+ */
+async function buildStudentHistory(studentId?: string): Promise<string> {
+    if (!studentId) {
+        return "No specific student data available. Provide general academic support.";
+    }
+
     try {
+        const studentDoc = await db.collection("students").doc(studentId).get();
+
+        if (!studentDoc.exists) {
+            return `Student ID ${studentId} not found in the database. Provide general academic support.`;
+        }
+
+        const data = studentDoc.data()!;
+        const parts: string[] = [];
+
+        // Name
+        if (data.name) {
+            parts.push(`The student's name is ${data.name}.`);
+        }
+
+        // Mastery scores
+        if (data.masteryScores && typeof data.masteryScores === "object") {
+            const scores = Object.entries(data.masteryScores as Record<string, number>)
+                .map(([subject, score]) => `${subject}: ${Math.round(score * 100)}%`)
+                .join(", ");
+            parts.push(`Current mastery scores: ${scores}.`);
+        }
+
+        // Strengths & weaknesses
+        if (data.strengths?.length) {
+            parts.push(`Strengths: ${data.strengths.join(", ")}.`);
+        }
+        if (data.weaknesses?.length) {
+            parts.push(`Areas needing improvement: ${data.weaknesses.join(", ")}.`);
+        }
+
+        // Streak
+        if (typeof data.streak === "number") {
+            parts.push(`Current study streak: ${data.streak} day(s).`);
+        }
+
+        // Last active
+        if (data.lastActive) {
+            parts.push(`Last active: ${data.lastActive}.`);
+        }
+
+        return parts.length > 0
+            ? parts.join(" ")
+            : "Student record exists but has limited data. Provide general academic support.";
+    } catch (error) {
+        console.error("[MENTOR_ACTIONS] Error fetching student data:", error);
+        return "Could not retrieve student data. Provide general academic support.";
+    }
+}
+
+export async function getMotivationalAdvice(studentConcern: string, studentId?: string) {
+    try {
+        const studentHistory = await buildStudentHistory(studentId);
+
         const response = await getMotivationalCounseling({
             studentConcern,
-            studentHistory: "The student has been feeling overwhelmed with their chemistry coursework and has an upcoming exam."
+            studentHistory,
         });
 
         if (!response || !response.advice) {
