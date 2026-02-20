@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   auto-review-and-merge:
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Classify changed files
@@ -26,8 +26,11 @@ jobs:
               per_page: 100,
             });
 
-            const isMarkdown = (file) => file.filename.endsWith('.md');
-            const isNewScript = (file) => file.status === 'added' && file.filename.startsWith('scripts/');
+            const isSafePath = (file) =>
+              !file.filename.startsWith('/') && !file.filename.split('/').includes('..');
+            const isMarkdown = (file) => isSafePath(file) && file.filename.endsWith('.md');
+            const isNewScript =
+              (file) => isSafePath(file) && file.status === 'added' && /^scripts\/[^/.][^/]*$/.test(file.filename);
             const eligible = files.length > 0 && files.every((file) => isMarkdown(file) || isNewScript(file));
 
             core.setOutput('eligible', eligible ? 'true' : 'false');
@@ -48,7 +51,7 @@ jobs:
                 repo: context.repo.repo,
                 pull_number: context.payload.pull_request.number,
                 event: 'APPROVE',
-                body: 'Auto-approved: this PR only updates Markdown files and/or adds scripts under scripts/.',
+                body: '[Automated] Auto-approved: this PR only updates Markdown files and/or adds scripts under scripts/.',
               });
               core.info('Approval review submitted.');
             } catch (error) {
