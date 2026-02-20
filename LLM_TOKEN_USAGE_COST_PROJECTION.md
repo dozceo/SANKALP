@@ -1,6 +1,5 @@
 # LLM Token Usage Cost Projection
 
-**Generated on:** 2026-02-19
 **Scope:** `src/ai/flows/` (Genkit LLM calls)
 **Model Basis:** Gemini 1.5 Flash
 **Pricing Assumptions:**

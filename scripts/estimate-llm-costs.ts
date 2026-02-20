@@ -81,7 +81,6 @@ function calculateCost(tokens: number, pricePer1M: number): number {
 function generateReport() {
   let report = `# LLM Token Usage Cost Projection
 
-**Generated on:** ${new Date().toISOString().split('T')[0]}
 **Scope:** \`src/ai/flows/\` (Genkit LLM calls)
 **Model Basis:** Gemini 1.5 Flash
 **Pricing Assumptions:**
