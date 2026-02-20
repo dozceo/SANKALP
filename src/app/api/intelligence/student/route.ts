@@ -106,10 +106,10 @@ export async function GET(request: NextRequest) {
 
         // Pass 1: Prepare topics
         for (const topic of topics) {
-             const features = extractMasteryFeatures(topic, studentHistory);
-             const cached = cachedPredictionsMap.get(topic);
+            const features = extractMasteryFeatures(topic, studentHistory);
+            const cached = cachedPredictionsMap.get(topic);
 
-             if (cached) {
+            if (cached) {
                 topicData.push({
                     topic,
                     features,
@@ -131,11 +131,25 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // Batch Prediction
+        // Batch Prediction — with circuit-breaker for ML service failures
         let newPredictionsMap = new Map<string, MasteryPredictionOutput>();
+        let mlServiceDegraded = false;
         if (topicsToPredict.length > 0) {
-            const batchResults = await batchPredictMastery(topicsToPredict);
-            newPredictionsMap = new Map(batchResults.map((r) => [r.topic, r.prediction]));
+            try {
+                const batchResults = await batchPredictMastery(topicsToPredict);
+                newPredictionsMap = new Map(batchResults.map((r) => [r.topic, r.prediction]));
+            } catch (mlError) {
+                console.error("[ML_SERVICE_DOWN] ML batch prediction failed, using heuristic fallback:", mlError);
+                mlServiceDegraded = true;
+                // Heuristic fallback: estimate mastery from quiz scores
+                for (const { topic, features } of topicsToPredict) {
+                    newPredictionsMap.set(topic, {
+                        mastery_probability: features.avg_quiz_score,
+                        confidence: 0.3, // Low confidence — heuristic only
+                        predicted_class: "not_mastered" as const,
+                    });
+                }
+            }
         }
 
         // Pass 2: Process all topics with predictions
@@ -248,11 +262,11 @@ export async function GET(request: NextRequest) {
             attentionRisk: overallAttentionRisk,
             revisionUrgency: highestUrgency,
             adkDecision: adkMode,
-            confidence: "MEDIUM",
+            confidence: mlServiceDegraded ? "LOW" : "MEDIUM",
             generatedAt: new Date().toISOString(),
             studentId,
             reasoning: reasoning.length > 0 ? reasoning : ["Learning on track"],
-            flags: allAdkFlags,
+            flags: mlServiceDegraded ? [...allAdkFlags, "ML_SERVICE_DEGRADED"] : allAdkFlags,
         };
 
         return NextResponse.json(intelligence);
