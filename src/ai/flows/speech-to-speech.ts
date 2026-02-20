@@ -8,10 +8,10 @@
  * - SpeechToSpeechOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import wav from 'wav';
-import {googleAI} from '@genkit-ai/googleai';
+import { googleAI } from '@genkit-ai/googleai';
 
 const SpeechToSpeechInputSchema = z.string().describe(
   "A user's speech recording, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
@@ -58,47 +58,55 @@ const speechToSpeechFlow = ai.defineFlow(
     outputSchema: SpeechToSpeechOutputSchema,
   },
   async (audioDataUri) => {
-    // 1. Transcribe audio to text (STT)
-    const sttResponse = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-speech'),
-      prompt: [{media: {url: audioDataUri}}],
-    });
-    const userQuery = sttResponse.text;
-    
-    // 2. Generate a text response from the transcribed text
-    const llmResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
-      prompt: `You are CognitoBot, a friendly and helpful AI learning assistant. A student just asked you the following question verbally. Provide a concise and clear response. Question: "${userQuery}"`,
-    });
-    const botResponseText = llmResponse.text;
+    console.log(`[FLOW:speechToSpeechFlow] Invoked`);
+    try {
+      // 1. Transcribe audio to text (STT)
+      const sttResponse = await ai.generate({
+        model: googleAI.model('gemini-2.5-flash-speech'),
+        prompt: [{ media: { url: audioDataUri } }],
+      });
+      const userQuery = sttResponse.text;
+      console.log(`[FLOW:speechToSpeechFlow] STT complete, query length=${userQuery.length}`);
 
-    // 3. Convert the text response to speech (TTS)
-    const ttsResponse = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'},
+      // 2. Generate a text response from the transcribed text
+      const llmResponse = await ai.generate({
+        model: 'googleai/gemini-2.5-flash',
+        prompt: `You are CognitoBot, a friendly and helpful AI learning assistant. A student just asked you the following question verbally. Provide a concise and clear response. Question: "${userQuery}"`,
+      });
+      const botResponseText = llmResponse.text;
+
+      // 3. Convert the text response to speech (TTS)
+      const ttsResponse = await ai.generate({
+        model: googleAI.model('gemini-2.5-flash-preview-tts'),
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Algenib' },
+            },
           },
         },
-      },
-      prompt: botResponseText,
-    });
-    
-    if (!ttsResponse.media) {
-      throw new Error('No audio media was generated from text-to-speech.');
+        prompt: botResponseText,
+      });
+
+      if (!ttsResponse.media) {
+        throw new Error('No audio media was generated from text-to-speech.');
+      }
+
+      // 4. Convert the generated PCM audio to WAV format for browser playback
+      const audioBuffer = Buffer.from(
+        ttsResponse.media.url.substring(ttsResponse.media.url.indexOf(',') + 1),
+        'base64'
+      );
+      const wavBase64 = await toWav(audioBuffer);
+
+      console.log(`[FLOW:speechToSpeechFlow] Success`);
+      return {
+        audioDataUri: 'data:audio/wav;base64,' + wavBase64,
+      };
+    } catch (error) {
+      console.error(`[FLOW:speechToSpeechFlow] Error:`, error);
+      throw error;
     }
-
-    // 4. Convert the generated PCM audio to WAV format for browser playback
-    const audioBuffer = Buffer.from(
-      ttsResponse.media.url.substring(ttsResponse.media.url.indexOf(',') + 1),
-      'base64'
-    );
-    const wavBase64 = await toWav(audioBuffer);
-
-    return {
-      audioDataUri: 'data:audio/wav;base64,' + wavBase64,
-    };
   }
 );

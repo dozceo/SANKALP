@@ -7,8 +7,8 @@
  * - ExplainConceptCustomizedOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const ExplainConceptCustomizedInputSchema = z.object({
   concept: z.string().describe('The concept to explain.'),
@@ -30,8 +30,8 @@ export async function explainConceptWithCustomization(input: ExplainConceptCusto
 
 const prompt = ai.definePrompt({
   name: 'explainConceptCustomizedPrompt',
-  input: {schema: ExplainConceptCustomizedInputSchema},
-  output: {schema: ExplainConceptCustomizedOutputSchema},
+  input: { schema: ExplainConceptCustomizedInputSchema },
+  output: { schema: ExplainConceptCustomizedOutputSchema },
   prompt: `You are a cognitive chatbot designed to help a student learn. Your behavior is customized by their teacher.
 
   Your assigned personality and tone is: {{{personality}}}.
@@ -53,7 +53,14 @@ const customizedConceptFlow = ai.defineFlow(
     outputSchema: ExplainConceptCustomizedOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    console.log(`[FLOW:customizedConceptFlow] Invoked for concept="${input.concept}", lang="${input.language}"`);
+    try {
+      const { output } = await prompt(input);
+      console.log(`[FLOW:customizedConceptFlow] Success`);
+      return output!;
+    } catch (error) {
+      console.error(`[FLOW:customizedConceptFlow] Error:`, error);
+      throw error;
+    }
   }
 );
