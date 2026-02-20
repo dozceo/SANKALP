@@ -1,153 +1,161 @@
-# UX Flow Entropy Report: Multi-Path Complexity Analysis
+# UX Flow Entropy Report
 
-**Date:** 2026-02-18
-**Scope:** Complete student and teacher user journeys in `src/app/(main)`
+## 1. Executive Summary
+- **Total States (Nodes)**: 25
+- **Total Transitions (Edges)**: 225
+- **High Complexity Pages**: 4
+- **Dead-Ends (Contextual)**: 13
 
-## Executive Summary
-- **Total Pages Analyzed:** 25
-- **Dead Ends Detected:** 7
-- **Avg Cognitive Load:** 36.32 (Target < 50)
-- **Avg Decision Entropy:** 3.05 bits (Target ~3 bits)
+## 2. Cognitive Load Heatmap
+| Page | Elements | Decisions | Complexity (Hicks) | Attention Cost | Status |
+|---|---|---|---|---|---|
+| `/teacher/classes` | 13 | 12 | 3.70 | 67 | 🟡 High |
+| `/test-accessibility` | 10 | 10 | 3.46 | 15 | 🟡 High |
+| `/quiz` | 9 | 9 | 3.32 | 44 | 🟡 High |
+| `/home` | 16 | 8 | 3.17 | 33 | 🟡 High |
+| `/onboarding` | 7 | 7 | 3.00 | 55 | 🟢 Optimal |
+| `/sign-up` | 7 | 6 | 2.81 | 28 | 🟢 Optimal |
+| `/teacher/classes/:classId` | 6 | 6 | 2.81 | 32 | 🟢 Optimal |
+| `/teacher/students` | 6 | 6 | 2.81 | 68 | 🟢 Optimal |
+| `/login` | 7 | 5 | 2.58 | 22 | 🟢 Optimal |
+| `/teacher-onboarding` | 5 | 5 | 2.58 | 47 | 🟢 Optimal |
+| `/chat` | 5 | 5 | 2.58 | 36 | 🟢 Optimal |
+| `/settings` | 5 | 5 | 2.58 | 47 | 🟢 Optimal |
+| `/syllabus` | 5 | 4 | 2.32 | 20 | 🟢 Optimal |
+| `/teacher/students/:studentId` | 4 | 4 | 2.32 | 14 | 🟢 Optimal |
+| `/classes` | 3 | 3 | 2.00 | 64 | 🟢 Optimal |
+| `/join-class` | 2 | 2 | 1.58 | 8 | 🟢 Optimal |
+| `/mentor` | 2 | 2 | 1.58 | 13 | 🟢 Optimal |
+| `/teacher` | 3 | 2 | 1.58 | 7 | 🟢 Optimal |
+| `/teacher/student/:studentId` | 2 | 1 | 1.00 | 6 | 🟢 Optimal |
+| `/` | 0 | 0 | 0.00 | 5 | 🟢 Optimal |
+| `/brain-map` | 0 | 0 | 0.00 | 20 | 🟢 Optimal |
+| `/planner` | 0 | 0 | 0.00 | 5 | 🟢 Optimal |
+| `/profile` | 0 | 0 | 0.00 | 5 | 🟢 Optimal |
+| `/rewards` | 0 | 0 | 0.00 | 70 | 🟢 Optimal |
+| `/test-charts` | 0 | 0 | 0.00 | 0 | 🟢 Optimal |
 
-## 1. Interactive Flow Graph (Mermaid)
+## 3. Decision Entropy & Paralysis Risk
+Pages with high entropy offer too many choices without clear guidance.
 
-```mermaid
-graph TD
-  _join_class["/join-class"]
-  _join_class --> _home
-  _login["/login"]
-  _login --> _forgot_password
-  _login --> _sign_up
-  _login --> _teacher
-  _login --> _home
-  _login --> _home
-  _onboarding["/onboarding"]
-  _onboarding --> _home
-  _sign_up["/sign-up"]
-  _sign_up --> _login
-  _sign_up --> _teacher_onboarding
-  _sign_up --> _onboarding
-  _teacher_onboarding["/teacher-onboarding"]
-  _teacher_onboarding --> _teacher
-  _brain_map["/brain-map"]:::deadEnd
-  _chat["/chat"]
-  _classes["/classes"]
-  _home["/home"]
-  _home --> _quiz
-  _home --> _planner
-  _home --> _chat
-  _home --> _classes
-  _home --> _planner
-  _home --> _quiz
-  _home --> _syllabus
-  _home --> _chat
-  _mentor["/mentor"]:::deadEnd
-  _planner["/planner"]:::deadEnd
-  _profile["/profile"]:::deadEnd
-  _quiz["/quiz"]
-  _rewards["/rewards"]:::deadEnd
-  _settings["/settings"]
-  _syllabus["/syllabus"]
-  _teacher_classes_classId["/teacher/classes/[classId]"]
-  _teacher_classes_classId --> _teacher_classes
-  _teacher_classes_classId --> _teacher_classes
-  _teacher_classes["/teacher/classes"]:::highLoad
-  _teacher["/teacher"]
-  _teacher_student_studentId["/teacher/student/[studentId]"]
-  _teacher_student_studentId --> _teacher
-  _teacher_students_studentId["/teacher/students/[studentId]"]
-  _teacher_students_studentId --> _teacher_students
-  _teacher_students_studentId --> _teacher_students
-  _teacher_students_studentId --> _teacher_students
-  _teacher_students["/teacher/students"]:::highLoad
-  _["/ (root)"]:::deadEnd
-  _test_accessibility["/test-accessibility"]
-  _test_charts["/test-charts"]:::deadEnd
+| Page | Entropy (bits) | Outgoing Paths (Contextual) | Risk Level |
+|---|---|---|---|
+| `/home` | 4.09 | 8 | High (Analysis Paralysis) |
+| `/login` | 3.91 | 5 | High (Analysis Paralysis) |
+| `/sign-up` | 3.70 | 3 | High (Analysis Paralysis) |
+| `/join-class` | 3.46 | 1 | Medium |
+| `/onboarding` | 3.46 | 1 | Medium |
+| `/` | 3.32 | 0 | Medium |
+| `/profile` | 3.32 | 0 | Medium |
+| `/test-accessibility` | 3.32 | 0 | Medium |
+| `/test-charts` | 3.32 | 0 | Medium |
+| `/brain-map` | 3.17 | 0 | Medium |
+| `/chat` | 3.17 | 0 | Medium |
+| `/classes` | 3.17 | 0 | Medium |
+| `/mentor` | 3.17 | 0 | Medium |
+| `/planner` | 3.17 | 0 | Medium |
+| `/quiz` | 3.17 | 0 | Medium |
+| `/rewards` | 3.17 | 0 | Medium |
+| `/settings` | 3.17 | 0 | Medium |
+| `/syllabus` | 3.17 | 0 | Medium |
+| `/teacher/students/:studentId` | 2.81 | 3 | Medium |
+| `/teacher/classes/:classId` | 2.58 | 2 | Medium |
+| `/teacher-onboarding` | 2.32 | 1 | Low |
+| `/teacher` | 2.32 | 2 | Low |
+| `/teacher/student/:studentId` | 2.32 | 1 | Low |
+| `/teacher/students` | 2.32 | 2 | Low |
+| `/teacher/classes` | 2.00 | 1 | Low |
 
-  classDef deadEnd fill:#f9f,stroke:#333,stroke-width:2px;
-  classDef highLoad fill:#f00,stroke:#333,stroke-width:2px,color:#fff;
-```
+## 4. Path Efficiency Analysis
+Measuring friction for critical user journeys. (Contextual Click = 1, Global Click = 5)
 
-## 2. Cognitive Load Heatmap (Top 10 High Load)
-| Page | Score | Words | Interactive Elements | Status |
+| Journey | Desktop Cost | Mobile Cost | Feasible? | Gap Analysis |
 |---|---|---|---|---|
-| `/teacher/classes` | 104.1 | 962 | 28 | 🔴 Overload |
-| `/teacher/students` | 94.2 | 763 | 28 | 🔴 Overload |
-| `/onboarding` | 73.1 | 862 | 15 | qh Warning |
-| `/quiz` | 63.9 | 598 | 17 | qh Warning |
-| `/teacher-onboarding` | 58.1 | 723 | 11 | qh Warning |
-| `/home` | 54.0 | 441 | 16 | qh Warning |
-| `/chat` | 49.7 | 433 | 14 | 🟢 Optimal |
-| `/teacher/classes/[classId]` | 49.0 | 619 | 9 | 🟢 Optimal |
-| `/syllabus` | 42.5 | 570 | 7 | 🟢 Optimal |
-| `/teacher/students/[studentId]` | 35.6 | 472 | 6 | 🟢 Optimal |
-
-## 3. Decision Entropy Analysis (Analysis Paralysis)
-Pages with high entropy (> 3.5 bits) indicate too many choices without guidance.
-
-| Page | Entropy (bits) | Choices (Implicit + Explicit) |
-|---|---|---|
-| `/login` | 3.70 | 13 |
-| `/sign-up` | 3.70 | 13 |
-| `/join-class` | 3.32 | 10 |
-| `/onboarding` | 3.32 | 10 |
-| `/profile` | 3.32 | 10 |
-| `/` | 3.32 | 10 |
-| `/test-accessibility` | 3.32 | 10 |
-| `/test-charts` | 3.32 | 10 |
-| `/brain-map` | 3.17 | 10 |
-| `/chat` | 3.17 | 10 |
-
-## 4. Path Efficiency Matrix
-### Student Journey (From /home)
-| Goal | Steps | Status |
-|---|---|---|
-| `/quiz` | 1 | ✅ Efficient |
-| `/planner` | 1 | ✅ Efficient |
-| `/syllabus` | 1 | ✅ Efficient |
-
-### Teacher Journey (From /teacher)
-| Goal | Steps | Status |
-|---|---|---|
-| `/teacher/interventions` | -1 | ❌ Unreachable |
-| `/teacher/analytics` | -1 | ❌ Unreachable |
+| Student: Quiz -> Revision | 5 | 6 | Yes | ✅ Efficient |
+| Student: Home -> Quiz | 1 | 1 | Yes | ✅ Efficient |
+| Teacher: Dashboard -> Intervention | ∞ | ∞ | No | 🚨 BROKEN LINK |
+| Teacher: Dashboard -> Students | 5 | 6 | Yes | ✅ Efficient |
 
 ## 5. Dead-End Inventory
-Pages with no explicit forward navigation (traps users).
+Pages where the user must use global navigation to leave (breaking flow).
 
-| Page | Recommended Escape |
-|---|---|
-| `/brain-map` | Add 'Back' button or primary CTA |
-| `/mentor` | Add 'Back' button or primary CTA |
-| `/planner` | Add 'Back' button or primary CTA |
-| `/profile` | Add 'Back' button or primary CTA |
-| `/rewards` | Add 'Back' button or primary CTA |
-| `/` | Add 'Back' button or primary CTA |
-| `/test-charts` | Add 'Back' button or primary CTA |
+- `/brain-map`: No visible "Next Step" buttons.
+- `/chat`: No visible "Next Step" buttons.
+- `/classes`: No visible "Next Step" buttons.
+- `/mentor`: No visible "Next Step" buttons.
+- `/planner`: No visible "Next Step" buttons.
+- `/profile`: No visible "Next Step" buttons.
+- `/quiz`: No visible "Next Step" buttons.
+- `/rewards`: No visible "Next Step" buttons.
+- `/settings`: No visible "Next Step" buttons.
+- `/syllabus`: No visible "Next Step" buttons.
+- `/test-accessibility`: No visible "Next Step" buttons.
+- `/test-charts`: No visible "Next Step" buttons.
 
-## 6. Attention Budget Violations
-Pages exceeding attention budget (> 100 points).
+## 6. Prioritized Backlog
+Based on the audit, here are the top issues:
 
-| Page | Cost | Violation Source |
-|---|---|---|
-| `/rewards` | 180 | Too many elements/charts |
-| `/teacher/classes` | 114 | Too many elements/charts |
+1. **CRITICAL**: The `/quiz` page is a dead-end. Users finish a quiz and have no direct button to "Review Weak Areas" or "Go to Planner".
+2. **CRITICAL**: The Teacher Intervention flow is broken. `/teacher/interventions` is not reachable from the dashboard.
 
-## 7. Mobile-Desktop Flow Divergence
-Pages with responsive visibility classes on interactive elements.
-
-No significant flow divergence detected.
-
-## 8. Prioritized UX Improvement Backlog
-
-1. **[CRITICAL] Fix Dead End on `/brain-map`**: User is trapped. Add explicit navigation.
-2. **[CRITICAL] Fix Dead End on `/mentor`**: User is trapped. Add explicit navigation.
-3. **[CRITICAL] Fix Dead End on `/planner`**: User is trapped. Add explicit navigation.
-4. **[CRITICAL] Fix Dead End on `/profile`**: User is trapped. Add explicit navigation.
-5. **[CRITICAL] Fix Dead End on `/rewards`**: User is trapped. Add explicit navigation.
-6. **[CRITICAL] Fix Dead End on `/`**: User is trapped. Add explicit navigation.
-7. **[CRITICAL] Fix Dead End on `/test-charts`**: User is trapped. Add explicit navigation.
-8. **[HIGH] Reduce Cognitive Load on `/teacher/classes`**: Score 104. Break content into chunks or steps.
-9. **[HIGH] Reduce Cognitive Load on `/teacher/students`**: Score 94. Break content into chunks or steps.
-10. **[MEDIUM] Fix Unreachable Goal `/teacher/interventions`**: No path found from entry point.
-11. **[MEDIUM] Fix Unreachable Goal `/teacher/analytics`**: No path found from entry point.
+## 7. Interactive Flow Graph (Mermaid)
+```mermaid
+graph TD
+  "/join-class"
+  "/":::deadEnd
+  "/login"
+  "/onboarding"
+  "/sign-up"
+  "/teacher-onboarding"
+  "/brain-map":::deadEnd
+  "/chat":::deadEnd
+  "/classes":::deadEnd
+  "/home"
+  "/mentor":::deadEnd
+  "/planner":::deadEnd
+  "/profile":::deadEnd
+  "/quiz":::deadEnd
+  "/rewards":::deadEnd
+  "/settings":::deadEnd
+  "/syllabus":::deadEnd
+  "/teacher/classes/:classId"
+  "/teacher/classes"
+  "/teacher"
+  "/teacher/student/:studentId"
+  "/teacher/students/:studentId"
+  "/teacher/students"
+  "/test-accessibility":::deadEnd
+  "/test-charts":::deadEnd
+  "/join-class" -->|1| "/home"
+  "/login" -->|1| "/forgot-password"
+  "/login" -->|1| "/sign-up"
+  "/login" -->|1| "/teacher"
+  "/login" -->|1| "/home"
+  "/login" -->|1| "/home"
+  "/onboarding" -->|1| "/home"
+  "/sign-up" -->|1| "/login"
+  "/sign-up" -->|1| "/teacher-onboarding"
+  "/sign-up" -->|1| "/onboarding"
+  "/teacher-onboarding" -->|1| "/teacher"
+  "/home" -->|1| "/quiz"
+  "/home" -->|1| "/planner"
+  "/home" -->|1| "/chat"
+  "/home" -->|1| "/classes"
+  "/home" -->|1| "/planner"
+  "/home" -->|1| "/quiz"
+  "/home" -->|1| "/syllabus"
+  "/home" -->|1| "/chat"
+  "/teacher/classes/:classId" -->|1| "/teacher/classes"
+  "/teacher/classes/:classId" -->|1| "/teacher/classes"
+  "/teacher/classes" -->|1| "/teacher/classes/:id"
+  "/teacher" -->|1| "/teacher/student/:id"
+  "/teacher" -->|1| "/teacher/student/:id"
+  "/teacher/student/:studentId" -->|1| "/teacher"
+  "/teacher/students/:studentId" -->|1| "/teacher/students"
+  "/teacher/students/:studentId" -->|1| "/teacher/students"
+  "/teacher/students/:studentId" -->|1| "/teacher/students"
+  "/teacher/students" -->|1| "/teacher/students/:id"
+  "/teacher/students" -->|1| "/teacher/students/:id"
+  classDef deadEnd fill:#fecaca,stroke:#ef4444,stroke-width:2px;
+  classDef highLoad fill:#fef08a,stroke:#eab308,stroke-width:2px;
+```
