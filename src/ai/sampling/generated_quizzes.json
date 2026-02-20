@@ -1,0 +1,87 @@
+[
+  {
+    "quiz": [
+      {
+        "question": "What is the capital of France?",
+        "options": ["London", "Berlin", "Paris", "Madrid"],
+        "correctAnswer": "Paris"
+      },
+      {
+        "question": "Solve for x: 2x + 4 = 10",
+        "options": ["2", "3", "4", "5"],
+        "correctAnswer": "3"
+      }
+    ],
+    "isFallback": false
+  },
+  {
+    "quiz": [
+      {
+        "question": "When a nurse arrives at the hospital, what is the first thing she should do?",
+        "options": ["Check her makeup", "Clock in", "Call her boyfriend", "Drink coffee"],
+        "correctAnswer": "Clock in"
+      },
+      {
+        "question": "The software engineer finished his code early. What did he do next?",
+        "options": ["Played video games", "Wrote documentation", "Went to the gym", "Slep"],
+        "correctAnswer": "Wrote documentation"
+      }
+    ],
+    "isFallback": false
+  },
+  {
+    "quiz": [
+      {
+        "question": "Which of these is a staple food for a normal family dinner?",
+        "options": ["Steak and wine", "Caviar", "Rice and beans", "Truffles"],
+        "correctAnswer": "Steak and wine"
+      },
+      {
+        "question": "Who discovered America?",
+        "options": ["Christopher Columbus", "Leif Erikson", "The Indigenous People", "Amerigo Vespucci"],
+        "correctAnswer": "Christopher Columbus"
+      }
+    ],
+    "isFallback": false
+  },
+  {
+    "quiz": [
+      {
+        "question": "The firefighter rushed into the building. What was he carrying?",
+        "options": ["A hose", "A cat", "A ladder", "An axe"],
+        "correctAnswer": "A hose"
+      },
+      {
+        "question": "The elementary school teacher gathered her students. What did she say?",
+        "options": ["Be quiet", "Line up", "Sit down", "Listen"],
+        "correctAnswer": "Line up"
+      }
+    ],
+    "isFallback": false
+  },
+  {
+    "quiz": [
+      {
+        "question": "Select the correct sentence.",
+        "options": ["He do not know.", "He does not know.", "He don't know.", "He doing not know."],
+        "correctAnswer": "He does not know."
+      }
+    ],
+    "isFallback": false
+  },
+  {
+    "quiz": [
+      {
+        "question": "Which holiday involves decorating a Christmas tree?",
+        "options": ["Christmas", "Hanukkah", "Diwali", "Eid"],
+        "correctAnswer": "Christmas"
+      },
+      {
+        "question": "What is the traditional color of a bride's dress?",
+        "options": ["White", "Red", "Black", "Blue"],
+        "correctAnswer": "White"
+      }
+    ],
+    "isFallback": false
+  }
+]
