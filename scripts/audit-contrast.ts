@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Helper: HSL to RGB
+// Helper: HSL to RGB (Standard implementation)
 function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   s /= 100;
   l /= 100;
@@ -57,9 +57,10 @@ colorMap['black'] = [0, 0, 0];
 colorMap['transparent'] = [255, 255, 255]; // Treat as white for contrast check against text
 
 const violations: string[] = [];
-
-// Check defined pairs in globals (optional, but good for base theme)
-// ... skipping for brevity as we scan files mainly
+const stats = {
+  totalPairsChecked: 0,
+  violations: 0
+};
 
 // Scan files for ad-hoc usage
 function scanFile(filePath: string) {
@@ -73,13 +74,11 @@ function scanFile(filePath: string) {
 
     if (bgClass && textClass) {
       // Parse bg class
-      // format: bg-{color}/{opacity} or bg-{color}
       const bgParts = bgClass.replace('bg-', '').split('/');
       const bgName = bgParts[0];
       const bgOpacity = bgParts[1] ? parseInt(bgParts[1], 10) / 100 : 1;
 
       // Parse text class
-      // format: text-{color}/{opacity} or text-{color}
       const textParts = textClass.replace('text-', '').split('/');
       const textName = textParts[0];
       const textOpacity = textParts[1] ? parseInt(textParts[1], 10) / 100 : 1;
@@ -91,9 +90,6 @@ function scanFile(filePath: string) {
          }
 
          let textColor = colorMap[textName];
-         // If text has opacity, it blends with background.
-         // Effectively: text over bg.
-         // Text color = textBase * alpha + bg * (1-alpha)
          if (textOpacity < 1) {
             textColor = [
                 Math.round(textColor[0] * textOpacity + bgColor[0] * (1 - textOpacity)),
@@ -106,8 +102,11 @@ function scanFile(filePath: string) {
          const l2 = getLuminance(...textColor);
          const ratio = getContrastRatio(l1, l2);
 
-         if (ratio < 4.5) {
+         stats.totalPairsChecked++;
+
+         if (ratio < 4.5) { // Strict WCAG AA for normal text
             violations.push(`File: ${filePath} - Contrast violation: ${bgClass} vs ${textClass}. Ratio: ${ratio.toFixed(2)}`);
+            stats.violations++;
          }
       }
     }
@@ -133,14 +132,24 @@ traverseDir('src/app');
 traverseDir('src/components');
 
 let report = '# Contrast Violation Report\n\n';
+report += '## Executive Summary\n';
+report += `- **Total Color Pairs Checked**: ${stats.totalPairsChecked}\n`;
+report += `- **Violations Found**: ${stats.violations}\n\n`;
+report += '## Recommendations\n';
+report += '1. **Increase Contrast**: Ensure all text/background combinations meet WCAG AA (4.5:1 ratio).\n';
+report += '2. **Avoid Low Opacity Backgrounds**: Low opacity backgrounds on text often reduce contrast significantly.\n';
+report += '3. **Review Color Palette**: Check if primary colors need adjustment for better accessibility.\n\n';
+
 if (violations.length === 0) {
   report += 'No contrast violations found.\n';
 } else {
+  report += '## Detailed Violations\n';
   report += '| Violation |\n|---|\n';
   violations.forEach(v => {
     report += `| ${v} |\n`;
   });
 }
 
-fs.writeFileSync('contrast-violation-report.md', report);
-console.log('Contrast Audit Complete. Report saved to contrast-violation-report.md');
+const outputPath = 'reports/CONTRAST_VIOLATION_REPORT.md';
+fs.writeFileSync(outputPath, report);
+console.log(`Contrast Audit Complete. Report saved to ${outputPath}`);
