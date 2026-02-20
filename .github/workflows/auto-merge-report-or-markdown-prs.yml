@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   auto-review-and-merge:
-    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
     steps:
       - name: Classify changed files
@@ -26,11 +26,15 @@ jobs:
               per_page: 100,
             });
 
-            const isSafePath = (file) =>
-              !file.filename.startsWith('/') && !file.filename.split('/').includes('..');
+            const isSafePath = (file) => {
+              const segments = file.filename.split('/');
+              return !file.filename.startsWith('/') && !segments.includes('.') && !segments.includes('..');
+            };
             const isMarkdown = (file) => isSafePath(file) && file.filename.endsWith('.md');
-            const isNewScript =
-              (file) => isSafePath(file) && file.status === 'added' && /^scripts\/[^/.][^/]*$/.test(file.filename);
+            const isNewScript = (file) =>
+              isSafePath(file) &&
+              file.status === 'added' &&
+              /^scripts\/[^/.][^/]*\.(ts|js|py)$/.test(file.filename);
             const eligible = files.length > 0 && files.every((file) => isMarkdown(file) || isNewScript(file));
 
             core.setOutput('eligible', eligible ? 'true' : 'false');
