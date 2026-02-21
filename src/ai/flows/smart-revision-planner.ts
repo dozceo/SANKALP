@@ -158,7 +158,7 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         performance_trend: calculateTrend(
             studentHistory.quizResults
                 .filter(r => r.topic === topicName)
-                .map(r => ({ score: r.score, timestamp: new Date(r.timestamp) })),
+                .map(r => r.score),
             true
         ) as "IMPROVING" | "STABLE" | "DECLINING",
       };

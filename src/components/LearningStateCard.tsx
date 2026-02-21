@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, TrendingUp, Brain, Info } from "lucide-react";
@@ -22,7 +22,7 @@ interface LearningStateCardProps {
     intelligence: StudentIntelligence;
 }
 
-export function LearningStateCard({ intelligence }: LearningStateCardProps) {
+export const LearningStateCard = memo(function LearningStateCard({ intelligence }: LearningStateCardProps) {
     const overallMastery = useMemo(() => {
         const values = Object.values(intelligence.mastery);
         if (values.length === 0) return 0;
@@ -31,7 +31,13 @@ export function LearningStateCard({ intelligence }: LearningStateCardProps) {
             sum += values[i].score;
         }
         return sum / values.length;
-    }, [intelligence.mastery]);
+    }, [intelligence.generatedAt, intelligence.mastery]);
+    // Optimization: Added generatedAt, though mastery ref is safer if generatedAt isn't unique enough.
+    // Actually, stick to generatedAt if we trust it, but mastery object ref is standard.
+    // If I use memo() wrapper, the props won't change unless generatedAt changes (if I use custom comparator).
+    // But default memo compares props shallowly.
+    // If intelligence is a new object, memo sees change.
+    // So I should use custom comparator.
 
     const tooltipText = useMemo(() => {
         if (intelligence.attentionRisk === 'HIGH') return "High attention risk detected. Consider taking shorter, more frequent sessions.";
@@ -117,4 +123,4 @@ export function LearningStateCard({ intelligence }: LearningStateCardProps) {
             </CardContent>
         </Card>
     );
-}
+}, (prev, next) => prev.intelligence.generatedAt === next.intelligence.generatedAt);

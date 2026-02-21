@@ -16,7 +16,9 @@ export async function getStudentAnalytics(studentId: string) {
 
     // Calculate metrics and topic stats in a single pass
     let totalScoreSum = 0;
-    const topicStats: Record<string, { sum: number; count: number; results: TrendInput[] }> = {};
+    // Optimization: Store scores directly as number[] instead of TrendInput[] objects
+    // This avoids object allocation for every quiz result since we skip sorting (DB returns sorted)
+    const topicStats: Record<string, { sum: number; count: number; results: number[] }> = {};
 
     for (const r of quizResults) {
         totalScoreSum += r.score;
@@ -27,7 +29,7 @@ export async function getStudentAnalytics(studentId: string) {
         const stats = topicStats[r.topic];
         stats.sum += r.score;
         stats.count += 1;
-        stats.results.push({ score: r.score, timestamp: r.timestamp });
+        stats.results.push(r.score);
     }
 
     const avgScore = quizResults.length > 0 ? totalScoreSum / quizResults.length : 0;

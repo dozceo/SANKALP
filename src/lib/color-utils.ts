@@ -15,13 +15,25 @@ export function lightenColor(hex: string, percent: number): string {
     return colorCache.get(key)!;
   }
 
-  // Optimization: Use slice instead of replace for faster string processing
-  let cleanHex = hex.startsWith('#') ? hex.slice(1) : hex;
-  if (cleanHex.length === 3) {
-    cleanHex = cleanHex[0] + cleanHex[0] + cleanHex[1] + cleanHex[1] + cleanHex[2] + cleanHex[2];
+  let num: number;
+  // Check for hash and get length effectively
+  const hasHash = hex.charCodeAt(0) === 35; // '#' is 35
+  const start = hasHash ? 1 : 0;
+  const len = hex.length - start;
+
+  if (len === 3) {
+    // Optimization: Handle shorthand #RGB without string allocation
+    const r = parseInt(hex[start], 16);
+    const g = parseInt(hex[start + 1], 16);
+    const b = parseInt(hex[start + 2], 16);
+    // Expand to RRGGBB: (r << 4 | r) << 16 | (g << 4 | g) << 8 | (b << 4 | b)
+    num = (r << 20) | (r << 16) | (g << 12) | (g << 8) | (b << 4) | b;
+  } else {
+    // Full #RRGGBB or RRGGBB
+    // If hasHash, we must slice, otherwise use as is
+    num = parseInt(start === 0 ? hex : hex.slice(1), 16);
   }
 
-  const num = parseInt(cleanHex, 16);
   const amt = Math.round(2.55 * percent);
 
   // Extract components
@@ -38,9 +50,10 @@ export function lightenColor(hex: string, percent: number): string {
   const result = `#${(0x1000000 + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
 
   // Cache the result
-  // Limit cache size to prevent memory leaks in long running sessions
   if (colorCache.size > 1000) {
-    colorCache.clear();
+    // Optimization: Delete oldest entry instead of clearing all to maintain hit rate
+    const firstKey = colorCache.keys().next().value;
+    if (firstKey) colorCache.delete(firstKey);
   }
   colorCache.set(key, result);
 

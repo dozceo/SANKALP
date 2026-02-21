@@ -210,7 +210,10 @@ export function StudentProvider({ children }: { children: ReactNode }) {
             }
 
             // Update local state
-            if (currentStudent) {
+            // Optimization: Use functional update to avoid dependency on currentStudent
+            setCurrentStudent(prev => {
+                if (!prev) return prev;
+
                 const newMaterial: StudyMaterial = {
                     id: data.itemId,
                     subject: material.subject,
@@ -224,18 +227,18 @@ export function StudentProvider({ children }: { children: ReactNode }) {
                     fileUploads: []
                 };
 
-                setCurrentStudent({
-                    ...currentStudent,
-                    studyMaterials: [newMaterial, ...(currentStudent.studyMaterials || [])]
-                });
-            }
+                return {
+                    ...prev,
+                    studyMaterials: [newMaterial, ...(prev.studyMaterials || [])]
+                };
+            });
 
             return data.itemId;
         } catch (error) {
             console.error('[StudentContext] Error adding study material:', error);
             throw error;
         }
-    }, [user?.uid, currentStudent]);
+    }, [user?.uid]);
 
     useEffect(() => {
         fetchStudent();
