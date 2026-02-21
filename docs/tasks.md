@@ -14,6 +14,9 @@ Each task links to a specific prompt file in `docs/prompts/` that contains detai
 - [x] [Bundle Size Optimization & Build Fixes](prompts/finished/performance_bundle_size.md)
 - [x] [System Resilience & Chaos Engineering Fixes](prompts/finished/reliability_chaos_engineering.md)
 
+## Core Block Upgrade
+- [ ] [Core Block Upgrade — Step-by-step implementation plan](02_Core_Architecture_&_Specs/core_block_upgrade.md)
+
 ## Other Reports (To be populated)
 
 
