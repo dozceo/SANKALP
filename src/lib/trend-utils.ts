@@ -18,44 +18,66 @@ export type Trend = "IMPROVING" | "STABLE" | "DECLINING";
  * - If 2-3 results, compares the most recent result vs the average of the rest.
  * - Uses a 10% threshold (0.1) to determine significant change.
  *
- * @param results List of quiz results containing score and timestamp
- * @param skipSort If true, assumes results are already sorted by timestamp descending
+ * @param results List of quiz results containing score and timestamp OR array of scores (if sorted)
+ * @param skipSort If true, assumes results are already sorted by timestamp descending (newest first)
  * @returns "IMPROVING" | "STABLE" | "DECLINING"
  */
-export function calculateTrend(results: TrendInput[], skipSort: boolean = false): Trend {
+export function calculateTrend(results: number[], skipSort: true): Trend;
+export function calculateTrend(results: TrendInput[], skipSort?: boolean): Trend;
+export function calculateTrend(results: (TrendInput | number)[], skipSort: boolean = false): Trend {
     const count = results.length;
     if (count < 2) return "STABLE";
 
-    // Sort by timestamp descending (newest first) only if needed
-    const sorted = skipSort ? results : [...results].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    // If skipSort is true, we assume results are sorted (newest first).
+    // If results are numbers, skipSort MUST be true.
+
+    let sorted: (TrendInput | number)[];
+
+    if (skipSort) {
+        sorted = results;
+    } else {
+        // Must be TrendInput objects to sort
+        sorted = [...(results as TrendInput[])].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    }
 
     let recentSum = 0;
     let previousSum = 0;
     let recentCount = 0;
     let previousCount = 0;
 
+    // Check type of first element to determine loop strategy
+    // We assume array is homogeneous
+    const isNumberArray = typeof sorted[0] === 'number';
+
     if (count >= 4) {
         // Split into two halves: Recent (first half) vs Previous (second half)
-        // mid is the start index of the second half
         const mid = Math.floor(count / 2);
 
-        // Optimization: Split loop to remove conditional check inside iteration
-        for (let i = 0; i < mid; i++) {
-            recentSum += sorted[i].score;
-            recentCount++;
-        }
-        for (let i = mid; i < count; i++) {
-            previousSum += sorted[i].score;
-            previousCount++;
+        recentCount = mid;
+        previousCount = count - mid;
+
+        if (isNumberArray) {
+             const nums = sorted as number[];
+             for (let i = 0; i < mid; i++) recentSum += nums[i];
+             for (let i = mid; i < count; i++) previousSum += nums[i];
+        } else {
+             const objs = sorted as TrendInput[];
+             for (let i = 0; i < mid; i++) recentSum += objs[i].score;
+             for (let i = mid; i < count; i++) previousSum += objs[i].score;
         }
     } else {
         // 2 or 3 items: Compare most recent (1) vs average of the rest
-        recentSum = sorted[0].score;
         recentCount = 1;
+        previousCount = count - 1;
 
-        for (let i = 1; i < count; i++) {
-            previousSum += sorted[i].score;
-            previousCount++;
+        if (isNumberArray) {
+             const nums = sorted as number[];
+             recentSum = nums[0];
+             for (let i = 1; i < count; i++) previousSum += nums[i];
+        } else {
+             const objs = sorted as TrendInput[];
+             recentSum = objs[0].score;
+             for (let i = 1; i < count; i++) previousSum += objs[i].score;
         }
     }
 

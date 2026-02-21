@@ -20,7 +20,9 @@ interface TopicMasteryGridProps {
 
 export const TopicMasteryGrid = memo(function TopicMasteryGrid({ intelligence }: TopicMasteryGridProps) {
     // Memoize entries to prevent array recreation on every render
-    const masteryEntries = useMemo(() => Object.entries(intelligence.mastery), [intelligence.mastery]);
+    // Optimization: Use generatedAt as stable dependency to avoid recalculation on reference change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const masteryEntries = useMemo(() => Object.entries(intelligence.mastery), [intelligence.generatedAt]);
 
     return (
         <Card className="md:col-span-2 lg:col-span-3">
