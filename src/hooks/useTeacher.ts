@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Teacher {
     id: string;
@@ -13,20 +14,26 @@ export interface Teacher {
 }
 
 export function useTeacher(teacherId: string | undefined) {
+    const { user } = useAuth();
     const [teacher, setTeacher] = useState<Teacher | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        if (!teacherId) {
+        if (!teacherId || !user) {
             setLoading(false);
             return;
         }
 
+        const currentUser = user;
+
         async function fetchTeacher() {
             setLoading(true);
             try {
-                const res = await fetch(`/api/teacher?teacherId=${teacherId}`);
+                const token = await currentUser.getIdToken();
+                const res = await fetch(`/api/teacher?teacherId=${teacherId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
                 if (!res.ok) throw new Error('Failed to fetch teacher data');
                 const data = await res.json();
                 setTeacher(data.teacher);
@@ -38,7 +45,7 @@ export function useTeacher(teacherId: string | undefined) {
         }
 
         fetchTeacher();
-    }, [teacherId]);
+    }, [teacherId, user]);
 
     return { teacher, loading, error };
 }

@@ -45,7 +45,10 @@ export function TeacherProfileForm() {
                 return;
             }
             try {
-                const response = await fetch(`/api/teacher?teacherId=${user.uid}`);
+                const token = await user.getIdToken();
+                const response = await fetch(`/api/teacher?teacherId=${user.uid}`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
                 if (response.ok) {
                     const data = await response.json();
                     if (data.teacher) {
