@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Architecture Map.md",
+                "file": "upcoming manual changess/Core_block_upgrade.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Architecture Map"
+              "title": "Core_block_upgrade"
             }
           }
         ],
