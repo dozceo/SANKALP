@@ -135,8 +135,8 @@ export default function QuizPage() {
   const currentQuestion = quiz ? quiz[currentQuestionIndex] : null;
 
   if (isLoading) {
-    return <div className="flex flex-col justify-center items-center h-full gap-4">
-      <Loader2 className="h-8 w-8 animate-spin" />
+    return <div role="status" aria-live="polite" className="flex flex-col justify-center items-center h-full gap-4">
+      <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
       <p className="text-muted-foreground">Generating your custom quiz...</p>
     </div>;
   }
@@ -147,13 +147,13 @@ export default function QuizPage() {
     return (
       <Card className="max-w-2xl mx-auto text-center">
         <CardHeader>
-          <Award className="mx-auto h-16 w-16 text-yellow-500" />
+          <Award className="mx-auto h-16 w-16 text-yellow-500" aria-hidden="true" />
           <CardTitle className="font-headline text-3xl">Quiz Complete!</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-xl">Your final score is:</p>
           <p className="text-5xl font-bold text-primary">{score} / {quizLength}</p>
-          <Progress value={finalScore} className="w-full" />
+          <Progress value={finalScore} className="w-full" aria-label="Final score" />
           <Button onClick={resetQuiz}>Take Another Quiz</Button>
         </CardContent>
       </Card>
@@ -165,13 +165,13 @@ export default function QuizPage() {
       <Card className="max-w-2xl mx-auto">
         {isFallback && (
           <div className="bg-amber-50 text-amber-700 px-4 py-2 text-xs border-b border-amber-100 flex items-center gap-2">
-            <Loader2 className="h-3 w-3" />
+            <Loader2 className="h-3 w-3" aria-hidden="true" />
             AI is busy. Serving high-quality standard questions for {quizTopic}.
           </div>
         )}
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Question {currentQuestionIndex + 1} of {quiz.length}</CardTitle>
-          <Progress value={((currentQuestionIndex + 1) / quiz.length) * 100} className="w-full" />
+          <Progress value={((currentQuestionIndex + 1) / quiz.length) * 100} className="w-full" aria-label="Quiz progress" />
           <CardDescription className="pt-4 text-lg">{currentQuestion.question}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -191,8 +191,18 @@ export default function QuizPage() {
                     } ${isAnswered ? 'cursor-not-allowed' : ''}`}>
                   <RadioGroupItem value={option} id={`option-${index}`} className="mr-3" />
                   <span>{option}</span>
-                  {isAnswered && isCorrect && <CheckCircle className="ml-auto text-green-500" />}
-                  {isAnswered && isSelected && !isCorrect && <XCircle className="ml-auto text-red-500" />}
+                  {isAnswered && isCorrect && (
+                    <>
+                      <span className="sr-only">Correct answer</span>
+                      <CheckCircle className="ml-auto text-green-500" aria-hidden="true" />
+                    </>
+                  )}
+                  {isAnswered && isSelected && !isCorrect && (
+                    <>
+                      <span className="sr-only">Incorrect answer</span>
+                      <XCircle className="ml-auto text-red-500" aria-hidden="true" />
+                    </>
+                  )}
                 </Label>
               );
             })}
