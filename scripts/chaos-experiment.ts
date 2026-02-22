@@ -3,7 +3,7 @@
 process.env.USE_MOCK_DB = 'true';
 process.env.GOOGLE_GENAI_API_KEY = 'dummy_key_for_chaos_test';
 process.env.ENABLE_CHAOS = 'true';
-process.env.NODE_ENV = 'development'; // Chaos is usually disabled in production unless forced
+(process.env as any).NODE_ENV = 'development'; // Chaos is usually disabled in production unless forced
 
 import fs from 'fs';
 import path from 'path';

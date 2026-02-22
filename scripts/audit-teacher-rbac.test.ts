@@ -13,11 +13,11 @@ jest.mock('../src/lib/db-helpers', () => ({
 describe('Teacher RBAC Audit', () => {
   it('should allow access to student data without authentication', async () => {
     // Setup mocks
-    dbHelpers.getTeacherClasses.mockResolvedValue([]);
-    dbHelpers.getTeacherStudents.mockResolvedValue([
+    (dbHelpers.getTeacherClasses as jest.Mock).mockResolvedValue([]);
+    (dbHelpers.getTeacherStudents as jest.Mock).mockResolvedValue([
       { id: 's1', name: 'Student 1', email: 's1@example.com' }
     ]);
-    dbHelpers.getBatchedQuizResults.mockResolvedValue(new Map());
+    (dbHelpers.getBatchedQuizResults as jest.Mock).mockResolvedValue(new Map());
 
     // Create request with teacherId but NO Authorization header
     // Note: NextRequest constructor might not be available in test environment depending on jest-environment-jsdom/node versions
