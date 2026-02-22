@@ -32,7 +32,7 @@ Each task links to a specific prompt file in `docs/prompts/` that contains detai
 - [x] [Task: Address 06_Quality_Testing_&_Debt/chaos-report.md](prompts/finished/chaos-report_prompt.md)
 - [x] [Task: Address 05_ML_AI_&_Genkit/CHATBOT_CONTEXT_HEALTH_REPORT.md](prompts/finished/CHATBOT_CONTEXT_HEALTH_REPORT_prompt.md)
 - [x] [Task: Address 05_ML_AI_&_Genkit/CHATBOT_CONTEXT_REPORT.md](prompts/finished/CHATBOT_CONTEXT_REPORT_prompt.md)
-- [ ] [Task: Address 06_Quality_Testing_&_Debt/COMMIT_QUALITY_REPORT.md](prompts/COMMIT_QUALITY_REPORT_prompt.md)
+- [x] [Task: Address 06_Quality_Testing_&_Debt/COMMIT_QUALITY_REPORT.md](prompts/finished/COMMIT_QUALITY_REPORT_prompt.md)
 - [ ] [Task: Address 03_Audit_Reports_&_Validation/contrast-violation-report.md](prompts/contrast-violation-report_prompt.md)
 - [ ] [Task: Address 04_Performance_&_Optimization/COST_OPTIMIZATION_REPORT.md](prompts/COST_OPTIMIZATION_REPORT_prompt.md)
 - [ ] [Task: Address 04_Performance_&_Optimization/COST_PROJECTION.md](prompts/COST_PROJECTION_prompt.md)
