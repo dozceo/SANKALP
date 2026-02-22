@@ -42,7 +42,7 @@ Each task links to a specific prompt file in `docs/prompts/` that contains detai
 - [x] [Task: Address 06_Quality_Testing_&_Debt/DEAD_CODE_INVENTORY.md](prompts/finished/DEAD_CODE_INVENTORY_prompt.md)
 - [x] [Task: Address 06_Quality_Testing_&_Debt/DEAD_CODE_REPORT.md](prompts/finished/DEAD_CODE_REPORT_prompt.md)
 - [ ] [Task: Address 08_Unclassified_&_Misc/debug.md](prompts/debug_prompt.md)
-- [ ] [Task: Address 05_ML_AI_&_Genkit/DECISION_COVERAGE_MATRIX.md](prompts/DECISION_COVERAGE_MATRIX_prompt.md)
+- [x] [Task: Address 05_ML_AI_&_Genkit/DECISION_COVERAGE_MATRIX.md](prompts/finished/DECISION_COVERAGE_MATRIX_prompt.md)
 - [ ] [Task: Address 07_Manuals_Guides_&_Setup/Deployment Guide.md](prompts/Deployment Guide_prompt.md)
 - [ ] [Task: Address 03_Audit_Reports_&_Validation/design-token-violations.md](prompts/design-token-violations_prompt.md)
 - [x] [Task: Address 03_Audit_Reports_&_Validation/DOC_DRIFT_REPORT.md](prompts/finished/DOC_DRIFT_REPORT_prompt.md)

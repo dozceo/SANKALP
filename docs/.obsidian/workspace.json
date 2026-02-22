@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "tasks.md",
+                "file": "sankalp_visual_models.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "tasks"
+              "title": "sankalp_visual_models"
             }
           }
         ],
@@ -200,6 +200,10 @@
   },
   "active": "cd55ab023da54727",
   "lastOpenFiles": [
+    "sankalp_extended_marketing_bmc.md",
+    "tasks.md",
+    "sankalp_implementation_guide.md",
+    "sankalp_visual_models.md",
     "finished_reports/accessibility-report.md",
     "prompts/finished/accessibility-report_prompt.md",
     "upcoming manual changess/Core_block_upgrade.md",
