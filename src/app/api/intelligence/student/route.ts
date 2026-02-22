@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
         type TopicData = {
             topic: string;
             features: ReturnType<typeof extractMasteryFeatures>;
-            mlPrediction: Partial<MasteryPredictionOutput> | null;
+            mlPrediction: MasteryPredictionOutput | Pick<MasteryPredictionOutput, 'mastery_probability' | 'confidence'> | null;
         };
         const topicData: TopicData[] = [];
         const topicsToPredict: Array<{ topic: string; features: MasteryPredictionInput }> = [];
@@ -175,8 +175,8 @@ export async function GET(request: NextRequest) {
                 predictionsToCache.push({
                     studentId,
                     topic,
-                    masteryProbability: mlPrediction.mastery_probability!,
-                    confidence: mlPrediction.confidence!,
+                    masteryProbability: mlPrediction.mastery_probability,
+                    confidence: mlPrediction.confidence,
                     daysSinceRevision: features.days_since_last_revision,
                     createdAt: new Date(),
                     expiresAt: new Date(Date.now() + 60 * 60 * 1000),
