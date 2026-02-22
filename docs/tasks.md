@@ -117,7 +117,7 @@ Each task links to a specific prompt file in `docs/prompts/` that contains detai
 - [ ] [Task: Address 06_Quality_Testing_&_Debt/visual-regression-report.md](prompts/visual-regression-report_prompt.md)
 - [x] [Task: Address 08_Unclassified_&_Misc/WEAK_AREA_DETECTION_REPORT.md](prompts/finished/WEAK_AREA_DETECTION_REPORT_prompt.md)
 
-- [ ] [Task: Address 02_Core_Architecture_&_Specs/API Documentation.md](prompts/API_Documentation_prompt.md)
+- [x] [Task: Address 02_Core_Architecture_&_Specs/API Documentation.md](prompts/finished/API_Documentation_prompt.md)
 - [ ] [Task: Address 02_Core_Architecture_&_Specs/ARCHITECTURE.md](prompts/ARCHITECTURE_prompt.md)
 - [ ] [Task: Address 02_Core_Architecture_&_Specs/DATABASE.md](prompts/DATABASE_prompt.md)
 - [ ] [Task: Address 08_Unclassified_&_Misc/Development Status.md](prompts/Development_Status_prompt.md)
