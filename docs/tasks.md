@@ -27,7 +27,7 @@ Each task links to a specific prompt file in `docs/prompts/` that contains detai
 - [ ] [Task: Address 03_Audit_Reports_&_Validation/AUDIT_REPORT.md](prompts/AUDIT_REPORT_prompt.md)
 - [x] [Task: Address 08_Unclassified_&_Misc/BIAS_DETECTION_REPORT.md](prompts/finished/BIAS_DETECTION_REPORT_prompt.md)
 - [ ] [Task: Address 02_Core_Architecture_&_Specs/blueprint.md](prompts/blueprint_prompt.md)
-- [ ] [Task: Address 04_Performance_&_Optimization/CACHING_STRATEGY_PROPOSAL.md](prompts/CACHING_STRATEGY_PROPOSAL_prompt.md)
+- [x] [Task: Address 04_Performance_&_Optimization/CACHING_STRATEGY_PROPOSAL.md](prompts/finished/CACHING_STRATEGY_PROPOSAL_prompt.md)
 - [x] [Task: Address 03_Audit_Reports_&_Validation/CAUSAL_INTEGRITY_REPORT.md](prompts/finished/CAUSAL_INTEGRITY_REPORT_prompt.md)
 - [x] [Task: Address 06_Quality_Testing_&_Debt/chaos-report.md](prompts/finished/chaos-report_prompt.md)
 - [x] [Task: Address 05_ML_AI_&_Genkit/CHATBOT_CONTEXT_HEALTH_REPORT.md](prompts/finished/CHATBOT_CONTEXT_HEALTH_REPORT_prompt.md)

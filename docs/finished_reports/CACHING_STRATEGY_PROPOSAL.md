@@ -19,3 +19,6 @@ Based on the simulation of common syllabus queries:
 1. **Implement an LRU Cache of size 50**: This covers the most popular subjects ("Head of the Tail") effectively.
 2. **Expected Impact**: Reducing API costs by ~98% and improving average response latency significantly.
 3. **Implementation Strategy**: Use Redis (e.g., Upstash) or Next.js `unstable_cache` with a TTL of 24 hours for syllabus data, as syllabi rarely change daily.
+
+## Review Status
+? **Reviewed on 2026-02-22**: Strategy acknowledged. Implementation deferred to future infrastructure sprint pending Redis provisioning.
