@@ -22,7 +22,7 @@ Each task links to a specific prompt file in `docs/prompts/` that contains detai
 - [ ] [Task: Address 05_ML_AI_&_Genkit/ADK_DECISION_COVERAGE.md](prompts/ADK_DECISION_COVERAGE_prompt.md)
 - [x] [Task: Address 03_Audit_Reports_&_Validation/ADK_VALIDATION_REPORT.md](prompts/finished/ADK_VALIDATION_REPORT_prompt.md)
 - [x] [Task: Address 08_Unclassified_&_Misc/ADVERSARIAL_RESILIENCE_REPORT.md](prompts/finished/ADVERSARIAL_RESILIENCE_REPORT_prompt.md)
-- [ ] [Task: Address 03_Audit_Reports_&_Validation/APP_ROUTER_VALIDATION_REPORT.md](prompts/APP_ROUTER_VALIDATION_REPORT_prompt.md)
+- [x] [Task: Address 03_Audit_Reports_&_Validation/APP_ROUTER_VALIDATION_REPORT.md](prompts/finished/APP_ROUTER_VALIDATION_REPORT_prompt.md)
 - [ ] [Task: Address 02_Core_Architecture_&_Specs/Architecture Map.md](prompts/Architecture Map_prompt.md)
 - [ ] [Task: Address 03_Audit_Reports_&_Validation/AUDIT_REPORT.md](prompts/AUDIT_REPORT_prompt.md)
 - [x] [Task: Address 08_Unclassified_&_Misc/BIAS_DETECTION_REPORT.md](prompts/finished/BIAS_DETECTION_REPORT_prompt.md)
