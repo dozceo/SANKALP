@@ -71,7 +71,7 @@ export default function HomePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-headline">Welcome back, {currentStudent.name}!</h1>
+        <h1 className="text-3xl font-bold font-headline">Welcome back, {currentStudent?.name}!</h1>
         <p className="text-muted-foreground">
           Here&apos;s your AI-powered learning dashboard for today.
         </p>
@@ -144,7 +144,7 @@ export default function HomePage() {
       </div>
 
       {/* Join Class CTA if not enrolled */}
-      {!currentStudent.classId && (
+      {!currentStudent?.classId && (
         <Card className="border-primary/30 bg-primary/5 shadow-md overflow-hidden relative">
           <div className="absolute right-0 top-0 p-8 opacity-10 pointer-events-none">
             <Users className="h-32 w-32" />
@@ -178,7 +178,7 @@ export default function HomePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PersonalKnowledgeGraph student={currentStudent} height={450} />
+          <PersonalKnowledgeGraph student={currentStudent!} height={450} />
         </CardContent>
       </Card>
 

@@ -250,7 +250,7 @@ export {
   MenubarPortal,
   MenubarSubContent,
   MenubarSubTrigger,
-menubarGroup,
+  MenubarGroup,
   MenubarSub,
   MenubarShortcut,
 }

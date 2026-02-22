@@ -93,6 +93,9 @@ export const createDocument = async <T = DocumentData>(
     data: T
 ): Promise<string> => {
     try {
+        if (!db) {
+            throw new Error('Firestore is not initialized. This function must be called in the browser.');
+        }
         const collectionRef = collection(db, collectionName);
         const dataWithTimestamp = {
             ...data,
@@ -115,6 +118,9 @@ export const setDocument = async <T = DocumentData>(
     data: T,
     merge: boolean = false
 ): Promise<void> => {
+    if (!db) {
+        throw new Error('Firestore is not initialized. This function must be called in the browser.');
+    }
     try {
         const docRef = doc(db, collectionName, documentId);
         const dataWithTimestamp = {
@@ -136,6 +142,9 @@ export const updateDocument = async <T = Partial<DocumentData>>(
     documentId: string,
     data: T
 ): Promise<void> => {
+    if (!db) {
+        throw new Error('Firestore is not initialized. This function must be called in the browser.');
+    }
     try {
         const docRef = doc(db, collectionName, documentId);
         const dataWithTimestamp = {
@@ -155,9 +164,11 @@ export const deleteDocument = async (
     collectionName: string,
     documentId: string
 ): Promise<void> => {
+    if (!db) {
+        throw new Error('Firestore is not initialized. This function must be called in the browser.');
+    }
     try {
         const docRef = doc(db, collectionName, documentId);
-        await deleteDoc(docRef);
     } catch (error: any) {
         console.error('Error deleting document:', error.message);
         throw error;
@@ -170,6 +181,9 @@ export const subscribeToDocument = <T = DocumentData>(
     documentId: string,
     callback: (data: FirestoreDocument<T> | null) => void
 ): Unsubscribe => {
+    if (!db) {
+        throw new Error('Firestore is not initialized. This function must be called in the browser.');
+    }
     const docRef = doc(db, collectionName, documentId);
 
     return onSnapshot(
@@ -196,6 +210,9 @@ export const subscribeToCollection = <T = DocumentData>(
     callback: (data: FirestoreDocument<T>[]) => void,
     ...queryConstraints: QueryConstraint[]
 ): Unsubscribe => {
+    if (!db) {
+        throw new Error('Firestore is not initialized. This function must be called in the browser.');
+    }
     const collectionRef = collection(db, collectionName);
     const q = queryConstraints.length > 0
         ? query(collectionRef, ...queryConstraints)

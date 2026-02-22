@@ -152,7 +152,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const signOut = useCallback(async () => {
-        await firebaseSignOut(auth);
+        if (!auth) throw new Error('Auth not initialized');
+        await firebaseSignOut(auth as Auth);
         setUser(null);
         setRole(null);
     }, []);
