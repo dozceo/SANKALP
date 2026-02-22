@@ -1,9 +1,17 @@
 
 const colorCache = new Map<string, string>();
 
+const HEX_MAP: Record<string, number> = {
+  '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+  'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15,
+  'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14, 'F': 15
+};
+
+const HEX_CHARS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+
 /**
  * Lightens a hex color by a given percentage.
- * Memoized to prevent repeated parsing and calculation.
+ * Optimized for performance: avoids parseInt, uses lookup tables, and minimizes string allocation.
  *
  * @param hex The hex color string (e.g., "#9333EA")
  * @param percent The percentage to lighten (e.g., 20)
@@ -15,43 +23,62 @@ export function lightenColor(hex: string, percent: number): string {
     return colorCache.get(key)!;
   }
 
-  let num: number;
-  // Check for hash and get length effectively
-  const hasHash = hex.charCodeAt(0) === 35; // '#' is 35
-  const start = hasHash ? 1 : 0;
-  const len = hex.length - start;
+  const len = hex.length;
+  let r = 0, g = 0, b = 0;
+  let valid = true;
 
-  if (len === 3) {
-    // Optimization: Handle shorthand #RGB without string allocation
-    const r = parseInt(hex[start], 16);
-    const g = parseInt(hex[start + 1], 16);
-    const b = parseInt(hex[start + 2], 16);
-    // Expand to RRGGBB: (r << 4 | r) << 16 | (g << 4 | g) << 8 | (b << 4 | b)
-    num = (r << 20) | (r << 16) | (g << 12) | (g << 8) | (b << 4) | b;
+  // Parsing without parseInt and substrings
+  if (len === 7 || (len === 6 && hex[0] !== '#')) {
+      // #RRGGBB or RRGGBB
+      const start = len === 7 ? 1 : 0;
+      r = (HEX_MAP[hex[start]] << 4) | HEX_MAP[hex[start + 1]];
+      g = (HEX_MAP[hex[start + 2]] << 4) | HEX_MAP[hex[start + 3]];
+      b = (HEX_MAP[hex[start + 4]] << 4) | HEX_MAP[hex[start + 5]];
+  } else if (len === 4 || (len === 3 && hex[0] !== '#')) {
+      // #RGB or RGB
+      const start = len === 4 ? 1 : 0;
+      const rVal = HEX_MAP[hex[start]];
+      const gVal = HEX_MAP[hex[start + 1]];
+      const bVal = HEX_MAP[hex[start + 2]];
+      r = (rVal << 4) | rVal;
+      g = (gVal << 4) | gVal;
+      b = (bVal << 4) | bVal;
   } else {
-    // Full #RRGGBB or RRGGBB
-    // If hasHash, we must slice, otherwise use as is
-    num = parseInt(start === 0 ? hex : hex.slice(1), 16);
+      // Fallback for invalid length, though existing code didn't handle it explicitly well
+      // Treat as black or return input? Original code would crash or return weird result.
+      // Let's assume valid input for now but handle undefined lookup
+      valid = false;
+  }
+
+  // Safety check for invalid characters
+  if (isNaN(r) || isNaN(g) || isNaN(b)) valid = false;
+
+  if (!valid) {
+      // If parsing failed, return original (or could throw)
+      return hex;
   }
 
   const amt = Math.round(2.55 * percent);
 
-  // Extract components
-  const R = (num >> 16) + amt;
-  const G = ((num >> 8) & 0x00ff) + amt;
-  const B = (num & 0x0000ff) + amt;
+  // Apply lightness
+  let newR = r + amt;
+  let newG = g + amt;
+  let newB = b + amt;
 
-  // Clamp values between 0 and 255
-  const newR = R < 255 ? (R < 0 ? 0 : R) : 255;
-  const newG = G < 255 ? (G < 0 ? 0 : G) : 255;
-  const newB = B < 255 ? (B < 0 ? 0 : B) : 255;
+  // Clamp
+  if (newR > 255) newR = 255; else if (newR < 0) newR = 0;
+  if (newG > 255) newG = 255; else if (newG < 0) newG = 0;
+  if (newB > 255) newB = 255; else if (newB < 0) newB = 0;
 
-  // Bitwise composition with 0x1000000 to ensure zero-padding
-  const result = `#${(0x1000000 + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
+  // Convert to hex string manually to avoid toString(16)
+  // Optimization: Pre-calculated chars array
+  const result = '#' +
+    HEX_CHARS[(newR >> 4) & 0xF] + HEX_CHARS[newR & 0xF] +
+    HEX_CHARS[(newG >> 4) & 0xF] + HEX_CHARS[newG & 0xF] +
+    HEX_CHARS[(newB >> 4) & 0xF] + HEX_CHARS[newB & 0xF];
 
-  // Cache the result
+  // Cache management
   if (colorCache.size > 1000) {
-    // Optimization: Delete oldest entry instead of clearing all to maintain hit rate
     const firstKey = colorCache.keys().next().value;
     if (firstKey) colorCache.delete(firstKey);
   }
