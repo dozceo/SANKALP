@@ -178,7 +178,7 @@ export default function HomePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PersonalKnowledgeGraph student={currentStudent!} height={450} />
+          {currentStudent && <PersonalKnowledgeGraph student={currentStudent} height={450} />}
         </CardContent>
       </Card>
 
