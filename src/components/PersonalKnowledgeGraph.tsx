@@ -22,9 +22,9 @@ interface PersonalKnowledgeGraphProps {
 
 type ExtendedNodeObject = NodeObject & GraphNode & {
     _cachedLightColor?: string;
-    _cachedBaseColor?: string;
     _cachedGradient?: CanvasGradient;
-    _cachedGradientKey?: string;
+    _cachedBase?: string;
+    _cachedLight?: string;
 };
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
@@ -37,6 +37,16 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
 
     // Generate graph data for this student
     const graphData = useMemo(() => generatePersonalGraph(student), [student]);
+
+    // Optimization: Pre-calculate light colors for all nodes
+    useMemo(() => {
+        graphData.nodes.forEach((node: ExtendedNodeObject) => {
+            if (!node.lightColor && !node._cachedLightColor) {
+                const baseColor = node.color || GRAPH_COLORS_HEX.default;
+                node._cachedLightColor = lightenColor(baseColor, 20);
+            }
+        });
+    }, [graphData.nodes]);
 
     // Update dimensions
     useEffect(() => {
@@ -102,14 +112,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         } else {
             baseColor = node.color || GRAPH_COLORS_HEX.default;
             // Use pre-calculated light color if available, otherwise calculate once and cache
-            if (node.lightColor) {
-                lightColor = node.lightColor;
-            } else {
-                if (!node._cachedLightColor) {
-                    node._cachedLightColor = lightenColor(baseColor, 20);
-                }
-                lightColor = node._cachedLightColor;
-            }
+            lightColor = node.lightColor || node._cachedLightColor || lightenColor(baseColor, 20);
         }
 
         ctx.save();
@@ -137,14 +140,9 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
         } else {
             // Node circle with gradient using caching
             let nodeGradient: CanvasGradient;
-            const gradientKey = `${lightColor}-${baseColor}`;
 
-            // Scale to unit size to allow gradient caching
-            ctx.save();
-            ctx.scale(nodeSize, nodeSize);
-
-            // Optimization: Cache gradient directly on the node object
-            if (node._cachedGradient && node._cachedGradientKey === gradientKey) {
+            // Optimization: Cache gradient directly on the node object using efficient checks
+            if (node._cachedGradient && node._cachedBase === baseColor && node._cachedLight === lightColor) {
                 nodeGradient = node._cachedGradient;
             } else {
                 // Create unit gradient with offset center (-0.3, -0.3)
@@ -153,8 +151,13 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
                 nodeGradient.addColorStop(1, baseColor);
 
                 node._cachedGradient = nodeGradient;
-                node._cachedGradientKey = gradientKey;
+                node._cachedBase = baseColor;
+                node._cachedLight = lightColor;
             }
+
+            // Scale to unit size to allow gradient caching
+            ctx.save();
+            ctx.scale(nodeSize, nodeSize);
 
             ctx.beginPath();
             ctx.arc(0, 0, 1, 0, 2 * Math.PI);
