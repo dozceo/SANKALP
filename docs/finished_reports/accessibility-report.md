@@ -17,3 +17,6 @@ Total Violations: 4
 | **moderate** | `region` | Ensure all page content is contained by landmarks | `<section class="space-y-4">` |
 | **moderate** | `region` | Ensure all page content is contained by landmarks | `<section class="space-y-4">` |
 | **moderate** | `region` | Ensure all page content is contained by landmarks | `<section class="space-y-4">` |
+
+## Review Status
+? **Reviewed on 2026-02-22**: Won't Fix. All listed violations are from 'src/app/test-accessibility/page.tsx', which intentionally contains accessibility violations (e.g., missing labels) to verify the automated accessibility scanning tools.

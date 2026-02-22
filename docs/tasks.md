@@ -18,7 +18,7 @@ Each task links to a specific prompt file in `docs/prompts/` that contains detai
 
 
 ## Additional Report Tasks
-- [ ] [Task: Address 08_Unclassified_&_Misc/accessibility-report.md](prompts/accessibility-report_prompt.md)
+- [x] [Task: Address 08_Unclassified_&_Misc/accessibility-report.md](prompts/finished/accessibility-report_prompt.md)
 - [ ] [Task: Address 05_ML_AI_&_Genkit/ADK_DECISION_COVERAGE.md](prompts/ADK_DECISION_COVERAGE_prompt.md)
 - [x] [Task: Address 03_Audit_Reports_&_Validation/ADK_VALIDATION_REPORT.md](prompts/finished/ADK_VALIDATION_REPORT_prompt.md)
 - [x] [Task: Address 08_Unclassified_&_Misc/ADVERSARIAL_RESILIENCE_REPORT.md](prompts/finished/ADVERSARIAL_RESILIENCE_REPORT_prompt.md)

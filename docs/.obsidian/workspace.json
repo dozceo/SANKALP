@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "upcoming manual changess/Core_block_upgrade.md",
+                "file": "tasks.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Core_block_upgrade"
+              "title": "tasks"
             }
           }
         ],
@@ -200,6 +200,9 @@
   },
   "active": "cd55ab023da54727",
   "lastOpenFiles": [
+    "finished_reports/accessibility-report.md",
+    "prompts/finished/accessibility-report_prompt.md",
+    "upcoming manual changess/Core_block_upgrade.md",
     "ux_audits/smart_revision_flow_integrity_report.md",
     "ux_audits/mobile_responsive_coverage_report.md",
     "ux_audits/explainability_drift_report.md",
