@@ -184,9 +184,8 @@ export default function OnboardingPage() {
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
-                    i <= step ? "bg-primary" : "bg-primary/20"
-                  }`}
+                  className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${i <= step ? "bg-primary" : "bg-primary/20"
+                    }`}
                 />
               ))}
             </div>
@@ -203,7 +202,7 @@ export default function OnboardingPage() {
             {step === 1 && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider mb-2">
                     <Sparkles className="w-3 h-3" />
                     {t("welcome")}
                   </div>
@@ -237,11 +236,10 @@ export default function OnboardingPage() {
                         key={grade}
                         type="button"
                         onClick={() => setValue("grade", grade, { shouldValidate: true })}
-                        className={`p-4 rounded-xl border-2 transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${
-                          formData.grade === grade
+                        className={`p-4 rounded-xl border-2 transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${formData.grade === grade
                             ? "border-primary bg-primary/5 text-primary font-bold shadow-sm"
                             : "border-border hover:border-primary/30 hover:bg-accent/50"
-                        }`}
+                          }`}
                       >
                         {grade}
                       </button>
@@ -270,11 +268,10 @@ export default function OnboardingPage() {
                       key={subject}
                       type="button"
                       onClick={() => handleSubjectToggle(subject)}
-                      className={`p-4 rounded-xl border-2 transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${
-                        formData.subjects?.includes(subject)
+                      className={`p-4 rounded-xl border-2 transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${formData.subjects?.includes(subject)
                           ? "border-primary bg-primary/5 text-primary font-bold"
                           : "border-border hover:border-primary/30 hover:bg-accent/50"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <span>{subject}</span>
@@ -313,11 +310,10 @@ export default function OnboardingPage() {
                         key={goal}
                         type="button"
                         onClick={() => handleGoalToggle(goal)}
-                        className={`px-4 py-2 rounded-full border transition-all text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${
-                          formData.goals?.includes(goal)
+                        className={`px-4 py-2 rounded-full border transition-all text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${formData.goals?.includes(goal)
                             ? "bg-primary text-primary-foreground border-primary"
                             : "bg-background hover:bg-accent border-input"
-                        }`}
+                          }`}
                       >
                         {goal}
                       </button>
@@ -339,11 +335,10 @@ export default function OnboardingPage() {
                         key={time}
                         type="button"
                         onClick={() => setValue("dailyStudyTime", time, { shouldValidate: true })}
-                        className={`p-4 rounded-xl border-2 transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${
-                          formData.dailyStudyTime === time
+                        className={`p-4 rounded-xl border-2 transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${formData.dailyStudyTime === time
                             ? "border-primary bg-primary/5 text-primary font-bold"
                             : "border-border hover:border-primary/30 hover:bg-accent/50"
-                        }`}
+                          }`}
                       >
                         {time}
                       </button>

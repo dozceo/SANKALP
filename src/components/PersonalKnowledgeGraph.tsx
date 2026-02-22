@@ -240,7 +240,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
                 <button
                     onClick={() => handleZoom(1.5)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                    className="p-1.5 bg-secondary hover:bg-secondary/80 rounded text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
                     title="Zoom in"
                     aria-label="Zoom in"
                 >
@@ -248,7 +248,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
                 </button>
                 <button
                     onClick={() => handleZoom(0.67)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                    className="p-1.5 bg-secondary hover:bg-secondary/80 rounded text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
                     title="Zoom out"
                     aria-label="Zoom out"
                 >
@@ -256,7 +256,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
                 </button>
                 <button
                     onClick={handleReset}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                    className="p-1.5 bg-secondary hover:bg-secondary/80 rounded text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
                     title="Reset view"
                     aria-label="Reset view"
                 >
@@ -264,7 +264,7 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
                 </button>
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="p-1.5 bg-secondary/80 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                    className="p-1.5 bg-secondary hover:bg-secondary/80 rounded text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
                     title={isExpanded ? 'Collapse' : 'Expand'}
                     aria-label={isExpanded ? 'Collapse graph' : 'Expand graph'}
                 >
