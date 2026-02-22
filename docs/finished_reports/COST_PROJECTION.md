@@ -101,3 +101,6 @@ This report provides a cost projection model for the application's Genkit-based 
 3.  **Client-Side Throttling:** Prevent users from spamming the "Generate Quiz" button. Implement a cooldown (e.g., 10 seconds) or a daily cap for free-tier users.
 4.  **Monitor Model Versions:** Ensure the `gemini20Flash` (or `gemini15Flash`) model is strictly pinned. Accidentally switching to `gemini15Pro` would increase costs by ~50x.
 5.  **Track Audio Costs:** If `speech-to-speech` usage grows, audit the `gemini-2.5-flash-speech` costs separately, as audio processing is typically priced by duration (seconds) and can be more expensive than text.
+
+## Review Status
+? **Reviewed on 2026-02-22**: Confirmed models are pinned. Verified BrainMapContext is truncated. Implemented 10s client-side cooldown to prevent quiz generation spam. Syllabus caching is covered in CACHING_STRATEGY_PROPOSAL.

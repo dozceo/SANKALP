@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -41,8 +41,32 @@ export default function QuizPage() {
   const [isFinished, setIsFinished] = useState(false);
   const [quizStartTime, setQuizStartTime] = useState<number>(0);
   const [quizTopic, setQuizTopic] = useState("");
+  const [cooldownLeft, setCooldownLeft] = useState(0);
 
   const { user } = useAuth();
+
+  // Handle client-side cooldown to prevent spamming the LLM
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    const checkCooldown = () => {
+      const nextAvailable = localStorage.getItem('nextQuizAvailableAt');
+      if (nextAvailable) {
+        const remaining = Math.ceil((parseInt(nextAvailable) - Date.now()) / 1000);
+        if (remaining > 0) {
+          setCooldownLeft(remaining);
+        } else {
+          setCooldownLeft(0);
+          localStorage.removeItem('nextQuizAvailableAt');
+        }
+      }
+    };
+
+    checkCooldown();
+    if (cooldownLeft > 0) {
+      timer = setInterval(checkCooldown, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldownLeft]);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof quizFormSchema>>({
@@ -51,8 +75,15 @@ export default function QuizPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof quizFormSchema>) => {
+    if (cooldownLeft > 0) return;
     setIsLoading(true);
+
+    // Enforce cooldown
+    // Add 10 second cooldown logic
     try {
+      localStorage.setItem('nextQuizAvailableAt', (Date.now() + 10000).toString());
+      setCooldownLeft(10);
+
       const result = await createQuiz(values);
       setQuiz(result.quiz);
       setIsFallback(!!result.isFallback);
@@ -298,7 +329,9 @@ export default function QuizPage() {
                   )}
                 />
               </div>
-              <Button type="submit" className="w-full">Start Quiz</Button>
+              <Button type="submit" className="w-full" disabled={cooldownLeft > 0 || isLoading}>
+                {cooldownLeft > 0 ? `Please wait ${cooldownLeft}s...` : "Start Quiz"}
+              </Button>
             </form>
           </Form>
         </CardContent>
