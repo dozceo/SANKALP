@@ -160,3 +160,6 @@ This report provides a detailed cost model of the platform's resource consumptio
 **Implementation**:
 -   Use `src/lib/chaos-config.ts` or a new `CostMonitor` class to track token usage and DB ops per request.
 -   Log to a dedicated `cost_logs` collection or external monitoring service (Datadog/Sentry).
+
+## Review Status
+? **Reviewed on 2026-02-22**: Implemented DB batching for ML Predictions and ADK Decisions as recommended.

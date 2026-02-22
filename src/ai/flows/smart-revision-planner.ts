@@ -17,7 +17,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { extractMasteryFeatures, type StudentHistory } from '@/ml/features/student_features';
 import { predictMastery, batchPredictMastery } from '@/ml/inference/ml-bridge';
-import { getStudent, getQuizResults, getBatchedCachedPredictions, cachePrediction } from '@/lib/db-helpers';
+import { getStudent, getQuizResults, getBatchedCachedPredictions, batchCachePredictions } from '@/lib/db-helpers';
 import {
   makeRevisionDecision,
   makeInterventionDecision,
@@ -65,15 +65,15 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
   const topicObjMap = new Map<string, any>(); // Map topic name to topic object from brainMap
 
   topics.forEach((topic: any) => {
-      topicObjMap.set(topic.name, topic);
-      const features = extractMasteryFeatures(topic.name, studentHistory);
-      topicFeaturesMap.set(topic.name, {
-        avg_quiz_score: features.avg_quiz_score,
-        attempts_per_topic: features.attempts_per_topic,
-        days_since_last_revision: features.days_since_last_revision,
-        quiz_score_variance: features.quiz_score_variance,
-        time_spent_per_question: features.time_spent_per_question,
-      });
+    topicObjMap.set(topic.name, topic);
+    const features = extractMasteryFeatures(topic.name, studentHistory);
+    topicFeaturesMap.set(topic.name, {
+      avg_quiz_score: features.avg_quiz_score,
+      attempts_per_topic: features.attempts_per_topic,
+      days_since_last_revision: features.days_since_last_revision,
+      quiz_score_variance: features.quiz_score_variance,
+      time_spent_per_question: features.time_spent_per_question,
+    });
   });
 
   const topicNames = Array.from(topicFeaturesMap.keys());
@@ -81,44 +81,49 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
   // 2. Check Cache
   let cachedPredictions = new Map<string, any>();
   if (studentHistory.studentId) {
-      cachedPredictions = await getBatchedCachedPredictions(studentHistory.studentId, topicNames);
+    cachedPredictions = await getBatchedCachedPredictions(studentHistory.studentId, topicNames);
   }
 
   // 3. Identify missing topics
   const topicsToPredict: Array<{ topic: string; features: MasteryPredictionInput }> = [];
 
   topicNames.forEach(topic => {
-      if (!cachedPredictions.has(topic)) {
-          topicsToPredict.push({
-              topic,
-              features: topicFeaturesMap.get(topic)!
-          });
-      }
+    if (!cachedPredictions.has(topic)) {
+      topicsToPredict.push({
+        topic,
+        features: topicFeaturesMap.get(topic)!
+      });
+    }
   });
 
   // 4. Batch Predict
   let newPredictionsMap = new Map<string, MasteryPredictionOutput>();
   if (topicsToPredict.length > 0) {
-      const batchResults = await batchPredictMastery(topicsToPredict);
-      batchResults.forEach(r => {
-          if (r.prediction && r.prediction.predicted_class !== 'error') {
-              newPredictionsMap.set(r.topic, r.prediction);
+    const batchResults = await batchPredictMastery(topicsToPredict);
+    const predictionsToCache: Parameters<typeof batchCachePredictions>[0] = [];
 
-              // Cache the new prediction
-              if (studentHistory.studentId) {
-                   // We don't await this to keep it fast
-                   cachePrediction({
-                      studentId: studentHistory.studentId,
-                      topic: r.topic,
-                      masteryProbability: r.prediction.mastery_probability,
-                      confidence: r.prediction.confidence,
-                      daysSinceRevision: topicFeaturesMap.get(r.topic)!.days_since_last_revision,
-                      createdAt: new Date(),
-                      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour cache
-                   }).catch(console.error);
-              }
-          }
-      });
+    batchResults.forEach(r => {
+      if (r.prediction && r.prediction.predicted_class !== 'error') {
+        newPredictionsMap.set(r.topic, r.prediction);
+
+        // Cache the new prediction
+        if (studentHistory.studentId) {
+          predictionsToCache.push({
+            studentId: studentHistory.studentId,
+            topic: r.topic,
+            masteryProbability: r.prediction.mastery_probability,
+            confidence: r.prediction.confidence,
+            daysSinceRevision: topicFeaturesMap.get(r.topic)!.days_since_last_revision,
+            createdAt: new Date(),
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour cache
+          });
+        }
+      }
+    });
+
+    if (predictionsToCache.length > 0) {
+      batchCachePredictions(predictionsToCache).catch(console.error);
+    }
   }
 
   for (const topicName of topicNames) {
@@ -127,27 +132,27 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
       let prediction = cachedPredictions.get(topicName);
 
       if (!prediction) {
-          prediction = newPredictionsMap.get(topicName);
+        prediction = newPredictionsMap.get(topicName);
       }
 
       if (!prediction) {
-          // Fallback: include topic if it hasn't been revised recently
-          if (topic.daysSinceLastRevision && topic.daysSinceLastRevision > 10) {
-            decisions.push({
-              topic: topicName,
-              masteryProbability: 0.5,
-              priority: "MEDIUM" as const,
-              daysSinceRevision: topic.daysSinceLastRevision,
-              adkDecision: null, // Mark as fallback
-            });
-          }
-          continue;
+        // Fallback: include topic if it hasn't been revised recently
+        if (topic.daysSinceLastRevision && topic.daysSinceLastRevision > 10) {
+          decisions.push({
+            topic: topicName,
+            masteryProbability: 0.5,
+            priority: "MEDIUM" as const,
+            daysSinceRevision: topic.daysSinceLastRevision,
+            adkDecision: null, // Mark as fallback
+          });
+        }
+        continue;
       }
 
       const features = topicFeaturesMap.get(topicName)!;
       const masteryProb = (prediction.masteryProbability !== undefined)
-                          ? prediction.masteryProbability
-                          : prediction.mastery_probability;
+        ? prediction.masteryProbability
+        : prediction.mastery_probability;
 
       // Step 3: Build ML Signals for ADK
       const mlSignals: MLSignals = {
@@ -156,10 +161,10 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         days_since_last_revision: features.days_since_last_revision,
         attempts_count: features.attempts_per_topic,
         performance_trend: calculateTrend(
-            studentHistory.quizResults
-                .filter(r => r.topic === topicName)
-                .map(r => r.score),
-            true
+          studentHistory.quizResults
+            .filter(r => r.topic === topicName)
+            .map(r => r.score),
+          true
         ) as "IMPROVING" | "STABLE" | "DECLINING",
       };
 
@@ -362,11 +367,11 @@ const smartRevisionPlannerFlow = ai.defineFlow(
       // Robust fallback reason if LLM fails or explanation missing
       let fallbackReason = 'Recommended for revision based on your learning history.';
       if (!decision.adkDecision) {
-         fallbackReason = 'It has been a while since you practiced this topic.';
+        fallbackReason = 'It has been a while since you practiced this topic.';
       } else if (decision.adkDecision.action === 'URGENT_REVISION') {
-         fallbackReason = 'Urgent: Your mastery is critically low.';
+        fallbackReason = 'Urgent: Your mastery is critically low.';
       } else if (decision.adkDecision.action === 'SCHEDULED_REVISION') {
-         fallbackReason = 'Spaced repetition: Time to review this to prevent forgetting.';
+        fallbackReason = 'Spaced repetition: Time to review this to prevent forgetting.';
       }
 
       return {

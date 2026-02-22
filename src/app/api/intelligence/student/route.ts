@@ -12,7 +12,7 @@ import { extractMasteryFeatures, type StudentHistory } from "@/ml/features/stude
 import { makeRevisionDecision, makeInterventionDecision } from "@/ai/adk/decision-engine";
 import { DecisionAction, type MLSignals } from "@/ai/adk/types";
 import type { StudentIntelligence, MasterySignal, ADKMode } from "@/types/intelligence";
-import { getStudent, getQuizResults, getCachedPrediction, cachePrediction, saveADKDecision, getBatchedCachedPredictions } from "@/lib/db-helpers";
+import { getStudent, getQuizResults, batchCachePredictions, batchSaveADKDecisions, getBatchedCachedPredictions } from "@/lib/db-helpers";
 import { calculateTrend } from "@/lib/trend-utils";
 
 /**
@@ -152,6 +152,10 @@ export async function GET(request: NextRequest) {
             }
         }
 
+        // Collect batch writes
+        const predictionsToCache: Parameters<typeof batchCachePredictions>[0] = [];
+        const decisionsToSave: Parameters<typeof batchSaveADKDecisions>[0] = [];
+
         // Pass 2: Process all topics with predictions
         for (const data of topicData) {
             const { topic, features } = data;
@@ -168,7 +172,7 @@ export async function GET(request: NextRequest) {
                 }
 
                 // Cache the new prediction
-                await cachePrediction({
+                predictionsToCache.push({
                     studentId,
                     topic,
                     masteryProbability: mlPrediction.mastery_probability!,
@@ -196,8 +200,8 @@ export async function GET(request: NextRequest) {
                 mlSignals,
             });
 
-            // Log ADK decision to database (async, don't wait)
-            saveADKDecision({
+            // Log ADK decision to database
+            decisionsToSave.push({
                 studentId,
                 topic,
                 action: adkDecision.action,
@@ -205,7 +209,7 @@ export async function GET(request: NextRequest) {
                 reasoning: adkDecision.reasoning,
                 flags: adkDecision.adkFlags,
                 timestamp: new Date(),
-            }).catch((err) => console.error("Failed to log ADK decision:", err));
+            });
 
             // Update aggregate state
             if (adkDecision.action === DecisionAction.URGENT_REVISION) {
@@ -255,6 +259,12 @@ export async function GET(request: NextRequest) {
         if (allAdkFlags.includes("SPACED_REPETITION")) {
             reasoning.push("Spaced repetition recommended for retention");
         }
+
+        // Run batch DB writes asynchronously (don't block the request)
+        Promise.all([
+            predictionsToCache.length > 0 ? batchCachePredictions(predictionsToCache) : Promise.resolve(),
+            decisionsToSave.length > 0 ? batchSaveADKDecisions(decisionsToSave) : Promise.resolve(),
+        ]).catch(err => console.error("Failed to execute batch DB writes:", err));
 
         // Build response
         const intelligence: StudentIntelligence = {

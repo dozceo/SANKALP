@@ -407,7 +407,7 @@ export async function getQuizResults(
 
         const snapshot = await query.get();
 
-        return snapshot.docs.map((doc) => {
+        return snapshot.docs.map((doc: any) => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -465,7 +465,7 @@ export async function getBatchedQuizResults(
             // and to correctly apply per-student limits
             const snapshot = await query.get();
 
-            snapshot.docs.forEach(doc => {
+            snapshot.docs.forEach((doc: any) => {
                 const data = doc.data();
                 const result: QuizResult = {
                     id: doc.id,
@@ -602,6 +602,35 @@ export async function cachePrediction(prediction: Omit<MLPrediction, 'id'>): Pro
     }
 }
 
+/**
+ * Batch cache ML predictions
+ */
+export async function batchCachePredictions(predictions: Omit<MLPrediction, 'id'>[]): Promise<void> {
+    await chaos.checkChaos('firestoreWrite');
+    if (!predictions.length) return;
+
+    try {
+        const batch = db.batch();
+        predictions.forEach(prediction => {
+            const docRef = db.collection('mlPredictions').doc();
+            batch.set(docRef, {
+                studentId: prediction.studentId,
+                topic: prediction.topic,
+                masteryProbability: prediction.masteryProbability,
+                confidence: prediction.confidence,
+                daysSinceRevision: prediction.daysSinceRevision,
+                createdAt: FieldValue.serverTimestamp(),
+                expiresAt: prediction.expiresAt,
+            });
+        });
+
+        await batch.commit();
+    } catch (error) {
+        console.error('Error batch caching predictions:', error);
+        throw error;
+    }
+}
+
 // ============================================
 // ADK Decisions (Audit Trail)
 // ============================================
@@ -630,6 +659,35 @@ export async function saveADKDecision(decision: Omit<ADKDecision, 'id'>): Promis
 }
 
 /**
+ * Batch save ADK decisions
+ */
+export async function batchSaveADKDecisions(decisions: Omit<ADKDecision, 'id'>[]): Promise<void> {
+    await chaos.checkChaos('firestoreWrite');
+    if (!decisions.length) return;
+
+    try {
+        const batch = db.batch();
+        decisions.forEach(decision => {
+            const docRef = db.collection('adkDecisions').doc();
+            batch.set(docRef, {
+                studentId: decision.studentId,
+                topic: decision.topic,
+                action: decision.action,
+                priority: decision.priority,
+                reasoning: decision.reasoning,
+                flags: decision.flags,
+                timestamp: FieldValue.serverTimestamp(),
+            });
+        });
+
+        await batch.commit();
+    } catch (error) {
+        console.error('Error batch saving ADK decisions:', error);
+        throw error;
+    }
+}
+
+/**
  * Get recent ADK decisions for a student
  */
 export async function getADKDecisions(
@@ -645,7 +703,7 @@ export async function getADKDecisions(
             .limit(limit)
             .get();
 
-        return snapshot.docs.map((doc) => {
+        return snapshot.docs.map((doc: any) => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -708,7 +766,7 @@ export async function getUnresolvedInterventions(
             .orderBy('createdAt', 'desc')
             .get();
 
-        return snapshot.docs.map((doc) => {
+        return snapshot.docs.map((doc: any) => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -1033,7 +1091,7 @@ export async function getTeacherClasses(teacherId: string): Promise<Class[]> {
             .where('isActive', '==', true)
             .get();
 
-        return snapshot.docs.map((doc) => {
+        return snapshot.docs.map((doc: any) => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -1158,7 +1216,7 @@ export async function getStudentsInClass(classId: string): Promise<Student[]> {
             .where('classId', '==', classId)
             .get();
 
-        return snapshot.docs.map((doc) => {
+        return snapshot.docs.map((doc: any) => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -1200,7 +1258,7 @@ export async function getTeacherStudents(
 
         const snapshot = await query.get();
 
-        return snapshot.docs.map((doc) => {
+        return snapshot.docs.map((doc: any) => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -1271,7 +1329,7 @@ export async function getStudentSyllabi(studentId: string): Promise<Syllabus[]> 
             .orderBy('createdAt', 'desc')
             .get();
 
-        return snapshot.docs.map((doc) => {
+        return snapshot.docs.map((doc: any) => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -1363,7 +1421,7 @@ export async function getBatchedCachedPredictions(
                 .where('expiresAt', '>', now)
                 .get();
 
-            snapshot.docs.forEach(doc => {
+            snapshot.docs.forEach((doc: any) => {
                 const data = doc.data();
                 const expiresAt = data.expiresAt?.toDate() || new Date();
 
