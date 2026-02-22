@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
         type TopicData = {
             topic: string;
             features: ReturnType<typeof extractMasteryFeatures>;
-            mlPrediction: MasteryPredictionOutput | Pick<MasteryPredictionOutput, 'mastery_probability' | 'confidence'> | null;
+            mlPrediction: MasteryPredictionOutput | Pick<MasteryPredictionOutput, 'mastery_probability' | 'confidence'> | null | undefined;
         };
         const topicData: TopicData[] = [];
         const topicsToPredict: Array<{ topic: string; features: MasteryPredictionInput }> = [];

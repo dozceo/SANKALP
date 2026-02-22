@@ -13,7 +13,7 @@ import { z } from 'genkit';
 import wav from 'wav';
 import { googleAI } from '@genkit-ai/googleai';
 
-const SpeechToSpeechInputSchema = z.string().describe(
+const SpeechToSpeechInputSchema = z.string().max(10000000).describe(
   "A user's speech recording, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
 );
 export type SpeechToSpeechInput = z.infer<typeof SpeechToSpeechInputSchema>;
@@ -69,9 +69,11 @@ const speechToSpeechFlow = ai.defineFlow(
       console.log(`[FLOW:speechToSpeechFlow] STT complete, query length=${userQuery.length}`);
 
       // 2. Generate a text response from the transcribed text
+      // Sanitize userQuery to prevent prompt injection
+      const sanitizedQuery = userQuery.replace(/"/g, '\\"').substring(0, 2000);
       const llmResponse = await ai.generate({
         model: 'googleai/gemini-2.5-flash',
-        prompt: `You are CognitoBot, a friendly and helpful AI learning assistant. A student just asked you the following question verbally. Provide a concise and clear response. Question: "${userQuery}"`,
+        prompt: `You are CognitoBot, a friendly and helpful AI learning assistant. A student just asked you the following question verbally. Provide a concise and clear response. Question: "${sanitizedQuery}"`,
       });
       const botResponseText = llmResponse.text;
 

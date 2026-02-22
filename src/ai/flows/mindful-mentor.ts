@@ -12,8 +12,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const MotivationalCounselingInputSchema = z.object({
-  studentConcern: z.string().describe("The student's current emotional or academic concern."),
-  studentHistory: z.string().describe("Brief, relevant background about the student's recent challenges or academic situation."),
+  studentConcern: z.string().max(2000).describe("The student's current emotional or academic concern."),
+  studentHistory: z.string().max(5000).describe("Brief, relevant background about the student's recent challenges or academic situation."),
 });
 export type MotivationalCounselingInput = z.infer<typeof MotivationalCounselingInputSchema>;
 

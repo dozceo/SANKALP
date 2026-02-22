@@ -11,11 +11,11 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ExplainConceptCustomizedInputSchema = z.object({
-  concept: z.string().describe('The concept to explain.'),
-  brainMapContext: z.string().describe('The relevant Brain Map context for the concept.'),
-  language: z.string().describe('The target language for the explanation.'),
-  personality: z.string().describe('The desired personality and tone for the chatbot.'),
-  customInstructions: z.string().describe('Specific instructions for how the chatbot should respond.'),
+  concept: z.string().max(500).describe('The concept to explain.'),
+  brainMapContext: z.string().max(5000).describe('The relevant Brain Map context for the concept.'),
+  language: z.string().max(50).describe('The target language for the explanation.'),
+  personality: z.string().max(200).describe('The desired personality and tone for the chatbot.'),
+  customInstructions: z.string().max(1000).describe('Specific instructions for how the chatbot should respond.'),
 });
 export type ExplainConceptCustomizedInput = z.infer<typeof ExplainConceptCustomizedInputSchema>;
 

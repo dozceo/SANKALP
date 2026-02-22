@@ -14,7 +14,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const SyllabusInputSchema = z.object({
-  query: z.string().describe('The name of the exam or subject for which the syllabus is requested (e.g., "AP Calculus BC", "NEET Biology").'),
+  query: z.string().max(500).describe('The name of the exam or subject for which the syllabus is requested (e.g., "AP Calculus BC", "NEET Biology").'),
 });
 export type SyllabusInput = z.infer<typeof SyllabusInputSchema>;
 

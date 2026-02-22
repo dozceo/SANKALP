@@ -98,11 +98,11 @@ export function extractMasteryFeatures(
     const topicQuizzes = history.quizResults.filter((r) => r.topic === topic);
 
     if (topicQuizzes.length === 0) {
-        // Default features for new topics
+        // Default features for new topics (clamped to training data range)
         return {
             avg_quiz_score: 0,
             attempts_per_topic: 0,
-            days_since_last_revision: 999,
+            days_since_last_revision: 30,
             quiz_score_variance: 0,
             time_spent_per_question: 0,
         };
