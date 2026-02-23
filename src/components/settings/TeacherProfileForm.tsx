@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 const SUBJECTS = [
     'Mathematics',
@@ -162,10 +163,12 @@ export function TeacherProfileForm() {
                                     type="button"
                                     aria-pressed={formData.subjects.includes(subject)}
                                     onClick={() => handleSubjectToggle(subject)}
-                                    className={`px-3 py-2 rounded-lg border text-sm transition-all flex items-center gap-2 ${formData.subjects.includes(subject)
-                                        ? 'border-blue-600 bg-blue-50 font-semibold'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                    className={cn(
+                                        "px-3 py-2 rounded-lg border text-sm transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
+                                        formData.subjects.includes(subject)
+                                            ? 'border-blue-600 bg-blue-50 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
+                                    )}
                                 >
                                     {subject}
                                     {formData.subjects.includes(subject) && <CheckCircle className="w-3 h-3 text-blue-600" />}
@@ -183,10 +186,12 @@ export function TeacherProfileForm() {
                                     type="button"
                                     aria-pressed={formData.gradeLevels.includes(grade)}
                                     onClick={() => handleGradeLevelToggle(grade)}
-                                    className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.gradeLevels.includes(grade)
-                                        ? 'border-blue-600 bg-blue-50 font-semibold'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                    className={cn(
+                                        "px-3 py-2 rounded-lg border text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
+                                        formData.gradeLevels.includes(grade)
+                                            ? 'border-blue-600 bg-blue-50 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
+                                    )}
                                 >
                                     {grade}
                                 </button>
@@ -214,10 +219,12 @@ export function TeacherProfileForm() {
                                     role="radio"
                                     aria-checked={formData.expectedClassSize === size}
                                     onClick={() => setFormData({ ...formData, expectedClassSize: size })}
-                                    className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.expectedClassSize === size
-                                        ? 'border-blue-600 bg-blue-50 font-semibold'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                    className={cn(
+                                        "px-3 py-2 rounded-lg border text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
+                                        formData.expectedClassSize === size
+                                            ? 'border-blue-600 bg-blue-50 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
+                                    )}
                                 >
                                     {size}
                                 </button>

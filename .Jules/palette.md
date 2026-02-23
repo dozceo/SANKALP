@@ -9,3 +9,7 @@
 ## 2026-02-15 - Missing Focus Styles in Dynamic Lists
 **Learning:** Iterative rendering of native HTML elements (like `<a>` inside `.map()`) often bypasses design system defaults, leading to missing focus indicators in critical navigation areas.
 **Action:** Always verify keyboard navigation on dynamically generated lists, especially those using raw HTML tags instead of design system components.
+
+## 2026-06-21 - Form Toggle Buttons Accessibility
+**Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
+**Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
