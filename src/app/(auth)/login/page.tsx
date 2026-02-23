@@ -44,12 +44,8 @@ export default function LoginPage() {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-      // Route based on role
-      if ((user as any).role === "teacher") {
-        router.push("/teacher");
-      } else {
-        router.push("/home");
-      }
+      // Redirect to root which handles role-based routing
+      router.push("/");
     } catch (error: any) {
       toast({
         title: "Sign in failed",
@@ -64,7 +60,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      router.push("/home"); // Google sign-in usually defaults to student/home, role check handles redirects
+      router.push("/"); // Root page handles role-based routing (student → /home, teacher → /teacher)
     } catch (error: any) {
       toast({
         title: "Google Sign In Failed",
