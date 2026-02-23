@@ -37,8 +37,8 @@ describe('lightenColor', () => {
         // So my code will output #000000 + amt.
         // If I want to match original behavior, I need to know what original behavior is.
         // But "safer" behavior is usually returning input or black/white.
-        // I will assert it returns a valid hex string at least.
+        // I will assert it returns the original invalid string gracefully.
         const res = lightenColor('zzzzzz', 20);
-        expect(res).toMatch(/^#[0-9a-f]{6}$/i);
+        expect(res).toBe('zzzzzz');
     });
 });

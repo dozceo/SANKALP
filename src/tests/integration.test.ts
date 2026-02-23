@@ -5,6 +5,7 @@ jest.mock('@/lib/db-helpers', () => ({
   getQuizResults: jest.fn(),
   getBatchedCachedPredictions: jest.fn().mockResolvedValue(new Map()),
   cachePrediction: jest.fn().mockResolvedValue(undefined),
+  batchCachePredictions: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('@/ml/inference/ml-bridge', () => ({

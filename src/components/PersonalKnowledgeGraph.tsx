@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
+import { useCallback, useRef, useEffect, useState, useMemo, memo } from 'react';
 import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import { generatePersonalGraph } from '@/lib/generatePersonalGraph';
@@ -28,7 +28,9 @@ type ExtendedNodeObject = NodeObject & GraphNode & {
 };
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
-export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowledgeGraphProps) {
+// ⚡ Bolt: Memoize heavy graph component to prevent re-renders on parent updates
+// 📊 Impact: Eliminates expensive canvas redraws when only unrelated state changes
+export const PersonalKnowledgeGraph = memo(function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowledgeGraphProps) {
     const graphRef = useRef<ForceGraphMethods<ExtendedNodeObject>>();
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 800, height });
@@ -307,4 +309,4 @@ export function PersonalKnowledgeGraph({ student, height = 400 }: PersonalKnowle
             />
         </div>
     );
-}
+});

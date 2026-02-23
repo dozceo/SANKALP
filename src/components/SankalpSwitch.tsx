@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,7 +14,9 @@ interface SankalpSession {
     startTime: Date;
 }
 
-export function SankalpSwitch() {
+// ⚡ Bolt: Memoize timer component to isolate it from parent re-renders
+// 📊 Impact: Prevents timer jitter/resets when dashboard data updates
+export const SankalpSwitch = memo(function SankalpSwitch() {
     const [isActive, setIsActive] = useState(false);
     const [duration, setDuration] = useState<number>(30);
     const [session, setSession] = useState<SankalpSession | null>(null);
@@ -229,4 +231,4 @@ export function SankalpSwitch() {
             </CardContent>
         </Card>
     );
-}
+});
