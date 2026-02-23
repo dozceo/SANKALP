@@ -12,8 +12,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 // Dynamically import ForceGraph2D with SSR disabled
@@ -27,6 +30,8 @@ interface InteractiveGraphProps {
   highlightedNode?: string;
   graphData?: GraphData;
 }
+
+export type FilterType = 'all' | 'high-risk' | 'topics';
 
 type ExtendedNodeObject = NodeObject & GraphNode & {
     _cachedLightColor?: string;
@@ -59,7 +64,7 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'high-risk' | 'topics'>('all');
+  const [filter, setFilter] = useState<FilterType>('all');
 
   // Optimization: Use refs for frequent updates to avoid re-creating canvas functions
   const hoveredNodeRef = useRef<string | null>(null);
@@ -560,32 +565,43 @@ const GraphControls = memo(function GraphControls({
   setIsModalOpen: (v: boolean) => void;
   onZoom: (factor: number, ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
   onReset: (ref: MutableRefObject<ForceGraphMethods<ExtendedNodeObject> | undefined>) => void;
-  filter: 'all' | 'high-risk' | 'topics';
-  setFilter: (f: 'all' | 'high-risk' | 'topics') => void;
+  filter: FilterType;
+  setFilter: (f: FilterType) => void;
 }) {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex flex-col gap-2 p-2 bg-card/80 backdrop-blur-sm rounded-lg border border-border shadow-sm absolute top-4 right-4 z-10">
         {/* Filters */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${filter !== 'all' ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
-              aria-label="Filter Graph"
-            >
-              <Filter className="w-4 h-4" />
-            </button>
-          </DropdownMenuTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${filter !== 'all' ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+                  aria-label={`Filter Graph (Current: ${filter === 'all' ? 'Show All' : filter === 'high-risk' ? 'High Risk Students' : 'Topics Only'})`}
+                >
+                  <Filter className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>Filter Graph</p>
+            </TooltipContent>
+          </Tooltip>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setFilter('all')}>
-              Show All
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilter('high-risk')}>
-              High Risk Students
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilter('topics')}>
-              Topics Only
-            </DropdownMenuItem>
+            <DropdownMenuLabel>Filter View</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={filter} onValueChange={(v) => setFilter(v as FilterType)}>
+              <DropdownMenuRadioItem value="all">
+                Show All
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="high-risk">
+                High Risk Students
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="topics">
+                Topics Only
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
