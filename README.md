@@ -1,8 +1,8 @@
-# Sankalp (CognitoLearn) - Intelligent Learning Platform 🎓
+# Sankalp AEI-Attention Engagement Intelligence Learning Architecture 🎓
 
 ## Project Overview
 
-**Sankalp** (internally "CognitoLearn") is an **ML-driven** educational platform that combines machine learning predictions with generative AI to personalize the learning experience. Unlike traditional LLM-only approaches, Sankalp uses trained ML models to make data-driven decisions about what to teach, when to revise, and where students need help — then leverages LLMs to generate engaging explanations.
+**Sankalp**  is an **ML-driven** educational platform that combines machine learning predictions with generative AI to personalize the learning experience. Unlike traditional LLM-only approaches, Sankalp uses trained ML models to make data-driven decisions about what to teach, when to revise, and where students need help — then leverages LLMs to generate engaging explanations.
 
 **Key Architecture:**  
 `User → Quiz → Feature Extraction → ML Prediction → ADK Decision Engine → LLM Content Generation`
