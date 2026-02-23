@@ -31,15 +31,29 @@ export function lightenColor(hex: string, percent: number): string {
   if (len === 7 || (len === 6 && hex[0] !== '#')) {
       // #RRGGBB or RRGGBB
       const start = len === 7 ? 1 : 0;
-      r = (HEX_MAP[hex[start]] << 4) | HEX_MAP[hex[start + 1]];
-      g = (HEX_MAP[hex[start + 2]] << 4) | HEX_MAP[hex[start + 3]];
-      b = (HEX_MAP[hex[start + 4]] << 4) | HEX_MAP[hex[start + 5]];
+      const r1 = HEX_MAP[hex[start]];
+      const r2 = HEX_MAP[hex[start + 1]];
+      const g1 = HEX_MAP[hex[start + 2]];
+      const g2 = HEX_MAP[hex[start + 3]];
+      const b1 = HEX_MAP[hex[start + 4]];
+      const b2 = HEX_MAP[hex[start + 5]];
+
+      // ⚡ Bolt: Early return for invalid input to prevent invalid bitwise operations
+      // 🛡️ Improves robustness and prevents potential runtime errors
+      if (r1 === undefined || r2 === undefined || g1 === undefined || g2 === undefined || b1 === undefined || b2 === undefined) return hex;
+
+      r = (r1 << 4) | r2;
+      g = (g1 << 4) | g2;
+      b = (b1 << 4) | b2;
   } else if (len === 4 || (len === 3 && hex[0] !== '#')) {
       // #RGB or RGB
       const start = len === 4 ? 1 : 0;
       const rVal = HEX_MAP[hex[start]];
       const gVal = HEX_MAP[hex[start + 1]];
       const bVal = HEX_MAP[hex[start + 2]];
+
+      if (rVal === undefined || gVal === undefined || bVal === undefined) return hex;
+
       r = (rVal << 4) | rVal;
       g = (gVal << 4) | gVal;
       b = (bVal << 4) | bVal;

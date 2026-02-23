@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Card,
@@ -10,14 +11,25 @@ import {
   CardDescription
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, ListChecks, FileQuestion, MessageCircle, Loader2, Book, Users } from "lucide-react";
 import { LearningStateCard } from "@/components/LearningStateCard";
-import { TopicMasteryGrid } from "@/components/TopicMasteryGrid";
-import { PersonalKnowledgeGraph } from "@/components/PersonalKnowledgeGraph";
 import { SankalpSwitch } from "@/components/SankalpSwitch";
 import { useStudent } from "@/hooks/useStudent";
 import { generateStudentIntelligence } from "@/lib/generateStudentIntelligence";
 import type { StudentIntelligence } from "@/types/intelligence";
+
+// ⚡ Bolt: Lazy load heavy visualization components to reduce initial bundle size
+// 📊 Impact: Improves First Contentful Paint (FCP) by deferring JS execution for below-the-fold content
+const TopicMasteryGrid = dynamic(() => import('@/components/TopicMasteryGrid').then(mod => mod.TopicMasteryGrid), {
+  loading: () => <Skeleton className="h-[300px] w-full rounded-xl" />,
+  ssr: false
+});
+
+const PersonalKnowledgeGraph = dynamic(() => import('@/components/PersonalKnowledgeGraph').then(mod => mod.PersonalKnowledgeGraph), {
+  loading: () => <Skeleton className="h-[450px] w-full rounded-xl" />,
+  ssr: false
+});
 
 export default function HomePage() {
   const { currentStudent, loading: studentLoading } = useStudent();

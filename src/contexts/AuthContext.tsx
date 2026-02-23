@@ -71,13 +71,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     }
                 } catch (error) {
                     console.error('Error fetching user role:', error);
+                } finally {
+                    // ⚡ Bolt: Ensure loading state is cleared only after role fetch completes
+                    // 🎯 Fixes race condition where app would render before role was known
+                    setLoading(false);
                 }
             } else {
                 setUser(null);
                 setRole(null);
                 setOnboardingCompleted(null);
+                setLoading(false);
             }
-            setLoading(false);
         });
 
         return unsubscribe;
