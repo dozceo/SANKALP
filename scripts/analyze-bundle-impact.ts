@@ -17,7 +17,7 @@ const HEAVY_LIBS = [
   'lucide-react'
 ];
 
-function getAllFiles(dirPath, arrayOfFiles) {
+function getAllFiles(dirPath: string, arrayOfFiles: string[]): string[] {
   const files = fs.readdirSync(dirPath);
 
   arrayOfFiles = arrayOfFiles || [];

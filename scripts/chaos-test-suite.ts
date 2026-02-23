@@ -13,7 +13,7 @@ import path from 'path';
 // 1. Setup Environment Configuration
 process.env.USE_MOCK_DB = 'true';
 process.env.ENABLE_CHAOS = 'true';
-process.env.NODE_ENV = 'test';
+(process.env as any).NODE_ENV = 'test';
 // Ensure ML bridge uses local python
 process.env.ML_API_URL = '';
 

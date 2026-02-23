@@ -1,9 +1,6 @@
 
 import { spawn, execSync } from 'child_process';
-import { checkChaos } from '../src/lib/chaos-config'; // Can't import from src easily in script if not using ts-node/register properly?
-// Actually scripts are run with tsx, so imports work if paths are correct.
-// But alias @/ might not work without tsconfig paths.
-// I'll stick to relative imports or just not import app code in this runner if possible.
+import { chaos } from '../src/lib/chaos-config';
 
 const PORT = 9002;
 const BASE_URL = `http://localhost:${PORT}`;

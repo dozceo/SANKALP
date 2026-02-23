@@ -14,10 +14,8 @@ function createMockContext(
   const defaultSignals: MLSignals = {
     mastery_probability: 0.5,
     confidence: 0.8,
-    predicted_class: "not_mastered",
     days_since_last_revision: 5,
     attempts_count: 3,
-    avg_score: 0.6,
     attention_risk: "LOW",
     dropout_probability: 0.1,
     ...signals
@@ -27,6 +25,7 @@ function createMockContext(
     studentId: `student-${id}`,
     topic: topic,
     mlSignals: defaultSignals,
+    currentDate: new Date(),
     daysUntilExam: 30
   };
 }

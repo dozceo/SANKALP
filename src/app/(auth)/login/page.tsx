@@ -24,7 +24,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, googleSignIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -44,12 +44,8 @@ export default function LoginPage() {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-      // Route based on role
-      if (user.role === "teacher") {
-        router.push("/teacher");
-      } else {
-        router.push("/home");
-      }
+      // Redirect to root which handles role-based routing
+      router.push("/");
     } catch (error: any) {
       toast({
         title: "Sign in failed",
@@ -63,8 +59,8 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await googleSignIn();
-      router.push("/home"); // Google sign-in usually defaults to student/home, role check handles redirects
+      await signInWithGoogle();
+      router.push("/"); // Root page handles role-based routing (student → /home, teacher → /teacher)
     } catch (error: any) {
       toast({
         title: "Google Sign In Failed",

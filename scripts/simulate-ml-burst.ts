@@ -46,7 +46,7 @@ async function runBurst() {
   console.log(`Failure: ${failureCount}`);
 
   if (failureCount > 0) {
-      console.log('Sample errors:', results.filter(r => r.status === 'rejected').slice(0, 3).map(r => r.reason));
+      console.log('Sample errors:', results.filter(r => r.status === 'rejected').slice(0, 3).map(r => (r as PromiseRejectedResult).reason));
   }
 
   // Generate Report

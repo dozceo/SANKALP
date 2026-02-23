@@ -434,7 +434,7 @@ export function useTrackedSubmit(
 /**
  * Hook for tracking time spent on a component
  */
-export function useTimeTracking(componentName: string, context: string): void {
+export function useTimeTracking(componentName: string, context: string): (() => void) | undefined {
     if (typeof window === 'undefined') return;
 
     const startTime = Date.now();

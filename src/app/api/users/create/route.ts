@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const user = await createUser(uid, email, name, role);
+        const user = await createUser({ uid, email, name, role });
 
         return NextResponse.json({
             success: true,
