@@ -94,6 +94,39 @@ This is a **Client Component** that interacts with the AI backend.
 ### 3. AI <-> UI Bridge
 The project uses Next.js **Server Actions** (implied in `actions.ts`) to call Genkit flows directly from the React client. This removes the need for a separate API layer for simple operations.
 
+### 4. RAG — Retrieval-Augmented Generation (`src/ai/rag/retriever.ts`)
+
+**Yes, RAG is applied in SANKALP — here is how it works:**
+
+RAG (Retrieval-Augmented Generation) is the practice of *retrieving* relevant documents from a knowledge base and *augmenting* the LLM prompt with that retrieved context before *generating* the final answer.  This grounds the model's output in real, curated data rather than relying on generic world knowledge alone.
+
+**Knowledge base:** All student-profile markdown files under `data/students/` (e.g. `alex-kumar.md`, `arjun-reddy.md`, …) are loaded at server startup and split into overlapping text chunks (~300 characters each with a 60-character overlap).
+
+**Retrieval step:** When a user asks a question in the Chat page, `retrieveRelevantContext(query)` in `src/ai/rag/retriever.ts` is called.  It tokenises the query, scores every chunk by keyword overlap (a BM25-inspired term-frequency approach), and returns the top-3 most relevant chunks concatenated as a single string.
+
+**Augmentation step:** The retrieved string is passed as the `brainMapContext` field to `explainConcept()` (the multilingual chatbot Genkit flow in `src/ai/flows/multilingual-cognitive-chatbot.ts`).  The prompt template already contains `Brain Map Context: {{{brainMapContext}}}`, so the LLM sees the retrieved student data as part of its context window.
+
+**Generation step:** The LLM (Gemini 2.0 Flash) generates a personalised explanation that is aware of the topics, strengths, weaknesses, and recent quiz results of the relevant student profiles.
+
+**Full pipeline:**
+```
+User question
+    │
+    ▼
+retrieveRelevantContext()          ← Retrieval (src/ai/rag/retriever.ts)
+    │   scores data/students/*.md chunks by keyword overlap
+    ▼
+brainMapContext string              ← Augmentation (chat/actions.ts)
+    │   injected into LLM prompt
+    ▼
+explainConceptFlow (Genkit)        ← Generation (multilingual-cognitive-chatbot.ts)
+    │   Gemini 2.0 Flash generates grounded explanation
+    ▼
+Personalised answer in the Chat UI
+```
+
+No external vector database is required; retrieval runs entirely in-process on the Next.js server.
+
 ## Setup & Installation ⚙️
 
 ### 1. Clone and Install Dependencies

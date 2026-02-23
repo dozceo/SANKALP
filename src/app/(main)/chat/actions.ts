@@ -5,6 +5,7 @@ import { explainConcept } from "@/ai/flows/multilingual-cognitive-chatbot";
 import { textToSpeech } from "@/ai/flows/text-to-speech";
 import { speechToSpeech } from "@/ai/flows/speech-to-speech";
 import { getChatbotFallback } from "@/lib/chat-fallback";
+import { retrieveRelevantContext } from "@/ai/rag/retriever";
 
 export async function getExplanation(concept: string, language: string) {
     // Truncation guard — keep prompts lean and prevent overflow
@@ -13,11 +14,17 @@ export async function getExplanation(concept: string, language: string) {
         ? concept.slice(0, MAX_CONCEPT_CHARS) + "..."
         : concept;
 
+    // RAG: retrieve relevant context from the student knowledge base so the
+    // LLM can ground its explanation in real student data.
+    const retrievedContext = retrieveRelevantContext(safeConcept);
+    const brainMapContext = retrievedContext ||
+        "This concept is part of the general academic syllabus.";
+
     try {
         const response = await explainConcept({
             concept: safeConcept,
             language,
-            brainMapContext: "This concept is part of the introductory algebra syllabus, focusing on solving linear equations."
+            brainMapContext,
         });
 
         if (!response || !response.explanation) {
