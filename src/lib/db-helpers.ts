@@ -461,6 +461,12 @@ export async function getBatchedQuizResults(
                 query = query.select(...options.select);
             }
 
+            // Optimization: Add safety limit to prevent massive fetches
+            // This is a rough upper bound, as the actual per-student limit is applied in memory
+            // Default to 100 per student (1000 total for chunk of 10) if no limit specified
+            const safetyLimit = limitPerStudent ? limitPerStudent * chunk.length : 1000;
+            query = query.limit(safetyLimit);
+
             // We fetch all and sort in memory to be safe and avoid composite index requirements
             // and to correctly apply per-student limits
             const snapshot = await query.get();

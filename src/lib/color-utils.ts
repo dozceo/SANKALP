@@ -1,11 +1,15 @@
 
 const colorCache = new Map<string, string>();
 
-const HEX_MAP: Record<string, number> = {
-  '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
-  'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15,
-  'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14, 'F': 15
-};
+// Optimization: Use Int8Array for O(1) integer lookup instead of object property access
+// This avoids string allocation for keys and is faster than parseInt
+const HEX_VAL = new Int8Array(128).fill(-1);
+// 0-9
+for (let i = 48; i <= 57; i++) HEX_VAL[i] = i - 48;
+// A-F
+for (let i = 65; i <= 70; i++) HEX_VAL[i] = i - 55;
+// a-f
+for (let i = 97; i <= 102; i++) HEX_VAL[i] = i - 87;
 
 const HEX_CHARS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
 
@@ -28,47 +32,44 @@ export function lightenColor(hex: string, percent: number): string {
   let valid = true;
 
   // Parsing without parseInt and substrings
-  if (len === 7 || (len === 6 && hex[0] !== '#')) {
+  if (len === 7 || (len === 6 && hex.charCodeAt(0) !== 35)) { // 35 is '#'
       // #RRGGBB or RRGGBB
       const start = len === 7 ? 1 : 0;
-      const r1 = HEX_MAP[hex[start]];
-      const r2 = HEX_MAP[hex[start + 1]];
-      const g1 = HEX_MAP[hex[start + 2]];
-      const g2 = HEX_MAP[hex[start + 3]];
-      const b1 = HEX_MAP[hex[start + 4]];
-      const b2 = HEX_MAP[hex[start + 5]];
+
+      // Optimization: Direct char code lookup is faster than object property access
+      const r1 = HEX_VAL[hex.charCodeAt(start)];
+      const r2 = HEX_VAL[hex.charCodeAt(start + 1)];
+      const g1 = HEX_VAL[hex.charCodeAt(start + 2)];
+      const g2 = HEX_VAL[hex.charCodeAt(start + 3)];
+      const b1 = HEX_VAL[hex.charCodeAt(start + 4)];
+      const b2 = HEX_VAL[hex.charCodeAt(start + 5)];
 
       // ⚡ Bolt: Early return for invalid input to prevent invalid bitwise operations
       // 🛡️ Improves robustness and prevents potential runtime errors
-      if (r1 === undefined || r2 === undefined || g1 === undefined || g2 === undefined || b1 === undefined || b2 === undefined) return hex;
+      // -1 check is faster than undefined check
+      if (r1 === -1 || r2 === -1 || g1 === -1 || g2 === -1 || b1 === -1 || b2 === -1) return hex;
 
       r = (r1 << 4) | r2;
       g = (g1 << 4) | g2;
       b = (b1 << 4) | b2;
-  } else if (len === 4 || (len === 3 && hex[0] !== '#')) {
+  } else if (len === 4 || (len === 3 && hex.charCodeAt(0) !== 35)) {
       // #RGB or RGB
       const start = len === 4 ? 1 : 0;
-      const rVal = HEX_MAP[hex[start]];
-      const gVal = HEX_MAP[hex[start + 1]];
-      const bVal = HEX_MAP[hex[start + 2]];
+      const rVal = HEX_VAL[hex.charCodeAt(start)];
+      const gVal = HEX_VAL[hex.charCodeAt(start + 1)];
+      const bVal = HEX_VAL[hex.charCodeAt(start + 2)];
 
-      if (rVal === undefined || gVal === undefined || bVal === undefined) return hex;
+      if (rVal === -1 || gVal === -1 || bVal === -1) return hex;
 
       r = (rVal << 4) | rVal;
       g = (gVal << 4) | gVal;
       b = (bVal << 4) | bVal;
   } else {
-      // Fallback for invalid length, though existing code didn't handle it explicitly well
-      // Treat as black or return input? Original code would crash or return weird result.
-      // Let's assume valid input for now but handle undefined lookup
+      // Fallback for invalid length
       valid = false;
   }
 
-  // Safety check for invalid characters
-  if (isNaN(r) || isNaN(g) || isNaN(b)) valid = false;
-
   if (!valid) {
-      // If parsing failed, return original (or could throw)
       return hex;
   }
 

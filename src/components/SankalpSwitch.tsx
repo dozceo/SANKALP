@@ -29,12 +29,15 @@ export const SankalpSwitch = memo(function SankalpSwitch() {
     useEffect(() => {
         if (!isActive || !session) return;
 
+        // Optimization: Calculate timestamps outside the interval to reduce object allocation
+        const startTimeMs = session.startTime instanceof Date ? session.startTime.getTime() : new Date(session.startTime).getTime();
+        const totalSeconds = session.duration * 60;
+
         const timer = setInterval(() => {
-            const now = new Date().getTime();
-            const start = new Date(session.startTime).getTime();
-            const elapsed = Math.floor((now - start) / 1000); // seconds
-            const total = session.duration * 60; // convert to seconds
-            const remaining = Math.max(0, total - elapsed);
+            // Optimization: Use Date.now() instead of new Date().getTime()
+            const now = Date.now();
+            const elapsed = Math.floor((now - startTimeMs) / 1000); // seconds
+            const remaining = Math.max(0, totalSeconds - elapsed);
 
             setTimeRemaining(remaining);
 

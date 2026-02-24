@@ -50,11 +50,18 @@ class ChaosManager {
     firestoreWriteCalls: 0,
   };
 
+  private lastLoad = 0;
+
   constructor() {
-      this.load();
+      this.load(true);
   }
 
-  private load() {
+  private load(force = false) {
+      // Optimization: Throttle file reads to prevent high I/O overhead on every DB call
+      const now = Date.now();
+      if (!force && now - this.lastLoad < 5000) return; // 5 seconds cache
+      this.lastLoad = now;
+
       if (fs.existsSync(CHAOS_STATE_FILE)) {
           try {
               const content = fs.readFileSync(CHAOS_STATE_FILE, 'utf-8');
@@ -77,7 +84,7 @@ class ChaosManager {
 
   // Getters
   public getState(): ChaosState {
-    this.load(); // Ensure fresh state
+    this.load(); // Ensure fresh state (throttled)
     return { ...this.state };
   }
 
@@ -87,7 +94,7 @@ class ChaosManager {
 
   // Setters
   public setState(newState: Partial<ChaosState>) {
-    this.load(); // Load current state first
+    this.load(true); // Force load current state first
     this.state = { ...this.state, ...newState };
     this.save();
     console.log('[ChaosManager] State updated:', this.state);
