@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-08-05 - Critical Controls Keyboard Accessibility
+**Learning:** Found critical form controls (password visibility toggle) explicitly removed from tab order with `tabIndex={-1}`, making them inaccessible to keyboard users.
+**Action:** When auditing forms, check for `tabIndex={-1}` on interactive elements, as this is an anti-pattern often used to "clean up" tab order but severely hurts accessibility.

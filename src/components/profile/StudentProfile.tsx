@@ -143,7 +143,11 @@ export default function StudentProfile({ userId }: StudentProfileProps) {
                                             <span className="capitalize">{subject}</span>
                                             <span className="text-muted-foreground">{Math.round(score * 100)}%</span>
                                         </div>
-                                        <Progress value={score * 100} className="h-2" />
+                                        <Progress
+                                            value={score * 100}
+                                            className="h-2"
+                                            aria-label={`Mastery in ${subject}`}
+                                        />
                                     </div>
                                 ))
                             ) : (
