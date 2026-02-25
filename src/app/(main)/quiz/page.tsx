@@ -47,7 +47,7 @@ export default function QuizPage() {
 
   // Handle client-side cooldown to prevent spamming the LLM
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    // Optimization: Run interval continuously instead of re-subscribing on every state update
     const checkCooldown = () => {
       const nextAvailable = localStorage.getItem('nextQuizAvailableAt');
       if (nextAvailable) {
@@ -62,11 +62,9 @@ export default function QuizPage() {
     };
 
     checkCooldown();
-    if (cooldownLeft > 0) {
-      timer = setInterval(checkCooldown, 1000);
-    }
+    const timer = setInterval(checkCooldown, 1000);
     return () => clearInterval(timer);
-  }, [cooldownLeft]);
+  }, []);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof quizFormSchema>>({

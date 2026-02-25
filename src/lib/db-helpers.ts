@@ -464,6 +464,8 @@ export async function getBatchedQuizResults(
             // We fetch all and sort in memory to be safe and avoid composite index requirements
             // and to correctly apply per-student limits
             const snapshot = await query.get();
+            // Optimization: avoid object allocation inside loop
+            const now = new Date();
 
             snapshot.docs.forEach((doc: any) => {
                 const data = doc.data();
@@ -474,7 +476,7 @@ export async function getBatchedQuizResults(
                     score: data.score,
                     timeSpent: data.timeSpent,
                     questionsAttempted: data.questionsAttempted,
-                    timestamp: data.timestamp?.toDate() || new Date(),
+                    timestamp: data.timestamp?.toDate() || now,
                 };
 
                 // Optimization: Avoid redundant Map.set calls
@@ -1423,7 +1425,7 @@ export async function getBatchedCachedPredictions(
 
             snapshot.docs.forEach((doc: any) => {
                 const data = doc.data();
-                const expiresAt = data.expiresAt?.toDate() || new Date();
+                const expiresAt = data.expiresAt?.toDate() || now;
 
                 const prediction: MLPrediction = {
                     id: doc.id,
@@ -1432,7 +1434,7 @@ export async function getBatchedCachedPredictions(
                     masteryProbability: data.masteryProbability,
                     confidence: data.confidence,
                     daysSinceRevision: data.daysSinceRevision,
-                    createdAt: data.createdAt?.toDate() || new Date(),
+                    createdAt: data.createdAt?.toDate() || now,
                     expiresAt: expiresAt,
                 };
 

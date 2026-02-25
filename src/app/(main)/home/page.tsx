@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -71,6 +71,24 @@ export default function HomePage() {
       </div>
     );
   }
+
+  const urgentRevisions = useMemo(() => {
+    if (!intelligence) return [];
+    return Object.entries(intelligence.mastery)
+      .filter(([_, signal]) => signal.priority === "HIGH");
+  }, [intelligence]);
+
+  const todaysPriorities = useMemo(() => {
+    if (!intelligence) return [];
+    return Object.entries(intelligence.mastery)
+      .filter(([_, signal]) => signal.needsRevision)
+      .slice(0, 3);
+  }, [intelligence]);
+
+  const hasPriorities = useMemo(() => {
+    if (!intelligence) return false;
+    return Object.values(intelligence.mastery).some(s => s.needsRevision);
+  }, [intelligence]);
 
   if (!intelligence) {
     return (
@@ -207,21 +225,19 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.priority === "HIGH")
-              .map(([topic, signal]) => (
-                <div key={topic} className="p-3 border rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-medium">{topic}</h4>
-                    <span className="text-xs text-muted-foreground">
-                      {Math.round(signal.score * 100)}% mastery
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Reason: Low mastery ({Math.round(signal.score * 100)}%) · {signal.daysSinceRevision} days since last revision
-                  </p>
+            {urgentRevisions.map(([topic, signal]) => (
+              <div key={topic} className="p-3 border rounded-lg">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium">{topic}</h4>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.round(signal.score * 100)}% mastery
+                  </span>
                 </div>
-              ))}
+                <p className="text-sm text-muted-foreground">
+                  Reason: Low mastery ({Math.round(signal.score * 100)}%) · {signal.daysSinceRevision} days since last revision
+                </p>
+              </div>
+            ))}
             <Link href="/planner">
               <Button className="w-full mt-4">
                 Start Revision
@@ -272,23 +288,20 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.needsRevision)
-              .slice(0, 3)
-              .map(([topic, signal]) => (
-                <div key={topic} className="p-3 border rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-medium">{topic}</h4>
-                    <span className="text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
-                      {signal.priority}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {signal.daysSinceRevision} days since last revision
-                  </p>
+            {todaysPriorities.map(([topic, signal]) => (
+              <div key={topic} className="p-3 border rounded-lg">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">{topic}</h4>
+                  <span className="text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
+                    {signal.priority}
+                  </span>
                 </div>
-              ))}
-            {Object.values(intelligence.mastery).filter(s => s.needsRevision).length === 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {signal.daysSinceRevision} days since last revision
+                </p>
+              </div>
+            ))}
+            {!hasPriorities && (
               <p className="text-sm text-muted-foreground text-center py-4">
                 🎉 All caught up! Great work!
               </p>

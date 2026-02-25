@@ -190,18 +190,16 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       return nodeIds.has(s) && nodeIds.has(t);
     });
 
+    // Optimization: Calculate light colors during data preparation to avoid extra pass and side effects
+    filteredNodes.forEach((node: ExtendedNodeObject) => {
+      if (!node.lightColor && !node._cachedLightColor) {
+        const baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
+        node._cachedLightColor = lightenColor(baseColor, 20);
+      }
+    });
+
     return { nodes: filteredNodes, links: filteredLinks };
   }, [baseGraphData, filter]);
-
-  // Optimization: Pre-calculate light colors for all nodes in the current view
-  useMemo(() => {
-    graphData.nodes.forEach((node: ExtendedNodeObject) => {
-        if (!node.lightColor && !node._cachedLightColor) {
-            const baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
-            node._cachedLightColor = lightenColor(baseColor, 20);
-        }
-    });
-  }, [graphData.nodes]);
 
   useEffect(() => {
     const updateDimensions = () => {
