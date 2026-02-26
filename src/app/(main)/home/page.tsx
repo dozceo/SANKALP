@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -71,6 +71,24 @@ export default function HomePage() {
       </div>
     );
   }
+
+  const highPriorityTopics = useMemo(() => {
+    if (!intelligence) return [];
+    return Object.entries(intelligence.mastery)
+      .filter(([_, signal]) => signal.priority === "HIGH");
+  }, [intelligence]);
+
+  const needsRevisionTopics = useMemo(() => {
+    if (!intelligence) return [];
+    return Object.entries(intelligence.mastery)
+      .filter(([_, signal]) => signal.needsRevision)
+      .slice(0, 3);
+  }, [intelligence]);
+
+  const hasRevisionNeeds = useMemo(() => {
+    if (!intelligence) return false;
+    return Object.values(intelligence.mastery).some(s => s.needsRevision);
+  }, [intelligence]);
 
   if (!intelligence) {
     return (
@@ -207,9 +225,7 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.priority === "HIGH")
-              .map(([topic, signal]) => (
+            {highPriorityTopics.map(([topic, signal]) => (
                 <div key={topic} className="p-3 border rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-medium">{topic}</h4>
@@ -272,10 +288,7 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.needsRevision)
-              .slice(0, 3)
-              .map(([topic, signal]) => (
+            {needsRevisionTopics.map(([topic, signal]) => (
                 <div key={topic} className="p-3 border rounded-lg">
                   <div className="flex justify-between items-center">
                     <h4 className="font-medium">{topic}</h4>
@@ -288,7 +301,7 @@ export default function HomePage() {
                   </p>
                 </div>
               ))}
-            {Object.values(intelligence.mastery).filter(s => s.needsRevision).length === 0 && (
+            {!hasRevisionNeeds && (
               <p className="text-sm text-muted-foreground text-center py-4">
                 🎉 All caught up! Great work!
               </p>

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Mail, School, BookOpen, Users, Pencil, Briefcase } from "lucide-react";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { getInitials } from '@/lib/student-utils';
 
 interface TeacherProfileProps {
     userId: string;
@@ -47,16 +48,6 @@ export default function TeacherProfile({ userId }: TeacherProfileProps) {
             </div>
         );
     }
-
-    // Helper for initials
-    const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    };
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto pb-10">
