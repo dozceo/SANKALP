@@ -159,11 +159,11 @@ export function upsertDocument(source: string, text: string): void {
  */
 export function removeDocument(source: string): void {
   const store = getStore();
-  // Remove all chunk ids that start with the source prefix
-  const idsToRemove: string[] = [];
-  // We need access to the internal chunks — for now, simply refresh
-  // TODO: expose an iterator on VectorStore for production use
-  refreshKnowledgeBase();
+  const ids = store.getIdsBySource(source);
+  if (ids.length > 0) {
+    store.remove(ids);
+    store.rebuild();
+  }
 }
 
 // ---------------------------------------------------------------------------

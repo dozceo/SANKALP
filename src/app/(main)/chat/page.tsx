@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { getExplanation, getTextToSpeech } from "./actions";
+import type { ChatMessage } from "@/ai/rag/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -75,8 +76,8 @@ export default function ChatPage() {
 
         // Send the full chat history so the RAG pipeline can build an enriched
         // query from conversational context, not just the current message.
-        const chatHistory = updatedMessages.map(m => ({
-            role: m.role as 'user' | 'bot',
+        const chatHistory: ChatMessage[] = updatedMessages.map(m => ({
+            role: m.role,
             content: m.content,
         }));
         

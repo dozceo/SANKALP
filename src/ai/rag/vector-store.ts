@@ -31,6 +31,8 @@ export interface VectorStore {
   upsert(chunks: DocumentChunk[]): void;
   /** Remove chunks by their ids. */
   remove(ids: string[]): void;
+  /** Return all chunk ids that start with the given source prefix. */
+  getIdsBySource(source: string): string[];
   /** Query the store and return re-ranked results. */
   query(queryText: string, config?: Partial<RAGConfig>): ScoredChunk[];
   /** Return the current number of indexed chunks. */
@@ -70,6 +72,15 @@ export class InMemoryVectorStore implements VectorStore {
       this.chunks.delete(id);
     }
     this.dirty = true;
+  }
+
+  getIdsBySource(source: string): string[] {
+    const prefix = `${source}#`;
+    const ids: string[] = [];
+    for (const id of this.chunks.keys()) {
+      if (id.startsWith(prefix)) ids.push(id);
+    }
+    return ids;
   }
 
   // -- Query ----------------------------------------------------------------

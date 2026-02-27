@@ -105,7 +105,8 @@ export function heuristicRerank(
       ...entry,
       score: entry.score + rerankBoost,
       scoreBreakdown: {
-        ...entry.scoreBreakdown!,
+        bm25: entry.scoreBreakdown?.bm25 ?? 0,
+        dense: entry.scoreBreakdown?.dense ?? 0,
         rerank: rerankBoost,
       },
     };

@@ -197,9 +197,14 @@ export function hybridScore(
     return { chunk, sparse, dense };
   });
 
-  // Normalise each component to [0, 1] so the weighting is fair
-  const maxSparse = Math.max(...rawScored.map(s => s.sparse), 1e-9);
-  const maxDense = Math.max(...rawScored.map(s => s.dense), 1e-9);
+  // Normalise each component to [0, 1] so the weighting is fair.
+  // Use a loop instead of Math.max(...spread) to avoid stack overflow on large arrays.
+  let maxSparse = 1e-9;
+  let maxDense = 1e-9;
+  for (const s of rawScored) {
+    if (s.sparse > maxSparse) maxSparse = s.sparse;
+    if (s.dense > maxDense) maxDense = s.dense;
+  }
 
   const scored: ScoredChunk[] = rawScored
     .map(entry => {

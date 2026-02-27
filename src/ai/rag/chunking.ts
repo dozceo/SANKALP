@@ -3,7 +3,7 @@
  *
  * Instead of fixed-length character slicing, this module splits documents on
  * natural paragraph / section boundaries so that each chunk is semantically
- * coherent.  Target size is 512–1024 tokens (~2 000–4 000 characters) with
+ * coherent.  Target size is 512–1024 tokens (~2000–4000 characters) with
  * configurable overlap to avoid losing context at boundaries.
  */
 
