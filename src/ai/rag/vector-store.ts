@@ -16,6 +16,7 @@ import { DEFAULT_RAG_CONFIG } from './types';
 import {
   buildCorpusStats,
   hybridScore,
+  tokenise,
   type CorpusStats,
 } from './scoring';
 import { heuristicRerank } from './reranker';
@@ -77,7 +78,6 @@ export class InMemoryVectorStore implements VectorStore {
     const mergedConfig = { ...DEFAULT_RAG_CONFIG, ...config };
     this.ensureFresh();
 
-    const { tokenise } = require('./scoring');
     const queryTerms = tokenise(queryText);
     if (queryTerms.length === 0) return [];
 
