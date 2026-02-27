@@ -24,7 +24,7 @@ const config: Config = {
       '<rootDir>/scripts/audit-teacher-rbac.test.ts',
   ],
   transformIgnorePatterns: [
-    '/node_modules/(?!(jose|jwks-rsa|firebase-admin)/)',
+    '/node_modules/(?!(jose|jwks-rsa|firebase-admin|lucide-react)/)',
   ],
 }
 
