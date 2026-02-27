@@ -16,17 +16,18 @@ export async function getStudentAnalytics(studentId: string) {
 
     // Calculate metrics and topic stats in a single pass
     let totalScoreSum = 0;
-    // Optimization: Store scores directly as number[] instead of TrendInput[] objects
-    // This avoids object allocation for every quiz result since we skip sorting (DB returns sorted)
-    const topicStats: Record<string, { sum: number; count: number; results: number[] }> = {};
+    // Optimization: Use Map for faster frequent insertions/lookups with string keys
+    const topicStats = new Map<string, { sum: number; count: number; results: number[] }>();
 
     for (const r of quizResults) {
         totalScoreSum += r.score;
 
-        if (!topicStats[r.topic]) {
-            topicStats[r.topic] = { sum: 0, count: 0, results: [] };
+        let stats = topicStats.get(r.topic);
+        if (!stats) {
+            stats = { sum: 0, count: 0, results: [] };
+            topicStats.set(r.topic, stats);
         }
-        const stats = topicStats[r.topic];
+
         stats.sum += r.score;
         stats.count += 1;
         stats.results.push(r.score);
@@ -39,8 +40,8 @@ export async function getStudentAnalytics(studentId: string) {
     const strengths: string[] = [];
     const weaknesses: string[] = [];
 
-    for (const topic in topicStats) {
-        const stats = topicStats[topic];
+    // Iterate over Map entries directly
+    for (const [topic, stats] of topicStats) {
         const avg = stats.sum / stats.count;
 
         // Use optimized calculation (skip sort as DB returns sorted results)

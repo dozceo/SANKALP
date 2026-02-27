@@ -351,7 +351,13 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     const showLabel = globalScale > 0.6 || isHighlighted || isHovered;
     if (showLabel) {
       const fontSize = Math.max(10 / globalScale, 8);
-      ctx.font = `${isHighlighted ? 'bold ' : ''}${fontSize}px Inter, system-ui, sans-serif`;
+      const newFont = `${isHighlighted ? 'bold ' : ''}${fontSize}px Inter, system-ui, sans-serif`;
+
+      // Optimization: Avoid redundant font setting which forces style recalculation
+      if (ctx.font !== newFont) {
+          ctx.font = newFont;
+      }
+
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
 

@@ -18,14 +18,22 @@ export function StudentSelector() {
         return null;
     }
 
-    // Get initials for avatar
+    // Optimization: Single-pass loop to avoid array allocation (split/map/join)
     const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
+        if (!name) return "";
+        let initials = "";
+        let isNextInitial = true;
+
+        for (let i = 0; i < name.length; i++) {
+            if (isNextInitial && name[i] !== ' ') {
+                initials += name[i];
+                if (initials.length === 2) break;
+                isNextInitial = false;
+            } else if (name[i] === ' ') {
+                isNextInitial = true;
+            }
+        }
+        return initials.toUpperCase();
     };
 
     // Get color based on student grade
