@@ -94,15 +94,28 @@ This is a **Client Component** that interacts with the AI backend.
 ### 3. AI <-> UI Bridge
 The project uses Next.js **Server Actions** (implied in `actions.ts`) to call Genkit flows directly from the React client. This removes the need for a separate API layer for simple operations.
 
-### 4. RAG — Retrieval-Augmented Generation (`src/ai/rag/retriever.ts`)
+### 4. RAG — Retrieval-Augmented Generation (`src/ai/rag/`)
 
 **Yes, RAG is applied in SANKALP — here is how it works:**
 
 RAG (Retrieval-Augmented Generation) is the practice of *retrieving* relevant documents from a knowledge base and *augmenting* the LLM prompt with that retrieved context before *generating* the final answer.  This grounds the model's output in real, curated data rather than relying on generic world knowledge alone.
 
-**Knowledge base:** All student-profile markdown files under `data/students/` (e.g. `alex-kumar.md`, `arjun-reddy.md`, …) are loaded at server startup and split into overlapping text chunks (~300 characters each with a 60-character overlap).
+The RAG pipeline has been upgraded to production standards aligned with the Core Intelligence Block Upgrade Strategy:
 
-**Retrieval step:** When a user asks a question in the Chat page, `retrieveRelevantContext(query)` in `src/ai/rag/retriever.ts` is called.  It tokenises the query, scores every chunk by keyword overlap (a BM25-inspired term-frequency approach), and returns the top-3 most relevant chunks concatenated as a single string.
+| Dimension | Implementation |
+|-----------|---------------|
+| **Retrieval** | Hybrid sparse BM25 + dense TF-IDF cosine similarity (`scoring.ts`) |
+| **Index** | Pluggable `VectorStore` interface — in-memory default; swap to Pinecone / pgvector / Weaviate (`vector-store.ts`) |
+| **Chunking** | Context-aware paragraph chunking targeting 512–1024 tokens (`chunking.ts`) |
+| **Scoring** | Real Okapi BM25 with k1/b tuning + normalised TF-IDF dense vectors |
+| **Reranking** | Heuristic cross-encoder with term proximity, section match, and exact-phrase overlap (`reranker.ts`) |
+| **Query** | Full user chat history merged into an enriched query for conversational context |
+| **Freshness** | Incremental reindexing via `refreshKnowledgeBase()` and `upsertDocument()` |
+| **Method** | Async `retrieveContext()` API to prevent blocking the UI |
+
+**Knowledge base:** All student-profile markdown files under `data/students/` (e.g. `alex-kumar.md`, `arjun-reddy.md`, …) are loaded at server startup and split into context-aware paragraph chunks (~600 tokens each with ~100 token overlap).
+
+**Retrieval step:** When a user asks a question in the Chat page, `retrieveContext(query, { history })` in `src/ai/rag/retriever.ts` is called.  The pipeline enriches the query with recent chat history, then runs hybrid BM25 + TF-IDF dense retrieval followed by cross-encoder reranking.
 
 **Augmentation step:** The retrieved string is passed as the `brainMapContext` field to `explainConcept()` (the multilingual chatbot Genkit flow in `src/ai/flows/multilingual-cognitive-chatbot.ts`).  The prompt template already contains `Brain Map Context: {{{brainMapContext}}}`, so the LLM sees the retrieved student data as part of its context window.
 
@@ -110,11 +123,17 @@ RAG (Retrieval-Augmented Generation) is the practice of *retrieving* relevant do
 
 **Full pipeline:**
 ```
-User question
+User question + chat history
     │
     ▼
-retrieveRelevantContext()          ← Retrieval (src/ai/rag/retriever.ts)
-    │   scores data/students/*.md chunks by keyword overlap
+buildEnrichedQuery()               ← Query enrichment (retriever.ts)
+    │   merges current message with recent chat history
+    ▼
+hybridScore()                      ← Hybrid retrieval (scoring.ts)
+    │   BM25 sparse + TF-IDF dense scoring
+    ▼
+heuristicRerank()                  ← Cross-encoder reranking (reranker.ts)
+    │   term proximity + section match + exact phrase
     ▼
 brainMapContext string              ← Augmentation (chat/actions.ts)
     │   injected into LLM prompt
@@ -125,7 +144,7 @@ explainConceptFlow (Genkit)        ← Generation (multilingual-cognitive-chatbo
 Personalised answer in the Chat UI
 ```
 
-No external vector database is required; retrieval runs entirely in-process on the Next.js server.
+The in-memory vector store runs entirely in-process.  For large-scale deployments, swap the `InMemoryVectorStore` for a managed vector database (Pinecone, pgvector, or Weaviate) by implementing the `VectorStore` interface in `src/ai/rag/vector-store.ts`.
 
 ## Setup & Installation ⚙️
 

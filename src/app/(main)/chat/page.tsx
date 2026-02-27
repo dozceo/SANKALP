@@ -68,11 +68,19 @@ export default function ChatPage() {
         if (!input.trim() || isLoading) return;
 
         const userMessage: Message = { id: Date.now(), role: "user", content: input };
-        setMessages(prev => [...prev, userMessage]);
+        const updatedMessages = [...messages, userMessage];
+        setMessages(updatedMessages);
         setInput("");
         setIsLoading(true);
+
+        // Send the full chat history so the RAG pipeline can build an enriched
+        // query from conversational context, not just the current message.
+        const chatHistory = updatedMessages.map(m => ({
+            role: m.role as 'user' | 'bot',
+            content: m.content,
+        }));
         
-        const result = await getExplanation(input, language);
+        const result = await getExplanation(input, language, chatHistory);
         
         const botMessage: Message = { id: Date.now() + 1, role: "bot", content: result.content };
         setMessages(prev => [...prev, botMessage]);

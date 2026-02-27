@@ -5,18 +5,26 @@ import { explainConcept } from "@/ai/flows/multilingual-cognitive-chatbot";
 import { textToSpeech } from "@/ai/flows/text-to-speech";
 import { speechToSpeech } from "@/ai/flows/speech-to-speech";
 import { getChatbotFallback } from "@/lib/chat-fallback";
-import { retrieveRelevantContext } from "@/ai/rag/retriever";
+import { retrieveContext } from "@/ai/rag/retriever";
+import type { ChatMessage } from "@/ai/rag/types";
 
-export async function getExplanation(concept: string, language: string) {
+export async function getExplanation(
+    concept: string,
+    language: string,
+    chatHistory?: ChatMessage[],
+) {
     // Truncation guard — keep prompts lean and prevent overflow
     const MAX_CONCEPT_CHARS = 2000;
     const safeConcept = concept.length > MAX_CONCEPT_CHARS
         ? concept.slice(0, MAX_CONCEPT_CHARS) + "..."
         : concept;
 
-    // RAG: retrieve relevant context from the student knowledge base so the
-    // LLM can ground its explanation in real student data.
-    const retrievedContext = retrieveRelevantContext(safeConcept);
+    // RAG: retrieve relevant context using the full hybrid pipeline.
+    // Pass chat history so the retriever can build an enriched query that
+    // accounts for conversational context, not just the current message.
+    const retrievedContext = await retrieveContext(safeConcept, {
+        history: chatHistory,
+    });
     const brainMapContext = retrievedContext ||
         "This concept is part of the general academic syllabus.";
 
