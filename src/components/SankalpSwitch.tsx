@@ -29,12 +29,15 @@ export const SankalpSwitch = memo(function SankalpSwitch() {
     useEffect(() => {
         if (!isActive || !session) return;
 
+        // ⚡ Bolt: Pre-calculate static timestamps outside the interval loop
+        // 📊 Impact: Prevents garbage collection overhead from creating Date objects every second
+        const startTimeMs = new Date(session.startTime).getTime();
+        const totalDurationSecs = session.duration * 60;
+
         const timer = setInterval(() => {
-            const now = new Date().getTime();
-            const start = new Date(session.startTime).getTime();
-            const elapsed = Math.floor((now - start) / 1000); // seconds
-            const total = session.duration * 60; // convert to seconds
-            const remaining = Math.max(0, total - elapsed);
+            const now = Date.now();
+            const elapsedSecs = Math.floor((now - startTimeMs) / 1000);
+            const remaining = Math.max(0, totalDurationSecs - elapsedSecs);
 
             setTimeRemaining(remaining);
 

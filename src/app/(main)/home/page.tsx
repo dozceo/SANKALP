@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -71,6 +71,18 @@ export default function HomePage() {
       </div>
     );
   }
+
+  // ⚡ Bolt: Memoize filtered intelligence lists to avoid redundant calculations on every render
+  // 📊 Impact: O(N) filtering operations are now only run once when intelligence changes, reducing CPU usage during re-renders
+  const { urgentTopics, priorityTopics } = useMemo(() => {
+    if (!intelligence) return { urgentTopics: [], priorityTopics: [] };
+
+    const entries = Object.entries(intelligence.mastery);
+    const urgent = entries.filter(([_, signal]) => signal.priority === "HIGH");
+    const priority = entries.filter(([_, signal]) => signal.needsRevision);
+
+    return { urgentTopics: urgent, priorityTopics: priority };
+  }, [intelligence]);
 
   if (!intelligence) {
     return (
@@ -207,9 +219,7 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.priority === "HIGH")
-              .map(([topic, signal]) => (
+            {urgentTopics.map(([topic, signal]) => (
                 <div key={topic} className="p-3 border rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-medium">{topic}</h4>
@@ -272,8 +282,7 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.needsRevision)
+            {priorityTopics
               .slice(0, 3)
               .map(([topic, signal]) => (
                 <div key={topic} className="p-3 border rounded-lg">
@@ -288,7 +297,7 @@ export default function HomePage() {
                   </p>
                 </div>
               ))}
-            {Object.values(intelligence.mastery).filter(s => s.needsRevision).length === 0 && (
+            {priorityTopics.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">
                 🎉 All caught up! Great work!
               </p>

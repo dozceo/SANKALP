@@ -60,6 +60,21 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
 
   if (topics.length === 0) return [];
 
+  // ⚡ Bolt: Pre-group quiz results by topic to avoid O(N*M) filtering inside the topics loop
+  // 📊 Impact: Changes performance characteristic from O(N*M) to O(N+M), significantly reducing array iterations
+  const quizzesByTopic = new Map<string, number[]>();
+  if (studentHistory.quizResults) {
+    for (let i = 0; i < studentHistory.quizResults.length; i++) {
+        const qr = studentHistory.quizResults[i];
+        const existing = quizzesByTopic.get(qr.topic);
+        if (existing) {
+            existing.push(qr.score);
+        } else {
+            quizzesByTopic.set(qr.topic, [qr.score]);
+        }
+    }
+  }
+
   // 1. Extract features for all topics
   const topicFeaturesMap = new Map<string, MasteryPredictionInput>();
   const topicObjMap = new Map<string, any>(); // Map topic name to topic object from brainMap
@@ -155,15 +170,14 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
         : prediction.mastery_probability;
 
       // Step 3: Build ML Signals for ADK
+      const topicQuizzes = quizzesByTopic.get(topicName) || [];
       const mlSignals: MLSignals = {
         mastery_probability: masteryProb,
         confidence: prediction.confidence,
         days_since_last_revision: features.days_since_last_revision,
         attempts_count: features.attempts_per_topic,
         performance_trend: calculateTrend(
-          studentHistory.quizResults
-            .filter(r => r.topic === topicName)
-            .map(r => r.score),
+          topicQuizzes,
           true
         ) as "IMPROVING" | "STABLE" | "DECLINING",
       };
@@ -234,9 +248,12 @@ async function makeRevisionDecisions(brainMapData: any, studentHistory: StudentH
     }
   }
 
+  // ⚡ Bolt: Move priority mapping object outside the sort callback to prevent object allocation on every comparison
+  // 📊 Impact: O(1) instead of O(N log N) object allocations during array sorting
+  const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+
   // Sort by priority (HIGH first) and mastery (lowest first)
   return decisions.sort((a, b) => {
-    const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
     if (a.priority !== b.priority) {
       return priorityOrder[a.priority] - priorityOrder[b.priority];
     }
