@@ -201,6 +201,8 @@ export function AddStudyMaterial() {
                                         variant="outline"
                                         size="icon"
                                         onClick={() => removeReferenceLink(index)}
+                                        aria-label="Remove reference link"
+                                        title="Remove reference link"
                                     >
                                         <X className="h-4 w-4" />
                                     </Button>
