@@ -27,13 +27,21 @@ const InteractiveGraph = dynamic(
   { ssr: false, loading: () => <div className="flex h-[400px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div> }
 );
 
-// Get initials for avatar
+// ⚡ Bolt: Optimize getInitials to use a single-pass string loop without creating arrays
+// 📊 Impact: Prevents multiple array allocations and GC pauses on render for each student/teacher avatar
 const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+  let initials = "";
+  let isNewWord = true;
+  for (let i = 0; i < name.length; i++) {
+      if (name[i] === ' ') {
+          isNewWord = true;
+      } else if (isNewWord) {
+          initials += name[i];
+          isNewWord = false;
+          if (initials.length === 2) break;
+      }
+  }
+  return initials.toUpperCase();
 };
 
 const getRiskVariant = (risk: string) => {

@@ -13,6 +13,23 @@ interface TeacherProfileProps {
     userId: string;
 }
 
+// ⚡ Bolt: Optimize getInitials to use a single-pass string loop without creating arrays
+// 📊 Impact: Prevents multiple array allocations and GC pauses on render for each student/teacher avatar
+const getInitials = (name: string) => {
+    let initials = "";
+    let isNewWord = true;
+    for (let i = 0; i < name.length; i++) {
+        if (name[i] === ' ') {
+            isNewWord = true;
+        } else if (isNewWord) {
+            initials += name[i];
+            isNewWord = false;
+            if (initials.length === 2) break;
+        }
+    }
+    return initials.toUpperCase();
+};
+
 export default function TeacherProfile({ userId }: TeacherProfileProps) {
     const { teacher, loading, error } = useTeacher(userId);
 
@@ -47,16 +64,6 @@ export default function TeacherProfile({ userId }: TeacherProfileProps) {
             </div>
         );
     }
-
-    // Helper for initials
-    const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    };
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto pb-10">

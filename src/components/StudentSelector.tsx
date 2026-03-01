@@ -5,6 +5,36 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Skeleton } from "@/components/ui/skeleton";
 
+const AVATAR_COLORS = [
+    'bg-blue-500',
+    'bg-purple-500',
+    'bg-green-500',
+    'bg-orange-500',
+    'bg-pink-500',
+];
+
+// Get color based on student grade
+const getAvatarColor = (grade?: number) => {
+    return AVATAR_COLORS[(grade || 0) % AVATAR_COLORS.length];
+};
+
+// ⚡ Bolt: Optimize getInitials to use a single-pass string loop without creating arrays
+// 📊 Impact: Prevents multiple array allocations and GC pauses on render for each student/teacher avatar
+const getInitials = (name: string) => {
+    let initials = "";
+    let isNewWord = true;
+    for (let i = 0; i < name.length; i++) {
+        if (name[i] === ' ') {
+            isNewWord = true;
+        } else if (isNewWord) {
+            initials += name[i];
+            isNewWord = false;
+            if (initials.length === 2) break;
+        }
+    }
+    return initials.toUpperCase();
+};
+
 export function StudentSelector() {
     const { currentStudent, loading } = useStudent();
 
@@ -17,28 +47,6 @@ export function StudentSelector() {
     if (!currentStudent) {
         return null;
     }
-
-    // Get initials for avatar
-    const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    };
-
-    // Get color based on student grade
-    const getAvatarColor = (grade?: number) => {
-        const colors = [
-            'bg-blue-500',
-            'bg-purple-500',
-            'bg-green-500',
-            'bg-orange-500',
-            'bg-pink-500',
-        ];
-        return colors[(grade || 0) % colors.length];
-    };
 
     return (
         <Link href="/profile" passHref>
