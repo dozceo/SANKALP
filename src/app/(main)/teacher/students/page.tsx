@@ -111,7 +111,14 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // ⚡ Bolt: Optimize Set creation by avoiding intermediate array allocations from map() and filter()
+        // 📊 Impact: Reduces memory pressure and garbage collection overhead when parsing student lists
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) {
+                classNames.add(s.className);
+            }
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -121,10 +128,13 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // ⚡ Bolt: Hoist toLowerCase() outside the loop to prevent redundant string allocations
+            // 📊 Impact: O(1) string allocations instead of O(N*3) when searching students
+            const lowerQuery = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(lowerQuery) ||
+                student.email.toLowerCase().includes(lowerQuery) ||
+                student.className?.toLowerCase().includes(lowerQuery)
             );
         }
 

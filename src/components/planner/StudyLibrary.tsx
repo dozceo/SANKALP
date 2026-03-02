@@ -32,16 +32,29 @@ export function StudyLibrary() {
     // Get study materials from current student
     const studyMaterials = currentStudent?.studyMaterials || [];
 
-    // Get unique subjects
-    const subjects = useMemo(() => Array.from(new Set(studyMaterials.map(m => m.subject))), [studyMaterials]);
+    // ⚡ Bolt: Optimize unique subject extraction by avoiding intermediate array allocation from map()
+    // 📊 Impact: Reduces memory pressure and garbage collection overhead during render
+    const subjects = useMemo(() => {
+        const subjectSet = new Set<string>();
+        for (const m of studyMaterials) {
+            subjectSet.add(m.subject);
+        }
+        return Array.from(subjectSet);
+    }, [studyMaterials]);
 
     // Filter materials
-    const filteredMaterials = useMemo(() => studyMaterials.filter(material => {
-        const matchesSearch = material.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            material.subject.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
-        return matchesSearch && matchesFilter;
-    }), [studyMaterials, searchTerm, filterSubject]);
+    const filteredMaterials = useMemo(() => {
+        // ⚡ Bolt: Hoist toLowerCase() outside the loop to prevent redundant string allocations
+        // 📊 Impact: O(1) string allocations instead of O(N) when filtering large lists
+        const lowerSearch = searchTerm.toLowerCase();
+
+        return studyMaterials.filter(material => {
+            const matchesSearch = material.topic.toLowerCase().includes(lowerSearch) ||
+                material.subject.toLowerCase().includes(lowerSearch);
+            const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
+            return matchesSearch && matchesFilter;
+        });
+    }, [studyMaterials, searchTerm, filterSubject]);
 
     // Status badge styles
     const getStatusVariant = (status: string) => {
