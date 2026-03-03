@@ -160,7 +160,7 @@ export function StudentProfileForm() {
                                     role="radio"
                                     aria-checked={formData.grade === grade}
                                     onClick={() => setFormData({ ...formData, grade })}
-                                    className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.grade === grade
+                                    className={`px-3 py-2 rounded-lg border text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${formData.grade === grade
                                         ? 'border-primary bg-primary/10 font-semibold'
                                         : 'border-gray-200 hover:border-gray-300'
                                         }`}
@@ -180,7 +180,7 @@ export function StudentProfileForm() {
                                     type="button"
                                     aria-pressed={formData.subjects.includes(subject)}
                                     onClick={() => handleSubjectToggle(subject)}
-                                    className={`px-3 py-2 rounded-lg border text-sm transition-all flex items-center gap-2 ${formData.subjects.includes(subject)
+                                    className={`px-3 py-2 rounded-lg border text-sm transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${formData.subjects.includes(subject)
                                         ? 'border-primary bg-primary/10 font-semibold'
                                         : 'border-gray-200 hover:border-gray-300'
                                         }`}
@@ -202,7 +202,7 @@ export function StudentProfileForm() {
                                     role="radio"
                                     aria-checked={formData.dailyStudyTime === time}
                                     onClick={() => setFormData({ ...formData, dailyStudyTime: time })}
-                                    className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.dailyStudyTime === time
+                                    className={`px-3 py-2 rounded-lg border text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${formData.dailyStudyTime === time
                                         ? 'border-primary bg-primary/10 font-semibold'
                                         : 'border-gray-200 hover:border-gray-300'
                                         }`}
