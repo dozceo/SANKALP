@@ -220,7 +220,10 @@ function computeRetrievalConfidence(results: ScoredChunk[]): number {
   const scores = results.map(r => r.score);
   const maxScore = Math.max(...scores);
   const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-  // Blend: mostly driven by the best-match score, tempered by average quality
+  // Blend weights: 0.6 best-match + 0.4 average.  Emphasises the top hit
+  // (a strong single match signals relevance) while the average guards
+  // against inflated single-term matches.  Tune via A/B testing in
+  // production once real query logs are available.
   return Math.min(1, 0.6 * maxScore + 0.4 * avgScore);
 }
 

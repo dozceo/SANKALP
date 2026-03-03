@@ -1154,7 +1154,9 @@ import { retrieveContextWithMetadata } from '@/ai/rag/retriever';
 
 const { context, metadata } = await retrieveContextWithMetadata(query, { history });
 
-// Route based on RAG confidence
+// Route based on RAG confidence.
+// NOTE: Thresholds below are illustrative starting points.
+// Tune via A/B testing once real query logs are available.
 if (metadata.retrievalConfidence > 0.7) {
   // Strong RAG context → use it verbatim in a focused prompt
   return generateWithGemini({ context, strategy: 'DEEP_DIVE' });
