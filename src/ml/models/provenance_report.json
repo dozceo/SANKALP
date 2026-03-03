@@ -1,16 +1,50 @@
 {
-  "report_type": "Metadata Collection (Dry Run)",
-  "timestamp": "2026-02-19T19:24:54.508130",
+  "model_name": "Topic Mastery Prediction Model",
+  "version": "1.0.0",
+  "training_timestamp": "2026-03-01T22:02:23.774833",
   "provenance": {
-    "git_commit_hash": "b8168d67da834a9fcd977fd93705329facaafe16",
-    "training_script_hash": "0503c7d78388d2f46143dd85317576f0207334b76b82902adb720c95418132c2",
-    "training_data_hash": "7acdb57982fc67a102e418c747efdd55634975f3cb0ba50709725beb55c2f059",
-    "data_source": "/app/src/ml/training/training_data.csv",
-    "script_source": "/app/src/ml/training/train_mastery_model.py"
+    "git_commit_hash": "4992dcbcde03dc2dce49489532268ba708474795",
+    "script_hash": "59f7b15b20126129f8a03c823eb5cc85bbdb340da69fd3d7be36871faf4ff9af",
+    "data_hash": "05e8eacf897365557f60c635f4dfffd6c3c6cd35d7f12e2d946445eb9e63c5f7",
+    "data_source": "C:\\Users\\venugopal\\Documents\\GitHub\\SANKALP\\src\\ml\\training\\training_data.csv",
+    "data_generation_metadata": {
+      "script_hash": "d96ad0ced23b62809ba009388804b887602a9c5d4d8fe8bf7480647621e15dd3",
+      "git_hash": "4992dcbcde03dc2dce49489532268ba708474795",
+      "random_seed": 42,
+      "n_samples": 2000,
+      "columns": [
+        "avg_quiz_score",
+        "attempts_per_topic",
+        "days_since_last_revision",
+        "quiz_score_variance",
+        "time_spent_per_question",
+        "mastered"
+      ],
+      "generated_at": "2026-03-01T21:56:27.833140"
+    }
+  },
+  "parameters": {
+    "model_type": "LogisticRegression",
+    "test_size": 0.2,
+    "random_state": 42,
+    "max_iter": 1000,
+    "class_weight": "balanced"
+  },
+  "metrics": {
+    "accuracy": 0.9125,
+    "feature_importance": {
+      "avg_quiz_score": 13.238428679863688,
+      "attempts_per_topic": -0.1557472942450373,
+      "days_since_last_revision": -0.17449224547991918,
+      "quiz_score_variance": -2.5364455630476033,
+      "time_spent_per_question": 0.005000528634729685
+    }
   },
   "environment": {
-    "python_version": "3.12.12 (main, Jan 18 2026, 06:09:15) [GCC 13.3.0]",
-    "platform": "linux"
-  },
-  "note": "This report was generated without executing model training."
+    "python_version": "3.13.12 (tags/v3.13.12:1cbe481, Feb  3 2026, 18:22:25) [MSC v.1944 64 bit (AMD64)]",
+    "sklearn_version": "1.8.0",
+    "pandas_version": "3.0.1",
+    "numpy_version": "2.4.2",
+    "joblib_version": "1.5.3"
+  }
 }
