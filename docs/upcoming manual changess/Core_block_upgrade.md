@@ -1099,6 +1099,109 @@ python scripts/compare_models.py
 
 ---
 
+# **RAG Pipeline Integration — How Production RAG Enables Each Tier**
+
+The production-standard RAG pipeline (`src/ai/rag/`) has been explicitly designed to support each upgrade tier. The `retrieveContextWithMetadata()` API returns structured `RetrievalMetadata` that downstream ML, ADK, and LLM layers consume directly.
+
+## Integration Points per Tier
+
+### Tier 1A — Ensemble ML Models
+| RAG Component | How It Feeds the Ensemble |
+|---------------|---------------------------|
+| `RetrievalMetadata.retrievalConfidence` | Ensemble models can use retrieval confidence as an additional input feature — if the knowledge base has strong context for a topic, the mastery prediction can be tempered by what the RAG found. |
+| `RetrievalMetadata.topChunkSources` | Source identifiers let the ensemble correlate which student profiles were retrieved vs. the student being predicted, enabling peer-comparison features. |
+
+### Tier 1B — Advanced Feature Engineering (40 features)
+| Feature (from Core_block_upgrade) | RAG Metadata Source |
+|-----------------------------------|---------------------|
+| `chat_history_length` | `retrieveContextWithMetadata()` accepts `options.history` — the length of the chat history directly feeds this feature. |
+| `help_seeking_frequency` | Each call to `retrieveContextWithMetadata()` counts as a help-seeking event; `queryTermCount` and `chunksReturned` proxy question complexity. |
+| `topic_affinity_score` | `topChunkSources` reveals which student profiles / topics the user frequently queries — a proxy for topic interest. |
+
+### Tier 1C — ADK Multi-Signal Decision Engine
+```typescript
+// Example: ADK using RAG metadata as an additional signal
+import { retrieveContextWithMetadata } from '@/ai/rag/retriever';
+
+const { context, metadata } = await retrieveContextWithMetadata(query, { history });
+
+// Feed retrievalConfidence into ADK decision context
+const adkContext = {
+  ...existingContext,
+  mlSignals: {
+    ...existingSignals,
+    // NEW: RAG confidence influences decision
+    rag_confidence: metadata.retrievalConfidence,
+  },
+};
+
+// ADK can now branch:
+// - High confidence → ground LLM in retrieved context
+// - Low confidence  → fall back to general knowledge mode
+const decision = makeRevisionDecision(adkContext);
+```
+
+### Tier 2 — Transformer Sequence Models & Bayesian Uncertainty
+| RAG Component | How It Supports Tier 2 |
+|---------------|------------------------|
+| `avgRelevanceScore` / `maxRelevanceScore` | These can be fed as time-series features into the `StudentMasteryTransformer` — the relevance of retrieved context over time correlates with how well the knowledge base covers a student's evolving needs. |
+| `retrievalConfidence` | The Bayesian model can use retrieval confidence as an informative prior — when the RAG pipeline is confident, the Bayesian model's posterior can be more assertive. |
+
+### Tier 3 — Dynamic LLM Orchestration
+```typescript
+// Example: Dynamic LLM routing using RAG metadata
+import { retrieveContextWithMetadata } from '@/ai/rag/retriever';
+
+const { context, metadata } = await retrieveContextWithMetadata(query, { history });
+
+// Route based on RAG confidence
+if (metadata.retrievalConfidence > 0.7) {
+  // Strong RAG context → use it verbatim in a focused prompt
+  return generateWithGemini({ context, strategy: 'DEEP_DIVE' });
+} else if (metadata.retrievalConfidence > 0.3) {
+  // Moderate → blend RAG context with general LLM knowledge
+  return generateWithClaude({ context, strategy: 'INTERACTIVE' });
+} else {
+  // Weak → rely on LLM's own knowledge, skip RAG context
+  return generateWithGPT4({ strategy: 'SHORT_FORM' });
+}
+```
+
+## Data Flow Summary
+
+```
+Student interaction
+    │
+    ▼
+retrieveContextWithMetadata()     ← Production RAG pipeline
+    │
+    ├── context (string)          → Injected into LLM prompt (existing flow)
+    │
+    └── metadata                  → Consumed by upgrade tiers:
+        ├── queryTermCount        → Tier 1B (feature engineering)
+        ├── chunksReturned        → Tier 1B (help_seeking_frequency)
+        ├── avgRelevanceScore     → Tier 2  (transformer features)
+        ├── maxRelevanceScore     → Tier 2  (Bayesian priors)
+        ├── topChunkSources       → Tier 1B (topic_affinity_score)
+        ├── retrievalConfidence   → Tier 1C (ADK decision weight)
+        │                         → Tier 3  (LLM routing)
+        └── totalIndexedChunks    → Observability / freshness monitoring
+```
+
+## VectorStore Migration Path
+
+The `VectorStore` interface (`src/ai/rag/vector-store.ts`) provides a clean upgrade path:
+
+| Phase | Backend | When |
+|-------|---------|------|
+| **Now** | `InMemoryVectorStore` | In-process, zero-config |
+| **Tier 1** | `InMemoryVectorStore` + `refreshKnowledgeBase()` | Event-driven reindexing from Firestore |
+| **Tier 2+** | Pinecone / pgvector / Weaviate | Implement `VectorStore` interface, swap factory in `retriever.ts` |
+
+No changes to downstream consumers are needed — `retrieveContext()` and `retrieveContextWithMetadata()` abstract the backend.
+
+---
+
 # **Key Advantages of This Approach**
 
 ✅ **Ensemble**: Multiple models catch what single models miss  
@@ -1108,5 +1211,6 @@ python scripts/compare_models.py
 ✅ **Dynamic LLM**: Routes to optimal model + prompt → better content  
 ✅ **Explainable**: Every decision has reasoning + feature importance  
 ✅ **Production-Ready**: All open-source, battle-tested in prod  
+✅ **RAG-Integrated**: Production RAG pipeline feeds metadata directly into all tiers
 
 This transforms your system from **toy ML → production-grade intelligence** 🚀

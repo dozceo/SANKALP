@@ -26,7 +26,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { ChatMessage, DocumentChunk, RAGConfig, ScoredChunk } from './types';
+import type { ChatMessage, DocumentChunk, RAGConfig, RetrievalMetadata, RetrievalResult, ScoredChunk } from './types';
 import { DEFAULT_RAG_CONFIG } from './types';
 import { chunkDocument } from './chunking';
 import { tokenise } from './scoring';
@@ -193,19 +193,99 @@ export async function retrieveContext(
     k?: number;
   },
 ): Promise<string> {
+  const result = await retrieveContextWithMetadata(query, options);
+  return result.context;
+}
+
+// ---------------------------------------------------------------------------
+// Metadata-returning retrieval API (for ML / ADK / LLM orchestration)
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute retrieval confidence from the score distribution of returned chunks.
+ *
+ * A high confidence (close to 1.0) means the top results have high absolute
+ * scores and a tight distribution — the pipeline found clearly relevant
+ * content.  A low confidence means scores are low or spread out.
+ *
+ * Downstream use:
+ *   - **ADK (Tier 1C)**: if confidence < 0.3 the decision engine can fall
+ *     back to general-knowledge mode instead of relying on RAG context.
+ *   - **Dynamic LLM (Tier 3)**: confidence informs prompt routing — high
+ *     confidence → use the retrieved context verbatim; low → ask the LLM
+ *     to generate from its own knowledge.
+ */
+function computeRetrievalConfidence(results: ScoredChunk[]): number {
+  if (results.length === 0) return 0;
+  const scores = results.map(r => r.score);
+  const maxScore = Math.max(...scores);
+  const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+  // Blend: mostly driven by the best-match score, tempered by average quality
+  return Math.min(1, 0.6 * maxScore + 0.4 * avgScore);
+}
+
+/**
+ * Retrieve the most relevant context chunks **with structured metadata**
+ * suitable for downstream ML feature engineering, ADK decision-making,
+ * and dynamic LLM orchestration.
+ *
+ * This is the primary API for the Core Intelligence Block Upgrade:
+ *
+ * | Upgrade Tier                       | Metadata used                                |
+ * |------------------------------------|----------------------------------------------|
+ * | **1B** Advanced Feature Engineering | `queryTermCount`, `avgRelevanceScore`,       |
+ * |                                    | `topChunkSources` → feed 40-feature pipeline |
+ * | **1C** ADK Multi-Signal Context     | `retrievalConfidence` → weight RAG vs.       |
+ * |                                    | general knowledge in decision rules          |
+ * | **3** Dynamic LLM Orchestration     | `retrievalConfidence`, `topChunkSources` →   |
+ * |                                    | inform prompt routing & token budgeting      |
+ *
+ * @param query   - The user's current question or concept.
+ * @param options - Optional configuration overrides and chat history.
+ * @returns A {@link RetrievalResult} with formatted context and metadata.
+ */
+export async function retrieveContextWithMetadata(
+  query: string,
+  options?: {
+    history?: ChatMessage[];
+    config?: Partial<RAGConfig>;
+    k?: number;
+  },
+): Promise<RetrievalResult> {
   const config = options?.config ?? {};
   const topK = options?.k ?? config.topK ?? DEFAULT_RAG_CONFIG.topK;
 
   const enrichedQuery = buildEnrichedQuery(query, options?.history);
   const store = getStore();
+  const queryTerms = tokenise(enrichedQuery);
 
   const results: ScoredChunk[] = store.query(enrichedQuery, { ...config, topK });
 
-  if (results.length === 0) return '';
+  const context = results.length === 0
+    ? ''
+    : results
+        .map(entry => `[Source: ${entry.chunk.source}]\n${entry.chunk.text}`)
+        .join('\n\n---\n\n');
 
-  return results
-    .map(entry => `[Source: ${entry.chunk.source}]\n${entry.chunk.text}`)
-    .join('\n\n---\n\n');
+  const scores = results.map(r => r.score);
+  const avgRelevanceScore = scores.length > 0
+    ? scores.reduce((a, b) => a + b, 0) / scores.length
+    : 0;
+  const maxRelevanceScore = scores.length > 0
+    ? Math.max(...scores)
+    : 0;
+
+  const metadata: RetrievalMetadata = {
+    queryTermCount: queryTerms.length,
+    chunksReturned: results.length,
+    totalIndexedChunks: store.size(),
+    avgRelevanceScore,
+    maxRelevanceScore,
+    topChunkSources: results.map(r => r.chunk.source),
+    retrievalConfidence: computeRetrievalConfidence(results),
+  };
+
+  return { context, metadata };
 }
 
 // ---------------------------------------------------------------------------

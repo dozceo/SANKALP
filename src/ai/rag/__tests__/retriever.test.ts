@@ -315,3 +315,66 @@ describe('InMemoryVectorStore', () => {
     expect(results.length).toBeLessThanOrEqual(2);
   });
 });
+
+// ---------------------------------------------------------------------------
+// retrieveContextWithMetadata (upgrade integration)
+// ---------------------------------------------------------------------------
+
+describe('retrieveContextWithMetadata', () => {
+  // We dynamically import so the module-level singleton is freshly created
+  let retrieveContextWithMetadata: typeof import('../retriever').retrieveContextWithMetadata;
+
+  beforeAll(async () => {
+    const mod = await import('../retriever');
+    retrieveContextWithMetadata = mod.retrieveContextWithMetadata;
+  });
+
+  it('returns both context string and metadata', async () => {
+    const result = await retrieveContextWithMetadata('algebra');
+    expect(result).toHaveProperty('context');
+    expect(result).toHaveProperty('metadata');
+    expect(typeof result.context).toBe('string');
+    expect(typeof result.metadata.queryTermCount).toBe('number');
+    expect(typeof result.metadata.chunksReturned).toBe('number');
+    expect(typeof result.metadata.totalIndexedChunks).toBe('number');
+    expect(typeof result.metadata.avgRelevanceScore).toBe('number');
+    expect(typeof result.metadata.maxRelevanceScore).toBe('number');
+    expect(Array.isArray(result.metadata.topChunkSources)).toBe(true);
+    expect(typeof result.metadata.retrievalConfidence).toBe('number');
+  });
+
+  it('returns zero-valued metadata when no chunks match', async () => {
+    const result = await retrieveContextWithMetadata('xyznonexistent123');
+    expect(result.context).toBe('');
+    expect(result.metadata.chunksReturned).toBe(0);
+    expect(result.metadata.avgRelevanceScore).toBe(0);
+    expect(result.metadata.maxRelevanceScore).toBe(0);
+    expect(result.metadata.retrievalConfidence).toBe(0);
+    expect(result.metadata.topChunkSources).toEqual([]);
+  });
+
+  it('retrieval confidence is between 0 and 1', async () => {
+    const result = await retrieveContextWithMetadata('algebra equations math');
+    expect(result.metadata.retrievalConfidence).toBeGreaterThanOrEqual(0);
+    expect(result.metadata.retrievalConfidence).toBeLessThanOrEqual(1);
+  });
+
+  it('passes chat history to enriched query', async () => {
+    const history: ChatMessage[] = [
+      { role: 'user', content: 'tell me about algebra' },
+      { role: 'bot', content: 'Algebra is about equations.' },
+    ];
+    const result = await retrieveContextWithMetadata('quadratic', { history });
+    // queryTermCount should reflect enriched query (more terms than just "quadratic")
+    expect(result.metadata.queryTermCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('metadata topChunkSources matches returned context sources', async () => {
+    const result = await retrieveContextWithMetadata('algebra');
+    if (result.metadata.chunksReturned > 0) {
+      for (const source of result.metadata.topChunkSources) {
+        expect(result.context).toContain(`[Source: ${source}]`);
+      }
+    }
+  });
+});

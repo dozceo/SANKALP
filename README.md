@@ -112,6 +112,7 @@ The RAG pipeline has been upgraded to production standards aligned with the Core
 | **Query** | Full user chat history merged into an enriched query for conversational context |
 | **Freshness** | Incremental reindexing via `refreshKnowledgeBase()` and `upsertDocument()` |
 | **Method** | Async `retrieveContext()` API to prevent blocking the UI |
+| **Upgrade Integration** | `retrieveContextWithMetadata()` returns structured `RetrievalMetadata` for downstream ML / ADK / LLM tiers |
 
 **Knowledge base:** All student-profile markdown files under `data/students/` (e.g. `alex-kumar.md`, `arjun-reddy.md`, …) are loaded at server startup and split into context-aware paragraph chunks (~600 tokens each with ~100 token overlap).
 
@@ -120,6 +121,8 @@ The RAG pipeline has been upgraded to production standards aligned with the Core
 **Augmentation step:** The retrieved string is passed as the `brainMapContext` field to `explainConcept()` (the multilingual chatbot Genkit flow in `src/ai/flows/multilingual-cognitive-chatbot.ts`).  The prompt template already contains `Brain Map Context: {{{brainMapContext}}}`, so the LLM sees the retrieved student data as part of its context window.
 
 **Generation step:** The LLM (Gemini 2.0 Flash) generates a personalised explanation that is aware of the topics, strengths, weaknesses, and recent quiz results of the relevant student profiles.
+
+**Upgrade integration:** The `retrieveContextWithMetadata()` API returns a `RetrievalResult` with both the formatted context and structured `RetrievalMetadata` (retrieval confidence, score statistics, source identifiers).  This metadata feeds directly into the Core Intelligence Block Upgrade tiers — see `docs/upcoming manual changess/Core_block_upgrade.md` § "RAG Pipeline Integration" for the full mapping.
 
 **Full pipeline:**
 ```
@@ -137,6 +140,9 @@ heuristicRerank()                  ← Cross-encoder reranking (reranker.ts)
     ▼
 brainMapContext string              ← Augmentation (chat/actions.ts)
     │   injected into LLM prompt
+    ▼
+RetrievalMetadata                  ← Upgrade bridge (retriever.ts)
+    │   confidence, scores, sources → ML / ADK / LLM tiers
     ▼
 explainConceptFlow (Genkit)        ← Generation (multilingual-cognitive-chatbot.ts)
     │   Gemini 2.0 Flash generates grounded explanation
