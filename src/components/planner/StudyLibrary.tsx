@@ -78,9 +78,20 @@ export function StudyLibrary() {
                                 placeholder="Search topics..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
+                                className="pl-10 pr-10"
                                 aria-label="Search study materials"
                             />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchTerm("")}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                                    aria-label="Clear search"
+                                    title="Clear search"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
                         </div>
                         <Select value={filterSubject} onValueChange={setFilterSubject}>
                             <SelectTrigger className="w-full sm:w-[200px]" aria-label="Filter by subject">
