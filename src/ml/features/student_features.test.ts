@@ -81,9 +81,8 @@ const topic = 'test_topic';
     };
 
     const features = extractMasteryFeatures(topic, history);
-    // Based on existing code:
-    // if (topicQuizzes.length === 0) return { ..., days_since_last_revision: 999, ... }
-    assert.strictEqual(features.days_since_last_revision, 999, 'days_since_last_revision should be 999');
+    // Cold-start default is clamped to training data range [0, 30]
+    assert.strictEqual(features.days_since_last_revision, 30, 'days_since_last_revision should be 30 (clamped to training range)');
     assert.strictEqual(features.attempts_per_topic, 0);
 }
 
