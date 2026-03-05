@@ -33,15 +33,31 @@ export function StudyLibrary() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get unique subjects
-    const subjects = useMemo(() => Array.from(new Set(studyMaterials.map(m => m.subject))), [studyMaterials]);
+    const subjects = useMemo(() => {
+        // ⚡ Bolt: Optimize Set creation to avoid intermediate array allocation
+        // 📊 Impact: Faster list updates without garbage collection pauses
+        const uniqueSubjects = new Set<string>();
+        for (let i = 0; i < studyMaterials.length; i++) {
+            if (studyMaterials[i].subject) {
+                uniqueSubjects.add(studyMaterials[i].subject);
+            }
+        }
+        return Array.from(uniqueSubjects);
+    }, [studyMaterials]);
 
     // Filter materials
-    const filteredMaterials = useMemo(() => studyMaterials.filter(material => {
-        const matchesSearch = material.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            material.subject.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
-        return matchesSearch && matchesFilter;
-    }), [studyMaterials, searchTerm, filterSubject]);
+    const filteredMaterials = useMemo(() => {
+        // ⚡ Bolt: Hoist toLowerCase() to prevent redundant O(N) string allocations during filter
+        // 📊 Impact: O(1) string creation instead of O(N) inside the loop iteration
+        const lowerSearchTerm = searchTerm.toLowerCase();
+
+        return studyMaterials.filter(material => {
+            const matchesSearch = material.topic.toLowerCase().includes(lowerSearchTerm) ||
+                material.subject.toLowerCase().includes(lowerSearchTerm);
+            const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
+            return matchesSearch && matchesFilter;
+        });
+    }, [studyMaterials, searchTerm, filterSubject]);
 
     // Status badge styles
     const getStatusVariant = (status: string) => {
