@@ -209,10 +209,12 @@ export default function ClassesPage() {
 
     // Search filter
     if (searchQuery) {
+      // ⚡ Bolt: Hoist lowerQuery out of filter to prevent redundant allocations and O(N*M) string creation
+      const lowerQuery = searchQuery.toLowerCase();
       filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+        cls.className.toLowerCase().includes(lowerQuery) ||
+        cls.subject.toLowerCase().includes(lowerQuery) ||
+        cls.classCode.toLowerCase().includes(lowerQuery)
       );
     }
 
@@ -247,11 +249,22 @@ export default function ClassesPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalStudents = classes.reduce((acc, cls) => acc + (cls.studentIds?.length || 0), 0);
+    let totalStudents = 0;
+    let mostPopularClass = classes[0];
+    let maxStudents = mostPopularClass?.studentIds?.length || 0;
+
+    // ⚡ Bolt: Single pass loop for O(n) reduction without callback overhead or redundant `.length` lookups
+    for (const cls of classes) {
+      const studentCount = cls.studentIds?.length || 0;
+      totalStudents += studentCount;
+
+      if (studentCount > maxStudents) {
+        maxStudents = studentCount;
+        mostPopularClass = cls;
+      }
+    }
+
     const avgStudents = classes.length > 0 ? Math.round(totalStudents / classes.length) : 0;
-    const mostPopularClass = classes.reduce((max, cls) =>
-      (cls.studentIds?.length || 0) > (max.studentIds?.length || 0) ? cls : max
-      , classes[0]);
 
     return {
       totalClasses: classes.length,

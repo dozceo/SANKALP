@@ -125,24 +125,27 @@ export default function ClassDetailsPage() {
     // Filter students by search query
     const filteredStudents = useMemo(() => {
         if (!searchQuery) return students;
+        // ⚡ Bolt: Hoist lowerQuery out of filter to prevent redundant allocations
+        const lowerQuery = searchQuery.toLowerCase();
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchQuery.toLowerCase())
+            student.name.toLowerCase().includes(lowerQuery) ||
+            student.email.toLowerCase().includes(lowerQuery)
         );
     }, [students, searchQuery]);
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
+        // ⚡ Bolt: Use Date.now() and Date.parse() to avoid allocating Date objects in loops
+        const nowTime = Date.now();
         const activeStudents = students.filter(s => {
             if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
+            const daysSinceLogin = (nowTime - Date.parse(s.lastLoginDate)) / (1000 * 60 * 60 * 24);
             return daysSinceLogin <= 7;
         });
 
         const recentJoins = students.filter(s => {
             if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
+            const daysSinceJoin = (nowTime - Date.parse(s.joinedClassAt)) / (1000 * 60 * 60 * 24);
             return daysSinceJoin <= 7;
         });
 
