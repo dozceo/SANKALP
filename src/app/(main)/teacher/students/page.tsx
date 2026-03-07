@@ -60,7 +60,7 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
 
 const isActive = (lastActivity?: Date): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    const daysSince = (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -121,10 +121,11 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            const query = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(query) ||
+                student.email.toLowerCase().includes(query) ||
+                student.className?.toLowerCase().includes(query)
             );
         }
 
@@ -157,8 +158,9 @@ export default function StudentsPage() {
                 case "performance":
                     return b.progress - a.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+                    // Optimization: Use .getTime() directly since lastActivity is a Date object or use Date.parse for strings
+                    const aTime = a.lastActivity ? (a.lastActivity instanceof Date ? a.lastActivity.getTime() : Date.parse(a.lastActivity)) : 0;
+                    const bTime = b.lastActivity ? (b.lastActivity instanceof Date ? b.lastActivity.getTime() : Date.parse(b.lastActivity)) : 0;
                     return bTime - aTime;
                 case "quizzes":
                     return b.quizzesTaken - a.quizzesTaken;

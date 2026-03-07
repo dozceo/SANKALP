@@ -144,7 +144,7 @@ export default function StudentProfilePage() {
     const performanceLevel = getPerformanceLevel(performance.avgScore);
     const topicEntries = Object.entries(performance.topicMastery).sort((a, b) => b[1].avg - a[1].avg);
     const isActive = student.lastLoginDate
-        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24) <= 7
+        ? (Date.now() - Date.parse(student.lastLoginDate)) / (1000 * 60 * 60 * 24) <= 7
         : false;
 
     return (

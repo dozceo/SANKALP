@@ -209,10 +209,11 @@ export default function ClassesPage() {
 
     // Search filter
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+        cls.className.toLowerCase().includes(query) ||
+        cls.subject.toLowerCase().includes(query) ||
+        cls.classCode.toLowerCase().includes(query)
       );
     }
 
@@ -234,7 +235,7 @@ export default function ClassesPage() {
         case "students":
           return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
         case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return Date.parse(b.createdAt) - Date.parse(a.createdAt);
         case "subject":
           return a.subject.localeCompare(b.subject);
         default:
