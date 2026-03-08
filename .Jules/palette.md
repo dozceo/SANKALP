@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-06-21 - Dynamically Rendered Icon Buttons
+**Learning:** When rendering a list of interactive items (like reference links in a form), inline buttons used to manipulate the list (e.g., delete/remove) often lack text content and an `aria-label`, making them inaccessible to screen readers.
+**Action:** Always verify that icon-only buttons within dynamically generated lists have an explicit `aria-label`.
