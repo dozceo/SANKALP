@@ -125,24 +125,29 @@ export default function ClassDetailsPage() {
     // Filter students by search query
     const filteredStudents = useMemo(() => {
         if (!searchQuery) return students;
+        // Optimization: Hoist search query lowercase to avoid O(N) re-allocations
+        const lowerSearchQuery = searchQuery.toLowerCase();
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchQuery.toLowerCase())
+            student.name.toLowerCase().includes(lowerSearchQuery) ||
+            student.email.toLowerCase().includes(lowerSearchQuery)
         );
     }, [students, searchQuery]);
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
+        // Optimization: Use Date.now() instead of new Date().getTime() to avoid object allocation
+        const now = Date.now();
         const activeStudents = students.filter(s => {
             if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
+            const lastLoginMs = s.lastLoginDate instanceof Date ? s.lastLoginDate.getTime() : new Date(s.lastLoginDate).getTime();
+            const daysSinceLogin = (now - lastLoginMs) / (1000 * 60 * 60 * 24);
             return daysSinceLogin <= 7;
         });
 
         const recentJoins = students.filter(s => {
             if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
+            const joinedAtMs = s.joinedClassAt instanceof Date ? s.joinedClassAt.getTime() : new Date(s.joinedClassAt).getTime();
+            const daysSinceJoin = (now - joinedAtMs) / (1000 * 60 * 60 * 24);
             return daysSinceJoin <= 7;
         });
 
@@ -355,10 +360,13 @@ export default function ClassDetailsPage() {
                             </TableHeader>
                             <TableBody>
                                 {filteredStudents.map((student) => {
-                                    const daysSinceLogin = student.lastLoginDate
-                                        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
-                                        : null;
-                                    const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
+                                    // Optimization: use Date.now() instead of instantiating new Date objects repeatedly inside render loop
+                                    let isActive = false;
+                                    if (student.lastLoginDate) {
+                                        const lastLoginMs = student.lastLoginDate instanceof Date ? student.lastLoginDate.getTime() : new Date(student.lastLoginDate).getTime();
+                                        const daysSinceLogin = (Date.now() - lastLoginMs) / (1000 * 60 * 60 * 24);
+                                        isActive = daysSinceLogin <= 7;
+                                    }
 
                                     return (
                                         <TableRow key={student.id}>
