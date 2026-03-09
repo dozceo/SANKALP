@@ -1,11 +1,11 @@
 
 import fs from 'fs';
 import path from 'path';
-import { extractMasteryFeatures, type StudentHistory, type RawQuizResult } from '@/ml/features/student_features';
-import { predictMastery } from '@/ml/inference/ml-bridge';
-import { makeRevisionDecision, selectContentStrategy, type ADKDecision } from '@/ai/adk/decision-engine';
-import { type MasteryPredictionOutput, type MasteryPredictionInput } from '@/ml/inference/types';
-import { DecisionAction, ContentStrategy } from '@/ai/adk/types';
+import { extractMasteryFeatures, type StudentHistory, type RawQuizResult } from '../src/ml/features/student_features';
+import { predictMastery } from '../src/ml/inference/ml-bridge';
+import { makeRevisionDecision, selectContentStrategy, type ADKDecision } from '../src/ai/adk/decision-engine';
+import { type MasteryPredictionOutput, type MasteryPredictionInput } from '../src/ml/inference/types';
+import { DecisionAction, ContentStrategy } from '../src/ai/adk/types';
 
 // Mock LLM Response Generator
 function mockLLM(promptContext: string, injectFault: boolean = false): any {

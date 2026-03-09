@@ -28,16 +28,15 @@ export function calculateTrend(results: (TrendInput | number)[], skipSort: boole
     const count = results.length;
     if (count < 2) return "STABLE";
 
-    // If skipSort is true, we assume results are sorted (newest first).
-    // If results are numbers, skipSort MUST be true.
+    // Optimization: Use the input array directly if sorting is skipped or not needed
+    let sorted: (TrendInput | number)[] = results;
 
-    let sorted: (TrendInput | number)[];
-
-    if (skipSort) {
-        sorted = results;
-    } else {
-        // Must be TrendInput objects to sort
-        sorted = [...(results as TrendInput[])].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    if (!skipSort) {
+        // Only copy and sort if strictly necessary (TrendInput objects and not pre-sorted)
+        // Check first element type to be safe, though TS types imply homogeneity
+        if (typeof results[0] !== 'number') {
+             sorted = (results as TrendInput[]).slice().sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        }
     }
 
     let recentSum = 0;
@@ -45,8 +44,7 @@ export function calculateTrend(results: (TrendInput | number)[], skipSort: boole
     let recentCount = 0;
     let previousCount = 0;
 
-    // Check type of first element to determine loop strategy
-    // We assume array is homogeneous
+    // Optimization: Check type once outside the loop
     const isNumberArray = typeof sorted[0] === 'number';
 
     if (count >= 4) {

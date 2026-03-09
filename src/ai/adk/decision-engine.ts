@@ -15,6 +15,9 @@ import {
     TeacherInterventionSignal,
 } from "./types";
 
+// Re-export types for convenience
+export type { MLSignals, DecisionContext, ADKDecision, LLMContext, TeacherInterventionSignal };
+
 /**
  * Core Decision Engine: Revision Planning
  * 

@@ -70,6 +70,7 @@ export interface StudentNode {
     className?: string;
     classSubject?: string;
     teacherName?: string;
+    joinedClassAt?: Date;
 
     // New hierarchical study data
     subjects?: Subject[];

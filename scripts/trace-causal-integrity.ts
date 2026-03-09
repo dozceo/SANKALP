@@ -96,7 +96,7 @@ async function runTrace(scenarioName: string, history: StudentHistory, faultInje
             confidence: prediction.confidence,
             days_since_last_revision: features.days_since_last_revision,
             attempts_count: features.attempts_per_topic,
-            attention_risk: prediction.mastery_probability < 0.4 ? "HIGH" : "LOW" as const
+            attention_risk: (prediction.mastery_probability < 0.4 ? "HIGH" : "LOW") as "HIGH" | "LOW"
         };
 
         if (faultInjection) {

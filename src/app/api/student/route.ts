@@ -65,6 +65,12 @@ export async function PUT(req: NextRequest) {
 
         let decodedToken;
         try {
+            if (!auth) {
+                return NextResponse.json(
+                    { error: 'Auth service not initialized' },
+                    { status: 500 }
+                );
+            }
             decodedToken = await auth.verifyIdToken(token);
         } catch (error) {
             console.error('Token verification failed:', error);

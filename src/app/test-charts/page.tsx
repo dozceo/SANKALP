@@ -27,10 +27,10 @@ const MOCK_PERFORMANCE = {
 
 const MOCK_GRAPH_DATA = {
   nodes: [
-    { id: "student-1", name: "Student A", type: "student", val: 20 },
-    { id: "student-2", name: "Student B", type: "student", val: 20 },
-    { id: "topic-1", name: "Algebra", type: "topic", val: 10 },
-    { id: "topic-2", name: "Physics", type: "topic", val: 10 },
+    { id: "student-1", name: "Student A", type: "student" as const, val: 20 },
+    { id: "student-2", name: "Student B", type: "student" as const, val: 20 },
+    { id: "topic-1", name: "Algebra", type: "topic" as const, val: 10 },
+    { id: "topic-2", name: "Physics", type: "topic" as const, val: 10 },
   ],
   links: [
     { source: "student-1", target: "topic-1" },

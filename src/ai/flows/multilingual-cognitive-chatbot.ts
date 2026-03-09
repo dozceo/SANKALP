@@ -11,9 +11,9 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExplainConceptInputSchema = z.object({
-  concept: z.string().describe('The concept to explain.'),
-  brainMapContext: z.string().describe('The relevant Brain Map context for the concept.'),
-  language: z.string().describe('The target language for the explanation.'),
+  concept: z.string().max(500).describe('The concept to explain.'),
+  brainMapContext: z.string().max(5000).describe('The relevant Brain Map context for the concept.'),
+  language: z.string().max(50).describe('The target language for the explanation.'),
 });
 export type ExplainConceptInput = z.infer<typeof ExplainConceptInputSchema>;
 

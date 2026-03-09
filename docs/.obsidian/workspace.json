@@ -28,8 +28,8 @@
               "type": "markdown",
               "state": {
                 "file": "sankalp_visual_models.md",
-                "mode": "source",
-                "source": false
+                "mode": "preview",
+                "source": true
               },
               "icon": "lucide-file",
               "title": "sankalp_visual_models"
@@ -49,19 +49,6 @@
         "id": "7672dec53fa422b1",
         "type": "tabs",
         "children": [
-          {
-            "id": "c22ec9ea1f92a20d",
-            "type": "leaf",
-            "state": {
-              "type": "file-explorer",
-              "state": {
-                "sortOrder": "alphabetical",
-                "autoReveal": false
-              },
-              "icon": "lucide-folder-closed",
-              "title": "Files"
-            }
-          },
           {
             "id": "a889de744f806d18",
             "type": "leaf",
@@ -198,13 +185,19 @@
       "bases:Create new base": false
     }
   },
-  "active": "cd55ab023da54727",
+  "active": "a889de744f806d18",
   "lastOpenFiles": [
-    "sankalp_extended_marketing_bmc.md",
+    "finished_reports/accessibility-report.md",
+    "finished_reports/ADK_VALIDATION_REPORT.md",
+    "finished_reports/ADK_DECISION_COVERAGE.md",
     "tasks.md",
+    "prompts/chaos-report_prompt.md",
+    "prompts/ARCHITECTURE_prompt.md",
+    "02_Core_Architecture_&_Specs/OBSERVABILITY_INFRASTRUCTURE_SPEC.md",
     "sankalp_implementation_guide.md",
     "sankalp_visual_models.md",
-    "finished_reports/accessibility-report.md",
+    "prompts/finished/DECISION_COVERAGE_MATRIX_prompt.md",
+    "sankalp_extended_marketing_bmc.md",
     "prompts/finished/accessibility-report_prompt.md",
     "upcoming manual changess/Core_block_upgrade.md",
     "ux_audits/smart_revision_flow_integrity_report.md",
@@ -220,7 +213,6 @@
     "Architecture Map.md",
     "README.md",
     "Links.md",
-    "blueprint.md",
-    "README_OSDI.md"
+    "blueprint.md"
   ]
 }

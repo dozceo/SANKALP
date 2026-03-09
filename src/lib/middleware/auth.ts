@@ -39,6 +39,12 @@ export async function verifyAuth(request: NextRequest): Promise<{
         }
 
         // Verify the token with Firebase Admin SDK
+        if (!auth) {
+            return {
+                authenticated: false,
+                error: 'Auth service not initialized'
+            };
+        }
         const decodedToken = await auth.verifyIdToken(token);
 
         return {

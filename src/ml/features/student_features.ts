@@ -98,11 +98,11 @@ export function extractMasteryFeatures(
     const topicQuizzes = history.quizResults.filter((r) => r.topic === topic);
 
     if (topicQuizzes.length === 0) {
-        // Default features for new topics
+        // Default features for new topics (clamped to training data range)
         return {
             avg_quiz_score: 0,
             attempts_per_topic: 0,
-            days_since_last_revision: 999,
+            days_since_last_revision: 30,
             quiz_score_variance: 0,
             time_spent_per_question: 0,
         };
@@ -125,16 +125,16 @@ export function extractMasteryFeatures(
         }
     }
 
-    const days_since_last_revision = Math.floor(
+    const days_since_last_revision = Math.max(0, Math.floor(
         (referenceDate.getTime() - latestTimestamp) / (1000 * 60 * 60 * 24)
-    );
+    ));
 
     // Calculate quiz_score_variance
     const mean = avg_quiz_score;
     const variance =
         scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
         scores.length;
-    const quiz_score_variance = Math.sqrt(variance);
+    const quiz_score_variance = variance;
 
     // Calculate time_spent_per_question
     const totalTime = topicQuizzes.reduce((sum, q) => sum + q.timeSpent, 0);

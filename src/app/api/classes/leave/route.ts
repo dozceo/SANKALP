@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
         const token = authHeader.split('Bearer ')[1];
 
         try {
+            if (!auth) {
+                return NextResponse.json(
+                    { error: 'Auth service not initialized' },
+                    { status: 500 }
+                );
+            }
             const decodedToken = await auth.verifyIdToken(token);
             // Verify ownership
             if (studentId !== decodedToken.uid) {

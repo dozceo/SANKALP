@@ -13,9 +13,9 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AdaptiveQuizInputSchema = z.object({
-  topic: z.string().describe('The topic of the quiz.'),
+  topic: z.string().max(200).describe('The topic of the quiz.'),
   numQuestions: z.number().describe('The number of questions in the quiz.'),
-  educationLevel: z.string().describe('The educational level for the quiz (e.g., High School, University).'),
+  educationLevel: z.string().max(100).describe('The educational level for the quiz (e.g., High School, University).'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe('The difficulty level of the quiz questions.'),
 });
 

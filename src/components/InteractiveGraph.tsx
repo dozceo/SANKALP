@@ -31,7 +31,8 @@ interface InteractiveGraphProps {
 type ExtendedNodeObject = NodeObject & GraphNode & {
     _cachedLightColor?: string;
     _cachedGradient?: CanvasGradient;
-    _cachedGradientKey?: string;
+    _cachedBase?: string;
+    _cachedLight?: string;
 };
 type ExtendedLinkObject = LinkObject & { source: ExtendedNodeObject; target: ExtendedNodeObject };
 
@@ -172,16 +173,11 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
         if (n.type === 'student') {
           return (n as any).risk?.toLowerCase() === 'high';
         }
-        return true; // Keep topics/others for context, or filter?
-        // Let's filter to only high risk students and topics connected to them?
-        // For simplicity, just show high risk students and ALL topics,
-        // OR just high risk students.
-        // Audit says: "Show only High Risk Students".
+        return true;
       });
-      // Refine: Only High Risk Students.
        filteredNodes = baseGraphData.nodes.filter(n =>
          (n.type === 'student' && (n as any).risk?.toLowerCase() === 'high') ||
-         n.type !== 'student' // Keep context nodes (topics) so it's not empty?
+         n.type !== 'student'
        );
     } else if (filter === 'topics') {
       filteredNodes = baseGraphData.nodes.filter(n => n.type === 'topic');
@@ -196,6 +192,16 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
     return { nodes: filteredNodes, links: filteredLinks };
   }, [baseGraphData, filter]);
+
+  // Optimization: Pre-calculate light colors for all nodes in the current view
+  useMemo(() => {
+    graphData.nodes.forEach((node: ExtendedNodeObject) => {
+        if (!node.lightColor && !node._cachedLightColor) {
+            const baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
+            node._cachedLightColor = lightenColor(baseColor, 20);
+        }
+    });
+  }, [graphData.nodes]);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -272,14 +278,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       // Use pre-calculated or type-based colors
       baseColor = node.color || NODE_TYPE_COLORS[node.type] || DEFAULT_NODE_COLOR;
       // Use pre-calculated light color if available, otherwise calculate once (memoized) and cache
-      if (node.lightColor) {
-        lightColor = node.lightColor;
-      } else {
-        if (!node._cachedLightColor) {
-          node._cachedLightColor = lightenColor(baseColor, 20);
-        }
-        lightColor = node._cachedLightColor;
-      }
+      // We rely on the useMemo above to have populated _cachedLightColor if lightColor wasn't present
+      lightColor = node.lightColor || node._cachedLightColor || lightenColor(baseColor, 20);
     }
 
     // Glow effect for highlighted/hovered nodes
@@ -316,10 +316,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
     } else {
       // Node circle with gradient using caching
       let nodeGradient: CanvasGradient;
-      // Optimization: Cache gradient directly on the node object to avoid map lookup and string allocation
-      const gradientKey = `${lightColor}-${baseColor}`;
-
-      if (node._cachedGradient && node._cachedGradientKey === gradientKey) {
+      // Optimization: Check cache without creating new string key
+      if (node._cachedGradient && node._cachedBase === baseColor && node._cachedLight === lightColor) {
         nodeGradient = node._cachedGradient;
       } else {
         // Create unit gradient with offset center (-0.3, -0.3)
@@ -328,7 +326,8 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
         nodeGradient.addColorStop(1, baseColor);
 
         node._cachedGradient = nodeGradient;
-        node._cachedGradientKey = gradientKey;
+        node._cachedBase = baseColor;
+        node._cachedLight = lightColor;
       }
 
       ctx.save();

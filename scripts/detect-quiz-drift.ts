@@ -11,13 +11,13 @@ const DifficultyEvaluationSchema = z.object({
 
 const difficultyJudgePrompt = ai.definePrompt({
   name: 'difficultyJudgePrompt',
-  inputSchema: z.object({
+  input: {schema: z.object({
       question: z.string(),
       options: z.array(z.string()),
       correctAnswer: z.string(),
       intendedDifficulty: z.string()
-  }),
-  outputSchema: DifficultyEvaluationSchema,
+  })},
+  output: {schema: DifficultyEvaluationSchema},
   prompt: `You are an expert educational content evaluator.
 
   Analyze the following quiz question:

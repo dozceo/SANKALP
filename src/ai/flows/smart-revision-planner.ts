@@ -29,8 +29,8 @@ import { calculateTrend } from '@/lib/trend-utils';
 import { MasteryPredictionInput, MasteryPredictionOutput } from '@/ml/inference/types';
 
 const SmartRevisionPlannerInputSchema = z.object({
-  brainMap: z.string().describe('The student\'s Brain Map data represented as a JSON string, including topics, progress, and last revision dates.'),
-  studentId: z.string().describe('Unique identifier for the student.'),
+  brainMap: z.string().max(50000).describe('The student\'s Brain Map data represented as a JSON string, including topics, progress, and last revision dates.'),
+  studentId: z.string().max(100).describe('Unique identifier for the student.'),
 });
 export type SmartRevisionPlannerInput = z.infer<typeof SmartRevisionPlannerInputSchema>;
 
