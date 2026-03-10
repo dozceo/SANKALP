@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -160,10 +161,12 @@ export function StudentProfileForm() {
                                     role="radio"
                                     aria-checked={formData.grade === grade}
                                     onClick={() => setFormData({ ...formData, grade })}
-                                    className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.grade === grade
-                                        ? 'border-primary bg-primary/10 font-semibold'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                    className={cn(
+                                        "px-3 py-2 rounded-lg border text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
+                                        formData.grade === grade
+                                            ? 'border-primary bg-primary/10 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
+                                    )}
                                 >
                                     {grade}
                                 </button>
@@ -180,10 +183,12 @@ export function StudentProfileForm() {
                                     type="button"
                                     aria-pressed={formData.subjects.includes(subject)}
                                     onClick={() => handleSubjectToggle(subject)}
-                                    className={`px-3 py-2 rounded-lg border text-sm transition-all flex items-center gap-2 ${formData.subjects.includes(subject)
-                                        ? 'border-primary bg-primary/10 font-semibold'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                    className={cn(
+                                        "px-3 py-2 rounded-lg border text-sm transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
+                                        formData.subjects.includes(subject)
+                                            ? 'border-primary bg-primary/10 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
+                                    )}
                                 >
                                     {subject}
                                     {formData.subjects.includes(subject) && <CheckCircle className="w-3 h-3 text-primary" />}
@@ -202,10 +207,12 @@ export function StudentProfileForm() {
                                     role="radio"
                                     aria-checked={formData.dailyStudyTime === time}
                                     onClick={() => setFormData({ ...formData, dailyStudyTime: time })}
-                                    className={`px-3 py-2 rounded-lg border text-sm transition-all ${formData.dailyStudyTime === time
-                                        ? 'border-primary bg-primary/10 font-semibold'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                    className={cn(
+                                        "px-3 py-2 rounded-lg border text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
+                                        formData.dailyStudyTime === time
+                                            ? 'border-primary bg-primary/10 font-semibold'
+                                            : 'border-gray-200 hover:border-gray-300'
+                                    )}
                                 >
                                     {time}
                                 </button>
