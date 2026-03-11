@@ -42,7 +42,11 @@ export function getOverallMastery(student: StudentNode | null): number {
     const subjects = getSubjectMastery(student);
     if (subjects.length === 0) return 0;
 
-    const total = subjects.reduce((acc, curr) => acc + curr.value, 0);
+    // ⚡ Bolt: Replace array reduce with for loop to reduce callback overhead
+    let total = 0;
+    for (let i = 0; i < subjects.length; i++) {
+        total += subjects[i].value;
+    }
     return Math.round(total / subjects.length);
 }
 

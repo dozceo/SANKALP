@@ -121,10 +121,12 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // ⚡ Bolt: Hoist toLowerCase to prevent redundant O(N) string allocations during filtering
+            const queryLower = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(queryLower) ||
+                student.email.toLowerCase().includes(queryLower) ||
+                student.className?.toLowerCase().includes(queryLower)
             );
         }
 
