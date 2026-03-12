@@ -259,6 +259,7 @@ export function FocusTimer() {
                     <div
                         className="text-7xl font-bold tabular-nums text-primary"
                         role="timer"
+                        aria-live="off"
                         aria-label="Time remaining"
                     >
                         {formatTime(timeLeft)}
