@@ -109,56 +109,67 @@ export default function StudentsPage() {
         }
     };
 
+    // ⚡ Bolt: Optimize Set creation by removing intermediate .map().filter() allocations
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        const classNames = new Set<string>();
+        for (let i = 0; i < students.length; i++) {
+            if (students[i].className) classNames.add(students[i].className as string);
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
     // Filter and sort students
     const filteredAndSortedStudents = useMemo(() => {
-        let filtered = students;
+        const filtered: Student[] = [];
+        const lowerQuery = searchQuery ? searchQuery.toLowerCase() : "";
 
-        // Search filter
-        if (searchQuery) {
-            filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
+        // ⚡ Bolt: Single pass filter loop instead of multiple chained .filter() arrays
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+            let matches = true;
 
-        // Class filter
-        if (classFilter !== "all") {
-            filtered = filtered.filter(s => s.className === classFilter);
-        }
+            if (classFilter !== "all" && s.className !== classFilter) {
+                matches = false;
+            }
 
-        // Performance filter
-        if (performanceFilter !== "all") {
-            filtered = filtered.filter(s => {
+            if (matches && performanceFilter !== "all") {
                 const level = getPerformanceLevel(s.progress).level;
-                return level === performanceFilter;
-            });
-        }
+                if (level !== performanceFilter) {
+                    matches = false;
+                }
+            }
 
-        // Activity filter
-        if (activityFilter !== "all") {
-            filtered = filtered.filter(s => {
+            if (matches && activityFilter !== "all") {
                 const active = isActive(s.lastActivity);
-                return activityFilter === "active" ? active : !active;
-            });
+                if (activityFilter === "active" ? !active : active) {
+                    matches = false;
+                }
+            }
+
+            if (matches && lowerQuery) {
+                matches =
+                    s.name.toLowerCase().includes(lowerQuery) ||
+                    s.email.toLowerCase().includes(lowerQuery) ||
+                    (s.className?.toLowerCase().includes(lowerQuery) || false);
+            }
+
+            if (matches) {
+                filtered.push(s);
+            }
         }
 
         // Sort
-        const sorted = [...filtered].sort((a, b) => {
+        return filtered.sort((a, b) => {
             switch (sortBy) {
                 case "name":
                     return a.name.localeCompare(b.name);
                 case "performance":
                     return b.progress - a.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+                    // ⚡ Bolt: Date parse is faster than instantiating new Date objects
+                    const aTime = a.lastActivity ? Date.parse(a.lastActivity as unknown as string) : 0;
+                    const bTime = b.lastActivity ? Date.parse(b.lastActivity as unknown as string) : 0;
                     return bTime - aTime;
                 case "quizzes":
                     return b.quizzesTaken - a.quizzesTaken;
@@ -166,16 +177,25 @@ export default function StudentsPage() {
                     return 0;
             }
         });
-
-        return sorted;
     }, [students, searchQuery, classFilter, performanceFilter, activityFilter, sortBy]);
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        let atRisk = 0;
+        let activeStudents = 0;
+        let totalProgress = 0;
+
+        // ⚡ Bolt: Compute stats in a single O(N) pass instead of multiple .filter() and .reduce() iterations
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity)) activeStudents++;
+            totalProgress += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(totalProgress / students.length)
             : 0;
 
         return {

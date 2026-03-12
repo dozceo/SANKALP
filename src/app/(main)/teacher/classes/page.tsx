@@ -192,66 +192,92 @@ export default function ClassesPage() {
     }
   };
 
+  // ⚡ Bolt: Optimize array operations by removing intermediate allocations
   // Get unique subjects and grades for filters
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
+    const subjects = new Set<string>();
+    for (let i = 0; i < classes.length; i++) {
+      if (classes[i].subject) subjects.add(classes[i].subject);
+    }
     return Array.from(subjects).sort();
   }, [classes]);
 
   const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
+    const grades = new Set<string>();
+    for (let i = 0; i < classes.length; i++) {
+      if (classes[i].grade) grades.add(classes[i].grade);
+    }
     return Array.from(grades).sort();
   }, [classes]);
 
   // Filter and sort classes
   const filteredAndSortedClasses = useMemo(() => {
-    let filtered = classes;
+    const filtered: ClassData[] = [];
+    const lowerQuery = searchQuery ? searchQuery.toLowerCase() : "";
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+    // ⚡ Bolt: Single pass filter loop instead of multiple chained .filter() arrays
+    for (let i = 0; i < classes.length; i++) {
+      const cls = classes[i];
+      let matches = true;
 
-    // Subject filter
-    if (subjectFilter !== "all") {
-      filtered = filtered.filter(cls => cls.subject === subjectFilter);
-    }
+      if (subjectFilter !== "all" && cls.subject !== subjectFilter) {
+        matches = false;
+      }
 
-    // Grade filter
-    if (gradeFilter !== "all") {
-      filtered = filtered.filter(cls => cls.grade === gradeFilter);
+      if (matches && gradeFilter !== "all" && cls.grade !== gradeFilter) {
+        matches = false;
+      }
+
+      if (matches && lowerQuery) {
+        matches =
+          cls.className.toLowerCase().includes(lowerQuery) ||
+          cls.subject.toLowerCase().includes(lowerQuery) ||
+          cls.classCode.toLowerCase().includes(lowerQuery);
+      }
+
+      if (matches) {
+        filtered.push(cls);
+      }
     }
 
     // Sort
-    const sorted = [...filtered].sort((a, b) => {
+    return filtered.sort((a, b) => {
       switch (sortBy) {
         case "name":
           return a.className.localeCompare(b.className);
         case "students":
           return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
         case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          // ⚡ Bolt: Date parse is faster than instantiating new Date objects
+          return Date.parse(b.createdAt as unknown as string) - Date.parse(a.createdAt as unknown as string);
         case "subject":
           return a.subject.localeCompare(b.subject);
         default:
           return 0;
       }
     });
-
-    return sorted;
   }, [classes, searchQuery, subjectFilter, gradeFilter, sortBy]);
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalStudents = classes.reduce((acc, cls) => acc + (cls.studentIds?.length || 0), 0);
+    let totalStudents = 0;
+    let mostPopularClass = classes.length > 0 ? classes[0] : null;
+    let maxStudents = mostPopularClass?.studentIds?.length || 0;
+
+    // ⚡ Bolt: Compute stats in a single O(N) pass instead of multiple .reduce() iterations
+    for (let i = 0; i < classes.length; i++) {
+      const cls = classes[i];
+      const studentCount = cls.studentIds?.length || 0;
+
+      totalStudents += studentCount;
+
+      if (studentCount > maxStudents) {
+        maxStudents = studentCount;
+        mostPopularClass = cls;
+      }
+    }
+
     const avgStudents = classes.length > 0 ? Math.round(totalStudents / classes.length) : 0;
-    const mostPopularClass = classes.reduce((max, cls) =>
-      (cls.studentIds?.length || 0) > (max.studentIds?.length || 0) ? cls : max
-      , classes[0]);
 
     return {
       totalClasses: classes.length,
