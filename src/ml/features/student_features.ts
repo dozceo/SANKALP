@@ -108,40 +108,39 @@ export function extractMasteryFeatures(
         };
     }
 
-    // Calculate avg_quiz_score
-    const scores = topicQuizzes.map((q) => q.score);
-    const avg_quiz_score =
-        scores.reduce((sum, score) => sum + score, 0) / scores.length;
-
-    // Calculate attempts_per_topic
     const attempts_per_topic = topicQuizzes.length;
+    let sumScores = 0;
+    let latestTimestamp = 0;
+    let totalTime = 0;
+    let totalQuestions = 0;
 
-    // Calculate days_since_last_revision
-    let latestTimestamp = topicQuizzes[0].timestamp.getTime();
-    for (let i = 1; i < topicQuizzes.length; i++) {
-        const ts = topicQuizzes[i].timestamp.getTime();
+    // ⚡ Bolt Optimization: Single-pass loop to calculate sums and max timestamp
+    // Replaces multiple O(N) array methods (.map, .reduce, .filter) to minimize GC pressure
+    for (let i = 0; i < attempts_per_topic; i++) {
+        const q = topicQuizzes[i];
+        sumScores += q.score;
+        totalTime += q.timeSpent;
+        totalQuestions += q.questionsAttempted;
+
+        const ts = q.timestamp.getTime();
         if (ts > latestTimestamp) {
             latestTimestamp = ts;
         }
     }
 
+    const avg_quiz_score = sumScores / attempts_per_topic;
+
+    // ⚡ Bolt Optimization: Second pass for variance (requires mean)
+    let sumVariance = 0;
+    for (let i = 0; i < attempts_per_topic; i++) {
+        sumVariance += Math.pow(topicQuizzes[i].score - avg_quiz_score, 2);
+    }
+    const quiz_score_variance = sumVariance / attempts_per_topic;
+
     const days_since_last_revision = Math.max(0, Math.floor(
         (referenceDate.getTime() - latestTimestamp) / (1000 * 60 * 60 * 24)
     ));
 
-    // Calculate quiz_score_variance
-    const mean = avg_quiz_score;
-    const variance =
-        scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
-        scores.length;
-    const quiz_score_variance = variance;
-
-    // Calculate time_spent_per_question
-    const totalTime = topicQuizzes.reduce((sum, q) => sum + q.timeSpent, 0);
-    const totalQuestions = topicQuizzes.reduce(
-        (sum, q) => sum + q.questionsAttempted,
-        0
-    );
     const time_spent_per_question =
         totalQuestions > 0 ? totalTime / totalQuestions : 0;
 
@@ -164,29 +163,34 @@ export function extractAttentionFeatures(
     const now = referenceDate.getTime();
     const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-    // Session frequency (quizzes taken in last week)
-    const recentQuizzes = history.quizResults.filter(
-        (r) => r.timestamp.getTime() > oneWeekAgo
-    );
-    const session_frequency = recentQuizzes.length;
+    let session_frequency = 0;
+    let recentTimeSpent = 0;
+    let lastActivityTime = 0;
 
-    // Average session duration (avg time per quiz)
-    const avg_session_duration =
-        recentQuizzes.length > 0
-            ? recentQuizzes.reduce((sum, q) => sum + q.timeSpent, 0) /
-            recentQuizzes.length /
-            60
-            : 0;
+    // ⚡ Bolt Optimization: Single-pass loop replaces chained array operations
+    // Avoids an O(N log N) sort operation and multiple O(N) filter/reduce passes
+    for (let i = 0; i < history.quizResults.length; i++) {
+        const quiz = history.quizResults[i];
+        const ts = quiz.timestamp.getTime();
 
-    // Quiz completion rate (assumed all completed for now - would need start/finish tracking)
+        if (ts > lastActivityTime) {
+            lastActivityTime = ts;
+        }
+
+        if (ts > oneWeekAgo) {
+            session_frequency++;
+            recentTimeSpent += quiz.timeSpent;
+        }
+    }
+
+    const avg_session_duration = session_frequency > 0
+        ? (recentTimeSpent / session_frequency) / 60
+        : 0;
+
     const quiz_completion_rate = 1.0;
 
-    // Days inactive
-    const lastActivity = history.quizResults.sort(
-        (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-    )[0];
-    const days_inactive = lastActivity
-        ? Math.floor((now - lastActivity.timestamp.getTime()) / (1000 * 60 * 60 * 24))
+    const days_inactive = lastActivityTime > 0
+        ? Math.floor((now - lastActivityTime) / (1000 * 60 * 60 * 24))
         : 999;
 
     // Performance trend (compare last 3 quizzes to previous 3)
