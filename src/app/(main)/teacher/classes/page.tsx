@@ -52,7 +52,8 @@ import {
   Filter,
   SortAsc,
   TrendingUp,
-  GraduationCap
+  GraduationCap,
+  X
 } from "lucide-react";
 import Link from "next/link";
 
@@ -444,7 +445,9 @@ export default function ClassesPage() {
                       setSubjectFilter("all");
                       setGradeFilter("all");
                     }}
+                    aria-label="Clear all search and filter criteria"
                   >
+                    <X className="mr-2 h-4 w-4" aria-hidden="true" />
                     Clear filters
                   </Button>
                 )}
