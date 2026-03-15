@@ -117,40 +117,42 @@ export default function StudentsPage() {
 
     // Filter and sort students
     const filteredAndSortedStudents = useMemo(() => {
-        let filtered = students;
+        // ⚡ Bolt: Hoist toLowerCase out of loop to avoid redundant string allocations
+        const lowerQuery = searchQuery ? searchQuery.toLowerCase() : "";
 
-        // Search filter
-        if (searchQuery) {
-            filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
+        // ⚡ Bolt: Combine all filter passes into a single pass to eliminate intermediate arrays
+        const filtered = students.filter(student => {
+            // Search filter
+            if (lowerQuery) {
+                if (!student.name.toLowerCase().includes(lowerQuery) &&
+                    !student.email.toLowerCase().includes(lowerQuery) &&
+                    !(student.className?.toLowerCase() || "").includes(lowerQuery)) {
+                    return false;
+                }
+            }
 
-        // Class filter
-        if (classFilter !== "all") {
-            filtered = filtered.filter(s => s.className === classFilter);
-        }
+            // Class filter
+            if (classFilter !== "all" && student.className !== classFilter) {
+                return false;
+            }
 
-        // Performance filter
-        if (performanceFilter !== "all") {
-            filtered = filtered.filter(s => {
-                const level = getPerformanceLevel(s.progress).level;
-                return level === performanceFilter;
-            });
-        }
+            // Performance filter
+            if (performanceFilter !== "all" && getPerformanceLevel(student.progress).level !== performanceFilter) {
+                return false;
+            }
 
-        // Activity filter
-        if (activityFilter !== "all") {
-            filtered = filtered.filter(s => {
-                const active = isActive(s.lastActivity);
-                return activityFilter === "active" ? active : !active;
-            });
-        }
+            // Activity filter
+            if (activityFilter !== "all") {
+                const active = isActive(student.lastActivity);
+                if (activityFilter === "active" && !active) return false;
+                if (activityFilter === "inactive" && active) return false;
+            }
+
+            return true;
+        });
 
         // Sort
-        const sorted = [...filtered].sort((a, b) => {
+        const sorted = filtered.sort((a, b) => {
             switch (sortBy) {
                 case "name":
                     return a.name.localeCompare(b.name);
@@ -172,10 +174,27 @@ export default function StudentsPage() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        // ⚡ Bolt: Single pass to calculate all stats, avoiding multiple O(N) filter/reduce calls
+        let atRisk = 0;
+        let activeStudents = 0;
+        let totalProgress = 0;
+
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+
+            if (s.progress < 60) {
+                atRisk++;
+            }
+
+            if (isActive(s.lastActivity)) {
+                activeStudents++;
+            }
+
+            totalProgress += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(totalProgress / students.length)
             : 0;
 
         return {

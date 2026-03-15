@@ -108,40 +108,44 @@ export function extractMasteryFeatures(
         };
     }
 
-    // Calculate avg_quiz_score
-    const scores = topicQuizzes.map((q) => q.score);
-    const avg_quiz_score =
-        scores.reduce((sum, score) => sum + score, 0) / scores.length;
-
-    // Calculate attempts_per_topic
-    const attempts_per_topic = topicQuizzes.length;
-
-    // Calculate days_since_last_revision
+    // ⚡ Bolt: Single pass to calculate all stats, avoiding multiple O(N) map/reduce calls
+    let sumScore = 0;
     let latestTimestamp = topicQuizzes[0].timestamp.getTime();
-    for (let i = 1; i < topicQuizzes.length; i++) {
-        const ts = topicQuizzes[i].timestamp.getTime();
+    let totalTime = 0;
+    let totalQuestions = 0;
+
+    // First pass: sum up scores, time, questions, and find latest timestamp
+    for (let i = 0; i < topicQuizzes.length; i++) {
+        const q = topicQuizzes[i];
+        sumScore += q.score;
+        totalTime += q.timeSpent;
+        totalQuestions += q.questionsAttempted;
+
+        const ts = q.timestamp.getTime();
         if (ts > latestTimestamp) {
             latestTimestamp = ts;
         }
     }
 
+    // Calculate avg_quiz_score
+    const avg_quiz_score = sumScore / topicQuizzes.length;
+
+    // Calculate attempts_per_topic
+    const attempts_per_topic = topicQuizzes.length;
+
+    // Calculate days_since_last_revision
     const days_since_last_revision = Math.max(0, Math.floor(
         (referenceDate.getTime() - latestTimestamp) / (1000 * 60 * 60 * 24)
     ));
 
-    // Calculate quiz_score_variance
-    const mean = avg_quiz_score;
-    const variance =
-        scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
-        scores.length;
-    const quiz_score_variance = variance;
+    // Calculate quiz_score_variance (requires second pass since it needs mean)
+    let varianceSum = 0;
+    for (let i = 0; i < topicQuizzes.length; i++) {
+        varianceSum += Math.pow(topicQuizzes[i].score - avg_quiz_score, 2);
+    }
+    const quiz_score_variance = varianceSum / topicQuizzes.length;
 
     // Calculate time_spent_per_question
-    const totalTime = topicQuizzes.reduce((sum, q) => sum + q.timeSpent, 0);
-    const totalQuestions = topicQuizzes.reduce(
-        (sum, q) => sum + q.questionsAttempted,
-        0
-    );
     const time_spent_per_question =
         totalQuestions > 0 ? totalTime / totalQuestions : 0;
 
@@ -164,18 +168,22 @@ export function extractAttentionFeatures(
     const now = referenceDate.getTime();
     const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-    // Session frequency (quizzes taken in last week)
-    const recentQuizzes = history.quizResults.filter(
-        (r) => r.timestamp.getTime() > oneWeekAgo
-    );
-    const session_frequency = recentQuizzes.length;
+    // ⚡ Bolt: Single pass to calculate frequency and duration, avoiding intermediate array allocation
+    let session_frequency = 0;
+    let sum_session_duration = 0;
+
+    for (let i = 0; i < history.quizResults.length; i++) {
+        const r = history.quizResults[i];
+        if (r.timestamp.getTime() > oneWeekAgo) {
+            session_frequency++;
+            sum_session_duration += r.timeSpent;
+        }
+    }
 
     // Average session duration (avg time per quiz)
     const avg_session_duration =
-        recentQuizzes.length > 0
-            ? recentQuizzes.reduce((sum, q) => sum + q.timeSpent, 0) /
-            recentQuizzes.length /
-            60
+        session_frequency > 0
+            ? (sum_session_duration / session_frequency) / 60
             : 0;
 
     // Quiz completion rate (assumed all completed for now - would need start/finish tracking)

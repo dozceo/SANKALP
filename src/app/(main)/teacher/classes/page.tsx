@@ -205,29 +205,35 @@ export default function ClassesPage() {
 
   // Filter and sort classes
   const filteredAndSortedClasses = useMemo(() => {
-    let filtered = classes;
+    // ⚡ Bolt: Hoist toLowerCase out of loop to avoid redundant string allocations
+    const lowerQuery = searchQuery ? searchQuery.toLowerCase() : "";
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+    // ⚡ Bolt: Combine all filter passes into a single pass to eliminate intermediate arrays
+    const filtered = classes.filter(cls => {
+      // Search filter
+      if (lowerQuery) {
+        if (!cls.className.toLowerCase().includes(lowerQuery) &&
+            !cls.subject.toLowerCase().includes(lowerQuery) &&
+            !cls.classCode.toLowerCase().includes(lowerQuery)) {
+          return false;
+        }
+      }
 
-    // Subject filter
-    if (subjectFilter !== "all") {
-      filtered = filtered.filter(cls => cls.subject === subjectFilter);
-    }
+      // Subject filter
+      if (subjectFilter !== "all" && cls.subject !== subjectFilter) {
+        return false;
+      }
 
-    // Grade filter
-    if (gradeFilter !== "all") {
-      filtered = filtered.filter(cls => cls.grade === gradeFilter);
-    }
+      // Grade filter
+      if (gradeFilter !== "all" && cls.grade !== gradeFilter) {
+        return false;
+      }
+
+      return true;
+    });
 
     // Sort
-    const sorted = [...filtered].sort((a, b) => {
+    const sorted = filtered.sort((a, b) => {
       switch (sortBy) {
         case "name":
           return a.className.localeCompare(b.className);
@@ -247,11 +253,21 @@ export default function ClassesPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalStudents = classes.reduce((acc, cls) => acc + (cls.studentIds?.length || 0), 0);
+    // ⚡ Bolt: Single pass to calculate all stats, avoiding multiple O(N) reduce calls
+    let totalStudents = 0;
+    let mostPopularClass = classes[0];
+
+    for (let i = 0; i < classes.length; i++) {
+      const cls = classes[i];
+      const count = cls.studentIds?.length || 0;
+      totalStudents += count;
+
+      if ((mostPopularClass?.studentIds?.length || 0) < count) {
+        mostPopularClass = cls;
+      }
+    }
+
     const avgStudents = classes.length > 0 ? Math.round(totalStudents / classes.length) : 0;
-    const mostPopularClass = classes.reduce((max, cls) =>
-      (cls.studentIds?.length || 0) > (max.studentIds?.length || 0) ? cls : max
-      , classes[0]);
 
     return {
       totalClasses: classes.length,
