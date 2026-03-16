@@ -125,32 +125,35 @@ export default function ClassDetailsPage() {
     // Filter students by search query
     const filteredStudents = useMemo(() => {
         if (!searchQuery) return students;
+        const lowerQuery = searchQuery.toLowerCase();
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchQuery.toLowerCase())
+            student.name.toLowerCase().includes(lowerQuery) ||
+            student.email.toLowerCase().includes(lowerQuery)
         );
     }, [students, searchQuery]);
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
-        const activeStudents = students.filter(s => {
-            if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceLogin <= 7;
-        });
+        const nowMs = Date.now();
+        let activeCount = 0;
+        let recentJoinCount = 0;
 
-        const recentJoins = students.filter(s => {
-            if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceJoin <= 7;
-        });
+        for (const s of students) {
+            if (s.lastLoginDate) {
+                const daysSinceLogin = (nowMs - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSinceLogin <= 7) activeCount++;
+            }
+            if (s.joinedClassAt) {
+                const daysSinceJoin = (nowMs - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSinceJoin <= 7) recentJoinCount++;
+            }
+        }
 
         return {
             total: students.length,
-            activeThisWeek: activeStudents.length,
-            recentJoins: recentJoins.length,
-            activityRate: students.length > 0 ? Math.round((activeStudents.length / students.length) * 100) : 0,
+            activeThisWeek: activeCount,
+            recentJoins: recentJoinCount,
+            activityRate: students.length > 0 ? Math.round((activeCount / students.length) * 100) : 0,
         };
     }, [students]);
 
@@ -356,7 +359,7 @@ export default function ClassDetailsPage() {
                             <TableBody>
                                 {filteredStudents.map((student) => {
                                     const daysSinceLogin = student.lastLoginDate
-                                        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
+                                        ? (Date.now() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
                                         : null;
                                     const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
 
