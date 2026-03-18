@@ -1,0 +1,308 @@
+SANKALP CODE ARCHITECTURE GUIDE (SOURCE-ONLY)
+
+Scope:
+- This guide is derived from executable/config source files only.
+- It excludes all Markdown documentation by design.
+
+============================================================
+1) TECH STACK (FROM package.json + config)
+============================================================
+
+Core runtime and framework
+- Next.js App Router: next (^15.5.7)
+- React: react/react-dom (^18.3.1)
+- TypeScript: typescript (^5)
+- Node runtime for server/API execution
+Files:
+- /home/runner/work/SANKALP/SANKALP/package.json
+- /home/runner/work/SANKALP/SANKALP/src/app/**
+
+Frontend UI and styling
+- Tailwind CSS + PostCSS
+- Radix UI primitives (@radix-ui/react-*)
+- Lucide icons
+- Recharts + react-force-graph-2d for visualizations
+Files:
+- /home/runner/work/SANKALP/SANKALP/package.json
+- /home/runner/work/SANKALP/SANKALP/tailwind.config.ts
+- /home/runner/work/SANKALP/SANKALP/src/components/ui/**
+
+Forms and validation
+- react-hook-form
+- zod + @hookform/resolvers
+Files:
+- /home/runner/work/SANKALP/SANKALP/package.json
+- /home/runner/work/SANKALP/SANKALP/src/app/(auth)/login/page.tsx
+
+Authentication + data layer
+- Firebase client SDK (browser): firebase
+- Firebase Admin SDK (server): firebase-admin
+- Firestore rules + indexes managed via firebase.json
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/lib/firebase.ts
+- /home/runner/work/SANKALP/SANKALP/src/lib/firebase-admin.ts
+- /home/runner/work/SANKALP/SANKALP/firebase.json
+- /home/runner/work/SANKALP/SANKALP/firestore.rules
+- /home/runner/work/SANKALP/SANKALP/firestore.indexes.json
+
+AI/LLM layer
+- Genkit + Google AI plugin (@genkit-ai/googleai)
+- Default model configured using the Genkit GoogleAI export `gemini20Flash`
+- Flow-based architecture in src/ai/flows
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/ai/genkit.ts
+- /home/runner/work/SANKALP/SANKALP/src/ai/flows/**
+
+ML layer
+- TypeScript feature engineering + Node bridge
+- Python inference script loading sklearn model artifact (.pkl)
+- Bridge supports HTTP prediction endpoint fallback + persistent subprocess
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/ml/features/student_features.ts
+- /home/runner/work/SANKALP/SANKALP/src/ml/inference/ml-bridge.ts
+- /home/runner/work/SANKALP/SANKALP/src/ml/inference/predict_mastery.py
+- /home/runner/work/SANKALP/SANKALP/src/ml/models/mastery_model.pkl
+
+Observability
+- Sentry via @sentry/nextjs (server/edge/client configs)
+- Event telemetry queue (IndexedDB + batched API logging)
+Files:
+- /home/runner/work/SANKALP/SANKALP/next.config.ts
+- /home/runner/work/SANKALP/SANKALP/src/instrumentation.ts
+- /home/runner/work/SANKALP/SANKALP/src/lib/eventTracker.ts
+
+============================================================
+2) FRONTEND ARCHITECTURE
+============================================================
+
+Route groups (App Router)
+- Auth pages: /src/app/(auth)
+  - login, sign-up, onboarding, teacher-onboarding, join-class
+- Main app pages: /src/app/(main)
+  - home, classes, planner, syllabus, quiz, chat, mentor, brain-map, rewards, settings, profile
+  - teacher dashboards: /teacher, /teacher/students, /teacher/classes, dynamic [studentId], [classId]
+- Root page: /src/app/page.tsx (auth-aware redirect coordinator)
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/app/(auth)/**/page.tsx
+- /home/runner/work/SANKALP/SANKALP/src/app/(main)/**/page.tsx
+- /home/runner/work/SANKALP/SANKALP/src/app/page.tsx
+
+Global composition
+- Root layout wraps app with:
+  ErrorBoundary -> NextIntlClientProvider -> ThemeProvider -> AuthProvider -> TooltipProvider -> Toaster
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/app/layout.tsx
+
+Main shell and navigation
+- Main layout chooses student vs teacher sidebar using AuthContext role
+- Header title derives from pathname mapping
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/app/(main)/layout.tsx
+- /home/runner/work/SANKALP/SANKALP/src/components/app/sidebar-nav.tsx
+- /home/runner/work/SANKALP/SANKALP/src/components/app/teacher-sidebar-nav.tsx
+- /home/runner/work/SANKALP/SANKALP/src/components/app/header.tsx
+
+Page transition behavior
+- Root page (/src/app/page.tsx) runs client-side redirect logic:
+  1) If no user -> /login
+  2) If teacher role -> checks /api/teacher and routes to /teacher or /teacher-onboarding
+  3) If student role -> checks /api/student and routes to /home or /onboarding
+  4) If role unknown -> probes APIs and infers route
+File:
+- /home/runner/work/SANKALP/SANKALP/src/app/page.tsx
+
+============================================================
+3) BACKEND ARCHITECTURE (NEXT APP ROUTER API)
+============================================================
+
+Backend is implemented as route handlers under:
+- /home/runner/work/SANKALP/SANKALP/src/app/api/**/route.ts
+
+Major API domains
+- User lifecycle:
+  /api/users/create, /api/users/[userId], /api/students/create, /api/teachers/create
+- Student/teacher profile + onboarding:
+  /api/student, /api/student/onboard, /api/teacher, /api/teacher/onboard
+- Class management:
+  /api/classes/create, /api/classes/join, /api/classes/leave,
+  /api/teacher/classes, /api/teacher/classes/[classId], /api/teacher/classes/[classId]/students
+- Planner and knowledge map:
+  /api/planner/data, /api/planner/review, /api/planner/convert-to-node,
+  /api/brainmap/nodes, /api/student/graph, /api/teacher/graph
+- Assessment + session telemetry:
+  /api/quiz/submit, /api/activity/log,
+  /api/sankalp/session/start, /api/sankalp/session/end
+- Intelligence endpoint (ML + ADK pipeline):
+  /api/intelligence/student
+
+Naming note
+- The repository currently uses both singular and plural resource segments
+  (for example /api/student vs /api/users). This guide lists routes exactly
+  as implemented in source.
+
+Representative files:
+- /home/runner/work/SANKALP/SANKALP/src/app/api/intelligence/student/route.ts
+- /home/runner/work/SANKALP/SANKALP/src/app/api/student/route.ts
+- /home/runner/work/SANKALP/SANKALP/src/app/api/teacher/classes/route.ts
+- /home/runner/work/SANKALP/SANKALP/src/app/api/activity/log/route.ts
+
+Auth enforcement pattern
+- Bearer Firebase ID token extracted and verified with Firebase Admin.
+- Shared auth helpers: verifyAuth, withAuth.
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/lib/middleware/auth.ts
+- /home/runner/work/SANKALP/SANKALP/src/lib/firebase-admin.ts
+
+============================================================
+4) FRONTEND <-> BACKEND CONNECTION PATTERNS
+============================================================
+
+Pattern A: Client fetch to API routes
+- Example: Home page fetches intelligence from /api/intelligence/student.
+File:
+- /home/runner/work/SANKALP/SANKALP/src/app/(main)/home/page.tsx
+
+Pattern B: Context-driven API orchestration
+- AuthContext fetches /api/users/[uid] to resolve role.
+- StudentContext fetches /api/student and /api/planner/data and performs writes.
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/contexts/AuthContext.tsx
+- /home/runner/work/SANKALP/SANKALP/src/contexts/StudentContext.tsx
+
+Pattern C: Authenticated fetch with Firebase token
+- StudentContext joins/leaves classes with Authorization: Bearer <idToken>.
+- Server verifies token with firebase-admin before mutation.
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/contexts/StudentContext.tsx
+- /home/runner/work/SANKALP/SANKALP/src/app/api/student/route.ts
+
+Pattern D: Server Actions for AI calls
+- Chat/Quiz/Syllabus/Planner actions run on server ("use server") and call AI flows.
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/app/(main)/chat/actions.ts
+- /home/runner/work/SANKALP/SANKALP/src/app/(main)/quiz/actions.ts
+- /home/runner/work/SANKALP/SANKALP/src/app/(main)/syllabus/actions.ts
+- /home/runner/work/SANKALP/SANKALP/src/app/(main)/planner/actions.ts
+
+============================================================
+5) AI + ML SUBSYSTEM INTEGRATION
+============================================================
+
+AI flow engine
+- Flows defined under /src/ai/flows and registered for dev in /src/ai/dev.ts.
+- Chat action composes:
+  retrieveRelevantContext() (RAG) -> explainConcept() flow -> fallback on failure.
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/ai/dev.ts
+- /home/runner/work/SANKALP/SANKALP/src/ai/flows/multilingual-cognitive-chatbot.ts
+- /home/runner/work/SANKALP/SANKALP/src/ai/rag/retriever.ts
+- /home/runner/work/SANKALP/SANKALP/src/app/(main)/chat/actions.ts
+
+ML inference pipeline
+- Feature extraction in TypeScript.
+- Inference call path:
+  API (/api/intelligence/student) -> batchPredictMastery()
+  -> try HTTP ML service -> fallback to persistent python subprocess
+  -> predict_mastery.py loads pkl model and returns JSON prediction.
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/app/api/intelligence/student/route.ts
+- /home/runner/work/SANKALP/SANKALP/src/ml/features/student_features.ts
+- /home/runner/work/SANKALP/SANKALP/src/ml/inference/ml-bridge.ts
+- /home/runner/work/SANKALP/SANKALP/src/ml/inference/predict_mastery.py
+
+ADK policy layer
+- ADK decision engine consumes ML signals and returns policy actions/priority.
+- Intelligence endpoint merges ML outputs + ADK decision + trend analysis into UI payload.
+Files:
+- /home/runner/work/SANKALP/SANKALP/src/ai/adk/decision-engine.ts
+- /home/runner/work/SANKALP/SANKALP/src/ai/adk/types.ts
+- /home/runner/work/SANKALP/SANKALP/src/app/api/intelligence/student/route.ts
+
+============================================================
+6) DATA + SECURITY MODEL
+============================================================
+
+Client vs server Firebase split
+- Browser code uses /src/lib/firebase.ts.
+- Privileged DB/auth operations use /src/lib/firebase-admin.ts.
+
+Firestore security boundaries
+- Rules enforce owner/teacher access patterns.
+- Sensitive collections (mlPredictions, adkDecisions) are read-limited and write-blocked from client rules.
+Files:
+- /home/runner/work/SANKALP/SANKALP/firestore.rules
+- /home/runner/work/SANKALP/SANKALP/firestore.indexes.json
+
+============================================================
+7) HOSTING + DEPLOYMENT (FROM CONFIG/SCRIPTS)
+============================================================
+
+Primary hosting target in repo config
+- Firebase App Hosting config exists in apphosting.yaml.
+- runConfig defines instance scaling, concurrency, CPU, memory.
+- env/secrets define build/runtime variables and secret references.
+File:
+- /home/runner/work/SANKALP/SANKALP/apphosting.yaml
+
+Additional Firebase deployment scope
+- firebase.json maps Firestore + Storage rules/indexes.
+- package script deploy:firestore deploys firestore rules/indexes.
+Files:
+- /home/runner/work/SANKALP/SANKALP/firebase.json
+- /home/runner/work/SANKALP/SANKALP/package.json
+
+Operational script present
+- deploy.sh pushes a branch and references Firebase App Hosting monitor URL.
+File:
+- /home/runner/work/SANKALP/SANKALP/deploy.sh
+
+============================================================
+8) HOW THE APP WORKS END-TO-END (REQUEST FLOW)
+============================================================
+
+User opens app
+-> /src/app/page.tsx checks AuthContext state
+-> routes to login/onboarding/home/teacher pages
+
+On student home
+-> /src/app/(main)/home/page.tsx fetches /api/intelligence/student
+-> API composes data via Firestore helpers + ML bridge + ADK logic
+-> returns StudentIntelligence JSON
+-> LearningStateCard/TopicMasteryGrid/graph components render
+
+When user interacts
+-> client eventTracker batches events (offline-capable)
+-> /api/activity/log persists logs and session metrics
+
+When user asks AI/chat/quiz/syllabus
+-> server actions call Genkit flows
+-> responses returned to client with fallback behavior where implemented
+
+============================================================
+9) QUICK FILE MAP (HIGH VALUE ENTRY POINTS)
+============================================================
+
+App shell and routing
+- /home/runner/work/SANKALP/SANKALP/src/app/layout.tsx
+- /home/runner/work/SANKALP/SANKALP/src/app/page.tsx
+- /home/runner/work/SANKALP/SANKALP/src/app/(main)/layout.tsx
+
+State providers
+- /home/runner/work/SANKALP/SANKALP/src/contexts/AuthContext.tsx
+- /home/runner/work/SANKALP/SANKALP/src/contexts/StudentContext.tsx
+
+Backend API
+- /home/runner/work/SANKALP/SANKALP/src/app/api/**/route.ts
+
+AI/ML core
+- /home/runner/work/SANKALP/SANKALP/src/ai/genkit.ts
+- /home/runner/work/SANKALP/SANKALP/src/ai/flows/**
+- /home/runner/work/SANKALP/SANKALP/src/ml/inference/ml-bridge.ts
+- /home/runner/work/SANKALP/SANKALP/src/ml/inference/predict_mastery.py
+
+Firebase/security/deployment
+- /home/runner/work/SANKALP/SANKALP/src/lib/firebase.ts
+- /home/runner/work/SANKALP/SANKALP/src/lib/firebase-admin.ts
+- /home/runner/work/SANKALP/SANKALP/firestore.rules
+- /home/runner/work/SANKALP/SANKALP/apphosting.yaml
+- /home/runner/work/SANKALP/SANKALP/next.config.ts
