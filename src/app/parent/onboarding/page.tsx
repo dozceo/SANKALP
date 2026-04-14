@@ -1,36 +1,110 @@
-import { Heart, BookOpen, Activity } from "lucide-react";
+import React from "react";
+import Link from "next/link";
 
 export default function ParentOnboardingPage() {
   return (
-    <div className="w-full max-w-4xl bg-[#E9EFF2] rounded-lg p-8 md:p-12 neumorphic-extruded flex flex-col gap-10 z-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div className="max-w-xl"><p className="font-label text-sm uppercase tracking-widest text-[#815600] font-bold mb-3">Onboarding Step 02</p><h1 className="font-headline text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight leading-none mb-4">Stay Connected</h1><p className="text-on-surface-variant text-lg leading-relaxed">Understand your child&apos;s journey in plain language.</p></div>
-        <div className="flex gap-3 mb-2"><div className="w-2.5 h-2.5 rounded-full bg-surface-dim neumorphic-debossed"></div><div className="w-8 h-2.5 rounded-full bg-primary shadow-sm"></div><div className="w-2.5 h-2.5 rounded-full bg-surface-dim neumorphic-debossed"></div></div>
+    <div className="min-h-screen bg-surface font-body text-on-surface flex flex-col items-center justify-center p-6 selection:bg-primary-container selection:text-on-primary-container">
+      
+      {/* Background Ambient Glow */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-primary/5 blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-secondary/5 blur-[100px]"></div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <div className="md:col-span-4 bg-surface-container-low rounded-lg p-6 neumorphic-card-sm flex flex-col gap-6">
-          <div className="flex justify-between items-center"><span className="font-bold text-sm text-on-surface-variant">DAILY FOCUS</span><Heart size={20} className="text-tertiary" /></div>
-          <div className="flex flex-col gap-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-outline">Language Arts</span>
-            <div className="h-4 w-full bg-surface-container-highest rounded-full neumorphic-debossed relative overflow-hidden"><div className="absolute inset-y-0 left-0 w-[75%] bg-tertiary rounded-full"></div></div>
-            <span className="text-xs font-bold uppercase tracking-wider text-outline">Logical Reasoning</span>
-            <div className="h-4 w-full bg-surface-container-highest rounded-full neumorphic-debossed relative overflow-hidden"><div className="absolute inset-y-0 left-0 w-[45%] bg-tertiary rounded-full"></div></div>
+
+      <div className="w-full max-w-2xl relative z-10">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="w-20 h-20 mx-auto rounded-full neumorphic-flat flex items-center justify-center mb-6">
+            <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+              family_restroom
+            </span>
           </div>
-          <div className="mt-auto pt-4 border-t border-surface-variant/30 text-center"><p className="text-2xl font-headline font-bold text-primary">84%</p><p className="text-[10px] font-bold uppercase text-outline">Weekly Average</p></div>
+          <h1 className="text-4xl md:text-5xl font-headline font-extrabold text-on-surface tracking-tight mb-4">
+            Welcome to SANKALP
+          </h1>
+          <p className="text-lg text-on-surface-variant max-w-lg mx-auto">
+            We believe every student learns at their own pace. Let's connect you to your child's learning journey so we can support them together.
+          </p>
         </div>
-        <div className="md:col-span-5 flex flex-col gap-6">
-          <div className="bg-surface rounded-lg p-5 neumorphic-card-sm flex items-start gap-4"><div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container shadow-inner shrink-0"><BookOpen size={24} /></div><div><h4 className="font-bold text-on-surface">Weekly Milestone</h4><p className="text-sm text-on-surface-variant line-clamp-2">Aarav completed 5 collaborative tasks without intervention.</p></div></div>
-          <div className="bg-surface-container-lowest rounded-lg p-5 neumorphic-card-sm border-l-4 border-primary"><div className="flex items-center gap-2 mb-2"><Activity className="text-primary" size={16} /><span className="text-[10px] font-bold uppercase tracking-tighter text-primary">Insight of the Week</span></div><p className="text-sm italic text-on-surface-variant font-medium leading-snug">&quot;Visual cues significantly improved retention during science modules.&quot;</p></div>
+
+        {/* Onboarding Card */}
+        <div className="neumorphic-flat p-10 md:p-14 rounded-[3rem]">
+          <div className="mb-8">
+            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2">
+              Step 1 of 2
+            </h2>
+            <h3 className="text-2xl font-headline font-bold text-on-surface">
+              Link Student Account
+            </h3>
+          </div>
+
+          <form className="space-y-8">
+            {/* Input Group */}
+            <div className="space-y-3">
+              <label htmlFor="inviteCode" className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-2">
+                Parent Invite Code
+              </label>
+              <div className="neumorphic-inset p-2 rounded-2xl flex items-center px-5 transition-all focus-within:ring-2 focus-within:ring-primary/20">
+                <span className="material-symbols-outlined text-primary/50 text-xl mr-3">
+                  vpn_key
+                </span>
+                <input
+                  id="inviteCode"
+                  type="text"
+                  placeholder="e.g. SNK-8X92-PLM"
+                  className="bg-transparent border-none focus:ring-0 text-base w-full py-4 placeholder:text-on-surface-variant/40 font-medium outline-none"
+                  required
+                />
+              </div>
+              <p className="text-xs text-on-surface-variant ml-2">
+                You can find this code in the welcome email sent by your school.
+              </p>
+            </div>
+
+            {/* Input Group */}
+            <div className="space-y-3">
+              <label htmlFor="relation" className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-2">
+                Relationship to Student
+              </label>
+              <div className="neumorphic-inset p-2 rounded-2xl flex items-center px-5">
+                <span className="material-symbols-outlined text-primary/50 text-xl mr-3">
+                  group
+                </span>
+                <select
+                  id="relation"
+                  className="bg-transparent border-none focus:ring-0 text-base w-full py-4 text-on-surface font-medium outline-none appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" disabled selected className="text-on-surface-variant/40">Select relationship...</option>
+                  <option value="mother">Mother</option>
+                  <option value="father">Father</option>
+                  <option value="guardian">Legal Guardian</option>
+                  <option value="other">Other</option>
+                </select>
+                <span className="material-symbols-outlined text-on-surface-variant pointer-events-none">
+                  expand_more
+                </span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <Link href="/login" className="text-sm font-bold text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest">
+                Cancel
+              </Link>
+              <Link href="/parent/dashboard" className="w-full sm:w-auto px-10 py-5 rounded-full bg-gradient-to-r from-primary to-primary-container text-white font-black text-sm tracking-widest hover:scale-[0.98] transition-all shadow-lg shadow-primary/20 uppercase text-center">
+                Connect Account
+              </Link>
+            </div>
+          </form>
         </div>
-        <div className="md:col-span-3 flex flex-col gap-4">
-          <div className="bg-surface-container-low rounded-lg p-4 neumorphic-card-sm flex flex-col items-center justify-center text-center gap-2"><div className="w-14 h-14 rounded-full flex items-center justify-center bg-primary-container text-white shadow-lg"><Heart size={28} /></div><div><p className="text-xs font-bold text-outline uppercase">Wellbeing</p><p className="font-bold text-on-surface">Thriving</p></div></div>
-          <div className="bg-surface rounded-lg p-4 neumorphic-card-sm flex flex-col items-center justify-center text-center gap-2"><div className="relative w-16 h-16 flex items-center justify-center"><svg className="absolute inset-0 w-full h-full -rotate-90"><circle className="text-surface-variant" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeWidth="6"></circle><circle className="text-tertiary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeDasharray="175" strokeDashoffset="40" strokeWidth="6"></circle></svg><Activity className="text-tertiary" size={24} /></div><div><p className="text-xs font-bold text-outline uppercase">Focus</p><p className="font-bold text-on-surface">Very High</p></div></div>
-        </div>
+
+        {/* Footer Note */}
+        <p className="text-center text-xs text-on-surface-variant mt-10 font-medium">
+          Your data is strictly protected. We never share personal information. <br/>
+          <Link href="#" className="text-primary hover:underline">Privacy Policy</Link>
+        </p>
       </div>
-      <footer className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-surface-variant/50">
-        <button className="text-on-surface-variant font-bold px-8 py-3 rounded-full hover:bg-surface-container-high transition-all active:scale-95 bg-transparent border-none">Skip Preview</button>
-        <button className="bg-primary text-white font-bold px-12 py-4 rounded-full shadow-[6px_6px_15px_#B8C5D1] hover:brightness-110 active:scale-95 transition-all text-lg border-none">Next</button>
-      </footer>
     </div>
   );
 }

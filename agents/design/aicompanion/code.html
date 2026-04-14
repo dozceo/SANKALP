@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SANKALP AEI | Cognitive Architect</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .recessed {
+            box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.05), inset -4px -4px 8px rgba(255, 255, 255, 0.8);
+        }
+        .extruded {
+            box-shadow: 12px 12px 24px rgba(0, 0, 0, 0.04), -12px -12px 24px rgba(255, 255, 255, 1);
+        }
+        .extruded-sm {
+            box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.03), -8px -8px 16px rgba(255, 255, 255, 0.9);
+        }
+        .glass {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .soft-neumorph-icon {
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.03), -10px -10px 20px rgba(255,255,255,1);
+        }
+        .soft-neumorph-card {
+            box-shadow: 20px 20px 60px #d1d9e6, -20px -20px 60px #ffffff;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "tertiary-dim": "#005c3d",
+                "on-error": "#ffefef",
+                "on-primary-fixed-variant": "#390083",
+                "on-primary": "#f8f0ff",
+                "on-tertiary-fixed-variant": "#006544",
+                "surface-container-high": "#dfe3e6",
+                "secondary-fixed": "#cdcdff",
+                "on-error-container": "#510017",
+                "tertiary": "#006947",
+                "error-container": "#f74b6d",
+                "primary-fixed-dim": "#a67aff",
+                "tertiary-fixed-dim": "#58e7ab",
+                "on-tertiary": "#c8ffe0",
+                "surface-container-highest": "#d9dde0",
+                "on-tertiary-container": "#005a3c",
+                "surface-container-lowest": "#ffffff",
+                "surface-variant": "#d9dde0",
+                "secondary-fixed-dim": "#bdbeff",
+                "outline-variant": "#abadaf",
+                "background": "#f5f7f9",
+                "surface-container": "#e5e9eb",
+                "error-dim": "#a70138",
+                "on-tertiary-fixed": "#00452d",
+                "surface-container-low": "#eef1f3",
+                "secondary": "#4647d3",
+                "outline": "#747779",
+                "primary": "#702ae1",
+                "on-background": "#2c2f31",
+                "on-secondary-fixed": "#160bae",
+                "surface-tint": "#702ae1",
+                "surface-dim": "#d0d5d8",
+                "secondary-dim": "#3939c7",
+                "on-secondary": "#f4f1ff",
+                "primary-fixed": "#b28cff",
+                "on-primary-container": "#2e006c",
+                "primary-container": "#b28cff",
+                "on-surface-variant": "#595c5e",
+                "on-primary-fixed": "#000000",
+                "inverse-on-surface": "#9a9d9f",
+                "primary-dim": "#6411d5",
+                "on-surface": "#2c2f31",
+                "on-secondary-container": "#2f2ebf",
+                "tertiary-fixed": "#69f6b8",
+                "error": "#b41340",
+                "surface": "#f5f7f9",
+                "on-secondary-fixed-variant": "#3a3ac8",
+                "tertiary-container": "#69f6b8",
+                "secondary-container": "#cdcdff",
+                "surface-bright": "#f5f7f9",
+                "inverse-surface": "#0b0f10",
+                "inverse-primary": "#a476ff"
+              },
+              fontFamily: {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-[#f0f2f5] font-body text-on-surface min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-white/80 dark:bg-[#1a1c1e] flex justify-between items-center w-full px-12 py-5 max-w-none shadow-sm backdrop-blur-md fixed top-0 z-[60]">
+<div class="text-xl font-black text-[#2c2f31] dark:text-white tracking-tight font-['Manrope'] uppercase">SANKALP AEI</div>
+<nav class="hidden md:flex items-center gap-12 font-['Manrope'] font-semibold text-sm">
+<a class="text-[#7C3AED] border-b-2 border-[#7C3AED] pb-1" href="#">Nodes</a>
+<a class="text-[#5a5d5f] hover:text-[#7C3AED] transition-colors" href="#">Mastery</a>
+<a class="text-[#5a5d5f] hover:text-[#7C3AED] transition-colors" href="#">Insights</a>
+<a class="text-[#5a5d5f] hover:text-[#7C3AED] transition-colors" href="#">Oracle</a>
+</nav>
+<div class="flex items-center gap-6">
+<button class="material-symbols-outlined text-[#7C3AED] text-2xl">notifications</button>
+<div class="w-10 h-10 rounded-full bg-surface-container overflow-hidden border-2 border-white shadow-sm">
+<img alt="Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/ALi7pD-X7T-C7E6V0S-4R6Q7f0W9b8C5m1n2o3p4q5r6s7t8u9v0w1x2y3z4a5b6c7d8e9f0g1h2i3j4k5l6m7n8o9p0q1r2s3t4u5v6w7x8y9z0"/>
+</div>
+</div>
+</header>
+<div class="h-[84px]"></div> <!-- Spacer for fixed header -->
+<!-- Extended Icon Navigation Bar (Centered) -->
+<div class="w-full py-8 mt-2">
+<div class="max-w-7xl mx-auto flex justify-center items-center gap-12 md:gap-20 overflow-x-auto scrollbar-hide px-6">
+<div class="flex flex-col items-center gap-3">
+<div class="w-20 h-20 bg-white rounded-full flex items-center justify-center soft-neumorph-icon cursor-pointer hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[#7C3AED] text-3xl font-bold">grid_view</span>
+</div>
+<span class="text-[10px] font-bold font-['Inter'] uppercase tracking-[0.2em] text-[#7C3AED]">Dashboard</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-20 h-20 bg-white rounded-full flex items-center justify-center soft-neumorph-icon cursor-pointer hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[#5a5d5f] text-3xl">menu_book</span>
+</div>
+<span class="text-[10px] font-bold font-['Inter'] uppercase tracking-[0.2em] text-outline">Curriculum</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-20 h-20 bg-white rounded-full flex items-center justify-center soft-neumorph-icon cursor-pointer hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[#5a5d5f] text-3xl">hub</span>
+</div>
+<span class="text-[10px] font-bold font-['Inter'] uppercase tracking-[0.2em] text-outline text-center">Cognitive Map</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-20 h-20 bg-white rounded-full flex items-center justify-center soft-neumorph-icon cursor-pointer hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[#5a5d5f] text-3xl">timer</span>
+</div>
+<span class="text-[10px] font-bold font-['Inter'] uppercase tracking-[0.2em] text-outline">Deep Work</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-20 h-20 bg-white rounded-full flex items-center justify-center soft-neumorph-icon cursor-pointer hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[#5a5d5f] text-3xl">insights</span>
+</div>
+<span class="text-[10px] font-bold font-['Inter'] uppercase tracking-[0.2em] text-outline">Insights</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-20 h-20 bg-white rounded-full flex items-center justify-center soft-neumorph-icon cursor-pointer hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[#5a5d5f] text-3xl">settings</span>
+</div>
+<span class="text-[10px] font-bold font-['Inter'] uppercase tracking-[0.2em] text-outline">Settings</span>
+</div>
+</div>
+</div>
+<main class="flex-1 flex flex-col md:flex-row p-6 md:p-12 gap-12 overflow-hidden mt-6">
+<!-- Left Side: Main Content Canvas -->
+<div class="flex-1 flex flex-col gap-10 min-w-0">
+<!-- Subject Header -->
+<div class="px-4">
+<span class="text-xs font-bold tracking-[0.2em] text-[#7C3AED] uppercase mb-2 block">Cognitive Dashboard</span>
+<h1 class="text-4xl md:text-5xl font-black font-headline tracking-tight text-on-surface">Welcome back, Aryan.</h1>
+<p class="text-on-surface-variant mt-2 font-medium opacity-70">Your Bayesian confidence levels have increased by 4.2% since yesterday's deep work session.</p>
+</div>
+<!-- Study Problem Card -->
+<div class="flex-1 flex items-center justify-center p-4">
+<div class="w-full max-w-3xl aspect-[16/9] bg-[#f0f2f5] soft-neumorph-card rounded-[2.5rem] p-12 flex flex-col justify-between relative overflow-hidden">
+<div class="space-y-6">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-[#7C3AED] animate-pulse"></span>
+<span class="text-xs font-bold text-[#7C3AED] tracking-widest uppercase">Active Challenge</span>
+</div>
+<h2 class="text-4xl md:text-5xl font-headline font-extrabold text-[#2c2f31] leading-tight">
+                        Solve for <span class="italic font-serif">x</span>:
+                        <br/>
+<span class="text-[#7C3AED] mt-6 block text-6xl font-mono tracking-tighter">x² - 5x + 6 = 0</span>
+</h2>
+</div>
+<div class="bg-white/60 backdrop-blur-sm p-8 rounded-3xl border border-white/50 relative shadow-inner">
+<div class="absolute -top-4 -left-4 w-10 h-10 bg-error-container rounded-full flex items-center justify-center text-white shadow-lg border-2 border-white">
+<span class="material-symbols-outlined text-base">priority_high</span>
+</div>
+<p class="text-on-surface font-bold mb-2">Observation</p>
+<p class="text-on-surface-variant text-base italic leading-relaxed">"Notice the signs. If the product of the constants is positive (+6) but the sum is negative (-5), what does that suggest about the two factors' signs?"</p>
+</div>
+<!-- Subtle Pattern Background -->
+<div class="absolute top-0 right-0 w-64 h-64 opacity-5 pointer-events-none translate-x-1/4 -translate-y-1/4">
+<img alt="" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRRUwt04V08X-6PizUhkQ2fXifTO6hQt1BPwnB1sITAe77rFk3JUa1oDKQCeudjLcs1RH0AseQPsVhm-PGVYYES_pSgz0_IIfdKZYUNHqK26uAL9uSK4yY033S3G_TDB60tD61eVImOaPNthboTaYGYQ08vIchoNTxpL4xgbcD_EJa4alOexEPHtUiV0Yz79m2hVWaDKgutj4YnQo4LOJIm59k3_WGy1OkLCDfBUM1dblL9AAKiY2ylbuC1LwTAxSZNf8ooBs0sVO9"/>
+</div>
+</div>
+</div>
+<!-- Action Area -->
+<div class="flex gap-6 mb-12 px-4">
+<button class="px-10 py-5 bg-[#7C3AED] text-white rounded-full font-bold shadow-xl hover:shadow-[#7C3AED]/30 hover:-translate-y-1 transition-all flex items-center gap-3">
+                Submit Answer <span class="material-symbols-outlined text-xl">send</span>
+</button>
+<button class="px-10 py-5 bg-white rounded-full font-bold text-[#2c2f31] soft-neumorph-icon hover:-translate-y-1 transition-all">
+                Draft Workspace
+            </button>
+</div>
+</div>
+<!-- Right Side: Conversational Panel -->
+<aside class="w-full md:w-[400px] flex flex-col gap-8">
+<!-- Mastery Gauge Card (Neumorphic) -->
+<div class="bg-[#f0f2f5] rounded-[2rem] p-8 soft-neumorph-card flex items-center justify-between gap-6">
+<div>
+<h3 class="font-headline font-extrabold text-xl text-[#2c2f31]">Mastery Context</h3>
+<p class="text-sm text-on-surface-variant font-medium opacity-60">Algebraic Structures</p>
+</div>
+<div class="relative w-20 h-20 flex items-center justify-center bg-white rounded-full soft-neumorph-icon">
+<svg class="w-16 h-16 -rotate-90">
+<circle class="text-surface-container-high" cx="32" cy="32" fill="none" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-[#7C3AED]" cx="32" cy="32" fill="none" r="28" stroke="currentColor" stroke-dasharray="176" stroke-dashoffset="49" stroke-linecap="round" stroke-width="4"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center text-sm font-black">72%</span>
+</div>
+</div>
+<!-- AI Assistant Shell -->
+<div class="flex-1 bg-[#f0f2f5] rounded-[2.5rem] soft-neumorph-card flex flex-col overflow-hidden border border-white/50">
+<div class="p-6 bg-white/40 border-b border-white/40 flex justify-between items-center backdrop-blur-sm">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-[#7C3AED] flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-white" data-weight="fill">smart_toy</span>
+</div>
+<div>
+<p class="font-bold text-[#2c2f31]">AEI Assistant</p>
+<p class="text-[10px] text-[#7C3AED] font-black uppercase tracking-widest mt-0.5">Deep Learning Mode</p>
+</div>
+</div>
+<button class="material-symbols-outlined text-[#5a5d5f]">more_vert</button>
+</div>
+<!-- Chat Messages -->
+<div class="flex-1 p-8 space-y-8 overflow-y-auto">
+<div class="flex items-start gap-4">
+<div class="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0 soft-neumorph-icon">
+<span class="material-symbols-outlined text-[#7C3AED] text-sm">auto_awesome</span>
+</div>
+<div class="bg-white p-5 rounded-3xl rounded-tl-none shadow-sm border border-white/50 text-sm leading-relaxed max-w-[85%] text-[#2c2f31]">
+                        I see you're looking at the middle term. To factorize this, we need two numbers that multiply to 6 and add to -5. Do you want to try the factoring method or the quadratic formula?
+                    </div>
+</div>
+<div class="flex items-start gap-4 flex-row-reverse">
+<div class="w-9 h-9 rounded-full bg-[#7C3AED] flex items-center justify-center flex-shrink-0 shadow-md">
+<span class="material-symbols-outlined text-white text-sm">person</span>
+</div>
+<div class="bg-[#7C3AED] text-white p-5 rounded-3xl rounded-tr-none shadow-lg text-sm leading-relaxed max-w-[85%]">
+                        I'm a bit confused about the signs. Why are both factors negative if 6 is positive?
+                    </div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0 soft-neumorph-icon">
+<span class="material-symbols-outlined text-[#7C3AED] text-sm">auto_awesome</span>
+</div>
+<div class="bg-white p-5 rounded-3xl rounded-tl-none shadow-sm border border-white/50 text-sm leading-relaxed max-w-[85%] text-[#2c2f31]">
+                        Great question! Recall that <span class="font-mono bg-surface-container-low px-1 rounded">(-2) × (-3) = +6</span>. When we sum them, we get <span class="font-mono bg-surface-container-low px-1 rounded">-5</span>. This satisfies both requirements!
+                    </div>
+</div>
+</div>
+<!-- Quick Replies -->
+<div class="px-6 py-4 flex gap-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
+<button class="bg-white/80 border border-white px-5 py-2.5 rounded-full text-xs font-bold text-[#5a5d5f] hover:bg-[#7C3AED] hover:text-white transition-all shadow-sm">Check my work</button>
+<button class="bg-white/80 border border-white px-5 py-2.5 rounded-full text-xs font-bold text-[#5a5d5f] hover:bg-[#7C3AED] hover:text-white transition-all shadow-sm">Show example</button>
+</div>
+<!-- Input Field -->
+<div class="p-6 bg-white/40 backdrop-blur-sm border-t border-white/40">
+<div class="bg-white rounded-full px-6 py-4 flex items-center gap-4 soft-neumorph-icon">
+<input class="bg-transparent border-none focus:ring-0 text-sm flex-1 placeholder:text-[#5a5d5f]/40 font-medium" placeholder="Ask AEI..." type="text"/>
+<button class="material-symbols-outlined text-[#7C3AED] hover:scale-110 transition-transform">mic</button>
+<button class="material-symbols-outlined text-[#7C3AED] hover:scale-110 transition-transform">send</button>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Streak Widget (From Reference Image bottom right) -->
+<div class="fixed bottom-10 right-10 z-[70] hidden md:block">
+<div class="bg-[#f0f2f5] soft-neumorph-card rounded-3xl p-5 flex items-center gap-5 border border-white/50">
+<div class="w-12 h-12 bg-[#b28cff] rounded-2xl flex items-center justify-center text-white shadow-lg">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div>
+<p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#5a5d5f]/60">Streak</p>
+<p class="text-xl font-black text-[#2c2f31]">14 Days</p>
+</div>
+</div>
+</div>
+<!-- Mobile Nav Bottom -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-6 pb-10 pt-4 bg-white/80 backdrop-blur-xl border-t border-white/50 rounded-t-[3rem]">
+<div class="flex flex-col items-center justify-center bg-[#7C3AED] text-white rounded-full w-14 h-14 shadow-lg">
+<span class="material-symbols-outlined">grid_view</span>
+</div>
+<div class="w-12 h-12 flex items-center justify-center bg-white rounded-full soft-neumorph-icon text-[#5a5d5f]">
+<span class="material-symbols-outlined">menu_book</span>
+</div>
+<div class="w-12 h-12 flex items-center justify-center bg-white rounded-full soft-neumorph-icon text-[#5a5d5f]">
+<span class="material-symbols-outlined">hub</span>
+</div>
+<div class="w-12 h-12 flex items-center justify-center bg-white rounded-full soft-neumorph-icon text-[#5a5d5f]">
+<span class="material-symbols-outlined">timer</span>
+</div>
+</nav>
+</body></html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SANKALP AEI | Password Recovery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-container": "#2f2ebf",
+              "on-secondary-fixed-variant": "#3a3ac8",
+              "on-tertiary-fixed": "#00452d",
+              "tertiary": "#006947",
+              "outline": "#747779",
+              "secondary": "#4647d3",
+              "surface-container": "#e0e5ec",
+              "on-background": "#2c2f31",
+              "error-container": "#f74b6d",
+              "surface-bright": "#f5f7f9",
+              "inverse-primary": "#a476ff",
+              "on-tertiary": "#c8ffe0",
+              "secondary-dim": "#3939c7",
+              "error": "#b41340",
+              "on-error-container": "#510017",
+              "secondary-fixed-dim": "#bdbeff",
+              "surface-variant": "#d9dde0",
+              "on-primary-container": "#2e006c",
+              "surface-dim": "#d0d5d8",
+              "surface-container-high": "#e0e5ec",
+              "secondary-container": "#cdcdff",
+              "on-primary-fixed-variant": "#390083",
+              "background": "#e0e5ec",
+              "on-primary": "#ffffff",
+              "primary": "#702ae1",
+              "primary-container": "#b28cff",
+              "primary-fixed-dim": "#a67aff",
+              "on-secondary": "#f4f1ff",
+              "surface-tint": "#702ae1",
+              "surface-container-highest": "#d9dde0",
+              "primary-fixed": "#b28cff",
+              "secondary-fixed": "#cdcdff",
+              "on-surface": "#2c2f31",
+              "on-error": "#ffefef",
+              "surface-container-low": "#e0e5ec",
+              "tertiary-fixed": "#69f6b8",
+              "inverse-surface": "#0b0f10",
+              "inverse-on-surface": "#9a9d9f",
+              "outline-variant": "#abadaf",
+              "on-primary-fixed": "#000000",
+              "on-surface-variant": "#595c5e",
+              "surface-container-lowest": "#f0f4f8",
+              "on-secondary-fixed": "#160bae",
+              "primary-dim": "#6411d5",
+              "tertiary-container": "#69f6b8",
+              "on-tertiary-fixed-variant": "#006544",
+              "tertiary-dim": "#005c3d",
+              "tertiary-fixed-dim": "#58e7ab",
+              "error-dim": "#a70138",
+              "surface": "#e0e5ec",
+              "on-tertiary-container": "#005a3c"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1.5rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #e0e5ec;
+        }
+        .neumorphic-flat {
+            background: #e0e5ec;
+            box-shadow: 9px 9px 16px rgb(163,177,198,0.6), -9px -9px 16px rgba(255,255,255, 0.5);
+        }
+        .neumorphic-inset {
+            background: #e0e5ec;
+            box-shadow: inset 6px 6px 12px #b8bec5, inset -6px -6px 12px #ffffff;
+        }
+        .neumorphic-button {
+            background: #e0e5ec;
+            box-shadow: 6px 6px 12px #b8bec5, -6px -6px 12px #ffffff;
+            transition: all 0.2s ease;
+        }
+        .neumorphic-button:active {
+            box-shadow: inset 4px 4px 8px #b8bec5, inset -4px -4px 8px #ffffff;
+            transform: scale(0.98);
+        }
+        .neumorphic-primary-button {
+            background: linear-gradient(145deg, #782df1, #6526cb);
+            box-shadow: 6px 6px 12px #b8bec5, -6px -6px 12px #ffffff;
+            transition: all 0.2s ease;
+        }
+        .neumorphic-primary-button:active {
+            box-shadow: inset 4px 4px 8px #5a22b5, inset -4px -4px 8px #8632ff;
+            transform: scale(0.98);
+        }
+        .neumorphic-icon-container {
+            background: #e0e5ec;
+            box-shadow: 4px 4px 8px #b8bec5, -4px -4px 8px #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col">
+<!-- Top Navigation Anchor -->
+<header class="fixed top-0 w-full z-50 bg-[#e0e5ec]/80 backdrop-blur-xl border-b border-white/20">
+<div class="flex justify-between items-center max-w-7xl mx-auto px-6 py-4">
+<div class="text-2xl font-black tracking-tighter text-violet-600 font-headline">
+                SANKALP AEI
+            </div>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-slate-600 hover:text-violet-500 font-label text-xs uppercase tracking-wider" href="#">Support</a>
+<a class="text-violet-600 font-bold font-label text-xs uppercase tracking-wider px-4 py-2 neumorphic-button rounded-full" href="#">Login</a>
+</div>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center px-6 py-24 relative overflow-hidden">
+<div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+<!-- Left Side: Editorial Content -->
+<div class="hidden lg:block space-y-8">
+<div class="inline-flex items-center gap-2 px-5 py-2 rounded-full neumorphic-flat text-primary font-label text-xs font-bold uppercase tracking-widest">
+<span class="material-symbols-outlined text-sm">security</span>
+                    Cognitive Safeguard
+                </div>
+<h1 class="font-headline text-6xl font-extrabold tracking-tight leading-tight text-on-surface">
+                    Secure your <br/><span class="text-primary">intellectual</span> assets.
+                </h1>
+<p class="text-on-surface-variant text-lg leading-relaxed max-w-md">
+                    Regain access to your personalized learning ecosystem. Our intelligence-driven recovery process ensures your data remains private and protected.
+                </p>
+<div class="flex items-center gap-6 pt-4">
+<div class="w-14 h-14 rounded-full neumorphic-icon-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">verified_user</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">End-to-End Encryption</p>
+<p class="text-on-surface-variant text-sm">Your recovery link is unique and time-sensitive.</p>
+</div>
+</div>
+</div>
+<!-- Right Side: Flow Containers -->
+<div class="w-full max-w-md mx-auto space-y-8">
+<!-- STATE 1: EMAIL INPUT -->
+<div class="neumorphic-flat p-10 rounded-xl" id="step-email">
+<div class="mb-8 text-center lg:text-left">
+<h2 class="font-headline text-3xl font-bold text-on-surface mb-2">Forgot Password?</h2>
+<p class="text-on-surface-variant">Enter the email associated with your account.</p>
+</div>
+<form class="space-y-6">
+<div class="space-y-3">
+<label class="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Work Email</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant">mail</span>
+<input class="w-full pl-12 pr-4 py-4 rounded-lg neumorphic-inset border-none focus:ring-0 transition-all placeholder:text-outline-variant/60" placeholder="name@company.com" type="email"/>
+</div>
+</div>
+<button class="w-full neumorphic-primary-button text-on-primary font-headline font-bold py-4 rounded-lg flex items-center justify-center gap-2" type="button">
+                            Send Reset Link
+                            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</form>
+<div class="mt-8 pt-8 border-t border-white/20 text-center">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-medium inline-flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+                            Back to login
+                        </a>
+</div>
+</div>
+<!-- STATE 3: RESET PAGE (Visible for specific flow context) -->
+<div class="neumorphic-flat p-10 rounded-xl" id="step-reset">
+<div class="mb-8 text-center lg:text-left">
+<h2 class="font-headline text-3xl font-bold text-on-surface mb-2">Create New Password</h2>
+<p class="text-on-surface-variant">Your new password must be unique.</p>
+</div>
+<form class="space-y-6">
+<div class="space-y-3">
+<label class="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">New Password</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant">lock</span>
+<input class="w-full pl-12 pr-12 py-4 rounded-lg neumorphic-inset border-none focus:ring-0 transition-all" type="password" value="SANKALP2024!"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant cursor-pointer">visibility</span>
+</div>
+<!-- Password Strength Meter -->
+<div class="pt-3 px-1">
+<div class="flex justify-between items-center mb-2">
+<span class="text-[10px] font-bold uppercase tracking-tighter text-tertiary">Strong Security</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant">85%</span>
+</div>
+<div class="h-2 w-full neumorphic-inset rounded-full overflow-hidden flex gap-1 p-0.5">
+<div class="h-full w-1/4 bg-tertiary rounded-full shadow-sm"></div>
+<div class="h-full w-1/4 bg-tertiary rounded-full shadow-sm"></div>
+<div class="h-full w-1/4 bg-tertiary rounded-full shadow-sm"></div>
+<div class="h-full w-1/8 bg-transparent"></div>
+</div>
+</div>
+</div>
+<div class="space-y-3">
+<label class="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Confirm Password</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant">verified</span>
+<input class="w-full pl-12 pr-4 py-4 rounded-lg neumorphic-inset border-none focus:ring-0 transition-all" placeholder="Re-enter password" type="password"/>
+</div>
+</div>
+<button class="w-full neumorphic-primary-button text-on-primary font-headline font-bold py-4 rounded-lg" type="button">
+                            Reset Password
+                        </button>
+</form>
+</div>
+<!-- Informational Footer inside Flow -->
+<div class="text-center">
+<p class="text-on-surface-variant text-xs font-medium">
+                        Need assistance? <a class="text-primary hover:underline font-bold" href="#">Contact Support Team</a>
+</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Cluster -->
+<footer class="w-full py-12 mt-auto border-t border-white/20">
+<div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12">
+<div class="col-span-2 md:col-span-1">
+<div class="text-xl font-bold text-slate-900 mb-4">SANKALP AEI</div>
+<p class="text-slate-500 text-sm leading-relaxed">
+                    © 2024 SANKALP AEI. Intelligence-Driven Learning for the Future.
+                </p>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-slate-900 mb-4">Legal</h4>
+<ul class="space-y-3 text-sm">
+<li><a class="text-slate-500 hover:text-violet-500 transition-colors" href="#">Privacy Policy</a></li>
+<li><a class="text-slate-500 hover:text-violet-500 transition-colors" href="#">Terms of Service</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-slate-900 mb-4">Connect</h4>
+<ul class="space-y-3 text-sm">
+<li><a class="text-slate-500 hover:text-violet-500 transition-colors" href="#">Twitter</a></li>
+<li><a class="text-slate-500 hover:text-violet-500 transition-colors" href="#">LinkedIn</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-slate-900 mb-4">Resources</h4>
+<ul class="space-y-3 text-sm">
+<li><a class="text-slate-500 hover:text-violet-500 transition-colors" href="#">Support</a></li>
+<li><a class="text-slate-500 hover:text-violet-500 transition-colors" href="#">Contact Us</a></li>
+</ul>
+</div>
+</div>
+</footer>
+</body></html>

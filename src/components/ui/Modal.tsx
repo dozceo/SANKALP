@@ -1,6 +1,5 @@
-"use client";
-
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
+import { GlassCard } from "./GlassCard";
 import { Button } from "./Button";
 
 export interface ModalProps {
@@ -11,6 +10,11 @@ export interface ModalProps {
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl";
 }
 
+/**
+ * SANKALP-AEI Modal Component
+ * Uses Glassmorphism for the overlay and a GlassCard for the content.
+ * Follows the No-Line rule and utilizes editorial typography.
+ */
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
@@ -18,27 +22,30 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = "lg",
 }) => {
-  const overlayRef = useRef<HTMLDivElement>(null);
-
+  // Prevent body scroll when modal is open
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleEscape);
+    } else {
+      document.body.style.overflow = "unset";
     }
-
     return () => {
       document.body.style.overflow = "unset";
-      window.removeEventListener("keydown", handleEscape);
     };
+  }, [isOpen]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  const maxWidthClasses = {
+  const maxWidths = {
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
@@ -48,45 +55,47 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? "modal-title" : undefined}
     >
-      {/* Glassmorphism Backdrop */}
+      {/* Backdrop */}
       <div
-        ref={overlayRef}
-        className="absolute inset-0 bg-surface/70 backdrop-blur-[20px] saturate-[180%] transition-opacity"
+        className="absolute inset-0 bg-surface-dim/40 dark:bg-inverse-surface/80 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal Content */}
-      <div
-        className={`relative w-full ${maxWidthClasses[maxWidth]} neumorphic-flat bg-surface p-8 rounded-[2.5rem] z-10 animate-slideUp flex flex-col max-h-[90vh]`}
+      <GlassCard
+        intensity="high"
+        className={`w-full ${maxWidths[maxWidth]} p-8 md:p-10 z-10 animate-in zoom-in-95 fade-in duration-300 slide-in-from-bottom-4`}
       >
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex justify-between items-start mb-8">
           {title && (
             <h2
               id="modal-title"
-              className="font-headline font-extrabold text-2xl text-on-surface tracking-tight"
+              className="text-2xl md:text-3xl font-extrabold font-headline text-on-surface dark:text-surface-container-lowest tracking-tight"
             >
               {title}
             </h2>
           )}
           <Button
             variant="icon"
-            icon="close"
+            size="icon"
             onClick={onClose}
             aria-label="Close modal"
-            className="ml-auto"
-          />
+            className="ml-auto -mt-2 -mr-2"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </Button>
         </div>
-
-        <div className="overflow-y-auto pr-2 custom-scrollbar flex-1">
+        
+        <div className="font-body text-on-surface-variant dark:text-outline-variant">
           {children}
         </div>
-      </div>
+      </GlassCard>
     </div>
   );
 };

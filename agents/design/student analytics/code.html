@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SANKALP AEI | Cognitive Cockpit - Analytics</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed": "#69f6b8",
+              "inverse-primary": "#a476ff",
+              "secondary": "#4647d3",
+              "secondary-container": "#cdcdff",
+              "surface-container-high": "#dfe3e6",
+              "on-primary-fixed": "#000000",
+              "error-container": "#f74b6d",
+              "on-error-container": "#510017",
+              "surface-container": "#e5e9eb",
+              "primary": "#702ae1",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary": "#f4f1ff",
+              "on-primary-fixed-variant": "#390083",
+              "on-surface-variant": "#595c5e",
+              "on-secondary-container": "#2f2ebf",
+              "primary-fixed-dim": "#a67aff",
+              "on-primary-container": "#2e006c",
+              "inverse-on-surface": "#9a9d9f",
+              "on-secondary-fixed": "#160bae",
+              "tertiary-container": "#69f6b8",
+              "tertiary": "#006947",
+              "surface-variant": "#d9dde0",
+              "surface-tint": "#702ae1",
+              "outline": "#747779",
+              "outline-variant": "#abadaf",
+              "on-background": "#2c2f31",
+              "secondary-fixed": "#cdcdff",
+              "surface": "#e0e5ec",
+              "on-tertiary-container": "#005a3c",
+              "on-tertiary-fixed": "#00452d",
+              "surface-container-low": "#eef1f3",
+              "secondary-fixed-dim": "#bdbeff",
+              "surface-bright": "#f5f7f9",
+              "on-primary": "#f8f0ff",
+              "tertiary-dim": "#005c3d",
+              "on-tertiary-fixed-variant": "#006544",
+              "surface-dim": "#d0d5d8",
+              "on-tertiary": "#c8ffe0",
+              "background": "#e0e5ec",
+              "tertiary-fixed-dim": "#58e7ab",
+              "inverse-surface": "#0b0f10",
+              "error-dim": "#a70138",
+              "primary-fixed": "#b28cff",
+              "primary-container": "#b28cff",
+              "on-surface": "#2c2f31",
+              "on-error": "#ffefef",
+              "surface-container-highest": "#d9dde0",
+              "primary-dim": "#6411d5",
+              "error": "#b41340",
+              "secondary-dim": "#3939c7",
+              "on-secondary-fixed-variant": "#3a3ac8"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Neumorphic Shadow Presets - Updated for specific background #e0e5ec */
+        .neumorph-extruded {
+            background: #e0e5ec;
+            box-shadow: 9px 9px 16px rgb(163,177,198,0.6), -9px -9px 16px rgba(255,255,255, 0.5);
+        }
+        .neumorph-recessed {
+            background: #e0e5ec;
+            box-shadow: inset 6px 6px 12px rgb(163,177,198,0.6), inset -6px -6px 12px rgba(255,255,255, 0.5);
+        }
+        .neumorph-extruded-sm {
+            background: #e0e5ec;
+            box-shadow: 4px 4px 8px rgb(163,177,198,0.6), -4px -4px 8px rgba(255,255,255, 0.5);
+        }
+        .neumorph-pressed {
+            background: #e0e5ec;
+            box-shadow: inset 2px 2px 5px rgb(163,177,198,0.6), inset -2px -2px 5px rgba(255,255,255, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col py-8 bg-surface w-72 rounded-r-[40px] shadow-[20px_0_60px_-15px_rgba(0,0,0,0.05)] z-50 border-r border-white/20">
+<div class="px-8 mb-12">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full neumorph-extruded flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<div>
+<h1 class="font-bold text-primary font-headline leading-tight">Cognitive Cockpit</h1>
+<p class="text-[10px] uppercase tracking-wider text-slate-400">AI Learning Platform</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-4">
+<a class="flex items-center gap-4 text-slate-500 mx-4 py-3 px-6 transition-all duration-300 hover:text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-[0.875rem] font-headline">Dashboard</span>
+</a>
+<!-- Active Tab: Analytics -->
+<a class="flex items-center gap-4 neumorph-recessed text-primary rounded-full mx-4 py-3 px-6 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="insights" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="text-[0.875rem] font-headline font-bold">Analytics</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 mx-4 py-3 px-6 transition-all duration-300 hover:text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="route">route</span>
+<span class="text-[0.875rem] font-headline">Learning Path</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 mx-4 py-3 px-6 transition-all duration-300 hover:text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="text-[0.875rem] font-headline">Resources</span>
+</a>
+<a class="flex items-center gap-4 text-slate-500 mx-4 py-3 px-6 transition-all duration-300 hover:text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="text-[0.875rem] font-headline">Mentors</span>
+</a>
+</nav>
+<div class="px-6 mb-8">
+<button class="w-full py-4 rounded-full neumorph-extruded text-primary font-headline text-sm hover:shadow-inner transition-all border border-white/20">
+                Launch Assessment
+            </button>
+</div>
+<div class="mt-auto space-y-2">
+<a class="flex items-center gap-4 text-slate-400 hover:text-primary mx-4 py-3 px-6 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="text-[0.875rem] font-headline">Help Center</span>
+</a>
+<a class="flex items-center gap-4 text-slate-400 hover:text-primary mx-4 py-3 px-6 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="text-[0.875rem] font-headline">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-72 min-h-screen p-10 pb-32">
+<!-- Top Nav Header -->
+<header class="fixed top-0 right-0 left-72 z-40 bg-surface/80 backdrop-blur-xl px-12 py-4 flex justify-between items-center border-b border-white/20">
+<span class="text-xl font-black tracking-tighter text-primary font-headline uppercase">SANKALP AEI</span>
+<div class="flex items-center gap-6">
+<div class="relative neumorph-recessed rounded-full px-4 py-1 flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 text-slate-600 h-8" placeholder="Search insights..." type="text"/>
+</div>
+<div class="flex gap-4">
+<button class="w-10 h-10 rounded-full flex items-center justify-center neumorph-extruded-sm text-slate-500 transition-all hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center neumorph-extruded-sm text-slate-500 transition-all hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden neumorph-extruded-sm p-1">
+<img alt="Student Profile Avatar" class="w-full h-full rounded-full object-cover" data-alt="professional portrait of a young male student in a modern workspace with soft warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDN2qqsnS0wsoKdOqCep9g-XlCnthCniDK_FEVUrRxs2Zl3A-4FW2BnAJWtJ28plt0_pd5wyRq9muhW94NNwaWbbEcOUAwTaeB6IKR2CDOiTM5bw04XwAIN7zw5QTQVrKq661rbKxopX6l1bPqS0qXP22DRjC24SwyuWKv16OOVH8xHH2Gitkht8OXt9IEg3aXoR2ikl5gXTd1Od2mba9BqXzLn0NsqquSrDQIt1LBbzpwS7Ptc15wPj1b13RzQViGl5EpeFolOhs1c"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Analytics Content -->
+<div class="mt-20 max-w-7xl mx-auto">
+<!-- Headline Finding -->
+<section class="text-center mb-16">
+<span class="text-primary font-bold uppercase tracking-widest text-[10px] mb-4 block">Intelligence Synthesis</span>
+<h2 class="text-4xl md:text-5xl font-extrabold font-headline leading-tight text-on-surface max-w-4xl mx-auto">
+                    This week, your <span class="text-primary">Calculus mastery grew 12%</span> and you stabilized <span class="text-secondary">3 at-risk concepts</span>.
+                </h2>
+</section>
+<div class="grid grid-cols-12 gap-8">
+<!-- Main Grid Column -->
+<div class="col-span-12 lg:col-span-9 space-y-10">
+<!-- Top Row Bento -->
+<div class="grid grid-cols-2 gap-8">
+<!-- Mastery Trajectory -->
+<div class="neumorph-extruded rounded-3xl p-8">
+<div class="flex justify-between items-center mb-8">
+<h3 class="font-headline font-bold text-slate-700">Mastery Trajectory</h3>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary shadow-sm shadow-primary/40"></span>
+<span class="text-[10px] font-bold text-slate-400">84% CONFIDENCE</span>
+</div>
+</div>
+<div class="neumorph-recessed rounded-2xl h-48 relative overflow-hidden flex items-end px-4 py-2 border border-white/10">
+<!-- Simulated Chart Graphic -->
+<svg class="w-full h-full" viewbox="0 0 400 150">
+<path d="M0,130 Q50,110 100,115 T200,80 T300,90 T400,30" fill="none" stroke="#702ae1" stroke-linecap="round" stroke-width="4"></path>
+<path d="M0,135 Q50,115 100,120 T200,85 T300,95 T400,35 L400,45 T300,105 T200,95 T100,130 T0,145 Z" fill="#702ae1" fill-opacity="0.1"></path>
+</svg>
+<div class="absolute bottom-4 left-4 right-4 flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+</div>
+</div>
+</div>
+<!-- Subject Mastery Breakdown -->
+<div class="neumorph-extruded rounded-3xl p-8">
+<div class="flex justify-between items-center mb-8">
+<h3 class="font-headline font-bold text-slate-700">Core Disciplines</h3>
+<div class="flex gap-2">
+<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="text-[9px] font-bold text-slate-400">NOW</span></div>
+<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-300"></span><span class="text-[9px] font-bold text-slate-400">30D AGO</span></div>
+</div>
+</div>
+<div class="flex justify-center items-center h-48">
+<!-- Radar Chart Representation -->
+<div class="relative w-40 h-40">
+<div class="absolute inset-0 border-2 border-slate-300 rounded-full border-dashed opacity-40"></div>
+<div class="absolute inset-4 border-2 border-slate-300 rounded-full border-dashed opacity-40"></div>
+<div class="absolute inset-8 border-2 border-slate-300 rounded-full border-dashed opacity-40"></div>
+<svg class="absolute inset-0 w-full h-full transform -rotate-90">
+<polygon fill="none" points="80,10 150,80 80,150 10,80" stroke="#a3b1c6" stroke-width="1"></polygon>
+<polygon class="drop-shadow-sm" fill="rgba(112, 42, 225, 0.15)" points="80,30 130,70 90,120 40,80" stroke="#702ae1" stroke-width="3"></polygon>
+</svg>
+<span class="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-black text-slate-500">MATH</span>
+<span class="absolute top-1/2 -right-6 -translate-y-1/2 text-[9px] font-black text-slate-500">BIO</span>
+<span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-black text-slate-500">ENG</span>
+<span class="absolute top-1/2 -left-6 -translate-y-1/2 text-[9px] font-black text-slate-500">PHYS</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Retention Health Grid (GitHub style) -->
+<div class="neumorph-extruded rounded-3xl p-8">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h3 class="font-headline font-bold text-slate-700">Retention Health Map</h3>
+<p class="text-xs text-slate-500">Strength of synaptic connections across 12 weeks</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[9px] font-bold text-slate-400">WEAK</span>
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-sm bg-error-container/20"></div>
+<div class="w-3 h-3 rounded-sm bg-primary/40"></div>
+<div class="w-3 h-3 rounded-sm bg-primary/70"></div>
+<div class="w-3 h-3 rounded-sm bg-primary"></div>
+</div>
+<span class="text-[9px] font-bold text-slate-400">VIBRANT</span>
+</div>
+</div>
+<div class="neumorph-recessed rounded-2xl p-6 overflow-x-auto border border-white/10">
+<div class="grid grid-flow-col grid-rows-7 gap-2 min-w-[800px]">
+<!-- Generative loop of health cells -->
+<div class="w-4 h-4 rounded-sm bg-primary"></div>
+<div class="w-4 h-4 rounded-sm bg-primary/80"></div>
+<div class="w-4 h-4 rounded-sm bg-primary/40"></div>
+<div class="w-4 h-4 rounded-sm bg-slate-300"></div>
+<div class="w-4 h-4 rounded-sm bg-error-container/30"></div>
+<div class="w-4 h-4 rounded-sm bg-primary/90"></div>
+<div class="w-4 h-4 rounded-sm bg-primary"></div>
+<!-- repeated visually for grid effect -->
+<script>
+                                    const grid = document.querySelector('.grid-flow-col');
+                                    for(let i=0; i<300; i++) {
+                                        const div = document.createElement('div');
+                                        const opacities = ['bg-primary', 'bg-primary/80', 'bg-primary/40', 'bg-slate-300', 'bg-error-container/30'];
+                                        div.className = `w-4 h-4 rounded-[3px] shadow-sm ${opacities[Math.floor(Math.random() * opacities.length)]}`;
+                                        grid.appendChild(div);
+                                    }
+                                </script>
+</div>
+</div>
+</div>
+<!-- Bottom Stats Row -->
+<div class="grid grid-cols-3 gap-8">
+<!-- Confidence Calibration -->
+<div class="neumorph-extruded rounded-3xl p-6">
+<h3 class="text-xs font-headline font-bold text-slate-700 mb-6 uppercase tracking-wider">Calibration</h3>
+<div class="neumorph-recessed h-32 rounded-2xl relative overflow-hidden border border-white/10">
+<div class="absolute inset-0 border-b border-l border-slate-300 m-4 opacity-40"></div>
+<div class="absolute top-0 right-0 w-full h-full p-4">
+<div class="w-full h-full border-t border-slate-300 transform rotate-45 origin-bottom-left opacity-20 border-dashed"></div>
+<!-- Scattered dots -->
+<div class="absolute top-1/4 left-1/3 w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(112,42,225,0.4)]"></div>
+<div class="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(112,42,225,0.4)]"></div>
+<div class="absolute top-1/3 left-1/4 w-2 h-2 rounded-full bg-primary/40"></div>
+<div class="absolute bottom-1/4 right-1/4 w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(70,71,211,0.4)]"></div>
+</div>
+</div>
+<p class="mt-4 text-[10px] text-slate-500 text-center font-bold">ACCURACY VS. CERTAINTY</p>
+</div>
+<!-- Study Habits -->
+<div class="neumorph-extruded rounded-3xl p-6">
+<h3 class="text-xs font-headline font-bold text-slate-700 mb-6 uppercase tracking-wider">Time Equity</h3>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-[9px] font-bold text-slate-400 mb-1"><span>ACTIVE RECALL</span><span>72%</span></div>
+<div class="h-2 neumorph-recessed rounded-full overflow-hidden border border-white/10">
+<div class="h-full bg-primary w-[72%] rounded-full shadow-sm"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[9px] font-bold text-slate-400 mb-1"><span>DRILLING</span><span>45%</span></div>
+<div class="h-2 neumorph-recessed rounded-full overflow-hidden border border-white/10">
+<div class="h-full bg-secondary w-[45%] rounded-full shadow-sm"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Velocity Sparklines -->
+<div class="neumorph-extruded rounded-3xl p-6">
+<h3 class="text-xs font-headline font-bold text-slate-700 mb-6 uppercase tracking-wider">Concept Velocity</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-bold text-slate-500">CALC</span>
+<div class="w-20 h-6 neumorph-recessed rounded-full overflow-hidden px-1 border border-white/10">
+<svg class="w-full h-full" viewbox="0 0 100 20">
+<path d="M0,15 L20,10 L40,12 L60,5 L80,8 L100,2" fill="none" stroke="#702ae1" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+<span class="text-[10px] font-bold text-primary">+12%</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-bold text-slate-500">NEURO</span>
+<div class="w-20 h-6 neumorph-recessed rounded-full overflow-hidden px-1 border border-white/10">
+<svg class="w-full h-full" viewbox="0 0 100 20">
+<path d="M0,5 L20,15 L40,10 L60,18 L80,12 L100,15" fill="none" stroke="#b41340" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+<span class="text-[10px] font-bold text-error">-4%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Annotation Rail -->
+<aside class="col-span-12 lg:col-span-3 space-y-8">
+<div class="neumorph-extruded rounded-3xl p-6 border border-white/20">
+<div class="w-10 h-10 rounded-full neumorph-recessed flex items-center justify-center text-primary mb-4">
+<span class="material-symbols-outlined text-sm">auto_awesome</span>
+</div>
+<h4 class="font-headline font-bold text-sm text-slate-800 mb-2">Cognitive Insight</h4>
+<p class="text-xs text-slate-500 leading-relaxed">
+                            Your "Retention Health" is peaking in late evening. Consider shifting complex Problem Sets to the 8pm - 10pm window for maximum neural plasticity.
+                        </p>
+</div>
+<div class="neumorph-extruded rounded-3xl p-6 border border-white/20">
+<div class="w-10 h-10 rounded-full neumorph-recessed flex items-center justify-center text-secondary mb-4">
+<span class="material-symbols-outlined text-sm">warning</span>
+</div>
+<h4 class="font-headline font-bold text-sm text-slate-800 mb-2">Stabilization Alert</h4>
+<p class="text-xs text-slate-500 leading-relaxed">
+                            Integration by Parts has entered a "Fragile" state. SANKALP recommends a 15-minute Story Mode session to re-contextualize the formula.
+                        </p>
+</div>
+<div class="neumorph-extruded rounded-3xl p-6 overflow-hidden relative border border-white/20">
+<img alt="Abstract Math Visualization" class="absolute inset-0 w-full h-full object-cover opacity-10 grayscale" data-alt="vibrant 3d abstract rendering of glowing mathematical functions and particles in deep violet and blue space" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqdkioYukcMTMN2uFKPr8bMEAMShrRuPU5nLdXaXwgMVD8rf-zfyHVSTn2KKkyrExcuzketj9Qv5n5aDWTTTePdhLoMMB3ILcNVqrZlokN2L37GA6C6Wjw7bKbcuMtCsih3ymAUdqj9Z6shro8hPgQkkp7XQSogiHqiQ6WSv2LX-9B_dGBWPvvkyIkl-T69lDRzNTntu866uBiN7W-XTKYfWbyzipiied--PPBpMpI3eTXb3nWqgwL8FUKBM7eZc0Dv4Ip5LRed3CJ"/>
+<div class="relative z-10">
+<h4 class="font-headline font-bold text-sm text-slate-800 mb-2">Mastery Reward</h4>
+<p class="text-xs text-slate-500 leading-relaxed mb-4">
+                                You are 3 sessions away from unlocking the "Architect of Infinity" avatar tier.
+                            </p>
+<div class="w-full h-1.5 neumorph-recessed rounded-full overflow-hidden">
+<div class="w-3/4 h-full bg-primary shadow-sm"></div>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</div>
+</main>
+<!-- Action Footer -->
+<footer class="fixed bottom-0 left-72 right-0 bg-surface/80 backdrop-blur-2xl px-12 py-8 z-40 border-t border-white/20">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full neumorph-extruded flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div>
+<h5 class="font-headline font-bold text-slate-800">Recommended Next Steps</h5>
+<p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Based on your cognitive signature</p>
+</div>
+</div>
+<div class="flex gap-6">
+<button class="px-8 py-3 rounded-full neumorph-extruded hover:neumorph-pressed transition-all text-sm font-bold text-slate-600 flex items-center gap-2 border border-white/20">
+<span class="material-symbols-outlined text-sm">history_edu</span>
+                    Review Derivatives
+                </button>
+<button class="px-8 py-3 rounded-full neumorph-extruded text-primary text-sm font-bold hover:shadow-inner transition-all flex items-center gap-2 border border-white/20">
+<span class="material-symbols-outlined text-sm">rocket_launch</span>
+                    Enter Story Mode
+                </button>
+</div>
+<div class="hidden xl:block text-right">
+<p class="text-[10px] text-slate-400 leading-tight">
+                    © 2024 SANKALP AEI • Cognitive Architecture<br/>
+                    AI Ethics Protocol v4.2 Active
+                </p>
+</div>
+</div>
+</footer>
+<!-- Mobile Navigation Suppressed per rules for high-end analytics shell -->
+</body></html>

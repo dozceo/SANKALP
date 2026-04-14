@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SANKALP AEI - Student Profile &amp; Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#7C3AED",
+                        "background": "#e0e5ec",
+                        "surface": "#e0e5ec",
+                        "on-surface": "#2d3436",
+                        "on-surface-variant": "#636e72",
+                        "error": "#d63031"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "1.5rem", "lg": "2.5rem", "xl": "3.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #e0e5ec;
+        }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Neumorphic Styles */
+        .neu-flat {
+            background: #e0e5ec;
+            box-shadow: 9px 9px 16px rgb(163,177,198,0.6), -9px -9px 16px rgba(255,255,255, 0.5);
+        }
+        .neu-pressed {
+            background: #e0e5ec;
+            box-shadow: inset 6px 6px 12px #b8b9be, inset -6px -6px 12px #ffffff;
+        }
+        .neu-button {
+            background: #e0e5ec;
+            box-shadow: 6px 6px 12px #b8b9be, -6px -6px 12px #ffffff;
+            transition: all 0.2s ease;
+        }
+        .neu-button:active {
+            box-shadow: inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff;
+            transform: scale(0.98);
+        }
+        .neu-icon-active {
+            box-shadow: inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff;
+            color: #7C3AED;
+        }
+        
+        .nav-item-active-dot {
+            position: relative;
+        }
+        .nav-item-active-dot::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: #7C3AED;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="text-on-surface min-h-screen">
+<!-- Top Horizontal Navigation -->
+<header class="fixed top-0 w-full bg-[#e0e5ec]/90 backdrop-blur-md z-50 px-8 py-5">
+<div class="max-w-7xl mx-auto flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-xl font-black tracking-tighter text-primary">SANKALP AEI</span>
+</div>
+<nav class="hidden lg:flex items-center gap-10">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-[11px] font-extrabold uppercase tracking-[0.2em]" href="#">Nodes</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-[11px] font-extrabold uppercase tracking-[0.2em]" href="#">Mastery</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-[11px] font-extrabold uppercase tracking-[0.2em]" href="#">Insights</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-[11px] font-extrabold uppercase tracking-[0.2em]" href="#">Oracle</a>
+</nav>
+<div class="flex items-center gap-5">
+<button class="w-11 h-11 flex items-center justify-center rounded-full neu-button text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-11 h-11 flex items-center justify-center rounded-full neu-button text-on-surface-variant">
+<span class="material-symbols-outlined">leaderboard</span>
+</button>
+<div class="w-11 h-11 rounded-full p-0.5 neu-flat overflow-hidden">
+<img alt="Student Avatar" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhONm1SPawuckfOweHfqdTWoh_YdJ-0E_hf0BCirtmBBPdBN4aAzzqltaggbQp4orvL_SMQpR1sa8YAcMxkky8-ViyRpHvSPNHpKJHvziU4PcD-Q3qw-zdKf3a8HxGGl2vT77IWeeERNEvH9W8AaQMbj-pZ5VRo7T5LO5p9xGNRjVC_pVtB9mO6ixWG-aJ-YONKFvMYxtUXyHSlgyaPf-rNsne5zndcoUokxpzcZVzw4Hvx51r4c2FZuLI30YHD7H1cXOXotibxv4F"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Sub-navigation (Iconic Row) -->
+<div class="pt-28 pb-10">
+<div class="max-w-7xl mx-auto px-6">
+<div class="flex flex-wrap justify-center gap-6 md:gap-14">
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="w-14 h-14 rounded-full neu-button flex items-center justify-center group-hover:text-primary">
+<span class="material-symbols-outlined text-[22px]">dashboard</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant group-hover:text-primary">Dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="w-14 h-14 rounded-full neu-button flex items-center justify-center group-hover:text-primary">
+<span class="material-symbols-outlined text-[22px]">menu_book</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant group-hover:text-primary">Curriculum</span>
+</a>
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="w-14 h-14 rounded-full neu-button flex items-center justify-center group-hover:text-primary">
+<span class="material-symbols-outlined text-[22px]">account_tree</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant group-hover:text-primary">Cognitive Map</span>
+</a>
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="w-14 h-14 rounded-full neu-button flex items-center justify-center group-hover:text-primary">
+<span class="material-symbols-outlined text-[22px]">timer</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant group-hover:text-primary">Deep Work</span>
+</a>
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="w-14 h-14 rounded-full neu-button flex items-center justify-center group-hover:text-primary">
+<span class="material-symbols-outlined text-[22px]">insights</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant group-hover:text-primary">Insights</span>
+</a>
+<a class="flex flex-col items-center gap-3 group nav-item-active-dot" href="#">
+<div class="w-14 h-14 rounded-full neu-pressed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">settings</span>
+</div>
+<span class="text-[10px] font-black uppercase tracking-wider text-primary">Settings</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Main Content -->
+<main class="pb-16 px-6 max-w-7xl mx-auto space-y-10">
+<!-- Profile Header Card -->
+<section class="neu-flat p-10 lg:p-14 rounded-[2.5rem] relative overflow-hidden">
+<div class="flex flex-col md:flex-row items-center gap-12">
+<div class="relative">
+<div class="w-36 h-36 lg:w-44 lg:h-44 rounded-full p-1 neu-pressed">
+<img alt="Priya Kumar Avatar" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaJCUkoCxQJFZmiuMjkJtZwNqXrnCPXk7m8yTY4Spo1rGb4rqR_P7uLheev_1sisZfpJJ2bFBW90U1bWB4bNHcNVqm4sa_cRkdLpEyJgeDWI8ewH3lWSIS1Oc8SxoYMai9cfSIeoxdGYTylsO9n6ZlQLi0_Ot7IOUCgOpDXrjaQUSOZKymZ8wL6xLXVzwLuJh_cIgt29IzUSEh8e0njucedylWr847P53MC2TZIpy3EFxm7f7iBPk5RtkTFOzBH0xeHpBr95LwWbjL"/>
+</div>
+<button class="absolute bottom-2 right-2 w-10 h-10 neu-button bg-primary text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+<div class="flex-1 text-center md:text-left">
+<div class="inline-block px-4 py-1.5 rounded-full neu-pressed text-primary text-[10px] font-black uppercase tracking-widest mb-4">Student Identity</div>
+<h1 class="text-4xl lg:text-6xl font-black tracking-tight text-on-surface mb-3">Priya Kumar</h1>
+<p class="text-on-surface-variant font-semibold text-lg mb-8 opacity-80">priya.kumar@sankalp.edu • Grade 10-A</p>
+<div class="flex flex-wrap justify-center md:justify-start gap-4">
+<span class="px-5 py-2.5 rounded-full neu-pressed text-on-surface-variant text-xs font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">school</span>
+                        Global Excellence International
+                    </span>
+<span class="px-5 py-2.5 rounded-full neu-pressed text-primary text-xs font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#27ae60]">verified</span>
+                        Academic Top 5%
+                    </span>
+</div>
+</div>
+<button class="neu-button px-10 py-5 rounded-2xl font-black text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined">edit_square</span>
+                Edit Profile
+            </button>
+</div>
+</section>
+<!-- Settings Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+<!-- Learning Preferences -->
+<div class="lg:col-span-2 neu-flat p-10 rounded-[2.5rem]">
+<div class="flex items-center gap-4 mb-10">
+<div class="w-14 h-14 rounded-2xl neu-pressed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">psychology</span>
+</div>
+<h3 class="text-2xl font-black">Learning Preferences</h3>
+</div>
+<div class="space-y-12">
+<div>
+<label class="block text-xs font-black uppercase tracking-[0.2em] text-on-surface-variant mb-8">Learning Style</label>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
+<button class="flex flex-col items-center gap-4 p-8 rounded-3xl neu-pressed text-primary border border-primary/10">
+<span class="material-symbols-outlined text-3xl">visibility</span>
+<span class="text-[11px] font-black uppercase">Visual</span>
+</button>
+<button class="flex flex-col items-center gap-4 p-8 rounded-3xl neu-button text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-3xl">hearing</span>
+<span class="text-[11px] font-black uppercase">Auditory</span>
+</button>
+<button class="flex flex-col items-center gap-4 p-8 rounded-3xl neu-button text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-3xl">touch_app</span>
+<span class="text-[11px] font-black uppercase">Kinesthetic</span>
+</button>
+<button class="flex flex-col items-center gap-4 p-8 rounded-3xl neu-button text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-3xl">menu_book</span>
+<span class="text-[11px] font-black uppercase">Reading</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-16">
+<div>
+<label class="block text-xs font-black uppercase tracking-[0.2em] text-on-surface-variant mb-8">Difficulty Level</label>
+<div class="flex p-2 neu-pressed rounded-full">
+<button class="flex-1 py-3 text-[11px] font-black uppercase rounded-full text-on-surface-variant">Easy</button>
+<button class="flex-1 py-3 text-[11px] font-black uppercase rounded-full neu-button bg-white/40 text-primary">Medium</button>
+<button class="flex-1 py-3 text-[11px] font-black uppercase rounded-full text-on-surface-variant">Hard</button>
+</div>
+</div>
+<div>
+<label class="block text-xs font-black uppercase tracking-[0.2em] text-on-surface-variant mb-8">Daily Study Goal</label>
+<div class="flex items-center gap-8">
+<div class="flex-1 h-3 neu-pressed rounded-full relative">
+<div class="absolute left-0 top-0 h-full w-[60%] bg-primary rounded-full"></div>
+<div class="absolute left-[60%] top-1/2 -translate-y-1/2 w-7 h-7 neu-button bg-white border-4 border-primary rounded-full cursor-pointer"></div>
+</div>
+<span class="text-sm font-black text-primary min-w-[70px] text-right">2.5 hrs</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Notifications/Alerts -->
+<div class="neu-flat p-10 rounded-[2.5rem]">
+<div class="flex items-center gap-4 mb-10">
+<div class="w-14 h-14 rounded-2xl neu-pressed flex items-center justify-center text-amber-500">
+<span class="material-symbols-outlined text-3xl">notifications_active</span>
+</div>
+<h3 class="text-2xl font-black">Alerts</h3>
+</div>
+<div class="space-y-8">
+<div class="flex justify-between items-center p-6 rounded-3xl neu-pressed">
+<div>
+<p class="text-[13px] font-black uppercase tracking-tight">Push Notifications</p>
+<p class="text-[10px] text-on-surface-variant font-semibold">Real-time mobile updates</p>
+</div>
+<div class="w-14 h-7 neu-pressed rounded-full relative p-1.5 cursor-pointer bg-primary">
+<div class="w-4 h-4 bg-white rounded-full absolute right-1.5 shadow-sm"></div>
+</div>
+</div>
+<div class="flex justify-between items-center p-6 rounded-3xl neu-pressed">
+<div>
+<p class="text-[13px] font-black uppercase tracking-tight">Struggle Alerts</p>
+<p class="text-[10px] text-on-surface-variant font-semibold">AI detection of gaps</p>
+</div>
+<div class="w-14 h-7 neu-pressed rounded-full relative p-1.5 cursor-pointer bg-primary">
+<div class="w-4 h-4 bg-white rounded-full absolute right-1.5 shadow-sm"></div>
+</div>
+</div>
+<div class="pt-8 mt-4 border-t border-white/20">
+<p class="text-[10px] font-black text-on-surface-variant mb-6 uppercase tracking-[0.2em]">Email Preferences</p>
+<div class="space-y-5">
+<label class="flex items-center gap-5 cursor-pointer group">
+<div class="w-7 h-7 rounded-lg neu-pressed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-lg">check_box</span>
+</div>
+<span class="text-[12px] font-bold text-on-surface group-hover:text-primary transition-colors">Achievement Milestones</span>
+</label>
+<label class="flex items-center gap-5 cursor-pointer group">
+<div class="w-7 h-7 rounded-lg neu-pressed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-lg">check_box</span>
+</div>
+<span class="text-[12px] font-bold text-on-surface group-hover:text-primary transition-colors">Weekly Learning Digest</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Security -->
+<div class="neu-flat p-10 rounded-[2.5rem]">
+<div class="flex items-center gap-4 mb-10">
+<div class="w-14 h-14 rounded-2xl neu-pressed flex items-center justify-center text-blue-500">
+<span class="material-symbols-outlined text-3xl">security</span>
+</div>
+<h3 class="text-2xl font-black">Security</h3>
+</div>
+<div class="space-y-5">
+<button class="w-full flex items-center justify-between p-6 rounded-[2rem] neu-button group text-left">
+<div class="flex items-center gap-5">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">password</span>
+<span class="text-[13px] font-black uppercase tracking-tight">Change Password</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-40">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-6 rounded-[2rem] neu-button group text-left">
+<div class="flex items-center gap-5">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">vibration</span>
+<span class="text-[13px] font-black uppercase tracking-tight">2-Factor Auth</span>
+</div>
+<span class="px-2.5 py-1 rounded-lg neu-pressed text-primary text-[10px] font-black uppercase">Enabled</span>
+</button>
+<div class="pt-8">
+<p class="text-[10px] font-black text-on-surface-variant mb-6 uppercase tracking-[0.2em]">Linked Accounts</p>
+<div class="flex gap-5">
+<div class="flex-1 p-4 rounded-2xl neu-pressed flex items-center justify-center gap-3">
+<img alt="Google" class="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzvE39CMKyf8CVvbDkpqBemCD9dtS4DxnGKXcizGMccodsqC9drO_c8LpyNMtIhz2sUgLjmJrIIeNYZ8TmC7gfmxiAWETuCR5NN4G4tHQvOAjpyS1W61mwZggBOzpndFW3d3yiUIljTfLIV_LVJK_nt2iiFN_7eaNfgnOdqGlKC2STFYUfJLNgSf2VRy_JNoZ2qtmjwd_NsNk3Vlu0pbAu6hnYJG9aZ9u8TMQJLtxwPl85eG86anBpr58qVVedpHoEKG3q0PjNHAqu"/>
+<span class="text-[11px] font-black uppercase">Google</span>
+</div>
+<div class="flex-1 p-4 rounded-2xl neu-pressed flex items-center justify-center gap-3">
+<img alt="Microsoft" class="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOdAMl0SWV6lC7BDs-DaFiqVlpsYbXSEMcCAEnCffuJHMzUHm04VXiu7p9skqThavACn7mVzT-FmapsJrbg6sABlKz8VzPNB9o4E7gLHzoVugPKevp3Wej1TuaX-xR2pDpgg7JSF034U6Zl3shigk7iR8NpxMNiv_GQ4gnSr0qldxmjymC-VEyvpmRfMEvcPAPzAoHI3MtTYtCtCfD_pDPrp2EMNGlsWs1wTuS6rfm6SAzS9EoKepCv_LSKiE_LseGmRD5lh4a936b"/>
+<span class="text-[11px] font-black uppercase tracking-tighter">MS Linked</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Privacy & Data -->
+<div class="neu-flat p-10 rounded-[2.5rem]">
+<div class="flex items-center gap-4 mb-10">
+<div class="w-14 h-14 rounded-2xl neu-pressed flex items-center justify-center text-emerald-500">
+<span class="material-symbols-outlined text-3xl">shield_person</span>
+</div>
+<h3 class="text-2xl font-black">Privacy</h3>
+</div>
+<div class="space-y-8">
+<div class="neu-pressed p-6 rounded-[2rem] space-y-6">
+<div class="flex items-center justify-between">
+<span class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wide">Teacher Visibility</span>
+<div class="w-12 h-6 bg-primary rounded-full relative p-1">
+<div class="w-4 h-4 bg-white rounded-full absolute right-1"></div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wide">Parent Portal Sync</span>
+<div class="w-12 h-6 bg-primary rounded-full relative p-1">
+<div class="w-4 h-4 bg-white rounded-full absolute right-1"></div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-5">
+<button class="flex flex-col items-center gap-3 p-5 rounded-[2rem] neu-button hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">download</span>
+<span class="text-[10px] font-black uppercase">Export</span>
+</button>
+<button class="flex flex-col items-center gap-3 p-5 rounded-[2rem] neu-button text-error hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-2xl">delete_forever</span>
+<span class="text-[10px] font-black uppercase">Delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- About & Help -->
+<div class="neu-flat p-10 rounded-[2.5rem]">
+<div class="flex items-center gap-4 mb-10">
+<div class="w-14 h-14 rounded-2xl neu-pressed flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-3xl">info</span>
+</div>
+<h3 class="text-2xl font-black">Help Center</h3>
+</div>
+<div class="space-y-4">
+<a class="flex items-center justify-between p-5 rounded-2xl hover:neu-pressed transition-all group" href="#">
+<span class="text-sm font-bold text-on-surface group-hover:text-primary">Support Center</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">open_in_new</span>
+</a>
+<a class="flex items-center justify-between p-5 rounded-2xl hover:neu-pressed transition-all group" href="#">
+<span class="text-sm font-bold text-on-surface group-hover:text-primary">Privacy Policy</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">open_in_new</span>
+</a>
+<div class="mt-10 p-8 neu-pressed rounded-[2rem] text-center">
+<p class="text-[10px] text-on-surface-variant uppercase font-black tracking-[0.3em] mb-3">Build 4.2.0-Alpha</p>
+<button class="text-[11px] font-black text-primary hover:underline underline-offset-4 decoration-2">CHECK UPDATES</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-14 px-12 flex flex-col md:flex-row justify-between items-center bg-[#e0e5ec] border-t border-white/20 gap-8">
+<p class="text-[11px] font-black text-on-surface-variant uppercase tracking-[0.2em] opacity-60">© 2024 SANKALP AEI • Cognitive Architecture</p>
+<div class="flex gap-10">
+<a class="text-[11px] text-on-surface-variant font-black hover:text-primary transition-colors uppercase tracking-[0.2em] opacity-60 hover:opacity-100" href="#">Privacy</a>
+<a class="text-[11px] text-on-surface-variant font-black hover:text-primary transition-colors uppercase tracking-[0.2em] opacity-60 hover:opacity-100" href="#">Terms</a>
+<a class="text-[11px] text-on-surface-variant font-black hover:text-primary transition-colors uppercase tracking-[0.2em] opacity-60 hover:opacity-100" href="#">Ethics</a>
+</div>
+</footer>
+</body></html>

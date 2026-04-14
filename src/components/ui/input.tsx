@@ -1,65 +1,34 @@
-"use client";
+import React from "react";
 
-import React, { InputHTMLAttributes, forwardRef, useId } from "react";
-
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: string;
-  error?: string;
+  containerClassName?: string;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, icon, error, className = "", ...props }, ref) => {
-    const generatedId = useId();
-    const inputId = props.id || generatedId;
-
+/**
+ * SANKALP-AEI Neumorphic Input
+ * Appears slightly "recessed" into the surface using an inner shadow.
+ * No traditional borders allowed.
+ */
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className = "", containerClassName = "", icon, ...props }, ref) => {
     return (
-      <div className={`flex flex-col w-full ${className}`}>
-        {label && (
-          <label
-            htmlFor={inputId}
-            className="font-label font-black text-[10px] tracking-[0.2em] uppercase text-on-surface-variant mb-3 ml-4"
-          >
-            {label}
-          </label>
-        )}
-        
-        <div
-          className={`neumorphic-inset p-2 rounded-full flex items-center px-5 transition-colors duration-300 ${
-            error ? "bg-error-container/20" : "bg-surface"
-          }`}
-        >
-          {icon && (
-            <span
-              className={`material-symbols-outlined text-lg mr-2 ${
-                error ? "text-error" : "text-on-surface-variant"
-              }`}
-              aria-hidden="true"
-            >
-              {icon}
-            </span>
-          )}
-          
-          <input
-            ref={ref}
-            id={inputId}
-            className="bg-transparent border-none focus:ring-0 text-sm w-full py-3 px-2 placeholder:text-on-surface-variant/40 font-body font-medium text-on-surface outline-none"
-            aria-invalid={!!error}
-            aria-describedby={error ? `${inputId}-error` : undefined}
-            {...props}
-          />
-        </div>
-
-        {error && (
+      <div
+        className={`neumorphic-recessed rounded-full px-6 py-2 flex items-center space-x-4 bg-surface dark:bg-inverse-surface transition-all focus-within:ring-2 focus-within:ring-primary/20 ${containerClassName}`}
+      >
+        {icon && (
           <span
-            id={`${inputId}-error`}
-            className="font-label font-bold text-xs text-error mt-3 ml-4 flex items-center"
-            role="alert"
+            className="material-symbols-outlined text-outline dark:text-outline-variant text-lg"
+            aria-hidden="true"
           >
-            <span className="material-symbols-outlined text-[14px] mr-1">error</span>
-            {error}
+            {icon}
           </span>
         )}
+        <input
+          ref={ref}
+          className={`bg-transparent border-none focus:ring-0 w-full text-on-surface dark:text-surface-container-lowest font-medium placeholder:text-outline/60 dark:placeholder:text-outline-variant/40 py-3 ${className}`}
+          {...props}
+        />
       </div>
     );
   }

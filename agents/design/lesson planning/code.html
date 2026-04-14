@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cognitive Architect | Grade 10 AP Calculus</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#006947",
+                        "primary-dim": "#6411d5",
+                        "on-tertiary-fixed": "#00452d",
+                        "secondary-dim": "#3939c7",
+                        "on-error": "#ffefef",
+                        "surface-container-highest": "#d9dde0",
+                        "on-primary-container": "#2e006c",
+                        "background": "#f5f7f9",
+                        "secondary-container": "#cdcdff",
+                        "primary-container": "#b28cff",
+                        "outline": "#747779",
+                        "tertiary-fixed": "#69f6b8",
+                        "on-surface": "#2c2f31",
+                        "primary-fixed": "#b28cff",
+                        "error-dim": "#a70138",
+                        "on-primary-fixed-variant": "#390083",
+                        "surface-variant": "#d9dde0",
+                        "surface-container-high": "#dfe3e6",
+                        "inverse-surface": "#0b0f10",
+                        "surface-dim": "#d0d5d8",
+                        "surface-bright": "#f5f7f9",
+                        "tertiary-dim": "#005c3d",
+                        "tertiary-container": "#69f6b8",
+                        "inverse-primary": "#a476ff",
+                        "surface-tint": "#702ae1",
+                        "on-tertiary-fixed-variant": "#006544",
+                        "on-primary": "#f8f0ff",
+                        "on-surface-variant": "#595c5e",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#4647d3",
+                        "surface-container-low": "#eef1f3",
+                        "surface": "#f5f7f9",
+                        "primary-fixed-dim": "#a67aff",
+                        "primary": "#702ae1",
+                        "on-tertiary-container": "#005a3c",
+                        "error-container": "#f74b6d",
+                        "secondary-fixed-dim": "#bdbeff",
+                        "on-secondary-container": "#2f2ebf",
+                        "on-secondary-fixed": "#160bae",
+                        "on-error-container": "#510017",
+                        "on-tertiary": "#c8ffe0",
+                        "on-secondary": "#f4f1ff",
+                        "surface-container": "#e5e9eb",
+                        "outline-variant": "#abadaf",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-primary-fixed": "#000000",
+                        "error": "#b41340",
+                        "secondary-fixed": "#cdcdff",
+                        "tertiary-fixed-dim": "#58e7ab",
+                        "on-secondary-fixed-variant": "#3a3ac8",
+                        "on-background": "#2c2f31"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neumorphic-card {
+            background: #f5f7f9;
+            box-shadow: 20px 20px 60px #d9dde0, -20px -20px 60px #ffffff;
+        }
+        .neumorphic-inset {
+            background: #eef1f3;
+            box-shadow: inset 6px 6px 12px #d1d5d8, inset -6px -6px 12px #ffffff;
+        }
+        .glass-gradient {
+            background: linear-gradient(135deg, rgba(112, 42, 225, 0.9) 0%, rgba(178, 140, 255, 0.9) 100%);
+            backdrop-filter: blur(20px);
+        }
+        .sub-nav-neumorphic {
+            box-shadow: 10px 10px 30px #d9dde0, -10px -10px 30px #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface min-h-screen">
+<!-- Header & Navigation -->
+<header class="flex flex-col w-full bg-[#f5f7f9] sticky top-0 z-50">
+<nav class="flex items-center justify-between px-10 py-6">
+<div class="text-2xl font-black text-[#7C3AED] tracking-tighter font-headline">
+            Cognitive Architect
+        </div>
+<div class="hidden md:flex items-center space-x-10">
+<a class="font-headline font-bold text-sm tracking-wide text-slate-500 hover:text-[#7C3AED] transition-all duration-300" href="#">Nodes</a>
+<a class="font-headline font-bold text-sm tracking-wide text-[#7C3AED] border-b-2 border-[#7C3AED] pb-1 transition-all duration-300" href="#">Mastery</a>
+<a class="font-headline font-bold text-sm tracking-wide text-slate-500 hover:text-[#7C3AED] transition-all duration-300" href="#">Insights</a>
+<a class="font-headline font-bold text-sm tracking-wide text-slate-500 hover:text-[#7C3AED] transition-all duration-300" href="#">Oracle</a>
+</div>
+<div class="flex items-center space-x-6">
+<div class="neumorphic-inset px-4 py-2 rounded-full flex items-center space-x-3">
+<span class="material-symbols-outlined text-on-surface-variant text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 font-medium" placeholder="Search knowledge..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="Teacher Profile" class="w-full h-full object-cover" data-alt="Professional educator portrait with soft studio lighting and clean neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8MFDxzJoKWBuKWNMEjj_Vb89fKSrBJQcWqOfU3xPSW-1Sp-XRLTdP1sGwFYllmGhulcNe0-Ic1l0xGkv5jczqjSB07PjaY0123WBx1EKB7KfDbv64FmO7zzjgRVF5xYvqlkpdcEuxwvXc7t8Nt4ECDhhDf-xyEkIaWJ8fFV9HECzwcb1w2EaVLbSAjJkqUdQtbRNvGtf0oyJJY14uSGbvoXR50L-1MR8k03q_gaW42zPcF9ZJDTTH4r6qAQirufctbv6UFMym369I"/>
+</div>
+</div>
+</nav>
+<!-- Secondary Icon Navigation -->
+<div class="w-full border-t border-surface-container-low/50 py-4 bg-[#f5f7f9]">
+<div class="flex items-center justify-center space-x-8 lg:space-x-12">
+<!-- Dashboard -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="flex items-center justify-center bg-[#eef1f3] text-slate-600 rounded-full w-12 h-12 group-hover:scale-105 transition-transform duration-200 sub-nav-neumorphic">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+</div>
+<span class="font-['Inter'] text-[9px] font-semibold uppercase tracking-widest mt-2 text-slate-400 group-hover:text-primary transition-colors">Dashboard</span>
+</div>
+<!-- Curriculum (ACTIVE) -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="flex items-center justify-center bg-gradient-to-br from-[#7C3AED] to-[#b28cff] text-white rounded-full w-12 h-12 shadow-lg scale-110">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+</div>
+<span class="font-['Inter'] text-[9px] font-bold uppercase tracking-widest mt-2 text-[#7C3AED]">Curriculum</span>
+</div>
+<!-- Dependency Map -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="flex items-center justify-center bg-[#eef1f3] text-slate-600 rounded-full w-12 h-12 group-hover:scale-105 transition-transform duration-200 sub-nav-neumorphic">
+<span class="material-symbols-outlined text-xl">hub</span>
+</div>
+<span class="font-['Inter'] text-[9px] font-semibold uppercase tracking-widest mt-2 text-slate-400 group-hover:text-primary transition-colors">Map</span>
+</div>
+<!-- Assessments -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="flex items-center justify-center bg-[#eef1f3] text-slate-600 rounded-full w-12 h-12 group-hover:scale-105 transition-transform duration-200 sub-nav-neumorphic">
+<span class="material-symbols-outlined text-xl">assignment</span>
+</div>
+<span class="font-['Inter'] text-[9px] font-semibold uppercase tracking-widest mt-2 text-slate-400 group-hover:text-primary transition-colors">Assessments</span>
+</div>
+<!-- Timeline -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="flex items-center justify-center bg-[#eef1f3] text-slate-600 rounded-full w-12 h-12 group-hover:scale-105 transition-transform duration-200 sub-nav-neumorphic">
+<span class="material-symbols-outlined text-xl">event_note</span>
+</div>
+<span class="font-['Inter'] text-[9px] font-semibold uppercase tracking-widest mt-2 text-slate-400 group-hover:text-primary transition-colors">Timeline</span>
+</div>
+<!-- Subgroups -->
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="flex items-center justify-center bg-[#eef1f3] text-slate-600 rounded-full w-12 h-12 group-hover:scale-105 transition-transform duration-200 sub-nav-neumorphic">
+<span class="material-symbols-outlined text-xl">group_work</span>
+</div>
+<span class="font-['Inter'] text-[9px] font-semibold uppercase tracking-widest mt-2 text-slate-400 group-hover:text-primary transition-colors">Subgroups</span>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-[1600px] mx-auto px-10 pt-8 pb-16">
+<!-- Dashboard Header -->
+<section class="mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<p class="font-label text-xs font-bold tracking-[0.2em] text-primary mb-2">COGNITIVE WORKSPACE</p>
+<h1 class="font-headline text-5xl font-extrabold tracking-tight text-on-surface">Grade 10 AP Calculus <span class="text-primary-container block md:inline">(Block A)</span></h1>
+</div>
+<div class="flex items-center space-x-4">
+<div class="neumorphic-card px-6 py-4 rounded-lg flex items-center space-x-4">
+<div class="w-12 h-12 rounded-full border-4 border-primary border-t-surface-container-highest flex items-center justify-center">
+<span class="text-xs font-bold text-primary">82%</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Syllabus Progress</p>
+<p class="font-bold text-on-surface">Unit 4: Transcendental Functions</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-12 gap-10">
+<!-- Left & Center: Curriculum & Readiness -->
+<div class="col-span-12 lg:col-span-9 space-y-10">
+<!-- Curriculum Calendar (Week View) -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline text-2xl font-bold text-on-surface">Curriculum Calendar</h2>
+<div class="flex space-x-2">
+<button class="neumorphic-inset p-2 rounded-full material-symbols-outlined text-sm">chevron_left</button>
+<button class="neumorphic-inset p-2 rounded-full material-symbols-outlined text-sm">chevron_right</button>
+</div>
+</div>
+<div class="grid grid-cols-5 gap-6">
+<!-- Monday -->
+<div class="neumorphic-card p-6 rounded-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<p class="text-xs font-bold text-on-surface-variant mb-4">MON, OCT 12</p>
+<h3 class="font-headline font-bold text-lg leading-tight mb-8">Polynomial Differentiation</h3>
+<div class="mt-auto flex items-center justify-between">
+<div class="px-3 py-1 bg-tertiary-container/30 text-tertiary rounded-full text-[10px] font-bold">READY</div>
+<span class="text-2xl font-black text-tertiary">78%</span>
+</div>
+<div class="absolute bottom-0 left-0 h-1 bg-tertiary w-[78%]"></div>
+</div>
+<!-- Tuesday -->
+<div class="neumorphic-card p-6 rounded-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<p class="text-xs font-bold text-on-surface-variant mb-4">TUE, OCT 13</p>
+<h3 class="font-headline font-bold text-lg leading-tight mb-8">Chain Rule Applications</h3>
+<div class="mt-auto flex items-center justify-between">
+<div class="px-3 py-1 bg-tertiary-container/30 text-tertiary rounded-full text-[10px] font-bold">READY</div>
+<span class="text-2xl font-black text-tertiary">72%</span>
+</div>
+<div class="absolute bottom-0 left-0 h-1 bg-tertiary w-[72%]"></div>
+</div>
+<!-- Wednesday -->
+<div class="neumorphic-card p-6 rounded-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<p class="text-xs font-bold text-on-surface-variant mb-4">WED, OCT 14</p>
+<h3 class="font-headline font-bold text-lg leading-tight mb-8">Implicit Differentiation</h3>
+<div class="mt-auto flex items-center justify-between">
+<div class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-[10px] font-bold">STABLE</div>
+<span class="text-2xl font-black text-orange-600">58%</span>
+</div>
+<div class="absolute bottom-0 left-0 h-1 bg-orange-500 w-[58%]"></div>
+</div>
+<!-- Thursday -->
+<div class="neumorphic-card p-6 rounded-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+<p class="text-xs font-bold text-on-surface-variant mb-4">THU, OCT 15</p>
+<h3 class="font-headline font-bold text-lg leading-tight mb-8">Exponentials Review</h3>
+<div class="mt-auto flex items-center justify-between">
+<div class="px-3 py-1 bg-tertiary-container/30 text-tertiary rounded-full text-[10px] font-bold">READY</div>
+<span class="text-2xl font-black text-tertiary">85%</span>
+</div>
+<div class="absolute bottom-0 left-0 h-1 bg-tertiary w-[85%]"></div>
+</div>
+<!-- Friday -->
+<div class="bg-primary text-white p-6 rounded-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 shadow-xl">
+<p class="text-xs font-bold opacity-70 mb-4">FRI, OCT 16</p>
+<h3 class="font-headline font-bold text-lg leading-tight mb-8">Intro to Logarithms</h3>
+<div class="mt-auto flex items-center justify-between">
+<div class="px-3 py-1 bg-white/20 text-white rounded-full text-[10px] font-bold">CAUTION</div>
+<span class="text-2xl font-black text-white">42%</span>
+</div>
+<div class="absolute bottom-0 left-0 h-1 bg-error-container w-[42%]"></div>
+</div>
+</div>
+</section>
+<!-- Prerequisite Status & Dependency Summary -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+<!-- Prerequisite Status Alert -->
+<div class="neumorphic-card p-8 rounded-lg border-l-8 border-error">
+<div class="flex items-start space-x-6">
+<div class="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-error text-3xl">warning</span>
+</div>
+<div>
+<h3 class="font-headline text-xl font-bold text-on-surface mb-2">Prerequisite Alert: Logarithms Intro</h3>
+<p class="text-on-surface-variant text-sm mb-6 leading-relaxed">
+                                Friday's session has a <span class="font-bold text-error">42% readiness score</span>. The foundational concept <span class="italic text-on-surface font-medium">'Exponentials'</span> is only at 65% mastery across the cohort.
+                            </p>
+<div class="flex items-center space-x-4">
+<button class="bg-primary text-white px-5 py-2 rounded-full text-xs font-bold hover:opacity-90 transition-all">Assign Booster</button>
+<button class="text-primary text-xs font-bold hover:underline">View Student List</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Dependency Summary -->
+<div class="neumorphic-card p-8 rounded-lg overflow-hidden relative">
+<h3 class="font-headline text-xl font-bold text-on-surface mb-6">Downstream Dependencies</h3>
+<div class="space-y-6">
+<div class="flex items-center space-x-4">
+<div class="w-2 h-2 rounded-full bg-primary-container"></div>
+<div class="flex-1">
+<div class="flex justify-between mb-1">
+<span class="text-xs font-bold">Natural Logs in Integrals</span>
+<span class="text-[10px] font-bold text-on-surface-variant">BLOCK RISK: HIGH</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[100%]"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<div class="w-2 h-2 rounded-full bg-slate-300"></div>
+<div class="flex-1">
+<div class="flex justify-between mb-1">
+<span class="text-xs font-bold">Differential Equations</span>
+<span class="text-[10px] font-bold text-on-surface-variant">BLOCK RISK: MED</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-slate-300 w-[60%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Abstract Visual -->
+<div class="absolute -right-10 -bottom-10 opacity-5">
+<span class="material-symbols-outlined text-[180px]">hub</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: AI Recommendations -->
+<aside class="col-span-12 lg:col-span-3">
+<div class="neumorphic-card p-8 rounded-lg h-full">
+<div class="flex items-center space-x-3 mb-8">
+<span class="material-symbols-outlined text-primary fill-current" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h2 class="font-headline text-xl font-bold text-on-surface">Oracle Insights</h2>
+</div>
+<div class="space-y-8">
+<!-- Recommendation 1 -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-black text-primary uppercase tracking-widest">Strategy Shift</span>
+<span class="text-[10px] font-bold text-on-surface-variant">High Impact</span>
+</div>
+<h4 class="font-bold text-sm leading-snug">Delay 'Logarithms' by 1 week</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+                            Current mastery delta suggests shifting the intro to Monday, Oct 23rd. Use Friday for an "Exponentials Workshop" to close the 35% gap.
+                        </p>
+<button class="w-full py-3 glass-gradient text-white rounded-full text-xs font-bold mt-2 hover:scale-[1.02] transition-transform">Auto-Adjust Schedule</button>
+</div>
+<hr class="border-t border-surface-container"/>
+<!-- Recommendation 2 -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-black text-tertiary uppercase tracking-widest">Student Grouping</span>
+<span class="text-[10px] font-bold text-on-surface-variant">Med Impact</span>
+</div>
+<h4 class="font-bold text-sm leading-snug">Subgroup Intervention</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+                            8 students in 'Subgroup Gamma' are outperforming the curve. Recommend peer-tutoring pairs for the Implicit Differentiation lab.
+                        </p>
+<button class="w-full py-3 neumorphic-inset text-primary rounded-full text-xs font-bold hover:bg-surface-container-high transition-colors">Generate Pairs</button>
+</div>
+<!-- Data Visual Asset -->
+<div class="mt-12">
+<img class="w-full h-32 object-cover rounded-lg shadow-inner grayscale opacity-50" data-alt="Abstract complex mathematical visualization with flowing lines and glowing nodes representing digital connections and data intelligence" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbyxmowz2L2KsJZjhHvelv_9Otgjqljtkhr_qLYDU1JsVpG_BXE5OkXHvhH-qff8iZwQNiyDMl7In-OBuN3qxCxN2oVdBnW_eXKM0HhTPGHxtvcXrXg-S8Jw0V_I4U4z3oII83q5Bdk3arnjnNWNAnof3ynqvUO5Mjm8-Wi2NNVVQ6-A0KyFmU53pAucUuYA5wXkV28de9M3CmEOJeJ_0kIilGdC6rCgtUakfzsJWc1LsPfrFEyxslw6pJn3VJnKOiWDFjQzath0kt"/>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SANKALP AEI | Intelligence-Driven Learning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "background": "#e0e5ec",
+              "primary": "#702ae1",
+              "on-background": "#2c2f31",
+              "on-surface-variant": "#595c5e",
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1.5rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        :root {
+            --nm-bg: #e0e5ec;
+            --nm-shadow-dark: rgba(163, 177, 198, 0.6);
+            --nm-shadow-light: rgba(255, 255, 255, 0.7);
+        }
+
+        body {
+            background-color: var(--nm-bg);
+        }
+
+        .nm-flat {
+            background: var(--nm-bg);
+            box-shadow: 9px 9px 16px var(--nm-shadow-dark), -9px -9px 16px var(--nm-shadow-light);
+        }
+
+        .nm-convex {
+            background: linear-gradient(145deg, #f0f4f8, #cacfd4);
+            box-shadow: 9px 9px 16px var(--nm-shadow-dark), -9px -9px 16px var(--nm-shadow-light);
+        }
+
+        .nm-concave {
+            background: var(--nm-bg);
+            box-shadow: inset 9px 9px 16px var(--nm-shadow-dark), inset -9px -9px 16px var(--nm-shadow-light);
+        }
+
+        .nm-button {
+            background: var(--nm-bg);
+            box-shadow: 6px 6px 12px var(--nm-shadow-dark), -6px -6px 12px var(--nm-shadow-light);
+            transition: all 0.2s ease;
+        }
+
+        .nm-button:active {
+            box-shadow: inset 4px 4px 8px var(--nm-shadow-dark), inset -4px -4px 8px var(--nm-shadow-light);
+            transform: scale(0.98);
+        }
+
+        .nm-button-primary {
+            background: #702ae1;
+            box-shadow: 6px 6px 12px rgba(112, 42, 225, 0.3), -6px -6px 12px rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .nm-button-primary:active {
+            box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.2);
+            transform: scale(0.98);
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at 50% 50%, rgba(112, 42, 225, 0.03) 0%, transparent 70%);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="text-on-background font-body selection:bg-primary/20 selection:text-primary">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#e0e5ec]/90 backdrop-blur-md transition-all duration-300">
+<div class="flex justify-between items-center max-w-7xl mx-auto px-6 py-5">
+<div class="text-2xl font-black tracking-tighter text-primary font-headline">
+            SANKALP AEI
+        </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-primary font-bold border-b-2 border-primary py-1 transition-all duration-300" href="#features">Features</a>
+<a class="text-slate-600 hover:text-primary font-label uppercase tracking-wider text-xs transition-all duration-300" href="#roles">Roles</a>
+<a class="text-slate-600 hover:text-primary font-label uppercase tracking-wider text-xs transition-all duration-300" href="#pricing">Pricing</a>
+<a class="text-slate-600 hover:text-primary font-label uppercase tracking-wider text-xs transition-all duration-300" href="#about">About</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden sm:block text-slate-600 hover:text-primary font-semibold px-4 py-2 transition-all">Login</button>
+<button class="nm-button-primary text-white px-6 py-2.5 rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all">Get Started</button>
+</div>
+</div>
+</nav>
+<main class="pt-24">
+<!-- Hero Section -->
+<section class="relative min-h-[85vh] flex items-center justify-center overflow-hidden hero-gradient">
+<div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+<div class="z-10">
+<span class="inline-block px-4 py-1.5 rounded-full nm-concave text-primary font-label text-xs font-bold uppercase tracking-widest mb-6">Attention &amp; Engagement Intelligence</span>
+<h1 class="font-headline text-5xl lg:text-7xl font-extrabold tracking-tight text-on-background leading-[1.1] mb-8">
+                    Intelligence-Driven <span class="text-primary">Learning</span>
+</h1>
+<p class="text-lg md:text-xl text-on-surface-variant leading-relaxed mb-10 max-w-xl">
+                    Making the invisible processes of learning visible through adaptive intelligence. Track attention, engagement, and mastery in real-time.
+                </p>
+<div class="flex flex-wrap gap-6">
+<button class="nm-button-primary text-white px-8 py-4 rounded-xl font-bold text-lg hover:brightness-110 transition-all">Get Started</button>
+<button class="nm-button text-primary px-8 py-4 rounded-xl font-bold text-lg transition-all">Request Demo</button>
+</div>
+</div>
+<div class="relative">
+<div class="relative z-10 rounded-2xl overflow-hidden nm-convex p-4 transition-transform duration-700">
+<img alt="AI Learning Visualization" class="w-full h-auto rounded-xl shadow-inner" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBN-S5xomyXGcO17QW45lh9rhMOiIOYzV5CIdwCGhkFqjABO-lkRiViLFWAQkUTFraxKkbK27V2JUyd3VHEHC0htKmk9hFOouXKFQ5uXMXT0zDRIG_-KOBO6W5uJpVZeloD4Sjy0-57-aUyaj_Fp6kW-HmpnfU2LItoboJ1MMH6oYOsB5TTt7iixGygPEOJImNgPC8D4sdIOoDNhXarRPO3ZuRWmNacCZ150M5AItGYQrcfAliduWANvpRKdI-P41_4i2RKg1ZVLQL1"/>
+</div>
+<!-- Decorative Elements -->
+<div class="absolute -top-12 -right-12 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-12 -left-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
+</div>
+</div>
+</section>
+<!-- Feature Grid Section -->
+<section class="py-24" id="features">
+<div class="max-w-7xl mx-auto px-6">
+<div class="text-center mb-20">
+<h2 class="font-headline text-4xl font-bold mb-4">Architecting Cognitive Success</h2>
+<p class="text-on-surface-variant max-w-2xl mx-auto">Our platform uses advanced biometric and interaction data to craft a personalized learning journey that adapts to every nuance of your focus.</p>
+</div>
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+<!-- Feature 1 -->
+<div class="nm-convex p-8 rounded-2xl transition-all duration-300 hover:translate-y-[-4px]">
+<div class="w-16 h-16 rounded-2xl nm-concave flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="psychology">psychology</span>
+</div>
+<h3 class="font-headline text-xl font-bold mb-4">Brain Map Visualization</h3>
+<p class="text-on-surface-variant leading-relaxed">Interactive neural pathways that visualize knowledge retention and conceptual connections in a stunning 3D landscape.</p>
+</div>
+<!-- Feature 2 -->
+<div class="nm-convex p-8 rounded-2xl transition-all duration-300 hover:translate-y-[-4px]">
+<div class="w-16 h-16 rounded-2xl nm-concave flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="tune">tune</span>
+</div>
+<h3 class="font-headline text-xl font-bold mb-4">Adaptive Difficulty</h3>
+<p class="text-on-surface-variant leading-relaxed">Dynamic challenge scaling that stays perfectly within the user's "Zone of Proximal Development" for optimal flow.</p>
+</div>
+<!-- Feature 3 -->
+<div class="nm-convex p-8 rounded-2xl transition-all duration-300 hover:translate-y-[-4px]">
+<div class="w-16 h-16 rounded-2xl nm-concave flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="rebase_edit">rebase_edit</span>
+</div>
+<h3 class="font-headline text-xl font-bold mb-4">Spaced Revision Intelligence</h3>
+<p class="text-on-surface-variant leading-relaxed">AI-calculated recall sessions designed to move short-term knowledge into long-term permanent storage.</p>
+</div>
+<!-- Feature 4 -->
+<div class="nm-convex p-8 rounded-2xl transition-all duration-300 hover:translate-y-[-4px]">
+<div class="w-16 h-16 rounded-2xl nm-concave flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="monitoring">monitoring</span>
+</div>
+<h3 class="font-headline text-xl font-bold mb-4">Real-time Tracking</h3>
+<p class="text-on-surface-variant leading-relaxed">Precision monitoring of ocular patterns and interaction speed to gauge genuine mental engagement levels.</p>
+</div>
+<!-- Feature 5 -->
+<div class="nm-convex p-8 rounded-2xl transition-all duration-300 hover:translate-y-[-4px]">
+<div class="w-16 h-16 rounded-2xl nm-concave flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="smart_toy">smart_toy</span>
+</div>
+<h3 class="font-headline text-xl font-bold mb-4">AI Interventions</h3>
+<p class="text-on-surface-variant leading-relaxed">Proactive nudges and micro-breaks triggered automatically when the system detects cognitive fatigue.</p>
+</div>
+<!-- Feature 6 -->
+<div class="nm-convex p-8 rounded-2xl transition-all duration-300 hover:translate-y-[-4px]">
+<div class="w-16 h-16 rounded-2xl nm-concave flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="auto_stories">auto_stories</span>
+</div>
+<h3 class="font-headline text-xl font-bold mb-4">Story Mode Learning</h3>
+<p class="text-on-surface-variant leading-relaxed">Transforming abstract curriculum into narrative-driven quests that increase emotional resonance and retention.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Role-based Panels -->
+<section class="py-24 overflow-hidden" id="roles">
+<div class="max-w-7xl mx-auto px-6">
+<div class="mb-16">
+<h2 class="font-headline text-4xl font-bold mb-4">Empowering the Ecosystem</h2>
+<div class="w-24 h-1.5 nm-concave bg-primary rounded-full"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Students -->
+<div class="md:col-span-7 group relative rounded-2xl overflow-hidden nm-convex p-4 h-[400px]">
+<div class="relative w-full h-full rounded-xl overflow-hidden">
+<img alt="Student Platform" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBivunnCftD7UjJO7eXRmkl0N3kmUh1wtBNdKmWm-_-3w0Oq-QO3uS7u89VmVU6zXSKD11lCUX6BVd8tsn_ADppsGZb1PDpChF1nFPbLKc7S9eYU94jNkwOWw7dQIv02D785w3QUg-kmxfs_-A81TT10Yw2TOOwT0qU4NpZ3GZNO9DnsfA38wfIhsb40NimVXzyCmQj5YTmZIhPkqlEwR1FJBWbteABnCHkgN-u2qcpZu9zPhpl7bxUHc0Wv0mRDE8-8cj6aDAUreT5"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-10">
+<h4 class="text-white font-headline text-3xl font-bold mb-2">Students</h4>
+<p class="text-white/80 text-lg">See your knowledge grow through interactive visualizers.</p>
+</div>
+</div>
+</div>
+<!-- Teachers -->
+<div class="md:col-span-5 group relative rounded-2xl overflow-hidden nm-convex p-4 h-[400px]">
+<div class="relative w-full h-full rounded-xl overflow-hidden">
+<img alt="Teacher Insights" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCC7ewhPr883zUPcM7jTbC60P5GR89c1zozqfU1bJMXW86o-Ui5mNi8W_pNTbFmdVOhNn4kXG-us4yHn00fVBxemm_O3ICFgS-nB_-yLqbt_NF8STN9gBUXtR6DCUSZtycqE_1u5N_1HSE0bjLGJn3pxj9HXiYxsghxqR-0mibb0Mj7nv8eT8XGKxMqE3LgR9znJw-n-fKdHsWYCMsy17W6gboC8gvjzCP1SBwzsS8cJ6l4EqCb6b3f-At5fZUpTprq3lml33sIyIOS"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent flex flex-col justify-end p-10">
+<h4 class="text-white font-headline text-3xl font-bold mb-2">Teachers</h4>
+<p class="text-white/80 text-lg">Act on insight, not instinct with predictive analytics.</p>
+</div>
+</div>
+</div>
+<!-- Parents -->
+<div class="md:col-span-5 group relative rounded-2xl overflow-hidden nm-convex p-4 h-[400px]">
+<div class="relative w-full h-full rounded-xl overflow-hidden">
+<img alt="Parental Dashboard" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADegNUDYS0OxCtTbKjo3y2Qaw6DnmLCOtxVV7aRl_gRh0mkjVgB7kfpP5hYwSNplqIdrhPZcTY_XZ9s4rd8ERoGBfRNP4flJgw8pUFt5RF3YUPPWKrBSqctRp2lsWN1NfElSR77n9rRNkzSkoh9StKL5ZvV0vtCn-WhCR3A-eGWBZS-P8QMMO5xvrsNWxdb7Xcs4wLEGCMRGILB29JiEnJBrCB8tKddo6HscOR0hLQThKTg7tXsCB0eMmJTcMvnIvlwTzT_VaySG-Q"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#4647d3]/80 via-[#4647d3]/20 to-transparent flex flex-col justify-end p-10">
+<h4 class="text-white font-headline text-3xl font-bold mb-2">Parents</h4>
+<p class="text-white/80 text-lg">Understand your child's journey with weekly focus reports.</p>
+</div>
+</div>
+</div>
+<!-- Admins -->
+<div class="md:col-span-7 group relative rounded-2xl overflow-hidden nm-convex p-4 h-[400px]">
+<div class="relative w-full h-full rounded-xl overflow-hidden">
+<img alt="Admin Governance" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcSO0JTJYE3TQ01jjBClwxKKpBXIKJvuecw6l13S7No0Jlg0kCMp8W-lMSVa3aCv-laa8ZoWUcvYo235-2mkwIIpRLwTMZDPdomKcnBTBXAtgGASMpH9gGied5BiJVDEm4-RYP9JF4hYIk4Ui_vdSXsxaq38w0rHJqK_I4ut-vQ5vMaG9tAp-ISNbuy9b758ZyM_coek7Dq7q62JguBREc3ghclDb2Yga_uI8fgv12M-PPEg-JniKxJ4InDM2gZjifa3DLpnHoSv9r"/>
+<div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent flex flex-col justify-end p-10">
+<h4 class="text-white font-headline text-3xl font-bold mb-2">Admins</h4>
+<p class="text-white/80 text-lg">Govern with confidence across thousands of active learners.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Dynamic CTA -->
+<section class="py-24">
+<div class="max-w-5xl mx-auto px-6">
+<div class="nm-flat p-12 md:p-20 rounded-3xl text-center border-t border-white/50 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+<h2 class="font-headline text-4xl md:text-5xl font-bold mb-6 relative z-10">Ready to unlock the potential of intelligence-driven education?</h2>
+<p class="text-on-surface-variant text-lg mb-10 max-w-2xl mx-auto relative z-10">Join over 500 institutions pioneering the future of cognitive learning. Start your 30-day free institutional pilot today.</p>
+<div class="flex flex-wrap justify-center gap-4 relative z-10">
+<button class="nm-button-primary text-white px-10 py-5 rounded-xl font-bold text-xl hover:brightness-110 active:scale-95 transition-all">Get Started Now</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 mt-auto border-t border-slate-300/50">
+<div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12">
+<div class="col-span-2 md:col-span-1">
+<div class="text-xl font-bold text-primary mb-6">SANKALP AEI</div>
+<p class="text-slate-500 text-sm leading-relaxed mb-4">
+                Intelligence-Driven Learning for the Future. Revolutionizing the way we perceive and engage with educational content.
+            </p>
+</div>
+<div>
+<h5 class="font-headline font-bold text-slate-900 mb-6">Company</h5>
+<ul class="space-y-4">
+<li><a class="text-slate-500 hover:text-primary text-sm transition-colors" href="#">About Us</a></li>
+<li><a class="text-slate-500 hover:text-primary text-sm transition-colors" href="#">Careers</a></li>
+<li><a class="text-slate-500 hover:text-primary text-sm transition-colors" href="#">Press</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-headline font-bold text-slate-900 mb-6">Support</h5>
+<ul class="space-y-4">
+<li><a class="text-slate-500 hover:text-primary text-sm transition-colors" href="#">Privacy Policy</a></li>
+<li><a class="text-slate-500 hover:text-primary text-sm transition-colors" href="#">Terms of Service</a></li>
+<li><a class="text-slate-500 hover:text-primary text-sm transition-colors" href="#">Contact Us</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-headline font-bold text-slate-900 mb-6">Social</h5>
+<ul class="space-y-4">
+<li><a class="text-slate-500 hover:text-primary text-sm transition-colors" href="#">Twitter</a></li>
+<li><a class="text-slate-500 hover:text-primary text-sm transition-colors" href="#">LinkedIn</a></li>
+<li><a class="text-slate-500 hover:text-primary text-sm transition-colors" href="#">Instagram</a></li>
+</ul>
+</div>
+</div>
+<div class="max-w-7xl mx-auto px-6 pt-12 mt-12 border-t border-slate-300/50 text-center md:text-left">
+<p class="text-slate-500 text-sm">
+            © 2024 SANKALP AEI. Intelligence-Driven Learning for the Future.
+        </p>
+</div>
+</footer>
+</body></html>

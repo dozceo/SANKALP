@@ -1,0 +1,54 @@
+{
+  "name": "Build Missing API Routes",
+  "description": "Create all 6 missing REST API route files: events.ts, students.ts, teachers.ts, predictions.ts, admin.ts, parents.ts. Each route must use Zod validation, RBAC middleware, and proper error handling. Wire them into src/api/server.ts.",
+  "subtasks": [
+    {
+      "name": "Read existing patterns",
+      "description": "Analyze src/api/server.ts and middleware files to understand the existing Express setup pattern",
+      "agent": "backend",
+      "dependsOn": []
+    },
+    {
+      "name": "Build events route",
+      "description": "Create src/api/routes/events.ts with POST /events (ingest interaction events), GET /events/:studentId (list events). Use Zod validation for event body, requireRole('teacher','admin').",
+      "agent": "backend",
+      "dependsOn": ["Read existing patterns"]
+    },
+    {
+      "name": "Build students route",
+      "description": "Create src/api/routes/students.ts with GET /students, GET /students/:id, GET /students/:id/mastery, GET /students/:id/brain-map. Use Zod params validation, requireRole middleware.",
+      "agent": "backend",
+      "dependsOn": ["Read existing patterns"]
+    },
+    {
+      "name": "Build teachers route",
+      "description": "Create src/api/routes/teachers.ts with GET /teachers/:id/dashboard, GET /teachers/:id/heatmap, GET /teachers/:id/risk-alerts. Wire to service layer.",
+      "agent": "backend",
+      "dependsOn": ["Read existing patterns"]
+    },
+    {
+      "name": "Build predictions route",
+      "description": "Create src/api/routes/predictions.ts with GET /predictions/:studentId, POST /predictions/batch. Return predictions with confidence bounds.",
+      "agent": "backend",
+      "dependsOn": ["Read existing patterns"]
+    },
+    {
+      "name": "Build admin and parents routes",
+      "description": "Create src/api/routes/admin.ts and src/api/routes/parents.ts. Admin gets system health endpoints, parents get privacy-safe CI-derived mastery views.",
+      "agent": "backend",
+      "dependsOn": ["Read existing patterns"]
+    },
+    {
+      "name": "Wire routes into server",
+      "description": "Update src/api/server.ts to import and mount all 6 new route files",
+      "agent": "integration",
+      "dependsOn": ["Build events route", "Build students route", "Build teachers route", "Build predictions route", "Build admin and parents routes"]
+    },
+    {
+      "name": "Generate API route tests",
+      "description": "Create tests/integration/api-routes.test.ts with supertest-based tests for all endpoints",
+      "agent": "testing",
+      "dependsOn": ["Wire routes into server"]
+    }
+  ]
+}

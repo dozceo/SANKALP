@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SANKALP AEI | Student Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#58e7ab",
+              "error-container": "#f74b6d",
+              "surface-container-high": "#dfe3e6",
+              "surface-container-low": "#eef1f3",
+              "on-tertiary-fixed-variant": "#006544",
+              "secondary-fixed-dim": "#bdbeff",
+              "secondary-dim": "#3939c7",
+              "on-secondary": "#f4f1ff",
+              "on-secondary-fixed": "#160bae",
+              "on-error-container": "#510017",
+              "surface-container": "#e5e9eb",
+              "tertiary-container": "#69f6b8",
+              "on-primary": "#f8f0ff",
+              "inverse-primary": "#a476ff",
+              "on-primary-fixed": "#000000",
+              "surface-container-lowest": "#ffffff",
+              "outline": "#747779",
+              "error-dim": "#a70138",
+              "on-tertiary": "#c8ffe0",
+              "secondary-container": "#cdcdff",
+              "tertiary-fixed": "#69f6b8",
+              "on-surface-variant": "#595c5e",
+              "tertiary-dim": "#005c3d",
+              "primary": "#702ae1",
+              "primary-fixed": "#b28cff",
+              "on-primary-container": "#2e006c",
+              "on-background": "#2c2f31",
+              "primary-dim": "#6411d5",
+              "on-tertiary-fixed": "#00452d",
+              "surface-container-highest": "#d9dde0",
+              "secondary": "#4647d3",
+              "inverse-surface": "#0b0f10",
+              "surface-variant": "#d9dde0",
+              "surface": "#f5f7f9",
+              "on-error": "#ffefef",
+              "surface-dim": "#d0d5d8",
+              "on-secondary-container": "#2f2ebf",
+              "on-surface": "#2c2f31",
+              "on-secondary-fixed-variant": "#3a3ac8",
+              "on-primary-fixed-variant": "#390083",
+              "outline-variant": "#abadaf",
+              "primary-container": "#b28cff",
+              "background": "#f5f7f9",
+              "tertiary": "#006947",
+              "surface-bright": "#f5f7f9",
+              "secondary-fixed": "#cdcdff",
+              "primary-fixed-dim": "#a67aff",
+              "error": "#b41340",
+              "surface-tint": "#702ae1",
+              "on-tertiary-container": "#005a3c",
+              "inverse-on-surface": "#9a9d9f"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .neumorphic-flat {
+            background: #f5f7f9;
+            box-shadow: 8px 8px 16px #e0e4e8, -8px -8px 16px #ffffff;
+        }
+        .neumorphic-inset {
+            background: #eef1f3;
+            box-shadow: inset 4px 4px 8px #d1d9e0, inset -4px -4px 8px #ffffff;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .mastery-arc {
+            background: conic-gradient(from 0deg, #702ae1 0%, #b28cff 78%, #eef1f3 78% 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Shell -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-20 bg-[#f5f7f9] shadow-sm font-['Manrope'] font-semibold tracking-tight">
+<div class="flex items-center gap-12">
+<span class="text-2xl font-black text-[#7C3AED] tracking-tighter uppercase">SANKALP AEI</span>
+<nav class="hidden md:flex gap-8">
+<a class="text-[#7C3AED] border-b-2 border-[#7C3AED] pb-1 hover:text-[#7C3AED] transition-colors duration-300" href="#">Dashboard</a>
+<a class="text-[#2c2f31] opacity-70 hover:text-[#7C3AED] transition-colors duration-300" href="#">Curriculum</a>
+<a class="text-[#2c2f31] opacity-70 hover:text-[#7C3AED] transition-colors duration-300" href="#">Assessments</a>
+<a class="text-[#2c2f31] opacity-70 hover:text-[#7C3AED] transition-colors duration-300" href="#">Insights</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="neumorphic-inset px-4 py-2 rounded-full flex items-center gap-3">
+<span class="material-symbols-outlined text-primary scale-90" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Focus Level: 88%</span>
+</div>
+<div class="flex gap-3">
+<button class="w-10 h-10 rounded-full neumorphic-flat flex items-center justify-center hover:scale-95 transition-transform">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<img alt="Student Profile Avatar" class="w-10 h-10 rounded-full border-2 border-primary-container" data-alt="close-up portrait of a young male student with a friendly expression and modern glasses in a bright studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxcMi-CGKA--fu385KAp7LpugeGjQM0zGol67pYo9wkiZLZRPRUTGMMQ88VAff9uz_7DV7owM0tta7omiV6QwaqVP9cfP2kojTezg6PnZj3D69fWi5eAnc28i36t-rdOBjkwr107l_9Sq1L0PgrJIyE_2TXCXf281kCCrXtbNOArrc1ek4UTZR2acPhUl02DewdhzHP0VrchAa5FiojbPjVeh1ezJeS9A3Pv8CY93FCuwoaCIblSVzZJTL1Vyuzym1oZfbNm65GfrC"/>
+</div>
+</div>
+</header>
+<main class="pt-28 pb-12 px-8 max-w-[1600px] mx-auto">
+<!-- Cognitive State Snapshot Header -->
+<section class="mb-10 flex flex-col md:flex-row justify-between items-end gap-6">
+<div>
+<h1 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight mb-2">Good morning, Aarav.</h1>
+<p class="text-on-surface-variant text-lg">Your cognitive clarity is peaking. Perfect time for <span class="text-primary font-bold">Quantum Mechanics</span>.</p>
+</div>
+<div class="flex gap-4">
+<div class="neumorphic-flat p-4 rounded-lg flex items-center gap-4">
+<div class="w-12 h-12 rounded-full mastery-arc flex items-center justify-center p-1">
+<div class="w-full h-full bg-surface rounded-full flex items-center justify-center">
+<span class="text-xs font-black">78%</span>
+</div>
+</div>
+<div>
+<p class="text-[10px] uppercase font-black text-on-surface-variant leading-none mb-1">Overall Mastery</p>
+<p class="text-lg font-bold text-primary tracking-tighter leading-none">Architect Level</p>
+</div>
+</div>
+<div class="neumorphic-flat p-4 rounded-lg flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div>
+<p class="text-[10px] uppercase font-black text-on-surface-variant leading-none mb-1">Current Streak</p>
+<p class="text-lg font-bold text-primary tracking-tighter leading-none">14 Days</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Tri-Pane Cognitive Cockpit -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Left Rail: Brain Map & Nav -->
+<aside class="col-span-12 lg:col-span-3 space-y-8">
+<div class="neumorphic-flat p-6 rounded-lg overflow-hidden">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline font-bold text-on-surface uppercase text-xs tracking-widest">Cognitive Brain Map</h3>
+<span class="material-symbols-outlined text-primary text-sm">open_in_full</span>
+</div>
+<div class="relative h-48 w-full neumorphic-inset rounded-lg flex items-center justify-center">
+<!-- Abstract brain map visualization -->
+<div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden rounded-lg">
+<div class="w-64 h-64 bg-primary blur-3xl absolute -top-10 -left-10 rounded-full"></div>
+<div class="w-48 h-48 bg-secondary blur-3xl absolute -bottom-10 -right-10 rounded-full"></div>
+</div>
+<div class="relative z-10 grid grid-cols-3 gap-4">
+<div class="w-12 h-12 rounded-full border-2 border-primary/30 flex items-center justify-center bg-white/50 backdrop-blur-sm">
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'FILL' 1;">functions</span>
+</div>
+<div class="w-12 h-12 rounded-full border-2 border-tertiary-fixed-dim flex items-center justify-center bg-white/50 backdrop-blur-sm translate-y-4">
+<span class="material-symbols-outlined text-tertiary text-xs" style="font-variation-settings: 'FILL' 1;">science</span>
+</div>
+<div class="w-12 h-12 rounded-full border-2 border-primary-container flex items-center justify-center bg-white/50 backdrop-blur-sm">
+<span class="material-symbols-outlined text-primary-dim text-xs" style="font-variation-settings: 'FILL' 1;">history_edu</span>
+</div>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h3 class="font-headline font-bold text-on-surface uppercase text-xs tracking-widest px-2">Subject Mastery</h3>
+<div class="space-y-3">
+<div class="neumorphic-flat p-4 rounded-lg flex items-center justify-between group hover:scale-[1.02] transition-transform cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-primary">architecture</span>
+</div>
+<span class="font-semibold text-sm">Mathematics</span>
+</div>
+<span class="text-xs font-bold text-primary">82%</span>
+</div>
+<div class="neumorphic-flat p-4 rounded-lg flex items-center justify-between group hover:scale-[1.02] transition-transform cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-secondary">experiment</span>
+</div>
+<span class="font-semibold text-sm text-on-surface-variant">Physics</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant">64%</span>
+</div>
+<div class="neumorphic-flat p-4 rounded-lg flex items-center justify-between group hover:scale-[1.02] transition-transform cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-tertiary">biotech</span>
+</div>
+<span class="font-semibold text-sm text-on-surface-variant">Biochemistry</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant">91%</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Center Workspace: Today's Mission -->
+<section class="col-span-12 lg:col-span-6 space-y-8">
+<div class="neumorphic-flat p-8 rounded-xl bg-gradient-to-br from-surface to-surface-container-low relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4">
+<span class="px-3 py-1 bg-primary text-white text-[10px] font-black rounded-full uppercase tracking-tighter">Challenge Mode</span>
+</div>
+<div class="relative z-10">
+<div class="mb-6">
+<h2 class="text-xs font-black text-primary uppercase tracking-[0.2em] mb-2">Today's Mission</h2>
+<h3 class="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Advanced Thermodynamics: Phase Transitions</h3>
+</div>
+<div class="neumorphic-inset p-6 rounded-lg mb-8">
+<div class="flex items-start gap-4 mb-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary-container">rocket_launch</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface">Deep Dive Challenge</h4>
+<p class="text-sm text-on-surface-variant">Solve 5 complex problems regarding entropy changes in non-ideal gases to unlock the 'Thermodynamic Titan' badge.</p>
+</div>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="w-[60%] h-full bg-gradient-to-r from-primary to-primary-fixed"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">3/5 Completed</span>
+<span class="text-[10px] font-bold text-primary uppercase">+250 XP at completion</span>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="flex-1 py-4 rounded-full bg-gradient-to-r from-primary to-primary-fixed text-white font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[0.98] transition-transform">
+                                Launch Mission
+                            </button>
+<button class="px-8 py-4 rounded-full neumorphic-flat text-on-surface font-bold text-sm hover:scale-[0.98] transition-transform">
+                                Review Theory
+                            </button>
+</div>
+</div>
+</div>
+<!-- Prerequisite Readiness Strip -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="neumorphic-flat p-6 rounded-lg">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary">fact_check</span>
+<h4 class="text-xs font-black uppercase tracking-widest">Prerequisite Readiness</h4>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-medium text-on-surface-variant">Partial Derivatives</span>
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-sm">check_circle</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-medium text-on-surface-variant">Ideal Gas Laws</span>
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-sm">check_circle</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-medium text-on-surface-variant">Statistical Mechanics Intro</span>
+<span class="material-symbols-outlined text-primary text-sm">sync</span>
+</div>
+</div>
+</div>
+<div class="neumorphic-flat p-6 rounded-lg">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary">trending_up</span>
+<h4 class="text-xs font-black uppercase tracking-widest">Progress Velocity</h4>
+</div>
+<div class="h-20 flex items-end gap-1">
+<div class="flex-1 bg-surface-container-highest rounded-t-sm h-[40%]"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-sm h-[60%]"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-sm h-[55%]"></div>
+<div class="flex-1 bg-primary-container rounded-t-sm h-[85%]"></div>
+<div class="flex-1 bg-primary rounded-t-sm h-[95%]"></div>
+<div class="flex-1 bg-primary rounded-t-sm h-[80%]"></div>
+<div class="flex-1 bg-primary rounded-t-sm h-[100%]"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-2 text-center uppercase font-bold tracking-tighter">Velocity: +12% vs last week</p>
+</div>
+</div>
+<!-- Gamification: Badges -->
+<div class="neumorphic-flat p-6 rounded-lg">
+<h4 class="text-xs font-black uppercase tracking-widest mb-4">Unlocked Achievements</h4>
+<div class="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
+<div class="shrink-0 flex flex-col items-center gap-2">
+<div class="w-14 h-14 rounded-full neumorphic-inset flex items-center justify-center p-2">
+<div class="w-full h-full rounded-full bg-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-container text-xl" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">Night Owl</span>
+</div>
+<div class="shrink-0 flex flex-col items-center gap-2">
+<div class="w-14 h-14 rounded-full neumorphic-inset flex items-center justify-center p-2 opacity-50 grayscale">
+<div class="w-full h-full rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container text-xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">Polymath</span>
+</div>
+<div class="shrink-0 flex flex-col items-center gap-2">
+<div class="w-14 h-14 rounded-full neumorphic-inset flex items-center justify-center p-2">
+<div class="w-full h-full rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-xl" style="font-variation-settings: 'FILL' 1;">psychology_alt</span>
+</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">Deep Thinker</span>
+</div>
+<div class="shrink-0 flex flex-col items-center gap-2">
+<div class="w-14 h-14 rounded-full neumorphic-inset flex items-center justify-center p-2">
+<div class="w-full h-full rounded-full bg-orange-200 flex items-center justify-center">
+<span class="material-symbols-outlined text-orange-800 text-xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">Consistent</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Rail: Explainer & Revision -->
+<aside class="col-span-12 lg:col-span-3 space-y-8">
+<div class="neumorphic-flat p-6 rounded-lg border-l-4 border-primary bg-primary/5">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary text-xl">help_center</span>
+<h4 class="font-headline font-bold text-on-surface uppercase text-xs tracking-widest">Why this now?</h4>
+</div>
+<p class="text-sm leading-relaxed text-on-surface-variant">
+                        Our AI detected a <span class="text-primary font-bold">cognitive resonance</span> between your recent progress in <span class="font-semibold">Vector Calculus</span> and the concepts in <span class="font-semibold">Thermodynamics</span>. Learning this now will solidify your neural links between pure math and applied physics.
+                    </p>
+</div>
+<div class="space-y-4">
+<h3 class="font-headline font-bold text-on-surface uppercase text-xs tracking-widest px-2">Revision Queue</h3>
+<div class="space-y-4 relative before:content-[''] before:absolute before:left-6 before:top-4 before:bottom-4 before:w-px before:bg-surface-container-highest">
+<div class="relative pl-12">
+<div class="absolute left-4 top-1 w-4 h-4 rounded-full neumorphic-flat bg-surface flex items-center justify-center z-10">
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+</div>
+<div class="neumorphic-flat p-4 rounded-lg">
+<p class="text-[10px] font-bold text-primary uppercase mb-1">In 2 hours</p>
+<p class="text-sm font-semibold">Organic Chemistry Flashcards</p>
+<p class="text-xs text-on-surface-variant">Forgetting curve alert (80%)</p>
+</div>
+</div>
+<div class="relative pl-12">
+<div class="absolute left-4 top-1 w-4 h-4 rounded-full neumorphic-flat bg-surface flex items-center justify-center z-10">
+<div class="w-1.5 h-1.5 rounded-full bg-outline-variant"></div>
+</div>
+<div class="neumorphic-flat p-4 rounded-lg opacity-80">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Tomorrow, 09:00</p>
+<p class="text-sm font-semibold">Linear Algebra Mock Test</p>
+<p class="text-xs text-on-surface-variant">Mastery consolidation</p>
+</div>
+</div>
+<div class="relative pl-12">
+<div class="absolute left-4 top-1 w-4 h-4 rounded-full neumorphic-flat bg-surface flex items-center justify-center z-10">
+<div class="w-1.5 h-1.5 rounded-full bg-outline-variant"></div>
+</div>
+<div class="neumorphic-flat p-4 rounded-lg opacity-60">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Oct 24</p>
+<p class="text-sm font-semibold">Electromagnetism Synthesis</p>
+<p class="text-xs text-on-surface-variant">Scheduled spaced repetition</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Recessed Input for Search/Ask AI -->
+<div class="neumorphic-inset p-1 rounded-full flex items-center px-4">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full py-3 placeholder:text-on-surface-variant/50" placeholder="Ask your AI tutor anything..." type="text"/>
+<button class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
+<span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</aside>
+</div>
+</main>
+<!-- Footer Shell -->
+<footer class="w-full py-12 px-8 bg-[#eef1f3] flex flex-col md:flex-row justify-between items-center gap-6 font-['Inter'] text-sm tracking-wide">
+<div class="flex flex-col gap-2">
+<span class="font-['Manrope'] font-bold text-[#2c2f31]">SANKALP AEI</span>
+<p class="text-[#abadaf]">© 2024 SANKALP AEI. Powered by Fluid Intelligence.</p>
+</div>
+<div class="flex gap-8">
+<a class="text-[#abadaf] hover:text-[#7C3AED] transition-all" href="#">Privacy Policy</a>
+<a class="text-[#abadaf] hover:text-[#7C3AED] transition-all" href="#">Terms of Service</a>
+<a class="text-[#abadaf] hover:text-[#7C3AED] transition-all" href="#">Help Center</a>
+<a class="text-[#abadaf] hover:text-[#7C3AED] transition-all" href="#">Feedback</a>
+</div>
+</footer>
+<!-- FAB -->
+<button class="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-primary-fixed text-white shadow-xl shadow-primary/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</button>
+</body></html>

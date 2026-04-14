@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SANKALP AEI - Login</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Manrope & Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#7C3AED",
+              "background": "#E0E5EC",
+              "surface": "#E0E5EC",
+              "on-surface": "#4A5568",
+              "on-surface-variant": "#718096",
+              "outline": "#A0AEC0",
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1.5rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      :root {
+        --neo-light: #ffffff;
+        --neo-dark: #a3b1c6;
+        --neo-accent-light: #9f67ff;
+        --neo-accent-dark: #5e2cc3;
+      }
+      
+      body {
+        background-color: #E0E5EC;
+      }
+
+      .neo-outset {
+        box-shadow: 9px 9px 16px var(--neo-dark), -9px -9px 16px var(--neo-light);
+      }
+      
+      .neo-inset {
+        box-shadow: inset 6px 6px 12px var(--neo-dark), inset -6px -6px 12px var(--neo-light);
+      }
+
+      .neo-button {
+        box-shadow: 6px 6px 12px var(--neo-dark), -6px -6px 12px var(--neo-light);
+        transition: all 0.2s ease;
+      }
+      
+      .neo-button:active {
+        box-shadow: inset 4px 4px 8px var(--neo-dark), inset -4px -4px 8px var(--neo-light);
+      }
+
+      .neo-button-primary {
+        background: #7C3AED;
+        box-shadow: 6px 6px 12px #c2a3ff, -6px -6px 12px #ffffff;
+        transition: all 0.2s ease;
+      }
+
+      .neo-button-primary:active {
+        box-shadow: inset 4px 4px 8px var(--neo-accent-dark), inset -4px -4px 8px var(--neo-accent-light);
+      }
+
+      .neo-card {
+        background: #E0E5EC;
+        box-shadow: 20px 20px 60px #bec8d4, -20px -20px 60px #ffffff;
+      }
+
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+    </style>
+</head>
+<body class="font-body text-on-surface min-h-screen flex flex-col">
+<!-- Hero Background Element (Subtle) -->
+<div class="fixed inset-0 z-0 overflow-hidden pointer-events-none opacity-40">
+<div class="absolute -top-[10%] -right-[5%] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[120px]"></div>
+<div class="absolute top-[40%] -left-[10%] w-[500px] h-[500px] rounded-full bg-white blur-[100px]"></div>
+</div>
+<!-- Top Navigation -->
+<nav class="relative z-50 px-8 py-6 flex justify-between items-center max-w-7xl mx-auto w-full">
+<div class="flex items-center gap-2">
+<span class="text-2xl font-black tracking-tighter text-primary font-headline">SANKALP AEI</span>
+</div>
+<div>
+<a class="text-label text-sm font-semibold text-primary hover:opacity-80 transition-opacity" href="#">Back to Home</a>
+</div>
+</nav>
+<main class="relative z-10 flex-1 flex items-center justify-center px-4 py-12">
+<div class="w-full max-w-[1100px] grid md:grid-cols-2 rounded-xl overflow-hidden neo-card">
+<!-- Left Side: Visual/Branding -->
+<div class="hidden md:flex flex-col justify-between p-12 bg-primary relative overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img alt="abstract flowing purple silk" class="w-full h-full object-cover opacity-30 mix-blend-overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLFbbsBke2DCVjoeIakdBPCDZqEFQJt45NSruVuvBA11c9ZcAwBYDnN8YcDrnGZL9T7NSZJabxKIibsgHxKY6cZ3EWJSXa6tbuwD0x4vPAdA3Q8bKdzKy0B6OCBJvOEYkjWrdfYTSFM3_WME41fmBY5zDgeqe3OKkT8iGp5UJ4PvfkfFTLS61QzVsW-K73nkfQKGBOf_TSLCbPfCFxDhZXD17abAmHJP-SFo8LBzVZEnh8KZsraXtDLUJaX5W9u3Y1epT7_lNlXzYN"/>
+</div>
+<div class="relative z-10">
+<h1 class="text-white font-headline text-4xl font-extrabold leading-tight">The Cognitive Architect</h1>
+<p class="text-white/90 mt-4 text-lg opacity-90 max-w-sm">Designing the future of intelligence-driven learning through precision and clarity.</p>
+</div>
+<div class="relative z-10 space-y-6">
+<div class="flex items-center gap-4 text-white/80">
+<div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-lg">
+<span class="material-symbols-outlined text-white">verified_user</span>
+</div>
+<span class="text-sm font-medium">Enterprise-grade security standards</span>
+</div>
+<div class="flex items-center gap-4 text-white/80">
+<div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-lg">
+<span class="material-symbols-outlined text-white">cloud_done</span>
+</div>
+<span class="text-sm font-medium">Seamless institutional integration</span>
+</div>
+</div>
+</div>
+<!-- Right Side: Login Form -->
+<div class="p-8 md:p-12 flex flex-col justify-center bg-surface">
+<div class="mb-8">
+<h2 class="text-2xl font-bold font-headline text-on-surface">Welcome Back</h2>
+<p class="text-on-surface-variant text-sm mt-1">Select your role to access your dashboard.</p>
+</div>
+<!-- Role Selector -->
+<div class="grid grid-cols-4 gap-4 mb-8">
+<button class="flex flex-col items-center gap-2 p-3 rounded-2xl neo-inset border-2 border-primary/30 transition-all">
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white shadow-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary font-label">Student</span>
+</button>
+<button class="flex flex-col items-center gap-2 p-3 rounded-2xl neo-button transition-all group">
+<div class="w-12 h-12 rounded-full bg-surface flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">co_present</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant font-label">Teacher</span>
+</button>
+<button class="flex flex-col items-center gap-2 p-3 rounded-2xl neo-button transition-all group">
+<div class="w-12 h-12 rounded-full bg-surface flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">family_restroom</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant font-label">Parent</span>
+</button>
+<button class="flex flex-col items-center gap-2 p-3 rounded-2xl neo-button transition-all group">
+<div class="w-12 h-12 rounded-full bg-surface flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant font-label">Admin</span>
+</button>
+</div>
+<form class="space-y-6" onsubmit="return false;">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label px-1">Email or Username</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">alternate_email</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface border-none rounded-2xl neo-inset focus:ring-0 text-on-surface placeholder:text-outline" placeholder="name@institution.edu" type="text"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<div class="flex justify-between items-center px-1">
+<label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant font-label">Password</label>
+<a class="text-xs font-semibold text-primary hover:underline" href="#">Forgot Password?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">lock</span>
+<input class="w-full pl-12 pr-12 py-4 bg-surface border-none rounded-2xl neo-inset focus:ring-0 text-on-surface placeholder:text-outline" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary" type="button">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+<div class="flex items-center gap-2 px-1 text-emerald-600 text-xs">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span>Strong password recognized</span>
+</div>
+</div>
+<!-- Remember Me -->
+<div class="flex items-center gap-3 px-1">
+<div class="relative flex items-center justify-center">
+<input class="peer h-6 w-6 opacity-0 absolute cursor-pointer" id="remember" type="checkbox"/>
+<div class="h-6 w-6 bg-surface rounded-lg neo-inset peer-checked:bg-primary/20 flex items-center justify-center transition-all pointer-events-none">
+<span class="material-symbols-outlined text-primary text-lg opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+</div>
+</div>
+<label class="text-sm text-on-surface-variant cursor-pointer select-none" for="remember">Remember this device for 30 days</label>
+</div>
+<!-- Submit Button -->
+<button class="w-full py-4 neo-button-primary text-white rounded-2xl font-bold text-lg transition-transform active:scale-[0.98]">
+                        Sign In to Dashboard
+                    </button>
+</form>
+<!-- Divider -->
+<div class="relative my-10 flex items-center justify-center">
+<div class="absolute w-full border-t border-dark/10"></div>
+<span class="relative px-4 bg-surface text-xs font-bold text-on-surface-variant uppercase tracking-widest font-label">Or continue with</span>
+</div>
+<!-- SSO Options -->
+<div class="grid grid-cols-3 gap-4">
+<button class="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl neo-button transition-all">
+<img alt="Google" class="w-5 h-5 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0VvQtO1uJv3blODi4wFqZndmZm9vIUZt9-87eDQbj0ZOZMxdclfxOMGXPvoif8vBo3Or6yypsk5aoiLno1ZdZmr0eGLDKTAh7rt5s72boIklLNc13xAfRHHf0NxZDQufTouuoF0wMXNdptTPb-hLWiziCxe2N26QAlR-bWI-3fnzk3TMPGrB7nPsKW8MrBsyRTZsOm1Z4XQnYkid1aSyQySgewgp0MRoQQaB3Jh6p1Tt-c-zuv4S5atGYSLC-MogfLBL9__sxZe9K"/>
+<span class="text-sm font-semibold text-on-surface-variant">Google</span>
+</button>
+<button class="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl neo-button transition-all">
+<img alt="Microsoft" class="w-5 h-5 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi5sLEx-4xh3YPPivVeRsBHAz3YM5wQf5FpNgayc2V4LzPJ_YKvmlHRO5gGNLssxT04iJ_muo4iYyogD8I6dU1QtXhSLtqDcFXP3JOaIo0UI41WEINCfWVvwPFPAfZrSZvYNpSamyUjH_eanysgoCqDrvlLx-1Js02qMbAiAxClVY0qEnICnpDjvyc9h1HdoSJklZyDec_gVzrR5P0hTOOOJ3sYWy5nHHkf0LZmh5Z7bzaETCUpubtD4qFG7NthEJDSBlkZbodfumz"/>
+<span class="text-sm font-semibold text-on-surface-variant">Microsoft</span>
+</button>
+<button class="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl neo-button transition-all">
+<span class="material-symbols-outlined text-lg text-on-surface-variant">account_balance</span>
+<span class="text-sm font-semibold text-on-surface-variant">SSO</span>
+</button>
+</div>
+<!-- Footer Link -->
+<p class="mt-10 text-center text-sm text-on-surface-variant">
+                    Don't have an account? 
+                    <a class="font-bold text-primary hover:underline ml-1" href="#">Sign Up for Free</a>
+</p>
+</div>
+</div>
+</main>
+<!-- Footer Component -->
+<footer class="w-full py-12 mt-auto border-t border-dark/10">
+<div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
+<div class="col-span-2 md:col-span-1">
+<span class="text-xl font-bold text-primary block mb-4">SANKALP AEI</span>
+<p class="text-on-surface-variant text-sm leading-relaxed">© 2024 SANKALP AEI. Intelligence-Driven Learning for the Future.</p>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-headline font-semibold text-on-surface">Resources</h4>
+<a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Support</a>
+<a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contact Us</a>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-headline font-semibold text-on-surface">Legal</h4>
+<a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-headline font-semibold text-on-surface">Social</h4>
+<a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Twitter</a>
+<a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">LinkedIn</a>
+</div>
+</div>
+</footer>
+</body></html>

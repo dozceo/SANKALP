@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Study Session | SANKALP AEI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#7C3AED",
+              "on-surface": "#2c2f31",
+              "on-surface-variant": "#595c5e",
+              "surface": "#EBEEF2",
+              "outline": "#747779",
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #EBEEF2;
+        }
+        .neumorphic-flat {
+            background: #EBEEF2;
+            box-shadow: 20px 20px 60px #c8cbd0, -20px -20px 60px #ffffff;
+        }
+        .neumorphic-embossed {
+            background: #EBEEF2;
+            box-shadow: 8px 8px 16px #c8cbd0, -8px -8px 16px #ffffff;
+        }
+        .neumorphic-inset {
+            background: #EBEEF2;
+            box-shadow: inset 6px 6px 12px #c8cbd0, inset -6px -6px 12px #ffffff;
+        }
+        .neumorphic-active {
+            background: #EBEEF2;
+            box-shadow: inset 4px 4px 8px #c8cbd0, inset -4px -4px 8px #ffffff;
+        }
+        .neumorphic-button-primary {
+            background: linear-gradient(145deg, #853fff, #7035d5);
+            box-shadow: 8px 8px 16px #c8cbd0, -8px -8px 16px #ffffff;
+        }
+        .neumorphic-button-primary:active {
+            box-shadow: inset 4px 4px 8px #5e2cb4, inset -4px -4px 8px #9a48ff;
+        }
+        .glass-panel {
+            background: rgba(235, 238, 242, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-8 h-20 bg-surface/80 backdrop-blur-md">
+<div class="flex items-center gap-6">
+<button class="w-12 h-12 flex items-center justify-center rounded-full neumorphic-embossed hover:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<span class="font-headline text-sm font-bold tracking-tight text-primary">Quantum Mechanics Intro</span>
+<div class="flex items-center gap-3 mt-1.5">
+<div class="w-32 h-2 bg-[#dee2e6] rounded-full overflow-hidden neumorphic-inset">
+<div class="h-full bg-primary w-[25%] rounded-full shadow-[0_0_8px_rgba(124,58,237,0.4)]"></div>
+</div>
+<span class="text-[10px] font-bold font-headline text-outline uppercase tracking-widest">3/12 QUESTIONS</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-headline text-lg font-extrabold text-primary tracking-tight">SANKALP AEI</span>
+<button class="w-12 h-12 flex items-center justify-center rounded-full neumorphic-embossed hover:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary">help</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-32 pb-36 px-6 max-w-5xl mx-auto w-full flex flex-col items-center">
+<!-- Question Stage -->
+<section class="w-full neumorphic-flat rounded-xl p-12 mb-12 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-8 opacity-5">
+<span class="material-symbols-outlined text-9xl" style="font-variation-settings: 'FILL' 1;">science</span>
+</div>
+<div class="relative z-10">
+<span class="text-xs font-headline font-bold text-primary uppercase tracking-[0.25em] mb-6 block">Question 03</span>
+<h1 class="font-headline text-3xl font-bold text-on-surface leading-snug mb-10 max-w-3xl">
+                    What is the primary implication of the Heisenberg Uncertainty Principle?
+                </h1>
+<!-- Options Grid -->
+<div class="grid gap-6">
+<!-- Option A -->
+<button class="group relative w-full p-6 text-left rounded-full transition-all neumorphic-inset hover:shadow-none">
+<div class="flex items-center gap-5">
+<span class="w-10 h-10 flex items-center justify-center rounded-full neumorphic-embossed text-primary font-bold text-sm">A</span>
+<span class="text-on-surface-variant font-medium">Energy and time are perfectly measurable simultaneously in any quantum state.</span>
+</div>
+</button>
+<!-- Option B (Selected State) -->
+<button class="group relative w-full p-6 text-left rounded-full transition-all ring-2 ring-primary/30 neumorphic-inset">
+<div class="flex items-center gap-5">
+<span class="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white font-bold text-sm shadow-lg shadow-primary/30">B</span>
+<span class="text-on-surface font-semibold">It is impossible to simultaneously know both the exact position and momentum of a particle.</span>
+</div>
+<div class="absolute right-8 top-1/2 -translate-y-1/2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</button>
+<!-- Option C -->
+<button class="group relative w-full p-6 text-left rounded-full transition-all neumorphic-inset hover:shadow-none">
+<div class="flex items-center gap-5">
+<span class="w-10 h-10 flex items-center justify-center rounded-full neumorphic-embossed text-primary font-bold text-sm">C</span>
+<span class="text-on-surface-variant font-medium">Subatomic particles always behave as solid spheres regardless of observation.</span>
+</div>
+</button>
+<!-- Option D -->
+<button class="group relative w-full p-6 text-left rounded-full transition-all neumorphic-inset hover:shadow-none">
+<div class="flex items-center gap-5">
+<span class="w-10 h-10 flex items-center justify-center rounded-full neumorphic-embossed text-primary font-bold text-sm">D</span>
+<span class="text-on-surface-variant font-medium">Observation has no effect on the outcome of quantum level experiments.</span>
+</div>
+</button>
+</div>
+</div>
+</section>
+<!-- Confidence Slider Area -->
+<div class="w-full max-w-xl space-y-6 mb-12">
+<div class="flex justify-between items-center px-4">
+<span class="text-xs font-bold font-headline text-outline uppercase tracking-wider">How confident are you?</span>
+<span class="text-xs font-bold font-headline text-primary uppercase tracking-wider">Sure</span>
+</div>
+<div class="relative py-4 px-2">
+<div class="absolute inset-y-1/2 left-0 right-0 h-3 bg-surface rounded-full neumorphic-inset -translate-y-1/2"></div>
+<div class="absolute inset-y-1/2 left-0 w-[75%] h-3 bg-primary rounded-full -translate-y-1/2 shadow-[0_0_12px_rgba(124,58,237,0.3)]"></div>
+<div class="absolute left-[75%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface neumorphic-embossed flex items-center justify-center border-4 border-white cursor-pointer hover:scale-110 transition-transform active:scale-95">
+<div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+</div>
+</div>
+<div class="flex justify-between px-2 text-[10px] text-outline font-bold uppercase tracking-tighter opacity-70">
+<span>Guessing</span>
+<span>Unsure</span>
+<span>Somewhat</span>
+<span>Very Sure</span>
+</div>
+</div>
+</main>
+<!-- Side Panel (Collapsed) -->
+<aside class="fixed right-0 top-1/2 -translate-y-1/2 z-40">
+<button class="flex flex-col items-center gap-8 py-10 px-3 bg-surface rounded-l-3xl neumorphic-embossed transition-all hover:pr-6">
+<span class="[writing-mode:vertical-lr] rotate-180 font-headline font-extrabold text-[10px] tracking-[0.4em] uppercase text-primary">Hints &amp; Rationales</span>
+<span class="material-symbols-outlined text-primary scale-110">lightbulb</span>
+</button>
+</aside>
+<!-- Bottom Action Bar -->
+<footer class="fixed bottom-0 left-0 w-full z-50 px-8 pb-10 pt-6 bg-surface/60 backdrop-blur-xl border-t border-white/20">
+<div class="max-w-5xl mx-auto flex items-center justify-between">
+<button class="px-10 py-5 font-headline font-bold text-outline hover:text-primary transition-colors uppercase tracking-[0.2em] text-xs">
+                Skip
+            </button>
+<div class="flex gap-6">
+<button class="w-16 h-16 rounded-full neumorphic-embossed flex items-center justify-center text-primary hover:scale-95 transition-transform active:neumorphic-active">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 500;">bookmark</span>
+</button>
+<button class="px-16 py-5 rounded-full neumorphic-button-primary text-white font-headline font-extrabold hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-[0.15em] text-sm">
+                    Submit Answer
+                </button>
+</div>
+</div>
+</footer>
+<!-- Background Decoration -->
+<div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none overflow-hidden">
+<div class="absolute top-[15%] left-[-5%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]"></div>
+<div class="absolute bottom-[5%] right-[-5%] w-[35%] h-[35%] rounded-full bg-primary/5 blur-[100px]"></div>
+</div>
+</body></html>

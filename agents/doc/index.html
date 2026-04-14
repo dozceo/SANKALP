@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SANKALP-AEI — Mission Control</title>
+<meta name="description" content="Phase execution dashboard for the SANKALP-AEI autonomous multi-agent orchestration system.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked@11.0.0/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --bg:#030712;--surface:rgba(15,23,42,.7);--surface-hover:rgba(30,41,59,.7);
+  --surface-glass:rgba(15,23,42,.5);--border:rgba(255,255,255,.07);
+  --border-active:rgba(129,140,248,.35);--text:#e2e8f0;--text-muted:#94a3b8;
+  --text-dim:#64748b;--primary:#818cf8;--primary-glow:rgba(99,102,241,.25);
+  --primary-soft:rgba(99,102,241,.12);--accent:#a78bfa;--green:#34d399;
+  --teal:#2dd4bf;--amber:#fbbf24;--red:#f87171;
+  --radius-sm:8px;--radius:14px;--radius-lg:20px;
+  --shadow-md:0 4px 24px rgba(0,0,0,.45);--shadow-lg:0 8px 40px rgba(0,0,0,.55);
+  --font-sans:'Inter',system-ui,sans-serif;
+  --font-display:'Outfit',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --transition:.22s cubic-bezier(.4,0,.2,1);
+  --topbar-h:60px;--docs-sidebar-w:260px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-sans);background:var(--bg);
+  background-image:radial-gradient(ellipse 80% 60% at 20% -10%,rgba(99,102,241,.09) 0%,transparent 60%),
+  radial-gradient(ellipse 60% 50% at 80% 110%,rgba(168,85,247,.07) 0%,transparent 60%);
+  background-attachment:fixed;color:var(--text);line-height:1.7;min-height:100vh;
+  -webkit-font-smoothing:antialiased}
+
+/* ═══════════════════════════════════════════
+   TOP BAR
+═══════════════════════════════════════════ */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-h);
+  background:rgba(3,7,18,.88);backdrop-filter:blur(24px) saturate(1.5);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 24px;z-index:100;gap:20px}
+.topbar-logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.topbar-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#6366f1,#a855f7);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:17px;box-shadow:0 0 14px rgba(99,102,241,.4)}
+.topbar-logo-text{font-family:var(--font-display);font-weight:700;font-size:14px;color:#fff;letter-spacing:.3px}
+.topbar-logo-text span{display:block;font-size:9.5px;font-weight:400;color:var(--text-dim);letter-spacing:.5px}
+
+/* ═══════════════════════════════════════════
+   TAB BAR
+═══════════════════════════════════════════ */
+.tab-bar{display:flex;gap:4px;flex:1;justify-content:center}
+.tab-btn{background:none;border:none;color:var(--text-muted);font-family:var(--font-sans);
+  font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius-sm);
+  cursor:pointer;transition:all var(--transition);display:flex;align-items:center;
+  gap:6px;white-space:nowrap}
+.tab-btn:hover{background:var(--surface-hover);color:var(--text)}
+.tab-btn.active{background:var(--primary-soft);color:#c7d2fe;font-weight:600}
+.tab-icon{font-size:15px}
+.tab-badge{font-size:10px;padding:1px 6px;border-radius:99px;background:rgba(255,255,255,.06);color:var(--text-dim)}
+.tab-btn.active .tab-badge{background:rgba(129,140,248,.2);color:var(--primary)}
+.topbar-pills{display:flex;gap:6px;flex-shrink:0}
+.topbar-pill{font-size:10px;padding:3px 8px;border-radius:99px;font-weight:500}
+.pill-green{background:rgba(52,211,153,.12);color:var(--green)}
+.pill-purple{background:rgba(167,139,250,.12);color:var(--accent)}
+
+/* ═══════════════════════════════════════════
+   VIEWS
+═══════════════════════════════════════════ */
+.view{display:none;padding-top:calc(var(--topbar-h) + 16px);min-height:100vh;
+  animation:viewFade .3s ease-out}
+.view.active{display:block}
+@keyframes viewFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.view-inner{max-width:1200px;margin:0 auto;padding:20px 32px 80px}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD VIEW
+═══════════════════════════════════════════ */
+.dash-header{text-align:center;margin-bottom:40px}
+.dash-header h1{font-family:var(--font-display);font-size:36px;font-weight:800;
+  background:linear-gradient(135deg,#fff 30%,#94a3b8);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.dash-header p{color:var(--text-muted);font-size:15px}
+
+.dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;text-align:center;transition:all var(--transition)}
+.stat-card:hover{border-color:var(--border-active);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat-value{font-family:var(--font-display);font-size:32px;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.stat-value.green{color:var(--green)}.stat-value.purple{color:var(--accent)}
+.stat-value.amber{color:var(--amber)}.stat-value.blue{color:var(--primary)}
+
+.dash-progress-section{display:grid;grid-template-columns:280px 1fr;gap:24px;margin-bottom:32px}
+.progress-ring-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.progress-ring{position:relative;width:160px;height:160px}
+.progress-ring svg{transform:rotate(-90deg);width:160px;height:160px}
+.progress-ring circle{fill:none;stroke-width:12;stroke-linecap:round}
+.progress-ring .ring-bg{stroke:rgba(255,255,255,.06)}
+.progress-ring .ring-fg{stroke:url(#ringGrad);transition:stroke-dashoffset 1s ease-out}
+.progress-ring .ring-label{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.progress-ring .ring-pct{font-family:var(--font-display);font-size:36px;font-weight:800;color:#fff}
+.progress-ring .ring-sub{font-size:11px;color:var(--text-muted)}
+
+.dash-phases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.dash-phase-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all var(--transition)}
+.dash-phase-card:hover{border-color:var(--border-active);background:var(--surface-hover)}
+.dash-phase-num{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:700;flex-shrink:0}
+.dash-phase-num.done{background:rgba(52,211,153,.15);color:var(--green)}
+.dash-phase-num.active{background:rgba(129,140,248,.2);color:var(--primary);box-shadow:0 0 10px rgba(99,102,241,.3)}
+.dash-phase-num.pending{background:rgba(255,255,255,.05);color:var(--text-dim)}
+.dash-phase-info{flex:1;min-width:0}
+.dash-phase-title{font-size:12.5px;font-weight:500;color:var(--text);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.dash-phase-bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:6px}
+.dash-phase-bar-fill{height:100%;border-radius:2px;transition:width .6s ease-out}
+.dash-phase-bar-fill.done{background:var(--green)}.dash-phase-bar-fill.active{background:var(--primary)}
+.dash-phase-bar-fill.pending{background:var(--text-dim)}
+
+.quick-actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;justify-content:center}
+.qa-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:12px 20px;color:var(--text);font-family:var(--font-sans);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all var(--transition);display:flex;align-items:center;gap:8px}
+.qa-btn:hover{border-color:var(--border-active);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.qa-btn.primary{background:var(--primary-soft);border-color:var(--border-active);color:#c7d2fe}
+
+/* ═══════════════════════════════════════════
+   PHASES VIEW
+═══════════════════════════════════════════ */
+.phases-header{margin-bottom:28px}
+.phases-header h2{font-family:var(--font-display);font-size:28px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.phases-header p{color:var(--text-muted);font-size:14px}
+.phases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+
+.phase-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;transition:all var(--transition)}
+.phase-card:hover{border-color:var(--border-active);box-shadow:var(--shadow-md)}
+.phase-card.expanded{grid-column:1/-1}
+.phase-card-head{padding:18px 20px;cursor:pointer;display:flex;align-items:flex-start;gap:14px}
+.phase-num{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-display);font-size:15px;font-weight:700;flex-shrink:0}
+.phase-num.s-done{background:rgba(52,211,153,.15);color:var(--green)}
+.phase-num.s-active{background:rgba(129,140,248,.2);color:var(--primary);box-shadow:0 0 12px rgba(99,102,241,.3)}
+.phase-num.s-pending{background:rgba(255,255,255,.05);color:var(--text-dim)}
+.phase-num.s-blocked{background:rgba(248,113,113,.12);color:var(--red)}
+.phase-head-info{flex:1;min-width:0}
+.phase-title{font-family:var(--font-display);font-size:15px;font-weight:600;color:#f1f5f9;margin-bottom:4px}
+.phase-status{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;
+  text-transform:uppercase;letter-spacing:.5px}
+.phase-status.s-done{background:rgba(52,211,153,.12);color:var(--green)}
+.phase-status.s-active{background:rgba(129,140,248,.15);color:var(--primary)}
+.phase-status.s-pending{background:rgba(255,255,255,.06);color:var(--text-dim)}
+.phase-status.s-blocked{background:rgba(248,113,113,.1);color:var(--red)}
+.phase-chevron{color:var(--text-dim);font-size:14px;transition:transform var(--transition);padding-top:4px}
+.phase-card.expanded .phase-chevron{transform:rotate(180deg)}
+
+.phase-progress{padding:0 20px 12px;display:flex;align-items:center;gap:10px}
+.phase-bar{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px}
+.phase-bar-fill{height:100%;border-radius:2px;transition:width .5s ease-out}
+.phase-pct{font-size:11px;color:var(--text-dim);font-weight:500;width:32px;text-align:right}
+
+.phase-body{display:none;border-top:1px solid var(--border);padding:20px;max-height:600px;overflow-y:auto}
+.phase-card.expanded .phase-body{display:block}
+.phase-checklist{list-style:none;margin:0 0 20px}
+.phase-checklist li{display:flex;align-items:flex-start;gap:10px;padding:6px 0;font-size:13.5px;
+  color:var(--text-muted);cursor:pointer;transition:color var(--transition)}
+.phase-checklist li:hover{color:var(--text)}
+.phase-checklist li.checked{color:var(--green);text-decoration:line-through;opacity:.7}
+.phase-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;
+  transition:all var(--transition)}
+.phase-checklist li.checked .phase-check{background:rgba(52,211,153,.15);border-color:var(--green);color:var(--green)}
+
+.phase-actions{display:flex;gap:10px;flex-wrap:wrap}
+.phase-btn{padding:9px 18px;border-radius:var(--radius-sm);font-family:var(--font-sans);
+  font-size:12.5px;font-weight:600;cursor:pointer;transition:all var(--transition);border:1px solid}
+.phase-btn-copy{background:var(--primary-soft);border-color:var(--border-active);color:#c7d2fe}
+.phase-btn-copy:hover{background:rgba(99,102,241,.25);transform:translateY(-1px)}
+.phase-btn-activate{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--green)}
+.phase-btn-activate:hover{background:rgba(52,211,153,.2);transform:translateY(-1px)}
+.phase-btn-reset{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.2);color:var(--red)}
+.phase-btn-reset:hover{background:rgba(248,113,113,.15)}
+
+/* ═══════════════════════════════════════════
+   CHAT VIEW
+═══════════════════════════════════════════ */
+.chat-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;min-height:calc(100vh - 120px)}
+.chat-main{display:flex;flex-direction:column}
+.chat-header h2{font-family:var(--font-display);font-size:22px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.chat-header p{color:var(--text-muted);font-size:13px;margin-bottom:20px}
+.chat-messages{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;overflow-y:auto;min-height:200px;max-height:calc(100vh - 360px);margin-bottom:16px}
+.chat-msg{margin-bottom:16px;display:flex;flex-direction:column}
+.chat-msg.user .chat-bubble{background:var(--primary-soft);border:1px solid var(--border-active);
+  margin-left:auto;border-radius:var(--radius) var(--radius) 4px var(--radius)}
+.chat-msg.system .chat-bubble{background:rgba(255,255,255,.04);border:1px solid var(--border);
+  margin-right:auto;border-radius:var(--radius) var(--radius) var(--radius) 4px}
+.chat-bubble{padding:12px 16px;max-width:85%;font-size:13.5px;line-height:1.6}
+.chat-bubble code{font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.4);
+  padding:2px 6px;border-radius:4px}
+.chat-cmd-preview{background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:14px 18px;font-family:var(--font-mono);font-size:12.5px;color:var(--green);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;
+  word-break:break-all}
+.chat-input-row{display:flex;gap:10px}
+.chat-input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 16px;color:var(--text);font-family:var(--font-sans);
+  font-size:13.5px;outline:none;transition:border-color var(--transition)}
+.chat-input:focus{border-color:var(--border-active)}
+.chat-input::placeholder{color:var(--text-dim)}
+.chat-send{background:var(--primary-soft);border:1px solid var(--border-active);border-radius:var(--radius-sm);
+  padding:12px 20px;color:#c7d2fe;font-family:var(--font-sans);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all var(--transition);white-space:nowrap}
+.chat-send:hover{background:rgba(99,102,241,.25);transform:translateY(-1px)}
+
+.chat-sidebar{display:flex;flex-direction:column;gap:16px}
+.chat-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.chat-panel h3{font-family:var(--font-display);font-size:14px;font-weight:600;color:#f1f5f9;margin-bottom:12px}
+.chat-option{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12.5px;color:var(--text-muted)}
+.chat-option input[type=checkbox]{accent-color:var(--primary)}
+.chat-preset{padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:var(--radius-sm);cursor:pointer;transition:all var(--transition);font-size:12px;
+  color:var(--text-muted);margin-bottom:6px;display:block;width:100%;text-align:left;
+  font-family:var(--font-sans)}
+.chat-preset:hover{border-color:var(--border-active);color:var(--text);background:var(--surface-hover)}
+.chat-history-item{padding:6px 0;font-size:11.5px;color:var(--text-dim);border-bottom:1px solid rgba(255,255,255,.04);
+  cursor:pointer;transition:color var(--transition);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-history-item:hover{color:var(--text)}
+
+/* ═══════════════════════════════════════════
+   DOCS VIEW (preserved wiki)
+═══════════════════════════════════════════ */
+.docs-layout{display:flex;min-height:calc(100vh - var(--topbar-h))}
+.docs-sidebar{width:var(--docs-sidebar-w);background:rgba(7,11,22,.82);
+  backdrop-filter:blur(20px) saturate(1.4);border-right:1px solid var(--border);
+  position:fixed;top:var(--topbar-h);bottom:0;overflow-y:auto;padding-top:8px;
+  scrollbar-width:thin;scrollbar-color:rgba(129,140,248,.2) transparent}
+.docs-sidebar::-webkit-scrollbar{width:3px}
+.docs-sidebar::-webkit-scrollbar-thumb{background:rgba(129,140,248,.2);border-radius:2px}
+.docs-sidebar-search{padding:14px 16px 10px}
+.docs-search-wrap{position:relative}
+.docs-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;pointer-events:none}
+.docs-search-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:8px 10px 8px 30px;color:var(--text);
+  font-family:var(--font-sans);font-size:12.5px;outline:none;transition:border-color var(--transition)}
+.docs-search-input::placeholder{color:var(--text-dim)}
+.docs-search-input:focus{border-color:var(--border-active);background:rgba(99,102,241,.07)}
+.docs-nav-label{font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;
+  letter-spacing:.8px;padding:8px 20px 4px}
+.docs-nav-list{padding:4px 10px}
+.docs-nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);
+  cursor:pointer;font-size:13.5px;color:var(--text-muted);text-decoration:none;
+  transition:all var(--transition);margin-bottom:2px;font-weight:500;position:relative;
+  overflow:hidden;border:1px solid transparent}
+.docs-nav-item:hover{background:var(--surface-hover);color:var(--text);border-color:var(--border)}
+.docs-nav-item.active{background:var(--primary-soft);color:#c7d2fe;border-color:var(--border-active);font-weight:600}
+.docs-nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;
+  background:var(--primary);border-radius:0 3px 3px 0}
+.docs-nav-icon{font-size:15px;flex-shrink:0}
+.docs-nav-label-text{flex:1}
+.docs-nav-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;
+  background:rgba(255,255,255,.07);color:var(--text-dim);white-space:nowrap;flex-shrink:0}
+.docs-nav-item.active .docs-nav-badge{background:rgba(129,140,248,.2);color:var(--primary)}
+
+.docs-content-wrap{margin-left:var(--docs-sidebar-w);flex:1;display:flex;justify-content:center}
+.docs-content{width:100%;max-width:880px;padding:32px 60px 100px;animation:viewFade .35s ease-out}
+/* Typography reuse for docs content */
+.docs-content h1{font-family:var(--font-display);font-size:40px;font-weight:800;line-height:1.15;
+  letter-spacing:-.8px;margin-bottom:20px;background:linear-gradient(135deg,#fff 30%,#94a3b8 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.docs-content h2{font-family:var(--font-display);font-size:24px;font-weight:700;margin:52px 0 18px;
+  padding-bottom:14px;border-bottom:1px solid var(--border);color:#f1f5f9;letter-spacing:-.3px}
+.docs-content h3{font-family:var(--font-display);font-size:18px;font-weight:600;margin:36px 0 14px;color:#e2e8f0}
+.docs-content h4{font-size:15px;font-weight:600;margin:24px 0 10px;color:var(--primary);
+  text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-sans)}
+.docs-content p{margin:14px 0;color:#cbd5e1;font-size:15px;line-height:1.75}
+.docs-content a{color:#a5b4fc;text-decoration:none;border-bottom:1px solid transparent;
+  transition:border-color var(--transition),color var(--transition)}
+.docs-content a:hover{color:#c7d2fe;border-color:#a5b4fc}
+.docs-content ul,.docs-content ol{padding-left:26px;color:#cbd5e1;margin:14px 0}
+.docs-content li{margin:7px 0;font-size:15px;line-height:1.7}
+.docs-content li::marker{color:var(--primary)}
+.docs-content code{font-family:var(--font-mono);font-size:12.5px;background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.07);padding:2px 7px;border-radius:5px;color:#c7d2fe;white-space:nowrap}
+.docs-content pre{background:rgba(0,0,0,.65);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px 24px;overflow-x:auto;margin:22px 0;box-shadow:inset 0 0 20px rgba(0,0,0,.3);position:relative}
+.docs-content pre::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(129,140,248,.3),transparent)}
+.docs-content pre code{background:none;border:none;padding:0;font-size:13px;line-height:1.65;
+  color:#e2e8f0;white-space:pre}
+.docs-content blockquote{border-left:3px solid var(--primary);background:var(--primary-soft);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:14px 20px;margin:20px 0;
+  color:var(--text-muted);font-style:italic}
+.docs-content blockquote p{margin:0;color:var(--text-muted)}
+.docs-content table{width:100%;border-collapse:separate;border-spacing:0;margin:24px 0;
+  background:var(--surface);border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--border);box-shadow:var(--shadow-md);font-size:13.5px}
+.docs-content thead{background:rgba(0,0,0,.25)}
+.docs-content th{padding:13px 18px;text-align:left;color:#f8fafc;font-family:var(--font-display);
+  font-weight:600;font-size:13px;letter-spacing:.2px;border-bottom:1px solid var(--border)}
+.docs-content td{padding:11px 18px;border-bottom:1px solid rgba(255,255,255,.04);color:#cbd5e1;vertical-align:top}
+.docs-content tr:last-child td{border-bottom:none}
+.docs-content tbody tr:hover td{background:rgba(255,255,255,.025)}
+.docs-content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.docs-content .mermaid{background:rgba(5,10,20,.6);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px 20px;display:flex;justify-content:center;align-items:center;overflow-x:auto;
+  margin:28px 0;box-shadow:var(--shadow-md)}
+
+/* ═══════════════════════════════════════════
+   PIPELINE VIEW
+═══════════════════════════════════════════ */
+.pipeline-header h2{font-family:var(--font-display);font-size:28px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.pipeline-header p{color:var(--text-muted);font-size:14px;margin-bottom:24px}
+.pipeline-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;margin-bottom:20px}
+.pipeline-section h3{font-family:var(--font-display);font-size:16px;font-weight:600;color:#f1f5f9;margin-bottom:16px}
+.verification-table{width:100%;border-collapse:collapse;font-size:13px}
+.verification-table th{text-align:left;padding:10px 14px;color:var(--text-muted);font-weight:600;
+  border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.verification-table td{padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.03);color:#cbd5e1}
+.verification-table tr:hover td{background:rgba(255,255,255,.02)}
+.v-status{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.v-done{background:var(--green)}.v-partial{background:var(--amber)}.v-missing{background:var(--red)}
+
+/* ═══════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  z-index:200;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal-box{background:rgba(15,23,42,.95);border:1px solid var(--border);border-radius:var(--radius-lg);
+  width:100%;max-width:900px;max-height:85vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+.modal-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;
+  align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-head h3{font-family:var(--font-display);font-size:18px;font-weight:700;color:#fff}
+.modal-close{background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;
+  padding:4px 8px;border-radius:6px;transition:all var(--transition)}
+.modal-close:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.modal-body{flex:1;overflow-y:auto;padding:24px}
+.modal-body pre{background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;font-family:var(--font-mono);font-size:12.5px;line-height:1.7;color:#e2e8f0;
+  white-space:pre-wrap;word-wrap:break-word;max-height:none}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;
+  justify-content:flex-end;flex-shrink:0}
+
+/* ═══════════════════════════════════════════
+   COPY BUTTON
+═══════════════════════════════════════════ */
+.copy-btn{background:var(--primary-soft);border:1px solid var(--border-active);
+  border-radius:var(--radius-sm);padding:8px 16px;color:#c7d2fe;font-family:var(--font-sans);
+  font-size:12px;font-weight:600;cursor:pointer;transition:all var(--transition);
+  display:inline-flex;align-items:center;gap:6px}
+.copy-btn:hover{background:rgba(99,102,241,.25);transform:translateY(-1px)}
+.copy-btn.copied{background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:var(--green)}
+.copy-btn-lg{padding:10px 24px;font-size:13px}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+.toast{position:fixed;bottom:28px;right:28px;background:rgba(52,211,153,.15);
+  border:1px solid rgba(52,211,153,.3);border-radius:var(--radius-sm);padding:12px 20px;
+  color:var(--green);font-size:13px;font-weight:500;z-index:300;
+  transform:translateY(80px);opacity:0;transition:all .3s ease-out;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media(max-width:1024px){
+  .dash-progress-section{grid-template-columns:1fr}
+  .chat-layout{grid-template-columns:1fr}
+  .chat-sidebar{flex-direction:row;flex-wrap:wrap}
+  .chat-sidebar .chat-panel{flex:1;min-width:200px}
+}
+@media(max-width:768px){
+  .topbar{padding:0 12px;gap:8px}
+  .tab-btn{padding:6px 10px;font-size:12px}
+  .tab-btn .tab-label{display:none}
+  .view-inner{padding:16px 16px 60px}
+  .phases-grid{grid-template-columns:1fr}
+  .dash-phases-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .docs-sidebar{display:none}
+  .docs-content-wrap{margin-left:0}
+  .docs-content{padding:20px 18px 80px}
+  .modal-box{max-width:100%;margin:10px}
+  .topbar-pills{display:none}
+}
+@media(max-width:480px){
+  .dash-stats{grid-template-columns:1fr 1fr}
+  .stat-value{font-size:24px}
+  .quick-actions{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ TOP BAR ═══════════════════ -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-icon">🤖</div>
+    <div class="topbar-logo-text">SANKALP-AEI<span>Mission Control</span></div>
+  </div>
+  <nav class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-tab="dashboard"><span class="tab-icon">📊</span><span class="tab-label">Dashboard</span></button>
+    <button class="tab-btn" data-tab="phases"><span class="tab-icon">📋</span><span class="tab-label">Phases</span><span class="tab-badge">16</span></button>
+    <button class="tab-btn" data-tab="chat"><span class="tab-icon">💬</span><span class="tab-label">Agent Chat</span></button>
+    <button class="tab-btn" data-tab="docs"><span class="tab-icon">📚</span><span class="tab-label">Docs</span></button>
+    <button class="tab-btn" data-tab="pipeline"><span class="tab-icon">⚡</span><span class="tab-label">Pipeline</span></button>
+  </nav>
+  <div class="topbar-pills">
+    <span class="topbar-pill pill-green">30 Keys</span>
+    <span class="topbar-pill pill-purple">6 Agents</span>
+  </div>
+</header>
+
+<!-- ═══════════════════ DASHBOARD VIEW ═══════════════════ -->
+<section id="view-dashboard" class="view active">
+  <div class="view-inner">
+    <div class="dash-header">
+      <h1>Phase Execution Dashboard</h1>
+      <p>Real-time overview of the 16-phase SANKALP-AEI development roadmap</p>
+    </div>
+    <div class="dash-stats" id="dash-stats"></div>
+    <div class="dash-progress-section">
+      <div class="progress-ring-wrap">
+        <div class="progress-ring">
+          <svg viewBox="0 0 160 160">
+            <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/>
+            </linearGradient></defs>
+            <circle class="ring-bg" cx="80" cy="80" r="68"/>
+            <circle class="ring-fg" id="ring-fg" cx="80" cy="80" r="68" stroke-dasharray="427.26" stroke-dashoffset="427.26"/>
+          </svg>
+          <div class="ring-label">
+            <span class="ring-pct" id="ring-pct">0%</span>
+            <span class="ring-sub">Overall Progress</span>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:12px;color:var(--text-dim)">Active Phase</div>
+          <div id="active-phase-label" style="font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--primary);margin-top:4px">—</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;color:#f1f5f9;margin-bottom:14px">Phase Overview</div>
+        <div class="dash-phases-grid" id="dash-phases-grid"></div>
+      </div>
+    </div>
+    <div class="quick-actions">
+      <button class="qa-btn primary" onclick="switchTab('phases')">📋 Manage Phases</button>
+      <button class="qa-btn" onclick="switchTab('chat')">💬 Agent Chat</button>
+      <button class="qa-btn" onclick="switchTab('pipeline')">⚡ Pipeline Analysis</button>
+      <button class="qa-btn" onclick="switchTab('docs')">📚 Documentation</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PHASES VIEW ═══════════════════ -->
+<section id="view-phases" class="view">
+  <div class="view-inner">
+    <div class="phases-header">
+      <h2>Phase Manager</h2>
+      <p>Click a phase to expand. Use "Copy Full Prompt" to get the complete agent prompt with identity preamble.</p>
+    </div>
+    <div class="phases-grid" id="phases-grid"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ CHAT VIEW ═══════════════════ -->
+<section id="view-chat" class="view">
+  <div class="view-inner">
+    <div class="chat-layout">
+      <div class="chat-main">
+        <div class="chat-header">
+          <h2>Agent Command Builder</h2>
+          <p>Build commands for the SANKALP-AEI agent CLI. Copy and run in your terminal.</p>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-msg system"><div class="chat-bubble">Welcome! Type a task description below to generate an agent command. Use the presets on the right for common tasks.</div></div>
+        </div>
+        <div class="chat-cmd-preview" id="chat-cmd-preview" style="display:none">
+          <code id="chat-cmd-text"></code>
+          <button class="copy-btn" onclick="copyCommand()">📋 Copy</button>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" class="chat-input" id="chat-input" placeholder="Describe your task… e.g. Build the student portfolio dashboard" autocomplete="off">
+          <button class="chat-send" id="chat-send">Generate ⚡</button>
+        </div>
+      </div>
+      <div class="chat-sidebar">
+        <div class="chat-panel">
+          <h3>⚙️ Options</h3>
+          <label class="chat-option"><input type="checkbox" id="opt-dry-run"> --dry-run</label>
+          <label class="chat-option"><input type="checkbox" id="opt-no-commit"> --no-commit</label>
+          <label class="chat-option"><input type="checkbox" id="opt-verbose"> --log-level verbose</label>
+        </div>
+        <div class="chat-panel">
+          <h3>🚀 Quick Presets</h3>
+          <div id="chat-presets"></div>
+        </div>
+        <div class="chat-panel">
+          <h3>📜 History</h3>
+          <div id="chat-history"><div style="font-size:11px;color:var(--text-dim)">No commands yet</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ DOCS VIEW ═══════════════════ -->
+<section id="view-docs" class="view">
+  <div class="docs-layout">
+    <nav class="docs-sidebar" id="docs-sidebar">
+      <div class="docs-sidebar-search">
+        <div class="docs-search-wrap">
+          <span class="docs-search-icon">🔍</span>
+          <input type="search" class="docs-search-input" id="docs-search" placeholder="Search docs…" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div class="docs-nav-label">Documentation</div>
+      <div class="docs-nav-list" id="docs-nav-list"></div>
+    </nav>
+    <div class="docs-content-wrap">
+      <main class="docs-content" id="docs-content">
+        <div style="text-align:center;padding:100px 20px;color:var(--text-muted)">
+          <div style="font-size:48px;margin-bottom:16px">📚</div>
+          <h2 style="font-family:var(--font-display);font-size:22px;font-weight:600;color:#e2e8f0;margin-bottom:8px">Loading Documentation…</h2>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PIPELINE VIEW ═══════════════════ -->
+<section id="view-pipeline" class="view">
+  <div class="view-inner">
+    <div class="pipeline-header">
+      <h2>Pipeline Analysis</h2>
+      <p>Phase dependency flow and verification matrix for the 16-phase roadmap.</p>
+    </div>
+    <div class="pipeline-section">
+      <h3>📐 Phase Dependency Flow</h3>
+      <div class="mermaid" id="pipeline-mermaid"></div>
+    </div>
+    <div class="pipeline-section">
+      <h3>✅ Verification Matrix</h3>
+      <div style="overflow-x:auto">
+        <table class="verification-table" id="verification-table"></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ MODAL ═══════════════════ -->
+<div class="modal-overlay" id="prompt-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-title">Phase Prompt</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <pre id="modal-prompt-text"></pre>
+    </div>
+    <div class="modal-foot">
+      <button class="copy-btn copy-btn-lg" id="modal-copy-btn" onclick="copyModalPrompt()">📋 Copy Full Prompt</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">✓ Copied to clipboard!</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA (injected by build-doc.cjs)
+═══════════════════════════════════════════ */
+var PAGES = {"overview":"# System Overview\n\nThe **SANKALP-AEI Multi-Agent Orchestration System** is an autonomous development pipeline housed in the `agents/` directory. It uses a pool of 30 Gemini API keys to autonomously execute development tasks, acting as a hyper-capable AI developer perfectly attuned to the specific architectural laws (Bayesian Brain Map™, Node.js/Next.js) of the SANKALP project.\n\n## Architecture\n\nThe system mimics a software development team with **dynamic skill injection** and **design-system awareness** — each agent loads curated expertise from the 1,268-skill library at execution time, and the Frontend Agent additionally receives reference designs from the 22-screen design library:\n\n1. **The Brain (Orchestrator)** acts as the Tech Lead, taking a high-level task and deciding how to accomplish it.\n2. **The Planner** decomposes large tasks into actionable Graph nodes (a Directed Acyclic Graph of subtasks).\n3. **The Dispatcher** parallelizes work and assigns nodes to specialized domain agents.\n4. **Domain Agents** (Frontend, Backend, Integration, Testing, DevOps) load relevant skills and generate code.\n5. **The Design Layer** (`DesignLoader`) maps task keywords to reference designs (DESIGN.md + code.html + screen.png) from `agents/design/`, automatically injecting visual references into Frontend Agent and Visual Validator context windows.\n6. **The Quality Gate** (Reviewer Pipeline) enforces architecture review, TypeScript compilation checks, **design-system compliance** (static checklist + LLM audit), and self-improvement loops.\n7. **The Branch Committer** automatically stages and commits changes onto feature branches.\n\n```mermaid\ngraph TD\n    User([User CLI]) -->|Task| Orch[Orchestrator]\n    Orch --> Planner[Planner]\n    Planner -->|DAG| Dispatcher[Dispatcher]\n\n    subgraph Skill Layer\n        SR[(Skill Registry<br/>1268 Skills)]\n        SL[Skill Loader]\n        SR -->|Lookup| SL\n    end\n\n    subgraph Design Layer\n        DL[Design Loader<br/>22 Screens]\n        DA[(agents/design/<br/>DESIGN.md + code.html)]\n        DA -->|Read| DL\n    end\n\n    subgraph Domain Agents\n        Dispatcher --> FA[Frontend Agent]\n        Dispatcher --> BA[Backend Agent]\n        Dispatcher --> IA[Integration Agent]\n        Dispatcher --> TA[Testing Agent]\n        Dispatcher --> DOA[DevOps Agent]\n        Dispatcher --> TOA[Token Optimizer Agent]\n    end\n\n    SL -.->|Core + Keyword<br/>Activated Skills| FA\n    SL -.->|Core + Keyword<br/>Activated Skills| BA\n    SL -.->|Core + Keyword<br/>Activated Skills| IA\n    SL -.->|Core + Keyword<br/>Activated Skills| TA\n    SL -.->|Core + Keyword<br/>Activated Skills| DOA\n\n    DL -.->|Reference HTML<br/>+ Design Spec| FA\n\n    FA & BA & IA & TA & DOA & TOA --> OPT[Token Optimizer<br/>Middleware]\n    OPT -->|Every callLLM| QG{Quality Gate}\n    DL -.->|Design Checklist<br/>+ Spec| QG\n\n    QG -->|Failed| Improve[Improve Loop]\n    Improve --> QG\n    QG -->|Passed| Committer[Branch Committer]\n\n    style SR fill:#6C3483,stroke:#A569BD,color:#fff\n    style SL fill:#1A5276,stroke:#2E86C1,color:#fff\n    style Orch fill:#D35400,stroke:#E67E22,color:#fff\n    style QG fill:#1E8449,stroke:#27AE60,color:#fff\n    style OPT fill:#2E86C1,stroke:#5DADE2,color:#fff\n    style TOA fill:#117A65,stroke:#1ABC9C,color:#fff\n    style DL fill:#C0392B,stroke:#E74C3C,color:#fff\n    style DA fill:#C0392B,stroke:#E74C3C,color:#fff\n```\n\n## Core Tenets\n- **Skill-Aware Agents:** Each agent dynamically loads domain-specific expertise from the `skills/` library, grounding LLM outputs with proven patterns and best practices.\n- **Design-Driven Frontend:** The Frontend Agent and Visual Validator receive pixel-accurate reference designs from `agents/design/` — 22 screens with DESIGN.md specs, Tailwind reference HTML, and screenshots.\n- **Data Safety:** Uses `fs-tools.ts` to create localized backups in `agents/output/diffs/` before any file write.\n- **API Resilience:** Uses exponential backoff and rate-limit tracking across 30 keys to guarantee robust API interactions.\n- **SANKALP Specificity:** All agents are grounded in the `.gitnexus/wiki/` context and strict `Zod`/`Beta(α, β)` rules.\n\n## The Execution Pipeline\nWhen a user runs a task via the CLI (`npx tsx src/index.ts run \"Build API\"`):\n1. **Plan:** The Context Engine reads the wiki and the codebase. The Planner decomposes the task into 5 to 10 subtasks.\n2. **Skill Resolution:** For each assigned agent, the Skill Loader queries the Skill Registry and activates relevant `SKILL.md` files based on the agent role and task keywords.\n3. **Design Resolution:** For frontend tasks, the Design Loader detects which screen(s) the task targets (via 40+ keyword mappings) and loads the reference `DESIGN.md` + `code.html` from `agents/design/`.\n4. **Execute:** Domain Agents receive their loaded skill context + design references alongside wiki + codebase context and generate code.\n5. **Design Validation:** The Visual Validator runs an 8-point static design checklist (fonts, colors, borders, shadows) at zero LLM cost, then passes results + DESIGN.md spec into an LLM audit.\n6. **Review:** Output is evaluated. If it fails typing, architectural rules, or design compliance, an `<Improve>` loop runs.\n7. **Commit:** Success leads to an automated git commit with a detailed statistics report including skills traceability.\n\n```mermaid\nsequenceDiagram\n    participant User\n    participant CLI\n    participant Context as Context Engine\n    participant Skills as Skill Loader\n    participant Design as Design Loader\n    participant Planner\n    participant Agents as Domain Agents\n    participant QA as Quality Gate\n    participant Git\n\n    User->>CLI: npx tsx src/index.ts run Task\n    CLI->>Context: Scan wiki & codebase\n    Context-->>Planner: Inject context guidelines\n    Planner->>Planner: Decompose into DAG subtasks\n    Planner->>Agents: Dispatch atomic subtasks\n\n    par Skill Injection (per agent)\n        Agents->>Skills: Request skills for role + task\n        Skills-->>Skills: Load core + keyword-activated SKILL.md\n        Skills-->>Agents: Inject skill context into prompt\n    end\n\n    par Design Injection (frontend tasks)\n        Agents->>Design: Detect screen from task keywords\n        Design-->>Design: Load DESIGN.md + code.html\n        Design-->>Agents: Inject design reference into prompt\n    end\n\n    Agents->>QA: Submit generated code\n\n    par Visual Validation\n        QA->>Design: Load design spec for screen\n        Design-->>QA: Static checklist + DESIGN.md\n        QA->>QA: 8-point design compliance check\n    end\n\n    loop Improve Loop\n        QA->>Agents: Return errors (compiler, structural, design)\n        Agents->>QA: Resubmit fixes\n    end\n    QA->>Git: Approve code\n    Git-->>User: Auto-commit feature branch + skills report\n```\n\n## Design System Integration\n\nThe `agents/design/` directory contains **22 reference screen designs**, each with:\n- `DESIGN.md` — The \"Cognitive Architect\" design system specification (colors, typography, spacing, components)\n- `code.html` — A pixel-accurate Tailwind/HTML reference implementation\n- `screen.png` — Visual reference screenshot\n\n```mermaid\nflowchart TB\n    subgraph \"agents/design/ (22 Screens)\"\n        S1[\"student dashboard/\"]\n        S2[\"teacher dashboard/\"]\n        S3[\"landing page/\"]\n        S4[\"cockpit/\"]\n        SN[\"... 18 more screens\"]\n    end\n\n    subgraph \"Each Screen Contains\"\n        DM[\"DESIGN.md<br/>Color tokens, typography,<br/>No-Line Rule, neumorphism\"]\n        CH[\"code.html<br/>Reference Tailwind<br/>implementation\"]\n        SP[\"screen.png<br/>Visual reference\"]\n    end\n\n    S1 & S2 & S3 & S4 --> DM & CH & SP\n\n    subgraph \"DesignLoader (src/design/design-loader.ts)\"\n        KW[\"Keyword Map<br/>40+ task → screen mappings\"]\n        LOAD[\"loadDesignForTask()\"]\n        FMT[\"formatAsContext()\"]\n        CHK[\"runDesignChecklist()<br/>8 static rules\"]\n        KW --> LOAD\n        LOAD --> FMT\n        LOAD --> CHK\n    end\n\n    DM & CH --> LOAD\n\n    FMT -->|Context Block| FE[Frontend Agent]\n    CHK -->|Pass/Fail| VV[Visual Validator]\n\n    style DM fill:#C0392B,stroke:#E74C3C,color:#fff\n    style CH fill:#C0392B,stroke:#E74C3C,color:#fff\n    style CHK fill:#8E44AD,stroke:#9B59B6,color:#fff\n    style FE fill:#1E8449,stroke:#27AE60,color:#fff\n    style VV fill:#1A5276,stroke:#2E86C1,color:#fff\n```\n\n## Skill-Enhanced Agent Architecture\n\nThe dynamic skill injection system connects the 1,268-skill library (organized across 66 categories) to each agent's context window:\n\n```mermaid\nflowchart TB\n    subgraph \"skills/ Directory (1268 SKILL.md files)\"\n        S1[react-best-practices]\n        S2[typescript-expert]\n        S3[firebase]\n        S4[testing-patterns]\n        S5[github-actions-templates]\n        S6[architecture-patterns]\n        SN[... 1262 more]\n    end\n\n    subgraph \"agents/knowledge/skills/\"\n        DS[design-system-sankalp<br/>Cognitive Architect spec]\n    end\n\n    subgraph \"skill_categorization/\"\n        IDX[(skills_index.json<br/>66 Categories)]\n    end\n\n    subgraph \"agents/src/skills/\"\n        REG[skill-registry.ts<br/>Agent to Skill Mapping]\n        LDR[skill-loader.ts<br/>Dual-Path Read + Cache + Budget]\n    end\n\n    IDX -.->|Category Reference| REG\n    REG -->|Core Skills| LDR\n    REG -->|Supplementary Pool| LDR\n    LDR -->|Read SKILL.md| S1 & S2 & S3 & S4 & S5 & S6\n    LDR -->|Fallback Path| DS\n\n    subgraph \"BaseAgent.buildPrompt()\"\n        CTX[Merged Context Window]\n        LDR -->|Formatted Skills Block| CTX\n        WIKI[Wiki Context] --> CTX\n        CODE[Codebase Context] --> CTX\n        TYPES[Type Definitions] --> CTX\n        DCTX[Design References] --> CTX\n    end\n\n    CTX -->|System + User Prompt| LLM[Gemini LLM Call]\n\n    style IDX fill:#6C3483,stroke:#A569BD,color:#fff\n    style REG fill:#1A5276,stroke:#2E86C1,color:#fff\n    style LDR fill:#1A5276,stroke:#2E86C1,color:#fff\n    style CTX fill:#D35400,stroke:#E67E22,color:#fff\n    style LLM fill:#1E8449,stroke:#27AE60,color:#fff\n    style DS fill:#C0392B,stroke:#E74C3C,color:#fff\n    style DCTX fill:#C0392B,stroke:#E74C3C,color:#fff\n```\n","orchestration":"# Orchestration Engine\n\nThe Orchestration layer is the \"central nervous system\" of the SANKALP-AEI Agents infrastructure. It integrates **dynamic skill loading** and **design-system validation** at every stage to ensure each component operates with domain-expert knowledge and visual fidelity.\n\n```mermaid\ngraph TD\n    subgraph Orchestration Layer\n        Orch[Orchestrator]\n        Plan[Planner]\n        Disp[Dispatcher]\n        Rev[Reviewer Pipeline]\n    end\n\n    subgraph Skill Infrastructure\n        SReg[Skill Registry]\n        SLoad[Skill Loader]\n        SReg --> SLoad\n    end\n\n    subgraph Design Infrastructure\n        DLoad[Design Loader]\n        DAssets[(agents/design/<br/>22 Screens)]\n        DAssets --> DLoad\n    end\n\n    Orch -->|\"1. Decomposes Task\"| Plan\n    Plan -->|\"2. Task DAG\"| Disp\n    Disp -->|\"3. Per-Agent Skill<br/>Resolution\"| SLoad\n    SLoad -->|\"4. Injected Context\"| Disp\n    Disp -->|\"5. Design Refs<br/>(frontend tasks)\"| DLoad\n    DLoad -->|\"6. DESIGN.md +<br/>code.html\"| Disp\n    Disp -->|\"7. Sends Code\"| Rev\n    DLoad -.->|\"Design Spec +<br/>Static Checklist\"| Rev\n\n    style Orch fill:#D35400,stroke:#E67E22,color:#fff\n    style SReg fill:#6C3483,stroke:#A569BD,color:#fff\n    style SLoad fill:#1A5276,stroke:#2E86C1,color:#fff\n    style Rev fill:#1E8449,stroke:#27AE60,color:#fff\n    style DLoad fill:#C0392B,stroke:#E74C3C,color:#fff\n    style DAssets fill:#C0392B,stroke:#E74C3C,color:#fff\n```\n\n## 1. Orchestrator (`src/core/orchestrator.ts`)\nThe `Orchestrator` is the top-level class invoked by the CLI. It handles:\n- **Initialization**: Loading API keys, mounting the Git/FS tools, and spinning up the Context Engine.\n- **Workflow Pipeline**: Calling the Planner, Dispatching the tasks, running the Quality Gate, and pushing to Git.\n- **Skills Traceability**: The final report now includes a `## Skills Injected` section listing which `SKILL.md` files were loaded into each agent's context window.\n- **Design Traceability**: Frontend tasks log which design screen references were loaded (e.g., `🎨 Design refs loaded: Student Dashboard`).\n- **Reporting**: Generating Markdown reports showing exactly how long the execution took, which tokens were used, and what files failed the QA gate.\n\n## 2. Planner (`src/core/planner.ts`)\nWhen given a highly ambiguous natural language task (e.g., \"Build the missing routes\"), the Planner:\n- Reads `tasks.md` to spot missing project components.\n- Scans `src/` to see the current codebase.\n- Commands the heavy-tier LLM (`gemini-3.1-pro-preview`) to break the goal into atomic `subtasks`.\n- Wires the subtasks together in a DAG (Directed Acyclic Graph) via the `TaskGraphManager`. (E.g., \"Tests\" must depend on \"Backend\").\n\n```mermaid\nflowchart LR\n    subgraph Planner Inputs\n        T[tasks.md] --> P\n        W[Wiki Context] --> P\n        FS[File Scanner] --> P\n    end\n\n    P[Planner LLM Call<br/>gemini-3.1-pro] -->|JSON| DAG\n\n    subgraph DAG[\"Task Graph (DAG)\"]\n        direction TB\n        N1[Backend Routes] --> N3[Integration Wiring]\n        N2[Frontend Pages] --> N3\n        N3 --> N4[Testing]\n        N3 --> N5[DevOps Config]\n    end\n\n    style P fill:#D35400,stroke:#E67E22,color:#fff\n    style DAG fill:#1A5276,stroke:#2E86C1,color:#fff\n```\n\n## 3. Dispatcher (`src/core/dispatcher.ts`)\nThe `Dispatcher` queries the `TaskGraphManager` for actionable nodes. If a task has met all its dependencies, standard parallelization allows multiple agents to hit the codebase concurrently.\n- Protects against concurrency collisions by running file modifications sequentially where API rate limits demand.\n- **Skill Resolution**: Before dispatching to an agent, the system resolves which skills that agent will receive based on the task keywords.\n- **Design Resolution**: For Frontend tasks, the `DesignLoader` automatically detects matching screens and prepares design context.\n\n```mermaid\nflowchart TB\n    DAG[Task Graph<br/>Manager] -->|Ready Tasks| D[Dispatcher]\n\n    D --> Check{Dependencies<br/>Met?}\n    Check -->|No| Wait[Wait for deps]\n    Wait --> DAG\n    Check -->|Yes| Resolve[Resolve Skills<br/>for Agent Role]\n    Resolve --> Design{Frontend<br/>Task?}\n    Design -->|Yes| DLoad[Load Design Refs<br/>DESIGN.md + code.html]\n    Design -->|No| Exec\n    DLoad --> Exec[Execute Agent<br/>with Skills + Design Context]\n    Exec --> Result{Success?}\n    Result -->|Yes| Mark[Mark Completed]\n    Result -->|No| Fail[Mark Failed]\n    Mark --> DAG\n    Fail --> DAG\n\n    style D fill:#D35400,stroke:#E67E22,color:#fff\n    style Resolve fill:#6C3483,stroke:#A569BD,color:#fff\n    style Exec fill:#1E8449,stroke:#27AE60,color:#fff\n    style DLoad fill:#C0392B,stroke:#E74C3C,color:#fff\n```\n\n## 4. Reviewer Pipeline (`src/core/reviewer.ts`)\nBefore any code goes to a git commit, it passes through a **four-stage pipeline** — now enhanced with design-system compliance checking:\n\n- **Stage 1 (Review):** LLM flags generic architectural or type errors.\n- **Stage 2 (Debug):** The system literally runs `npx tsc --noEmit` and captures compiler errors.\n- **Stage 3 (Visual Validation):** **Two-pass design-aware audit:**\n  - **3a. Static Design Checklist** (zero LLM cost): 8 rules checked against generated code:\n    1. Manrope font imported\n    2. Inter font imported\n    3. Primary color token (#702ae1) used\n    4. No generic color values (bg-blue-*, bg-red-*)\n    5. No hard 1px solid borders (No-Line Rule)\n    6. Neumorphic shadow classes present\n    7. Elements are rounded (border-radius >= 1rem)\n    8. Primary CTA uses gradient fill\n  - **3b. LLM Design Audit:** Passes static checklist results + DESIGN.md spec into an LLM prompt for deeper structural and design validation.\n- **Stage 4 (Improve):** Automatically fixes problems flagged in previous stages (including design violations).\n\n```mermaid\nstateDiagram-v2\n    [*] --> Stage1_Review\n\n    Stage1_Review --> Stage2_Debug : Score Assessed\n    Stage2_Debug --> Stage3_Validation : TypeCheck Complete\n\n    Stage3_Validation --> Approved : All Passed (Score >= 70)\n    Approved --> [*]\n\n    Stage1_Review --> Stage4_Improve : Score < 80\n    Stage2_Debug --> Stage4_Improve : TS Errors Found\n    Stage3_Validation --> Stage4_Improve : Design Violations\n\n    Stage4_Improve --> Stage1_Review : Retry with Fixes\n\n    state Stage1_Review {\n        [*] --> LLM_Review\n        LLM_Review --> Score_Assessment\n        Score_Assessment --> [*]\n    }\n\n    state Stage2_Debug {\n        [*] --> TSC_NoEmit\n        TSC_NoEmit --> Parse_Errors\n        Parse_Errors --> [*]\n    }\n\n    state Stage3_Validation {\n        [*] --> Static_Checklist\n        Static_Checklist --> Design_Spec_Load\n        Design_Spec_Load --> LLM_Design_Audit\n        LLM_Design_Audit --> Merge_Issues\n        Merge_Issues --> [*]\n    }\n\n    state Stage4_Improve {\n        [*] --> Collect_Issues\n        Collect_Issues --> LLM_Fix\n        LLM_Fix --> Apply_Fixes\n        Apply_Fixes --> [*]\n    }\n```\n\n### Visual Validation Deep Dive\n\n```mermaid\nflowchart TB\n    FILES[Generated .tsx / .css files] --> FILTER{Frontend<br/>Files?}\n    FILTER -->|No| SKIP[Skip Design Check]\n    FILTER -->|Yes .tsx .jsx .css .html| STATIC[Static Design Checklist<br/>8 Rules - Zero LLM Cost]\n\n    STATIC --> FONTS{Manrope +<br/>Inter?}\n    STATIC --> COLORS{Design Token<br/>Colors?}\n    STATIC --> BORDERS{No 1px<br/>solid?}\n    STATIC --> SHADOWS{Neumorphic<br/>Shadows?}\n\n    FONTS & COLORS & BORDERS & SHADOWS --> RESULT[Checklist Results<br/>Pass/Fail per Rule]\n\n    RESULT --> DETECT[DesignLoader.loadDesignForTask]\n    DETECT --> SPEC[Load DESIGN.md Spec<br/>for Matched Screen]\n    RESULT & SPEC --> LLM[LLM Design Audit<br/>Structural + Design Compliance]\n    LLM --> MERGE[Merge Static + LLM Issues]\n    MERGE --> FINAL{All<br/>Passed?}\n    FINAL -->|Yes| OK[Visual Validation Passed]\n    FINAL -->|No| FAIL[Issues Sent to Improve Loop]\n\n    style STATIC fill:#C0392B,stroke:#E74C3C,color:#fff\n    style SPEC fill:#C0392B,stroke:#E74C3C,color:#fff\n    style LLM fill:#8E44AD,stroke:#9B59B6,color:#fff\n    style OK fill:#1E8449,stroke:#27AE60,color:#fff\n    style FAIL fill:#E74C3C,stroke:#C0392B,color:#fff\n```\n\n## Complete Orchestration Data Flow\n\n```mermaid\nflowchart TB\n    CLI[CLI Input] --> ORCH[Orchestrator.run]\n\n    ORCH --> ENV[Load .env.agents<br/>30 API Keys]\n    ORCH --> P1[Phase 1: Planning]\n    P1 --> P2[Phase 2: Execution]\n    P2 --> P3[Phase 3: QA Pipeline]\n    P3 --> P4[Phase 4: Commit]\n\n    subgraph \"Phase 2 Detail\"\n        P2 --> D[Dispatcher]\n        D --> |Per Task| SK[Skill Loader<br/>Core + Keyword Skills]\n        D --> |Frontend| DL[Design Loader<br/>Screen Refs]\n        SK & DL --> AG[Agent.execute]\n        AG --> FC[File Changes]\n    end\n\n    subgraph \"Phase 3 Detail\"\n        P3 --> R[Stage 1: Code Review]\n        R --> DB[Stage 2: tsc --noEmit]\n        DB --> V[Stage 3: Design Validation<br/>Static Checklist + LLM Audit]\n        V --> |Issues| IMP[Stage 4: Auto-Improve]\n        IMP --> R\n    end\n\n    P4 --> BR[Create Branch]\n    BR --> ST[Stage Files]\n    ST --> CM[Commit + Report]\n    CM --> |Includes| SK_RPT[Skills + Design<br/>Traceability]\n\n    style ORCH fill:#D35400,stroke:#E67E22,color:#fff\n    style SK fill:#6C3483,stroke:#A569BD,color:#fff\n    style AG fill:#1A5276,stroke:#2E86C1,color:#fff\n    style SK_RPT fill:#6C3483,stroke:#A569BD,color:#fff\n    style DL fill:#C0392B,stroke:#E74C3C,color:#fff\n    style V fill:#C0392B,stroke:#E74C3C,color:#fff\n```\n","domain-agents":"# Domain Agents\n\nTo ensure high-quality output, tasks are not given to a generic LLM. Instead, the Dispatcher hands tasks to one of six specialized **Domain Agents**. Each agent inherits from `BaseAgent` and receives **dynamically injected skills** from the 1,268-skill library at execution time. The Frontend Agent additionally receives **reference design assets** from the 22-screen design library.\n\n## Architecture: Skill + Design Enhanced Inheritance\n\n```mermaid\nclassDiagram\n    class BaseAgent {\n        +role: AgentRole\n        +pool: PoolManager\n        +promptBuilder: PromptBuilder\n        +tokenOptimizer: TokenOptimizer\n        +skillLoader: SkillLoader\n        +execute(task)*\n        #callLLM(prompt, system, options)\n        #buildPrompt(desc, context) → systemPrompt + userPrompt + skillsLoaded\n        #parseAndApplyFiles(response, taskId)\n        #result(success, files, msg, tokens, attempts, skills)\n    }\n\n    class SkillLoader {\n        +skillsRoot: string\n        +fallbackSkillsRoot: string\n        +loadSkillsForAgent(role, taskDesc, budget)\n        +formatSkillsAsContext(skills)\n        +getSkillManifest()\n        -readSkillContent(skillId) Dual-path lookup\n        -getKeywordActivatedSkills(task, pool)\n    }\n\n    class DesignLoader {\n        +designRoot: string\n        +loadDesignForTask(taskDesc, maxScreens)\n        +loadScreen(screenDir)\n        +formatAsContext(assets, includeHtml)\n        +runDesignChecklist(code) 8 rules\n        +formatChecklistResults(items)\n        +listScreenDirs()\n    }\n\n    class TokenOptimizer {\n        +optimize(sys, user, tier, opts)\n        +getCacheStats()\n        -compressCodeBlocks(text)\n        -trimWhitespace(text)\n        -aggressiveTrim(text, max)\n        -checkContextCache(sys)\n    }\n\n    class FrontendAgent {\n        +designLoader: DesignLoader\n        +Core Skills: design-system-sankalp, react, nextjs, tailwind, threejs\n        +Design Injection: DESIGN.md + code.html per screen\n        +Tier: PRO 65K tokens\n    }\n    class BackendAgent {\n        +Core Skills: typescript-expert, nodejs-backend, firebase, zod\n        +Context: 12 Blocks, Firestore, RBAC\n        +Tier: PRO 65K tokens\n    }\n    class IntegrationAgent {\n        +Core Skills: architecture-patterns, api-patterns, DDD\n        +Context: Pipeline Wiring, Type Boundaries\n        +Tier: PRO 65K tokens\n    }\n    class TestingAgent {\n        +Core Skills: testing-patterns, e2e-testing, js-testing\n        +Context: Vitest, Pytest, Bayesian Edge Cases\n        +Tier: NANO_PRO 32K tokens\n    }\n    class DevOpsAgent {\n        +Core Skills: firebase, github-actions, deployment\n        +Context: GCP, CI/CD, Config Only\n        +Tier: FLASH 16K tokens\n    }\n    class TokenOptimizerAgent {\n        +Core Skills: cost-optimization\n        +Context: Token Budget, Cache, Compression\n        +Tier: FLASH 16K tokens\n    }\n\n    BaseAgent <|-- FrontendAgent\n    BaseAgent <|-- BackendAgent\n    BaseAgent <|-- IntegrationAgent\n    BaseAgent <|-- TestingAgent\n    BaseAgent <|-- DevOpsAgent\n    BaseAgent <|-- TokenOptimizerAgent\n    BaseAgent o-- SkillLoader : \"loads skills via\"\n    BaseAgent o-- TokenOptimizer : \"optimizes every call via\"\n    FrontendAgent o-- DesignLoader : \"injects design refs via\"\n```\n\n## Skill Injection per Agent\n\nEach agent receives skills in two tiers:\n- **Core Skills** (always loaded): Domain fundamentals that every task needs.\n- **Supplementary Skills** (keyword-activated): Loaded only when the task description matches activation keywords.\n\nThe Frontend Agent also receives a third context layer: **Design References** from `agents/design/`.\n\n```mermaid\nflowchart LR\n    subgraph \"Task: Build student dashboard page\"\n        T[Task Description]\n    end\n\n    T --> KW{Keyword Detection}\n\n    KW -->|\"student dashboard\"| D1[Design Loader<br/>DESIGN.md + code.html]\n    KW -->|\"dashboard\"| DS[design-system-sankalp]\n    KW -->|Always| S4[react-best-practices]\n    KW -->|Always| S5[nextjs-app-router-patterns]\n    KW -->|Always| S6[tailwind-patterns]\n    KW -->|Always| S7[frontend-design]\n    KW -->|Always| S8[threejs-fundamentals]\n\n    D1 & DS & S4 & S5 & S6 & S7 & S8 --> CTX[Agent Context Window<br/>Skills + Design Refs]\n\n    CTX --> OPT[Token Optimizer<br/>Compress + Cache]\n    OPT --> LLM[Gemini 3.1 Pro<br/>Frontend Agent]\n\n    style KW fill:#6C3483,stroke:#A569BD,color:#fff\n    style CTX fill:#D35400,stroke:#E67E22,color:#fff\n    style OPT fill:#2E86C1,stroke:#5DADE2,color:#fff\n    style LLM fill:#1E8449,stroke:#27AE60,color:#fff\n    style D1 fill:#C0392B,stroke:#E74C3C,color:#fff\n    style DS fill:#C0392B,stroke:#E74C3C,color:#fff\n```\n\n## Agent Skill Manifest\n\n| Agent | Core Skills | Supplementary Skills (keyword-activated) |\n|-------|-------------|------------------------------------------|\n| **Frontend** | `design-system-sankalp`, `react-best-practices`, `nextjs-app-router-patterns`, `tailwind-patterns`, `frontend-design`, `threejs-fundamentals` | `react-state-management`, `threejs-materials`, `threejs-postprocessing`, `animejs-animation`, `scroll-experience`, `accessibility-*`, `i18n-*`, `web-performance-*`, `zustand-*`, `shadcn` |\n| **Backend** | `typescript-expert`, `nodejs-backend-patterns`, `api-design-principles`, `firebase`, `zod-validation-expert` | `auth-implementation-*`, `error-handling-*`, `api-security-*`, `database-design`, `gemini-api-dev`, `bayesian-mastery-engine`, `backend-dev-*`, `cqrs-*` |\n| **Integration** | `architecture-patterns`, `api-patterns`, `typescript-expert`, `domain-driven-design` | `event-sourcing-*`, `microservices-*`, `workflow-orchestration-*`, `data-structure-*`, `saga-*` |\n| **Testing** | `testing-patterns`, `javascript-testing-patterns`, `e2e-testing-patterns` | `python-testing-*`, `tdd-workflows-*`, `playwright-skill`, `k6-load-testing`, `test-driven-*` |\n| **DevOps** | `firebase`, `github-actions-templates`, `deployment-procedures` | `gcp-cloud-run`, `secrets-management`, `observability-*`, `prometheus-*`, `cost-optimization` |\n| **Visual Validator** | `design-system-sankalp`, `code-review-checklist` | `vibe-code-auditor` |\n| **Token Optimizer** | `cost-optimization` | `web-performance-optimization` |\n\n## 1. Frontend Agent (`src/agents/frontend.ts`)\n- **Focus**: UI/UX, Next.js App Router, Tailwind CSS, React Three Fiber.\n- **Core Skills Loaded**: Design system spec (Cognitive Architect), React best practices, Next.js App Router patterns, Tailwind patterns, frontend design aesthetics, Three.js fundamentals.\n- **Design Injection**: Automatically detects which screen(s) the task targets via `DesignLoader`. Injects:\n  - The `DESIGN.md` specification (colors, typography, No-Line Rule, neumorphism, component patterns)\n  - The reference `code.html` (truncated at 12KB per screen)\n  - Prompt header: \"⚠️ CRITICAL: Reference Design Assets — your implementation MUST faithfully replicate the visual language\"\n- **Context Injection**: Rules enforcing the Cognitive Architect aesthetic — neumorphic shadows, glassmorphism, micro-interactions, No-Line Rule (no 1px solid borders), and Bayesian UI components (`Beta(α,β)` CI probability rings).\n- **Supplementary Activation**: Tasks mentioning \"brain map\" trigger Three.js material/postprocessing skills. Tasks mentioning \"scroll\" activate the scroll experience skill.\n\n### Frontend Agent Design Flow\n\n```mermaid\nflowchart TB\n    TASK[\"Task: Build student dashboard\"] --> DL[DesignLoader.loadDesignForTask]\n    DL -->|Keyword Match| SCREEN[\"agents/design/student dashboard/\"]\n    SCREEN --> DM[DESIGN.md<br/>Cognitive Architect spec]\n    SCREEN --> CH[code.html<br/>Tailwind reference]\n    SCREEN --> PNG[screen.png path]\n    DM & CH --> FMT[formatAsContext]\n    FMT --> PROMPT[LLM Prompt]\n    PROMPT --> GEN[Generated .tsx files]\n\n    style SCREEN fill:#C0392B,stroke:#E74C3C,color:#fff\n    style DL fill:#8E44AD,stroke:#9B59B6,color:#fff\n    style GEN fill:#1E8449,stroke:#27AE60,color:#fff\n```\n\n## 2. Backend Agent (`src/agents/backend.ts`)\n- **Focus**: Express.js routes, Firestore infrastructure, core Intelligence engine processing.\n- **Core Skills Loaded**: TypeScript expert patterns, Node.js backend architecture, API design principles, Firebase integration, Zod validation.\n- **Context Injection**: Enforces the 12 Canonical Blocks (Observe → Model → Decide), `Zod` validation boundaries, `RBAC` (Role Based Access Control) middleware, and strict TypeScript.\n- **Supplementary Activation**: Tasks mentioning \"auth\" trigger authentication skills. Tasks mentioning \"database\" activate data modeling skills.\n\n## 3. Integration Agent (`src/agents/integration.ts`)\n- **Focus**: Wiring different modular boundaries together securely.\n- **Core Skills Loaded**: Architecture patterns, API design patterns, TypeScript cross-boundary safety, Domain-Driven Design.\n- **Context Injection**: Specialized in cross-connecting the `Brain Map™` logic with `ADK` (Adaptive Decision Knowledge), injecting types into the `pipeline.ts` flow.\n- **Supplementary Activation**: Tasks mentioning \"event\" trigger event sourcing skills. Tasks mentioning \"workflow\" activate orchestration skills.\n\n## 4. Testing Agent (`src/agents/testing.ts`)\n- **Focus**: Vitest (TS) and Pytest (Python) mock and test generation.\n- **Core Skills Loaded**: Testing patterns (Jest/Vitest), JavaScript testing patterns, end-to-end testing architecture.\n- **Context Injection**: Enforces mandatory edge cases including first-time students, handling of missing mastery bounds, and mathematical verification that `α + β` strictly increases in Bayesian tests.\n- **Supplementary Activation**: Tasks involving Python activate pytest skills. Tasks mentioning \"e2e\" trigger Playwright skills.\n\n## 5. DevOps Agent (`src/agents/devops.ts`)\n- **Focus**: Configuration, CI/CD, and Hosting definitions.\n- **Core Skills Loaded**: Firebase hosting/functions/rules, GitHub Actions CI/CD templates, deployment procedures.\n- **Context Injection**: Focuses on `firebase.json`, `firestore.rules`, and GCP dashboards. Limits the agent's scope strictly to configuration data rather than core logic modification.\n- **Supplementary Activation**: Tasks mentioning \"deploy\" activate full deployment procedure skills. Tasks mentioning \"monitoring\" trigger observability skills.\n\n## 6. Token Optimizer Agent (`src/agents/token-optimizer-agent.ts`)\n- **Focus**: Reducing token consumption, latency, and API costs without compromising output quality.\n- **Core Skills Loaded**: Cost optimization strategies.\n- **Context Injection**: Runs transparently inside every `BaseAgent.callLLM()` call. Compresses code blocks, deduplicates system prompts via context caching, applies per-tier thinking budgets, and enforces output token caps.\n- **How It Works**: Unlike other agents, the Token Optimizer does not generate code. It operates as a middleware layer that intercepts and optimizes every LLM invocation system-wide.\n\n### Token Optimization Techniques\n\n```mermaid\nflowchart TD\n    RAW[Raw Prompt from Agent] --> C1[Compress Code Blocks<br/>Strip comments, collapse blanks]\n    C1 --> C2[Trim Whitespace<br/>Remove trailing, dedup newlines]\n    C2 --> C3{Context Cache Check}\n    C3 -->|Cache Hit| SKIP[Skip Re-tokenization<br/>Reuse cached prefix]\n    C3 -->|Cache Miss| STORE[Store hash for future hits]\n    SKIP & STORE --> C4[Estimate Token Count]\n    C4 -->|>85% window| TRIM[Aggressive Trim<br/>Remove largest code blocks]\n    C4 -->|OK| PASS[Pass Through]\n    TRIM & PASS --> C5[Apply Thinking Budget<br/>PRO=8192 / NANO=2048 / FLASH=512]\n    C5 --> C6[Cap max_output_tokens<br/>Per tier ceiling]\n    C6 --> C7{JSON Mode?}\n    C7 -->|Yes| HINT[Inject structured output hint]\n    C7 -->|No| FINAL[Optimized Prompt]\n    HINT --> FINAL\n\n    style RAW fill:#E74C3C,stroke:#C0392B,color:#fff\n    style FINAL fill:#27AE60,stroke:#1E8449,color:#fff\n    style C3 fill:#8E44AD,stroke:#9B59B6,color:#fff\n    style C5 fill:#2E86C1,stroke:#5DADE2,color:#fff\n```\n\n| Technique | Applies To | Savings |\n|-----------|-----------|---------|\n| **Context Caching** | Repeated system prompts | Avoids re-tokenization on cache hit |\n| **Code Block Compression** | TS/JS code in context | 10–25% fewer chars |\n| **Thinking Budget** | All tiers | Flash tasks use minimal reasoning (512 tok) |\n| **Output Capping** | All tiers | Prevents runaway output generation |\n| **Aggressive Trim** | Oversize prompts (>85% window) | Emergency truncation of largest blocks |\n| **Structured Output Hint** | JSON-mode calls | Eliminates wasted prose tokens |\n| **Batch Eligibility** | Flash-tier deferrable tasks | 50% cost discount via Batch API |\n\n\n","design-system":"# Design System Integration\n\nThe SANKALP-AEI agent system includes a full design-system integration layer that ensures generated frontend code adheres to the **\"Cognitive Architect\"** design language — a premium educational UI built on neumorphism, glassmorphism, and tonal layering.\n\n## Architecture\n\n```mermaid\nflowchart TB\n    subgraph \"agents/design/ (22 Reference Screens)\"\n        SD[\"student dashboard/\"]\n        TD[\"teacher dashboard/\"]\n        LP[\"landing page/\"]\n        CP[\"cockpit/\"]\n        MORE[\"... 18 more\"]\n    end\n\n    subgraph \"Each Screen\"\n        DM[\"DESIGN.md\"]\n        CH[\"code.html\"]\n        SP[\"screen.png\"]\n    end\n\n    SD & TD & LP & CP --> DM & CH & SP\n\n    subgraph \"DesignLoader (src/design/design-loader.ts)\"\n        KW[\"SCREEN_KEYWORD_MAP<br/>40+ keywords\"]\n        LOAD[\"loadDesignForTask()\"]\n        FMT[\"formatAsContext()\"]\n        CHK[\"runDesignChecklist()\"]\n        KW --> LOAD\n        LOAD --> FMT\n        LOAD --> CHK\n    end\n\n    subgraph \"Skill System\"\n        SKILL[\"design-system-sankalp<br/>SKILL.md\"]\n        REG[\"skill-registry.ts\"]\n        SKILL --> REG\n    end\n\n    DM & CH --> LOAD\n\n    FMT -->|Design Context| FE[Frontend Agent]\n    CHK -->|8-Rule Checklist| VV[Visual Validator]\n    REG -->|Core Skill| FE\n    REG -->|Core Skill| VV\n\n    style DM fill:#C0392B,stroke:#E74C3C,color:#fff\n    style CH fill:#C0392B,stroke:#E74C3C,color:#fff\n    style SKILL fill:#6C3483,stroke:#A569BD,color:#fff\n    style FE fill:#1E8449,stroke:#27AE60,color:#fff\n    style VV fill:#1A5276,stroke:#2E86C1,color:#fff\n```\n\n## Components\n\n### 1. Design Asset Library (`agents/design/`)\n\nContains **22 reference screen designs**, each with three files:\n\n| File | Purpose | Size |\n|------|---------|------|\n| `DESIGN.md` | Design specification — colors, typography, spacing, component patterns, the \"Cognitive Architect\" rules | 2–4 KB |\n| `code.html` | Pixel-accurate Tailwind/HTML reference implementation generated by the design team | 15–40 KB |\n| `screen.png` | Visual reference screenshot | Image |\n\n### Screen Inventory\n\n| Screen | Directory | Primary Keywords |\n|--------|-----------|-----------------|\n| AI Companion | `aicompanion/` | ai companion, ai tutor, companion |\n| Class Overview | `class overview/` | class overview, class view |\n| Cockpit | `cockpit/` | cockpit, admin |\n| Config | `config/` | config, configuration, settings |\n| Forgot Password | `forgot password/` | forgot password, reset password |\n| Help Center | `help center/` | help center, help, support |\n| Landing Page | `landing page/` | landing, landing page, home page |\n| Lesson Planning | `lesson planning/` | lesson planning, lesson plan |\n| Metacognition | `metacognition/` | metacognition |\n| Registration | `registration/` | login, sign up, register |\n| Student Analytics | `student analytics/` | student analytics |\n| Student Dashboard | `student dashboard/` | student dashboard, dashboard |\n| Student Drill Down | `student drill down/` | student drill, drill down |\n| Student Profile | `student profile/` | student profile |\n| Study Session | `study session/` | study session |\n| System Health | `systemhealth/` | system health, system monitor |\n| Teacher Dashboard | `teacher dashboard/` | teacher dashboard |\n| Teacher Profile | `teacher profile/` | teacher profile |\n| Teacher Report | `teacher report/` | teacher report |\n| User Management | `user management/` | user management, user admin |\n\n### 2. Design Loader (`src/design/design-loader.ts`)\n\nThe `DesignLoader` class is the runtime bridge between the static design assets and the agent system.\n\n**API Surface:**\n- `loadDesignForTask(taskDescription, maxScreens)` — Detects screen(s) from task keywords, returns loaded assets\n- `loadScreen(screenDir)` — Loads a specific screen by directory name\n- `formatAsContext(assets, includeHtml, maxHtmlChars)` — Formats assets as prompt-ready markdown\n- `runDesignChecklist(generatedCode)` — Runs 8 static compliance rules on generated code\n- `formatChecklistResults(items)` — Formats checklist as a human-readable pass/fail report\n- `listScreenDirs()` — Lists all available screen directories\n\n**Keyword Resolution Flow:**\n\n```mermaid\nflowchart LR\n    TASK[\"Task: Build student<br/>dashboard page\"] --> LOWER[Lowercase task text]\n    LOWER --> SCAN[Scan SCREEN_KEYWORD_MAP]\n    SCAN --> HIT{\"Keyword<br/>Match?\"}\n    HIT -->|Yes| LOAD[Load matching<br/>screen directories]\n    HIT -->|No| FALLBACK[Check if any<br/>dir name appears in task]\n    FALLBACK --> HIT2{\"Fallback<br/>Match?\"}\n    HIT2 -->|Yes| LOAD\n    HIT2 -->|No| EMPTY[Return empty array]\n    LOAD --> CAP[Cap at maxScreens=2]\n    CAP --> READ[Read DESIGN.md + code.html]\n    READ --> CACHE[Cache in memory]\n\n    style TASK fill:#D35400,stroke:#E67E22,color:#fff\n    style LOAD fill:#1E8449,stroke:#27AE60,color:#fff\n```\n\n### 3. Design System Skill (`agents/knowledge/skills/design-system-sankalp/SKILL.md`)\n\nA consolidated SKILL.md that captures the complete \"Cognitive Architect\" design system:\n\n- **Color Tokens** — 25+ Material Design 3 tokens with hex values\n- **No-Line Rule** — Strict mandate: no 1px solid borders for containment\n- **Neumorphic Shadow System** — `neumorphic-flat`, `neumorphic-inset`, `neumorphic-pressed` CSS classes\n- **Typography** — Manrope (headlines) + Inter (body), with size/weight tables\n- **Glassmorphism** — Floating elements recipe with blur + saturate + glass edge\n- **Component Patterns** — Buttons, icon circles, cards, inputs, progress bars, mastery arc\n- **Spacing & Layout** — Card padding, section gaps, grid system\n- **Border Radius** — Minimum 1rem on all visible containers\n- **Tailwind Config** — Complete theme extension for token colors, fonts, radii\n\nThis skill is loaded as a **core skill** for both the Frontend Agent and Visual Validator.\n\n### 4. Skill Loader Dual-Path Resolution (`src/skills/skill-loader.ts`)\n\nThe `SkillLoader` now searches two locations for SKILL.md files:\n\n```mermaid\nflowchart TB\n    REQ[readSkillContent<br/>skillId] --> P1[Primary Path<br/>skills/skillId/SKILL.md]\n    P1 --> EXISTS1{Exists?}\n    EXISTS1 -->|Yes| READ1[Read from primary]\n    EXISTS1 -->|No| P2[Fallback Path<br/>agents/knowledge/skills/skillId/SKILL.md]\n    P2 --> EXISTS2{Exists?}\n    EXISTS2 -->|Yes| READ2[Read from fallback]\n    EXISTS2 -->|No| NULL[Return null]\n    READ1 & READ2 --> CACHE[Cache in memory]\n\n    style P1 fill:#1A5276,stroke:#2E86C1,color:#fff\n    style P2 fill:#C0392B,stroke:#E74C3C,color:#fff\n```\n\n### 5. Visual Validation Pipeline (`src/core/reviewer.ts`)\n\nStage 3 of the Reviewer Pipeline now performs a **two-pass design-aware audit**:\n\n**Pass 1: Static Design Checklist (Zero LLM Cost)**\n\n| # | Rule | Regex/Pattern Check |\n|---|------|-------------------|\n| 1 | Manrope font imported | `/Manrope/i` |\n| 2 | Inter font imported | `/Inter/i` |\n| 3 | Primary token used | `/#702ae1\\|text-primary\\|bg-primary/i` |\n| 4 | No generic colors | Absence of `bg-blue-*`, `bg-red-*`, `bg-green-*` |\n| 5 | No hard borders | Absence of `border: 1px solid` (except glass edges) |\n| 6 | Neumorphic shadows | `neumorphic-flat\\|neumorphic-inset` present |\n| 7 | Rounded corners | `rounded-\\|border-radius` present |\n| 8 | CTA gradient | `from-primary\\|gradient.*primary` present |\n\n**Pass 2: LLM Design Audit**\n\nThe LLM receives:\n- The static checklist results (pass/fail summary)\n- The DESIGN.md specification for the matched screen\n- Six design-specific validation questions\n- The generated code snippets\n\nResults are merged: `passed = LLM.passed AND checklist.allPassed`.\n\n```mermaid\nflowchart TB\n    CODE[Generated Frontend Files] --> STATIC[Pass 1: Static Checklist<br/>8 Rules]\n    STATIC --> RESULTS[Checklist Results]\n    RESULTS --> MERGE\n\n    TASK[Task Description] --> DETECT[DesignLoader<br/>Detect Screen]\n    DETECT --> SPEC[DESIGN.md Spec]\n    SPEC --> LLM\n\n    RESULTS --> LLM[Pass 2: LLM Audit<br/>Structural + Design]\n    LLM --> LLM_ISSUES[LLM-Detected Issues]\n    LLM_ISSUES --> MERGE[Merge All Issues]\n    MERGE --> FINAL{All Passed?}\n    FINAL -->|Yes| OK[Validation Passed]\n    FINAL -->|No| FAIL[Send to Improve Loop]\n\n    style STATIC fill:#C0392B,stroke:#E74C3C,color:#fff\n    style LLM fill:#8E44AD,stroke:#9B59B6,color:#fff\n    style OK fill:#1E8449,stroke:#27AE60,color:#fff\n```\n\n## The Cognitive Architect — Design Principles Quick Reference\n\n| Principle | Rule |\n|-----------|------|\n| **No-Line Rule** | Never use `border: 1px solid` for sectioning. Use background shifts or ghost borders at 15% opacity. |\n| **Neumorphism** | All shadows via `neumorphic-flat` (raised) / `neumorphic-inset` (recessed) / `neumorphic-pressed` (active). Base color: `#EBEDF0`. |\n| **Typography** | Manrope 800 for headlines, Inter 400–500 for body, all-caps tracking-widest for metadata labels. |\n| **Glassmorphism** | Floating elements: `backdrop-filter: blur(20px) saturate(180%)` + 70% opacity surface + glass edge. |\n| **Color Palette** | Primary `#702ae1`, surface `#EBEDF0`, 25+ design tokens. No generic colors. |\n| **Border Radius** | Minimum `1rem` on all visible containers. Primary cards use `2.5rem`. Buttons use pill shape. |\n| **CTA Gradient** | `linear-gradient(135deg, #702ae1, #b28cff)` for all primary action buttons. |\n| **Icons** | Material Symbols Outlined inside `rounded-full neumorphic-inset` containers. |\n| **Spacing** | Card padding `2rem`, section gap `3.5rem`, navigation height `5rem`. |\n","llm-architecture":"# LLM Pool & Context Engine\n\nTo bypass generic LLM limitations, the Agent System relies on custom resource pooling, dynamic context injection, **skill-enhanced prompt engineering**, and **design-system aware context assembly**.\n\n## API Key Pool Manager (`src/llm/pool-manager.ts`)\nSANKALP-AEI utilizes an aggressive **30-key Google Gemini architecture** loaded via `.env.agents`.\n- **Top Tier (20 Keys):** `gemini-3.1-pro-preview`. Handled by the heavy lifters (Planning, Execution, Architectural Design).\n- **Core Tier (5 Keys):** `nano-banana-pro-preview`. Handled by the structural validators, refactoring scripts, and localized fixes.\n- **Fast Tier (5 Keys):** `gemini-2.5-flash`. Exclusively for rapid JSON parsing, log scanning, and single-file structural tests where speed trumps reasoning.\n\nThe manager automatically rotates keys round-robin, catching `429 Rate Limit` exceptions and throwing a local timeout (`30s` to `60s`) on individual keys while seamlessly failing over to valid keys.\n\n```mermaid\nflowchart LR\n    Task[Incoming Task] --> Router{Model Tier<br/>Selection}\n\n    Router -->|\"Planning/Complex<br/>(Orch, Planner, FE, BE, INT, Reviewer)\"| Tier1[Tier 1: gemini-3.1-pro<br/>x 20 keys]\n    Router -->|\"Validation/Refactor<br/>(Testing, Visual Validator)\"| Tier2[Tier 2: nano-pro<br/>x 5 keys]\n    Router -->|\"Parsing/Config<br/>(DevOps)\"| Tier3[Tier 3: gemini-2.5-flash<br/>x 5 keys]\n\n    Tier1 & Tier2 & Tier3 --> Node{Round Robin<br/>Key Assign}\n    Node -->|429 Rate Limit| Cool[Cooldown 30-60s]\n    Cool --> Node\n    Node -->|200 OK| Out[LLM Execution]\n\n    style Router fill:#D35400,stroke:#E67E22,color:#fff\n    style Tier1 fill:#1E8449,stroke:#27AE60,color:#fff\n    style Tier2 fill:#1A5276,stroke:#2E86C1,color:#fff\n    style Tier3 fill:#6C3483,stroke:#A569BD,color:#fff\n```\n\n## Agent → Model Tier Mapping\n\n```mermaid\ngraph LR\n    subgraph \"PRO Tier (20 keys)\"\n        O[Orchestrator]\n        P[Planner]\n        FE[Frontend]\n        BE[Backend]\n        INT[Integration]\n        REV[Reviewer]\n        DBG[Debugger]\n    end\n\n    subgraph \"NANO_PRO Tier (5 keys)\"\n        TEST[Testing]\n        VV[Visual Validator]\n    end\n\n    subgraph \"FLASH Tier (5 keys)\"\n        DEV[DevOps]\n        TOA[Token Optimizer]\n    end\n\n    style O fill:#1E8449,stroke:#27AE60,color:#fff\n    style P fill:#1E8449,stroke:#27AE60,color:#fff\n    style FE fill:#1E8449,stroke:#27AE60,color:#fff\n    style BE fill:#1E8449,stroke:#27AE60,color:#fff\n    style INT fill:#1E8449,stroke:#27AE60,color:#fff\n    style REV fill:#1E8449,stroke:#27AE60,color:#fff\n    style DBG fill:#1E8449,stroke:#27AE60,color:#fff\n    style TEST fill:#1A5276,stroke:#2E86C1,color:#fff\n    style VV fill:#1A5276,stroke:#2E86C1,color:#fff\n    style DEV fill:#6C3483,stroke:#A569BD,color:#fff\n    style TOA fill:#117A65,stroke:#1ABC9C,color:#fff\n```\n\n## The Context Engine\n\nInstead of dumping the entire repository into a prompt, the system relies on structured semantic parsing combined with **dynamic skill injection** and **design reference loading**:\n\n```mermaid\ngraph TD\n    subgraph \"Context Sources\"\n        W[Wiki Reader<br/>\".gitnexus/wiki/*.md\"] --> ContextPool\n        F[File Scanner<br/>\"src/**/*.ts\"] --> ContextPool\n        T[Task Parser<br/>\"tasks.md deltas\"] --> ContextPool\n        SK[Skill Loader<br/>\"skills/*/SKILL.md\"] --> ContextPool\n        DL[Design Loader<br/>\"agents/design/*/DESIGN.md\"] --> ContextPool\n    end\n\n    ContextPool[Context Pool<br/>Merged Raw Context] -->|Truncate / Prioritize| Budget[Token Budget<br/>Enforcer]\n    Budget --> SysPrompt[System Prompt<br/>Persona + Rules + Skills]\n    Budget --> UsrPrompt[User Prompt<br/>Task + Types + Code + Wiki + Design]\n\n    SysPrompt & UsrPrompt --> AgentEnv[Domain Agent<br/>LLM Call]\n\n    style SK fill:#6C3483,stroke:#A569BD,color:#fff\n    style DL fill:#C0392B,stroke:#E74C3C,color:#fff\n    style ContextPool fill:#D35400,stroke:#E67E22,color:#fff\n    style AgentEnv fill:#1E8449,stroke:#27AE60,color:#fff\n```\n\n### Context Composition Pipeline\n\n```mermaid\nflowchart TB\n    subgraph \"System Prompt Assembly\"\n        direction TB\n        PERSONA[\"Agent Persona<br/>(knowledge/system-prompts/{role}.md)\"]\n        RULES[\"Domain Rules<br/>(knowledge/rules/*.md)\"]\n        FORMAT[\"Output Format<br/>Instructions\"]\n        PERSONA --> SP[System Prompt]\n        RULES --> SP\n        FORMAT --> SP\n    end\n\n    subgraph \"User Prompt Assembly\"\n        direction TB\n        TASK[Task Description]\n        TYPES[\"Type Definitions<br/>(src/types/*.ts)\"]\n        WIKI[\"Wiki Context<br/>(.gitnexus/wiki/*.md)\"]\n        FILES[\"Code Context<br/>(existing source files)\"]\n        SKILLS[\"Skill Context<br/>(skills/*/SKILL.md)<br/>Core + Keyword-Activated\"]\n        DESIGN[\"Design Context<br/>(agents/design/*/DESIGN.md)<br/>+ Reference code.html\"]\n        TASK --> UP[User Prompt]\n        TYPES --> UP\n        WIKI --> UP\n        FILES --> UP\n        SKILLS --> UP\n        DESIGN --> UP\n    end\n\n    SP --> CALL[\"callLLM()\"]\n    UP --> CALL\n\n    style SKILLS fill:#6C3483,stroke:#A569BD,color:#fff\n    style DESIGN fill:#C0392B,stroke:#E74C3C,color:#fff\n    style CALL fill:#1E8449,stroke:#27AE60,color:#fff\n    style SP fill:#D35400,stroke:#E67E22,color:#fff\n    style UP fill:#1A5276,stroke:#2E86C1,color:#fff\n```\n\n## Context Sources Detail\n\n1. **Wiki Reader (`src/context/wiki-reader.ts`)**\n   Reads all `.gitnexus/wiki/` `.md` mapping files. It detects topics (Frontend vs Backend) and selectively injects relevant architecture rules into the system prompt.\n\n2. **File Scanner (`src/context/file-scanner.ts`)**\n   Navigates the `.ts` and `.tsx` structures to detect imports, schema shapes, core boundaries, and available UI components to prevent the LLM from hallucinating file paths. Maintains a strict `byte` ceiling limit using chunking to prevent token overflow.\n\n3. **Task Parser (`src/context/task-parser.ts`)**\n   Reads `tasks.md` to generate intelligent deltas. Allows the AI planner to determine exactly what files still need implementation.\n\n4. **Skill Loader (`src/skills/skill-loader.ts`)**\n   Reads `SKILL.md` files from two locations — the primary `skills/` directory and the fallback `agents/knowledge/skills/` directory — based on the `SkillRegistry` mapping. Each agent role has pre-assigned core skills and supplementary skills that activate via keyword matching. The loader enforces an **80KB byte budget** to prevent context window overflow, prioritizing core skills over supplementary ones.\n\n5. **Design Loader (`src/design/design-loader.ts`)** *(NEW)*\n   Maps task keywords to screen-specific design assets from `agents/design/`. It:\n   - Maintains a **40+ keyword → screen directory** mapping (`SCREEN_KEYWORD_MAP`)\n   - Reads `DESIGN.md` (design spec), `code.html` (reference implementation), and `screen.png` path\n   - Formats design assets as prompt-ready context blocks (HTML truncated at 12KB per screen)\n   - Runs a **static design compliance checklist** (8 rules, zero LLM cost) for use in visual validation\n   - Caches loaded assets in memory to avoid redundant disk reads\n\n## Design Loader Keyword Map\n\nThe `DesignLoader` uses keyword matching to determine which reference design(s) to load:\n\n| Keyword Group | Maps To Screen | Directory |\n|---------------|---------------|-----------|\n| \"student dashboard\", \"student home\", \"dashboard\" | Student Dashboard | `student dashboard/` |\n| \"teacher dashboard\", \"teacher home\" | Teacher Dashboard | `teacher dashboard/` |\n| \"landing\", \"landing page\", \"home page\" | Landing Page | `landing page/` |\n| \"login\", \"sign up\", \"register\", \"registration\" | Registration | `registration/` |\n| \"ai companion\", \"ai tutor\", \"companion\" | AI Companion | `aicompanion/` |\n| \"student analytics\" | Student Analytics | `student analytics/` |\n| \"study session\" | Study Session | `study session/` |\n| \"metacognition\" | Metacognition | `metacognition/` |\n| \"lesson planning\", \"lesson plan\" | Lesson Planning | `lesson planning/` |\n| \"cockpit\", \"admin\" | Cockpit | `cockpit/` |\n| \"system health\", \"system monitor\" | System Health | `systemhealth/` |\n| \"user management\", \"user admin\" | User Management | `user management/` |\n| \"config\", \"configuration\", \"settings\" | Config | `config/` |\n| \"help center\", \"help\", \"support\" | Help Center | `help center/` |\n\n## Skill Loading Budget Model\n\n```mermaid\npie title Typical Context Budget Distribution (Frontend Agent)\n    \"System Prompt (Persona + Rules)\" : 12\n    \"Type Definitions\" : 8\n    \"Wiki Context\" : 15\n    \"Code Context (existing files)\" : 20\n    \"Skill Context (SKILL.md)\" : 20\n    \"Design Context (DESIGN.md + code.html)\" : 20\n    \"Output Instructions\" : 5\n```\n","cli-usage":"# CLI and Usage Instructions\n\nThe orchestration system acts as an independent application accessible via `src/index.ts`. Command Line interface is built cleanly via `Commander.js`.\n\n## Local Setup\n1. **Install dependencies**: Navigate to the `agents/` folder and run `npm install`.\n2. **Configure Keys**: Map `cp .env.agents.example .env.agents`. Fill up to 30 API keys inside the configuration block.\n3. **Verify Skills**: Ensure the `skills/` directory is populated with `SKILL.md` files — agents will load these dynamically.\n4. **Verify Design Assets**: Ensure `agents/design/` contains the 22 screen folders — each with `DESIGN.md`, `code.html`, and `screen.png`. The Frontend Agent and Visual Validator will load these automatically.\n\n## Supported Commands\n\n```mermaid\ngraph LR\n    CLI[\"npx tsx src/index.ts\"] --> Run(\"run 'Task'\")\n    CLI --> DryRun(\"--dry-run 'Task'\")\n    CLI --> Status(\"status\")\n    CLI --> Pool(\"pool\")\n    CLI --> Wiki(\"wiki\")\n    CLI --> Skills(\"skills\")\n\n    Run -.-->|Executes| Pipe[Full Pipeline<br/>Plan + Skills + Design + Execute + QA + Commit]\n    DryRun -.-->|Verifies| Plan[Task DAG + Skill<br/>+ Design Resolution Preview]\n    Status -.-->|Reads| Tasks[tasks.md Completions]\n    Pool -.-->|Monitors| API[API Key Telemetry]\n    Wiki -.-->|Reads| Map[Context Engine Maps]\n    Skills -.-->|Lists| SM[Skill Manifest<br/>per Agent Role]\n\n    style Run fill:#1E8449,stroke:#27AE60,color:#fff\n    style Skills fill:#6C3483,stroke:#A569BD,color:#fff\n```\n\n### Run Pipeline (Autonomous Development)\nExecutes a task autonomously. Creates a branch, loads skills, resolves design references, plans the code, generates it, validates design compliance, and auto-commits with skills traceability.\n```bash\nnpx tsx src/index.ts run \"Build the student portfolio dashboard\"\n```\n\nExample output includes:\n```\n[orchestrator] Task: \"Build the student portfolio dashboard\"\n[orchestrator] Keys loaded: 28/30\n[system]       ─── Planning Phase ───\n[planner]      Plan: 6 subtasks created\n[system]       ─── Execution Phase ───\n[frontend]     🎨 Starting: Build dashboard page\n[frontend]     🎨 Design refs loaded: Student Dashboard\n[frontend]     🎨 Skills loaded: design-system-sankalp, react-best-practices, nextjs-app-router-patterns, tailwind-patterns, frontend-design, threejs-fundamentals\n[frontend]     🎨 Generated 4 frontend files\n[backend]      ⚙️ Starting: Build portfolio API routes\n[backend]      ⚙️ Skills loaded: typescript-expert, nodejs-backend-patterns, api-design-principles, firebase, zod-validation-expert\n[backend]      ⚙️ Generated 3 backend files\n[system]       ─── Quality Assurance Pipeline ───\n[visual_valid] 👁️ Design checklist: all rules passed ✅\n[visual_valid] 👁️ Design spec loaded for LLM: Student Dashboard\n[reviewer]     ✅ Review passed (score: 87/100)\n[orchestrator] Committed to agent/build-student-portfolio: a3f8b2c1\n```\n\n### Design Validation Output\nWhen design violations are detected, the visual validator reports them:\n```\n[visual_valid] 👁️ Design checklist: 2 violation(s) — No hard 1px solid borders, Neumorphic shadows present\n[visual_valid] 👁️ Design spec loaded for LLM: Student Dashboard\n[reviewer]     ❌ Review failed — design violations detected\n[improve]      🔧 Fixing: Replacing border: 1px solid with neumorphic-flat shadows\n[visual_valid] 👁️ Design checklist: all rules passed ✅\n[reviewer]     ✅ Review passed (score: 82/100)\n```\n\n### Dry Run Strategy\nUsed to verify the Orchestrator's internal Task DAG strategy without writing code. This lets a human review the `Planner` logic, **which skills would be loaded**, and **which design references would be injected** for each agent.\n```bash\nnpx tsx src/index.ts run --dry-run \"Implement Pytest framework\"\n```\nOr shorthand:\n```bash\nnpx tsx src/index.ts --dry-run \"Implement Pytest framework\"\n```\n\n### Skill Manifest\nView which skills each agent has access to:\n```bash\nnpx tsx src/index.ts skills\n```\nOutput:\n```\n─── Skill Manifest ───\nfrontend:\n  Core: design-system-sankalp, react-best-practices, nextjs-app-router-patterns, tailwind-patterns, frontend-design, threejs-fundamentals\n  Supplementary: react-state-management, threejs-materials, threejs-postprocessing, animejs-animation, ...\n\nvisual_validator:\n  Core: design-system-sankalp, code-review-checklist\n  Supplementary: vibe-code-auditor\n\nbackend:\n  Core: typescript-expert, nodejs-backend-patterns, api-design-principles, firebase, zod-validation-expert\n  Supplementary: auth-implementation-patterns, error-handling-patterns, api-security-best-practices, ...\n```\n\n### Tracking Pools and Projects\n- **System Status:** `npx tsx src/index.ts status` — Parses the `tasks.md` skeleton block dynamically outputting visual completions across the 30-day build.\n- **API Status:** `npx tsx src/index.ts pool` — Outputs telemetry on the 30 API keys: Tokens burned, total calls handled, availability status.\n- **Wiki Verification:** `npx tsx src/index.ts wiki` — Outputs all recognized Context Engine indexed mapping files.\n\n## Reports and File Operations\nAll file diffs that modify source code originate directly at the target paths inside `SANKALP-AEI/`. To safeguard the dev process:\n- Backups of modified files are sent to `agents/output/diffs/`\n- Markdown run reports are logged in `agents/output/reports/`\n- Reports now include a **Skills Injected** section showing exactly which `SKILL.md` files were consumed by each agent\n- Reports include a **Design References** section for frontend tasks showing which screen designs were loaded\n\n## Design System Compliance Checklist\n\nThe Visual Validator automatically runs an 8-point static checklist on all generated frontend files:\n\n| # | Rule | What It Checks |\n|---|------|---------------|\n| 1 | Manrope font | Headlines use the Manrope font family |\n| 2 | Inter font | Body text uses the Inter font family |\n| 3 | Primary color token | Uses `#702ae1`, not generic purple |\n| 4 | No generic colors | No `bg-blue-*`, `bg-red-*`, `bg-green-*` Tailwind classes |\n| 5 | No-Line Rule | No `border: 1px solid` for containment |\n| 6 | Neumorphic shadows | Uses `neumorphic-flat` / `neumorphic-inset` classes |\n| 7 | Rounded corners | All containers have `rounded-*` classes |\n| 8 | CTA gradient | Primary buttons use gradient from primary to primary-container |\n\n## Pipeline Execution Diagram\n\n```mermaid\nflowchart TB\n    START([User runs CLI]) --> INIT[Initialize<br/>Load 30 API Keys]\n    INIT --> PLAN[Phase 1: Planning<br/>Decompose into DAG]\n\n    PLAN --> DRY{Dry Run?}\n    DRY -->|Yes| REPORT[Output DAG +<br/>Skill + Design Preview]\n    REPORT --> END1([Done])\n\n    DRY -->|No| EXEC[Phase 2: Execution]\n\n    subgraph \"Phase 2: Skill + Design Enhanced Execution\"\n        EXEC --> LOOP[For each ready task]\n        LOOP --> SKILL[Load Skills<br/>Core + Keyword Match]\n        SKILL --> DLOAD{Frontend<br/>Task?}\n        DLOAD -->|Yes| DESIGN[Load Design Refs<br/>DESIGN.md + code.html]\n        DLOAD -->|No| AGENT\n        DESIGN --> AGENT[Agent.execute<br/>with full context]\n        AGENT --> FILES[Collect file changes]\n        FILES --> NEXT{More tasks?}\n        NEXT -->|Yes| LOOP\n        NEXT -->|No| QA\n    end\n\n    QA[Phase 3: QA Pipeline]\n    QA --> REV[Stage 1: Code Review]\n    REV --> DBG[Stage 2: TypeScript Debug]\n    DBG --> VAL[Stage 3: Design Validation<br/>Static Checklist + LLM Audit]\n    VAL --> PASS{Score >= 70?}\n\n    PASS -->|No| IMP[Stage 4: Auto-Improve]\n    IMP --> REV\n\n    PASS -->|Yes| COMMIT[Phase 4: Commit]\n    COMMIT --> BR[Create Feature Branch]\n    BR --> STAGE[Stage Files]\n    STAGE --> CM[Commit with Skills +<br/>Design Report]\n    CM --> END2([Done])\n\n    style SKILL fill:#6C3483,stroke:#A569BD,color:#fff\n    style AGENT fill:#1A5276,stroke:#2E86C1,color:#fff\n    style QA fill:#D35400,stroke:#E67E22,color:#fff\n    style COMMIT fill:#1E8449,stroke:#27AE60,color:#fff\n    style DESIGN fill:#C0392B,stroke:#E74C3C,color:#fff\n    style VAL fill:#C0392B,stroke:#E74C3C,color:#fff\n```\n"};
+var TREE  = [{"name":"System Overview","slug":"overview","icon":"🌐","badge":"Entry Point","children":[]},{"name":"Orchestration Engine","slug":"orchestration","icon":"⚙️","badge":"4 Components","children":[]},{"name":"Domain Agents","slug":"domain-agents","icon":"🤖","badge":"6 Agents","children":[]},{"name":"Design System","slug":"design-system","icon":"🎨","badge":"22 Screens","children":[]},{"name":"LLM Architecture","slug":"llm-architecture","icon":"🧠","badge":"30 Keys","children":[]},{"name":"CLI Usage","slug":"cli-usage","icon":"💻","badge":"4 Commands","children":[]}];
+var PHASES_RAW = [{"id":1,"title":"TYPESCRIPT COMPILATION: ZERO ERRORS GATE","content":"**Goal:** `npm run build` and `npm run typecheck` both pass with **zero errors** before any new features are added.\n\n### Your First Action\n```bash\nnpm run typecheck 2>&1 | tee typecheck_output.txt\n```\n\nCheck `typecheck_output.txt` (already exists in repo root). Fix errors in this priority order:\n\n### Known Issues to Fix\n\n**1. Duplicate function definitions in `src/core/memory/implementation.ts`**\n- Duplicate function definitions around lines 48, 68, 105, 110\n- Keep the most complete implementation of each, delete duplicates\n- Ensure `MemoryBlockImpl` exports correctly\n\n**2. Missing sub-module exports — create typed stubs if absent:**\n```typescript\n// src/core/features/cache.ts\nexport class FeatureCache {\n  async get(learnerId: string): Promise<FeatureVector | null> { return null; }\n  async set(learnerId: string, features: FeatureVector): Promise<void> { }\n  async invalidate(learnerId: string): Promise<void> { }\n}\n\n// src/core/features/normalizer.ts\nexport class FeatureNormalizer {\n  normalize(features: FeatureVector): FeatureVector { return features; }\n}\n\n// src/core/prediction/anps.ts\nexport class ANPSEngine {\n  async prioritize(features: FeatureVector): Promise<string[]> { return []; }\n}\n\n// src/services/mastery-trajectory.ts\nexport class MasteryTrajectoryService {\n  async log(learnerId: string, topicId: string, mastery: number): Promise<void> { }\n}\n```\n\n**3. Route import errors in `src/api/server.ts`**\n- Routes are imported but files don't exist\n- Comment out missing route imports temporarily with `// TODO: implement`\n- Do NOT delete the import lines\n\n**4. Fix any argument count mismatches** — check `errors.txt` in repo root for specifics\n\n### Verification Checklist\n- [ ] `npm run typecheck` outputs 0 errors\n- [ ] `npm run build` succeeds (dist/ created)\n- [ ] All existing tests still pass: `npm test`\n\n---","checklist":["`npm run typecheck` outputs 0 errors","`npm run build` succeeds (dist/ created)","All existing tests still pass: `npm test`"]},{"id":2,"title":"BRAIN MAP INTEGRATION","content":"**Goal:** Wire `brain-map.ts` into the core pipeline so every quiz/interaction event triggers a Bayesian mastery update.\n\n**MANDATORY READ BEFORE STARTING:**\n- `src/core/knowledge/brain-map.ts` (175 lines) — understand the full API surface\n- `.claude/memory/bayesian-gotchas.md`\n- `.claude/rules/brain-map.md`\n\n### 2.1 Wire into FeatureEngineeringBlock\n\nOpen `src/core/features/implementation.ts`. In the `extract()` method, for each topic:\n\n```typescript\nimport { updateMasteryFull, getMasteryVector, classifyMastery } from '../knowledge/brain-map';\n\nconst masteryResult = updateMasteryFull(\n  currentMastery,\n  wasCorrect,\n  difficulty,\n  {\n    priorAlpha: topic.priorAlpha ?? 1,\n    priorBeta:  topic.priorBeta  ?? 1,\n    recentScores: topic.recentScores ?? [],\n    forgettingStrength: topic.forgettingStrength ?? 0.1,\n  }\n);\n\n// NEVER store only masteryResult.newMastery — always propagate full distribution\ntopic.mastery         = masteryResult.newMastery;\ntopic.priorAlpha      = masteryResult.posteriorAlpha;\ntopic.priorBeta       = masteryResult.posteriorBeta;\ntopic.ciLower         = masteryResult.ciLower;\ntopic.ciUpper         = masteryResult.ciUpper;\ntopic.uncertainty     = masteryResult.uncertainty;   // ci_width — REQUIRED FIELD\ntopic.trajectorySlope = masteryResult.trajectorySlope;\ntopic.struggleFlags   = masteryResult.struggleFlags;\ntopic.recentScores    = masteryResult.recentScores;\n```\n\n### 2.2 Wire into InteractionCaptureBlock\n\nOpen `src/core/interaction/implementation.ts`. After every `captureEvent()` call:\n\n```typescript\n// Fire-and-forget Brain Map update (do NOT await on hot path)\nupdateBrainMapAfterInteraction(event).catch(err =>\n  logger.error({ err, eventId: event.id }, 'Brain Map update failed')\n);\n```\n\nCreate `src/core/interaction/event-stream.ts`:\n```typescript\nexport async function updateBrainMapAfterInteraction(event: InteractionEvent): Promise<void> {\n  // 1. Load student's current topic mastery from Firestore\n  // 2. Call updateMasteryFull() with event correctness + difficulty\n  // 3. Check struggle flags — if present, call RiskStratificationService\n  // 4. Write updated mastery (alpha, beta, ci_width) back to Firestore atomically\n}\n```\n\n### 2.3 Add Early Struggle Detection\n\nCreate `src/core/knowledge/struggle-detector.ts`:\n```typescript\nexport function detectEarlyStruggle(\n  recentMasteryHistory: number[],\n  ciWidthHistory: number[],\n): StruggleDetectionResult {\n  const decliningMastery    = isMonotonicallyDecreasing(recentMasteryHistory.slice(-3));\n  const wideningUncertainty = ciWidthHistory.at(-1)! > ciWidthHistory[0] * 1.3;\n  return {\n    isStruggling: decliningMastery || wideningUncertainty,\n    severity: computeSeverity(recentMasteryHistory, ciWidthHistory),\n    suggestedIntervention: decliningMastery ? 'immediate_review' : 'spaced_practice',\n  };\n}\n```\n\n### Verification Checklist\n- [ ] `updateMasteryFull()` called on every quiz completion event\n- [ ] `ci_width` stored alongside mastery in Firestore — never stripped\n- [ ] Struggle detection triggers when mastery declines 3+ consecutive sessions\n- [ ] No `any` types introduced\n- [ ] `npm run typecheck` still passes\n\n---","checklist":["`updateMasteryFull()` called on every quiz completion event","`ci_width` stored alongside mastery in Firestore — never stripped","Struggle detection triggers when mastery declines 3+ consecutive sessions","No `any` types introduced","`npm run typecheck` still passes"]},{"id":3,"title":"KNOWLEDGE SUB-ENGINES","content":"**Goal:** Implement the three missing sub-engines that Brain Map depends on.\n\n### 3.1 Forgetting Curve — `src/core/knowledge/forgetting-curve.ts`\n\nEbbinghaus model with learnable S-parameter:\n\n```typescript\n/** R(t) = e^(-t/S). S = stability in days. */\nexport function computeRetention(timeSincePracticeMs: number, stabilityDays: number): number {\n  const days = timeSincePracticeMs / (1000 * 60 * 60 * 24);\n  return Math.exp(-days / stabilityDays);\n}\n\nexport function updateStability(\n  currentStability: number,\n  wasSuccessful: boolean,\n  difficulty: number,\n): number {\n  if (!wasSuccessful) return currentStability * 0.5;\n  const retrievalEase = 1 + (1 - difficulty) * 0.5;\n  return Math.min(currentStability * retrievalEase, 365);\n}\n\nexport function applyForgettingDecay(\n  currentMastery: number,\n  priorAlpha: number,\n  priorBeta: number,\n  timeSincePracticeMs: number,\n  stabilityDays: number,\n): { decayedMastery: number; decayedAlpha: number; decayedBeta: number } {\n  const retention = computeRetention(timeSincePracticeMs, stabilityDays);\n  return {\n    decayedMastery: currentMastery * retention,\n    decayedAlpha:   priorAlpha * retention,  // uncertainty increases with forgetting\n    decayedBeta:    priorBeta,               // beta stays — failure rate unchanged\n  };\n}\n```\n\n### 3.2 Spaced Repetition Scheduler — `src/core/knowledge/spaced-repetition.ts`\n\n```typescript\nexport interface ReviewSchedule {\n  topicId: string;\n  nextReviewAt: Date;\n  intervalDays: number;\n  priorityScore: number;  // Higher = review sooner\n}\n\nexport function computeReviewSchedule(\n  topics: TopicMasteryState[],\n  now: Date,\n): ReviewSchedule[] {\n  return topics.map(topic => {\n    const retention = computeRetention(\n      now.getTime() - topic.lastPracticedAt.getTime(),\n      topic.stabilityDays,\n    );\n    const priorityScore = (1 - topic.mastery) * (1 - retention) * (topic.uncertainty + 0.1);\n    const intervalDays  = Math.max(1, topic.stabilityDays * retention);\n    return {\n      topicId:      topic.topicId,\n      nextReviewAt: new Date(topic.lastPracticedAt.getTime() + intervalDays * 86400000),\n      intervalDays,\n      priorityScore,\n    };\n  }).sort((a, b) => b.priorityScore - a.priorityScore);\n}\n```\n\n### 3.3 Mastery Trajectory Logger — `src/services/mastery-trajectory.ts`\n\n```typescript\nexport class MasteryTrajectoryService {\n  async log(learnerId: string, topicId: string, snapshot: MasterySnapshot): Promise<void> {\n    const ref = db.collection('students').doc(learnerId)\n      .collection('mastery_trajectory').doc(topicId);\n    await ref.set({\n      snapshots: admin.firestore.FieldValue.arrayUnion(snapshot),\n      lastUpdated: admin.firestore.FieldValue.serverTimestamp(),\n    }, { merge: true });\n  }\n\n  async getTrajectory(learnerId: string, topicId: string): Promise<MasterySnapshot[]> {\n    const snap = await db.collection('students').doc(learnerId)\n      .collection('mastery_trajectory').doc(topicId).get();\n    return snap.data()?.snapshots ?? [];\n  }\n}\n```\n\n### Verification Checklist\n- [ ] Forgetting decay applied when loading mastery state after gap > 24h\n- [ ] Spaced repetition schedule generated on student session start\n- [ ] Mastery trajectory logged after every interaction\n- [ ] Correct TypeScript types, zero `any`\n- [ ] `npm run typecheck` passes\n\n---","checklist":["Forgetting decay applied when loading mastery state after gap > 24h","Spaced repetition schedule generated on student session start","Mastery trajectory logged after every interaction","Correct TypeScript types, zero `any`","`npm run typecheck` passes"]},{"id":4,"title":"MISSING CORE SUB-MODULES","content":"**Goal:** Fill all NOT FOUND sub-modules referenced in `tasks.md`.\n\n### 4.1 ANPS Module — `src/core/prediction/anps.ts`\n\n```typescript\nexport class ANPSEngine {\n  async prioritizeConcepts(\n    features: FeatureVector,\n    knowledgeGraph: KnowledgeGraph,\n  ): Promise<ConceptPriority[]> {\n    // 1. Filter: prerequisites mastered (mastery > 0.6)\n    // 2. Score: gap = (1 - mastery), urgency = forgetting_risk, difficulty match\n    // 3. Return top-N sorted by composite score\n  }\n\n  async generateStudyPlan(\n    learnerId: string,\n    features: FeatureVector,\n    reviewSchedule: ReviewSchedule[],\n  ): Promise<StudyPlan> { /* 7-day adaptive plan */ }\n}\n```\n\n### 4.2 Decision Sub-modules\n\n`src/core/decision/rules.ts`:\n```typescript\nexport const DECISION_RULES: DecisionRule[] = [\n  {\n    id: 'immediate-intervention',\n    condition: (f) => f.riskScore > 0.65 && f.masteryTrend < -0.1,\n    action: 'trigger_intervention',\n    priority: 1,\n  },\n  {\n    id: 'spaced-review',\n    condition: (f) => f.daysSinceLastPractice > f.optimalInterval,\n    action: 'schedule_review',\n    priority: 2,\n  },\n];\n```\n\n`src/core/decision/strategies.ts`:\n```typescript\nexport const TEACHING_STRATEGIES: TeachingStrategy[] = [\n  { id: 'socratic',    label: 'Socratic Questioning', bestFor: ['struggling', 'learning'] },\n  { id: 'worked-ex',  label: 'Worked Examples',       bestFor: ['struggling'] },\n  { id: 'retrieval',  label: 'Retrieval Practice',    bestFor: ['learning', 'mastered'] },\n  { id: 'interleave', label: 'Interleaved Practice',  bestFor: ['mastered'] },\n];\n```\n\n`src/core/decision/audit.ts`:\n```typescript\nexport async function auditDecision(decision: DecisionResult, context: AuditContext): Promise<void> {\n  await db.collection('decision_audit').add({\n    ...decision,\n    actorId: context.actorId,\n    timestamp: admin.firestore.FieldValue.serverTimestamp(),\n    correlationId: context.correlationId,\n  });\n}\n```\n\n### 4.3 Generation Prompt Templates — `src/core/generation/prompts/`\n\nThree files, each exporting typed `buildPrompt(context: GenerationContext): string`:\n- `quiz-question.ts`\n- `explanation.ts`\n- `intervention-message.ts`\n\n### 4.4 Intervention Catalog — `src/core/intervention/catalog.ts`\n\n```typescript\nexport const INTERVENTION_CATALOG: InterventionType[] = [\n  { id: 'immediate_support', label: 'Immediate Support Session', urgency: 'critical', channels: ['teacher', 'parent'] },\n  { id: 'spaced_practice',   label: 'Spaced Practice Reminder',  urgency: 'medium',   channels: ['student'] },\n  { id: 'parent_alert',      label: 'Parent Notification',       urgency: 'high',     channels: ['parent'] },\n  { id: 'teacher_flag',      label: 'Teacher Flag',              urgency: 'high',     channels: ['teacher'] },\n  { id: 'monitoring',        label: 'Passive Monitoring',        urgency: 'low',      channels: [] },\n];\n```\n\n### Verification Checklist\n- [ ] All sub-modules compile without TypeScript errors\n- [ ] ANPS returns sorted `ConceptPriority[]`\n- [ ] Decision audit writes to Firestore `decision_audit` collection\n- [ ] `npm run typecheck` passes clean\n\n---","checklist":["All sub-modules compile without TypeScript errors","ANPS returns sorted `ConceptPriority[]`","Decision audit writes to Firestore `decision_audit` collection","`npm run typecheck` passes clean"]},{"id":5,"title":"API ROUTES (ALL 6 ROUTE FILES)","content":"**Goal:** Create all missing Express route files so the server handles requests.\n\n**BEFORE STARTING:** Read `src/api/server.ts` to understand middleware order and patterns.\n\n### Standard Route Template\n\n```typescript\n// src/api/routes/[name].ts\nimport { Router } from 'express';\nimport { verifyToken, requireRole } from '../middleware/auth';\nimport { z } from 'zod';\nimport { logger } from '../../infrastructure/logger';\n\nconst router = Router();\n\nrouter.get('/', verifyToken, requireRole(['teacher', 'admin']), async (req, res) => {\n  try {\n    res.json({ data: result });\n  } catch (err) {\n    logger.error({ err }, '[resource] fetch failed');\n    res.status(500).json({ error: 'Internal server error' });\n  }\n});\n\nexport default router;\n```\n\n### Files to Create\n\n`src/api/routes/events.ts`\n- `POST /api/v1/events/quiz-completion` — Zod-validate, Firestore write, async Brain Map update\n- `POST /api/v1/events/session-start`\n- `POST /api/v1/events/session-end`\n- `GET  /api/v1/events/:learnerId` (teacher/admin only)\n\n`src/api/routes/students.ts`\n- `GET   /api/v1/students/:id`\n- `GET   /api/v1/students/:id/brain-map`\n- `GET   /api/v1/students/:id/review-schedule`\n- `GET   /api/v1/students/:id/trajectory/:topicId`\n- `PATCH /api/v1/students/:id/profile` (student only)\n\n`src/api/routes/teachers.ts`\n- `GET  /api/v1/teachers/classes/:classId/heatmap`\n- `GET  /api/v1/teachers/classes/:classId/students`\n- `GET  /api/v1/teachers/students/:studentId`\n- `POST /api/v1/teachers/interventions`\n\n`src/api/routes/predictions.ts`\n- `POST /api/v1/predictions/:learnerId`\n- `GET  /api/v1/predictions/:learnerId/latest`\n\n`src/api/routes/parents.ts`\n- `GET /api/v1/parents/children`\n- `GET /api/v1/parents/children/:studentId/progress`\n- `GET /api/v1/parents/children/:studentId/interventions`\n- `GET /api/v1/parents/notifications`\n\n`src/api/routes/admin.ts`\n- `GET /api/v1/admin/health`\n- `GET /api/v1/admin/users`\n- `GET /api/v1/admin/audit?page=1&limit=50&actorId=...`\n- `GET /api/v1/admin/ml/status`\n- `GET /api/v1/admin/system/metrics`\n\n### Mount in server.ts\n```typescript\napp.use('/api/v1/events',      eventsRouter);\napp.use('/api/v1/students',    studentsRouter);\napp.use('/api/v1/teachers',    teachersRouter);\napp.use('/api/v1/predictions', predictionsRouter);\napp.use('/api/v1/parents',     parentsRouter);\napp.use('/api/v1/admin',       adminRouter);\n```\n\n### Verification Checklist\n- [ ] All 6 route files compile without errors\n- [ ] `GET /api/v1/admin/health` returns 200 `{ status: 'ok' }`\n- [ ] Unauthenticated requests return 401\n- [ ] Student accessing teacher routes returns 403\n- [ ] All 26 RBAC tests in `tests/security/rbac.test.ts` still pass\n\n---","checklist":["All 6 route files compile without errors","`GET /api/v1/admin/health` returns 200 `{ status: 'ok' }`","Unauthenticated requests return 401","Student accessing teacher routes returns 403","All 26 RBAC tests in `tests/security/rbac.test.ts` still pass"]},{"id":6,"title":"GENKIT INTEGRATION","content":"**Goal:** Replace stubs with real Genkit flows for retrieval, alerts, and quiz generation.\n\n**BEFORE STARTING:**\n1. Check `skills_index.json` for Genkit skills\n2. Verify `GEMINI_API_KEY` in `.env` and `agents/.env.agents`\n3. Read `src/core/retrieval/implementation.ts` — already imports Genkit\n\n### 6.1 Semantic Retrieval Flow\n\n```typescript\n// src/core/retrieval/flows/semantic-search.ts\nconst ai = genkit({ plugins: [googleAI()] });\n\nexport const semanticSearchFlow = ai.defineFlow(\n  { name: 'semanticSearch', inputSchema: SemanticSearchInputSchema, outputSchema: z.array(RetrievedChunkSchema) },\n  async (input) => {\n    // 1. Embed query with text-embedding-004\n    // 2. Query Firestore vector index for top-K chunks\n    // 3. Re-rank by cosine + mastery relevance\n    // 4. Return typed RetrievedChunk[]\n  }\n);\n```\n\n### 6.2 Teacher Alert Flow\n\n```typescript\n// src/core/intervention/flows/teacher-alert.ts\nexport const generateTeacherAlertFlow = ai.defineFlow(\n  { name: 'generateTeacherAlert', inputSchema: AlertContextSchema, outputSchema: AlertMessageSchema },\n  async (ctx) => {\n    const { output } = await ai.generate({\n      model: geminiFlash,\n      prompt: buildAlertPrompt(ctx),\n      output: { schema: AlertMessageSchema },\n    });\n    return output;  // Always Zod-validated before return\n  }\n);\n```\n\n### 6.3 Quiz Generation Flow\n\n```typescript\n// src/core/generation/flows/quiz-gen.ts\nexport const generateQuizQuestionFlow = ai.defineFlow(\n  { name: 'generateQuizQuestion', inputSchema: QuizGenInputSchema, outputSchema: QuizQuestionSchema },\n  async (input) => {\n    // Use quiz-question.ts prompt template\n    // NEVER return unvalidated LLM output\n  }\n);\n```\n\nRegister all flows in `src/core/flows/index.ts`.\n\n### Verification Checklist\n- [ ] `genkit start` launches without errors\n- [ ] Semantic search returns typed `RetrievedChunk[]`\n- [ ] Teacher alert produces valid Zod-validated `AlertMessage`\n- [ ] All flows registered in `src/core/flows/index.ts`\n\n---","checklist":["`genkit start` launches without errors","Semantic search returns typed `RetrievedChunk[]`","Teacher alert produces valid Zod-validated `AlertMessage`","All flows registered in `src/core/flows/index.ts`"]},{"id":7,"title":"TOKEN OPTIMIZATION LAYER","content":"**Goal:** `TokenOptimizer` middleware transparent to all LLM calls.\n\n**Reference:** See `agents/src/` for existing orchestration patterns.\n\n```typescript\n// src/infrastructure/token-optimizer.ts\nexport class TokenOptimizer {\n  async wrapWithCache<T>(\n    cacheKey: string,\n    systemPrompt: string,\n    callFn: (cachedPrompt: CachedContent) => Promise<T>,\n  ): Promise<T> { /* context caching via cache_id */ }\n\n  compressContext(rawContext: Record<string, unknown>): Record<string, unknown> {\n    // Remove null fields, truncate arrays to last-N, drop verbose metadata\n  }\n\n  getThinkingBudget(complexity: 'low' | 'medium' | 'high'): number {\n    return { low: 512, medium: 2048, high: 8192 }[complexity];\n  }\n}\n```\n\nApply in every Phase 6 flow:\n```typescript\nconst optimizer = new TokenOptimizer();\nconst compressed = optimizer.compressContext(rawInput);\nconst budget = optimizer.getThinkingBudget('medium');\n```\n\n### Verification Checklist\n- [ ] Token cost per prediction reduced vs Phase 6 baseline\n- [ ] Cache hits confirmed in logs for repeated system prompt segments\n- [ ] No output quality regression\n\n---","checklist":["Token cost per prediction reduced vs Phase 6 baseline","Cache hits confirmed in logs for repeated system prompt segments","No output quality regression"]},{"id":8,"title":"TEST SUITE EXPANSION","content":"**Goal:** Expand from ~50 to 200+ tests. Vitest for `.ts`, Pytest for `.py`. Exact type matching, no partial mocks.\n\n### Required Test Files\n\n```\ntests/unit/\n  brain-map.test.ts            - updateMasteryFull, computeCIBounds, detectEarlyStruggle\n  forgetting-curve.test.ts     - computeRetention, applyForgettingDecay, updateStability\n  spaced-repetition.test.ts    - computeReviewSchedule edge cases\n  anps.test.ts                 - prioritizeConcepts with dependency graph\n  decision-rules.test.ts       - all DECISION_RULES conditions\n  feature-engineering.test.ts  - FeatureVector shape, no NaN values\n  token-optimizer.test.ts      - compression ratios, budget assignment\n\ntests/integration/\n  api-routes.test.ts             - All 6 routes with supertest (200/201/400/401/403/404)\n  brain-map-integration.test.ts  - event > mastery update > Firestore write\n\ntests/security/\n  rbac.test.ts                   - Extend 26 tests + student>teacher cross-access\n```\n\n### Critical Brain Map Edge Cases\n```typescript\ndescribe('Brain Map - Edge Cases', () => {\n  it('first-time student: priorAlpha=1, priorBeta=1 → mastery ≈ 0.5', () => { });\n  it('null recentScores → trajectorySlope defaults to 0, no throw', () => { });\n  it('ci_width always present in return — never undefined', () => {\n    const result = updateMasteryFull(0.5, true, 0.5, { priorAlpha: 2, priorBeta: 2 });\n    expect(result.uncertainty).toBeDefined();\n    expect(result.uncertainty).toBeGreaterThan(0);\n  });\n  it('struggle detected after 3 consecutive declining mastery scores', () => { });\n});\n```\n\n### Verification Checklist\n- [ ] `npm test` → 200+ tests passing\n- [ ] Brain Map edge cases covered (including ci_width undefined guard)\n- [ ] Security tests confirm no cross-role data leakage\n- [ ] CI/CD pipeline runs tests on push\n\n---","checklist":["`npm test` → 200+ tests passing","Brain Map edge cases covered (including ci_width undefined guard)","Security tests confirm no cross-role data leakage","CI/CD pipeline runs tests on push"]},{"id":9,"title":"FRONTEND SCAFFOLD","content":"**Goal:** React + Vite + TypeScript with design system, routing, auth. UX Engineer mode active.\n\n### Initialize\n```bash\ncd frontend\nnpm create vite@latest . -- --template react-ts\nnpm install firebase @tanstack/react-query react-router-dom zustand axios\nnpm install react-force-graph d3 framer-motion\n```\n\n### Design Tokens — `frontend/src/styles/tokens.css`\n```css\n:root {\n  --color-bg-base:        #0A0C14;\n  --color-bg-surface:     #12151F;\n  --color-bg-elevated:    #1A1E2E;\n  --color-bg-glass:       rgba(255,255,255,0.04);\n  --color-primary:        #6C63FF;\n  --color-primary-glow:   rgba(108,99,255,0.3);\n  --color-accent:         #00D4B4;\n  --color-risk-low:       #00E676;\n  --color-risk-medium:    #FFAB40;\n  --color-risk-high:      #FF5252;\n  --color-risk-critical:  #D500F9;\n  --color-mastery-0:      #FF5252;\n  --color-mastery-50:     #FFAB40;\n  --color-mastery-80:     #00E676;\n  --color-mastery-100:    #00D4B4;\n  --font-display: 'Inter', sans-serif;\n  --font-mono:    'JetBrains Mono', monospace;\n}\n```\n\n### Auth Hook — Real Firebase Auth\n```typescript\nexport function useAuth() {\n  const [user, setUser] = useState<User | null>(null);\n  const [role, setRole] = useState<UserRole | null>(null);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => onAuthStateChanged(auth, async (firebaseUser) => {\n    if (firebaseUser) {\n      const claims = (await firebaseUser.getIdTokenResult()).claims;\n      setUser(firebaseUser);\n      setRole(claims.role as UserRole);\n    } else { setUser(null); setRole(null); }\n    setLoading(false);\n  }), []);\n\n  return { user, role, loading };\n}\n```\n\n### Verification Checklist\n- [ ] `npm run dev` starts without errors\n- [ ] Login > role detection > correct shell redirect (all 4 roles)\n- [ ] Unauthenticated user redirected to `/login`\n- [ ] Student cannot navigate to `/teacher/*`\n- [ ] Dark theme renders correctly\n\n---","checklist":["`npm run dev` starts without errors","Login > role detection > correct shell redirect (all 4 roles)","Unauthenticated user redirected to `/login`","Student cannot navigate to `/teacher/*`","Dark theme renders correctly"]},{"id":10,"title":"STUDENT PAGES","content":"**UX Engineer mode.** Glassmorphic cards, Framer Motion transitions, micro-animations everywhere.\n\n### StudentDashboard (`/student`)\n- Mastery overview card with animated progress ring (`conic-gradient`)\n- Real-time risk badge from `useStudentState(user.uid)` Firestore listener\n- Last 5 sessions with time-ago format\n- Recommended next topic card (from latest prediction)\n- Quick quiz CTA button\n- Empty states: friendly illustration, not blank\n\n### StudentBrainMap (`/student/brain-map`)\n- `react-force-graph-2d` force-directed layout\n- Node color = mastery using `--color-mastery-*` CSS vars\n- Node size = confidence (larger = more certain)\n- Directed edges = prerequisite dependencies\n- Click node → slide-in panel: mastery %, CI bounds, last practiced, \"Practice Now\" link\n- Real-time via `onSnapshot` on student Firestore doc\n- **CRITICAL:** Struggle nodes (`ci_width > 0.3` AND `mastery < 0.4`) → pulsing red glow animation\n\n### StudentQuiz (`/student/quiz/:topicId`)\n- Question + difficulty badge\n- Multiple choice with animated selection feedback\n- On submit: `POST /api/v1/events/quiz-completion`\n- Optimistic UI: show result immediately\n- Result card: mastery delta, confidence change\n- Auto-load next recommended topic\n\n### Verification Checklist\n- [ ] BrainMap renders nodes with correct mastery colors\n- [ ] Struggle node pulsing animation visible\n- [ ] Quiz completion triggers mastery update in BrainMap within 3 seconds\n- [ ] No lag during page transitions\n\n---","checklist":["BrainMap renders nodes with correct mastery colors","Struggle node pulsing animation visible","Quiz completion triggers mastery update in BrainMap within 3 seconds","No lag during page transitions"]},{"id":11,"title":"TEACHER PAGES","content":"### TeacherDashboard (`/teacher`)\n- Summary cards: active students, at-risk count, pending interventions\n- Count-up animation on mount\n- Class list with per-class risk distribution bar\n\n### TeacherHeatmap (`/teacher/classes/:classId/heatmap`)\n- Grid: students (rows) x topics (columns)\n- Cell color from `--color-mastery-*` tokens\n- **Uncertainty overlay:** `ci_width > 0.3` cells get diagonal stripe pattern\n- Hover tooltip: name, mastery %, CI bounds\n- `GET /api/v1/teachers/classes/:classId/heatmap` — auto-refresh every 60s\n\n### TeacherStudentProfile (`/teacher/students/:studentId`)\n- Full mastery breakdown + Brain Map thumbnail\n- 30-day trajectory line chart\n- Intervention history timeline\n- \"Create Intervention\" modal → `POST /api/v1/teachers/interventions`\n  - Type selector from `INTERVENTION_CATALOG`\n  - Message pre-filled by Genkit alert\n\n### Verification Checklist\n- [ ] Heatmap cells use correct mastery colors\n- [ ] Uncertainty stripe visible on low-confidence cells\n- [ ] Intervention creation writes to Firestore and appears in student list\n\n---","checklist":["Heatmap cells use correct mastery colors","Uncertainty stripe visible on low-confidence cells","Intervention creation writes to Firestore and appears in student list"]},{"id":12,"title":"PARENT + ADMIN PAGES","content":"### ParentDashboard (`/parent`)\n- Children cards with Bayesian RANGE display (not exact decimal)\n  - Show \"Strong (72-85%)\" NOT \"78.3%\"\n- Active intervention notifications with urgency badges\n\n### ParentChildDetail (`/parent/children/:studentId`)\n- Read-only — zero edit controls\n- 30-day mastery trend chart (from trajectory subcollection)\n- Subject breakdown by mastery tier\n\n### AdminDashboard (`/admin`)\n- `GET /api/v1/admin/health` → health panels\n- Total users, predictions/hour, error rate\n\n### AdminAuditLog (`/admin/audit`)\n- Paginated table: timestamp, actor, action, resource, correlation ID\n- Server-side filter: actorId, action type, date range\n- CSV export button\n\n### Verification Checklist\n- [ ] Parent sees RANGES not raw mastery decimals\n- [ ] Admin audit log pagination works with 100+ entries\n- [ ] Teacher cannot access admin routes\n\n---","checklist":["Parent sees RANGES not raw mastery decimals","Admin audit log pagination works with 100+ entries","Teacher cannot access admin routes"]},{"id":13,"title":"ML SERVING LAYER","content":"**Goal:** FastAPI service with CI bounds, connected to Node via MLBridgeService.\n\n### `ml/config.yaml`\n```yaml\nmodel:\n  name: \"sankalp-learner-state-v2\"\n  version: \"2.0.0\"\n  type: \"lightgbm\"\n  path: \"./models/sankalp_v2.pkl\"\nserving:\n  cloud_run_service: \"sankalp-ml-service\"\n  min_instances: 1\n  max_instances: 10\n  memory: \"2Gi\"\nfeatures:\n  risk_threshold_medium: 0.4\n  risk_threshold_high: 0.65\n  risk_threshold_critical: 0.85\n```\n\n### `ml/serving/main.py`\n```python\nclass PredictionResponse(BaseModel):\n    learner_id: str\n    next_topic_success_probability: float\n    risk_of_dropout: float\n    confidence_lower: float   # REQUIRED — python.md: always propagate CI bounds\n    confidence_upper: float\n    recommended_intervention: str\n    model_version: str\n\n@app.post(\"/predict\", response_model=PredictionResponse)\nasync def predict(req: PredictionRequest, authorization: str = Header(...)):\n    if authorization != f\"Bearer {os.environ['INTERNAL_SERVICE_TOKEN']}\":\n        raise HTTPException(status_code=401)\n    result = load_model().predict_with_confidence(req.features)\n    return PredictionResponse(learner_id=req.learner_id, **result, model_version=CONFIG[\"model\"][\"version\"])\n```\n\n### Verification Checklist\n- [ ] `GET /health` returns 200 with model name + version\n- [ ] `POST /predict` returns response with `confidence_lower` and `confidence_upper`\n- [ ] Heuristic fallback activates when ML unreachable (test by stopping Python server)\n- [ ] Pydantic catches malformed feature vectors (missing keys → 422)\n\n---","checklist":["`GET /health` returns 200 with model name + version","`POST /predict` returns response with `confidence_lower` and `confidence_upper`","Heuristic fallback activates when ML unreachable (test by stopping Python server)","Pydantic catches malformed feature vectors (missing keys → 422)"]},{"id":14,"title":"EVENT STREAMING (REAL-TIME PUB/SUB)","content":"```\nStudent submit quiz\n  → POST /api/v1/events/quiz-completion\n  → Express: validate + write Firestore + publish to Pub/Sub \"sankalp-interaction-events\"\n  → Cloud Function subscribes → runs Brain Map pipeline\n  → Updated mastery written to Firestore\n  → Frontend onSnapshot picks up instantly\n```\n\n**Implementation:**\n- `src/infrastructure/pubsub.ts` — PubSub client wrapper\n- `functions/process-interaction-event.ts` — Cloud Function handler\n- Idempotency key: `event.id` prevents double-processing\n\n### Verification Checklist\n- [ ] Pub/Sub message published on every quiz completion\n- [ ] Cloud Function processes within 2 seconds of publish\n- [ ] Duplicate events idempotently ignored\n- [ ] Frontend Brain Map updates within 3 seconds end-to-end\n\n---","checklist":["Pub/Sub message published on every quiz completion","Cloud Function processes within 2 seconds of publish","Duplicate events idempotently ignored","Frontend Brain Map updates within 3 seconds end-to-end"]},{"id":15,"title":"END-TO-END: DEFINITION OF DONE","content":"All items must pass before declaring production-ready:\n\n### Backend\n- [ ] `npm run build` → zero TypeScript errors\n- [ ] `npm test` → 200+ tests, all passing\n- [ ] All 6 routes return correct status codes\n- [ ] CORS accepts frontend URL\n- [ ] Unauthenticated requests → 401\n- [ ] Audit log created for all write operations\n\n### Brain Map Engine\n- [ ] Quiz completion → Bayesian update (alpha, beta, ci_width updated in Firestore)\n- [ ] Struggle detection fires on 3+ consecutive declines\n- [ ] Spaced repetition schedule generated on student session start\n- [ ] Forgetting decay applied to topics with gap > 24h\n\n### Frontend\n- [ ] Login → role detection → correct dashboard (all 4 roles)\n- [ ] Brain Map: nodes colored by mastery, struggle nodes pulse red\n- [ ] Quiz completion visible in Brain Map within 3 seconds\n- [ ] Teacher heatmap: correct colors + uncertainty stripes\n- [ ] Parent sees RANGES (not raw %), read-only confirmed\n- [ ] Admin audit log: paginated + searchable\n- [ ] Loading skeletons on all data fetches\n- [ ] Error boundaries catch API failures gracefully\n\n### ML\n- [ ] `GET /ml/health` → 200\n- [ ] `POST /ml/predict` → includes `confidence_lower`, `confidence_upper`\n- [ ] Heuristic fallback activates when ML unreachable\n\n### Integration\n- [ ] Firebase Auth token flow: frontend → backend verified\n- [ ] Event → Pub/Sub → Cloud Function → Firestore → onSnapshot pipeline end-to-end\n- [ ] Cross-role access denied: student cannot reach `/teacher/*`\n- [ ] PII not logged anywhere in backend output\n\n---","checklist":["`npm run build` → zero TypeScript errors","`npm test` → 200+ tests, all passing","All 6 routes return correct status codes","CORS accepts frontend URL","Unauthenticated requests → 401","Audit log created for all write operations","Quiz completion → Bayesian update (alpha, beta, ci_width updated in Firestore)","Struggle detection fires on 3+ consecutive declines","Spaced repetition schedule generated on student session start","Forgetting decay applied to topics with gap > 24h","Login → role detection → correct dashboard (all 4 roles)","Brain Map: nodes colored by mastery, struggle nodes pulse red","Quiz completion visible in Brain Map within 3 seconds","Teacher heatmap: correct colors + uncertainty stripes","Parent sees RANGES (not raw %), read-only confirmed","Admin audit log: paginated + searchable","Loading skeletons on all data fetches","Error boundaries catch API failures gracefully","`GET /ml/health` → 200","`POST /ml/predict` → includes `confidence_lower`, `confidence_upper`","Heuristic fallback activates when ML unreachable","Firebase Auth token flow: frontend → backend verified","Event → Pub/Sub → Cloud Function → Firestore → onSnapshot pipeline end-to-end","Cross-role access denied: student cannot reach `/teacher/*`","PII not logged anywhere in backend output"]},{"id":16,"title":"CLEANUP AND DOCUMENTATION","content":"- Remove all `console.log` → replace with `logger.*` from `src/infrastructure/logger.ts`\n- Resolve all `TODO:`, `FIXME:`, `HACK:` comments or open tracking issues\n- Regenerate `tasks.md` with current completion status\n- Update `README.md` with full local dev startup sequence\n- Ensure `.env.example` covers all variables used across all services\n- Run `npx gitnexus analyze` to refresh the code intelligence index after all changes\n\n---\n\n*End of phase-wise prompt set.*\n*Feed one phase at a time as system context to your agent, alongside relevant source files for that phase.*\n*Always prepend the AGENT IDENTITY section to every phase prompt you send.*","checklist":[]}];
+var AGENT_IDENTITY = "## AGENT IDENTITY (ALWAYS PREPEND TO EVERY PHASE PROMPT)\n\nYou are **\"The Architect\"** and **\"The UX Engineer\"** for SANKALP-AEI — a **learning intelligence system**, not a content app. SANKALP is hyper-focused on **attention retention, active engagement, and Bayesian mastery tracking**.\n\n### Non-Negotiable Operating Rules\n\n**TypeScript / Backend:**\n1. NO `any` types. Strict TypeScript everywhere.\n2. Use `Zod` for all runtime validation, especially near API ingestion.\n3. All logic must adhere strictly to `src/core/` interface contracts.\n4. Never log or leak PII in any log output or response body.\n5. Fix all TypeScript compilation errors before adding new code — run `npm run typecheck` first.\n6. NEVER edit a function, class, or method without first running `gitnexus_impact` on it.\n\n**Brain Map Laws (READ BEFORE TOUCHING `src/core/knowledge/`):**\n1. Every interaction MUST trigger a mastery update. No stale beliefs.\n2. Always represent mastery state as `Beta(alpha, beta)` distributions — NEVER point estimates.\n3. You MUST compute and pass `ci_width` (confidence interval width) on ALL estimates.\n4. GOTCHA: Never update only the mean. You MUST update `alpha` (successes) AND `beta` (failures).\n5. Deterministic `if mastery > 0` logic WITHOUT checking `ci_width` breaks the entire engine.\n\n**Frontend / UX:**\n1. Every UI component must be highly engaging — dark aesthetics, micro-animations, glassmorphism, responsive layouts.\n2. The primary success metric is retaining the student's attention.\n3. Zero delays in loading states — disjointed transitions drop student focus drastically.\n4. Default to direct, interactive paths over walls of text.\n\n**Python / ML:**\n1. Use `pydantic` models for strong data validation at all ML boundaries.\n2. All model predictions MUST propagate confidence bounds (uncertainty quantification).\n3. Follow `ml/` folder paths as defined in the project skeleton.\n\n**Skill Loading:**\n1. Before using any external skill, check `skills_index.json` or `/skill_categorization/` first.\n2. Never inject raw skill files blindly — use index-guided RAG retrieval.\n3. You MUST name the skill and ask for user permission before loading its contents.";
+var REPO_STATE = "## CURRENT REPO STATE (as of audit)\n\n```\nCOMPLETION: ~65-70%\n\nDONE:\n  Core blocks (12/12 implemented), type system, pipeline orchestration,\n  Firestore schema + RBAC rules, synthetic data gen (800 students, 50K+ events),\n  ML training pipeline, deployment configs (Firebase + CI/CD),\n  Brain Map Bayesian engine (brain-map.ts, 175 lines), risk stratification,\n  teacher/parent dashboard backend services\n\nPARTIAL:\n  Brain Map not wired to FeatureEngineeringBlock\n  API server (no routes mounted)\n  ANPS (logic exists, no module)\n  Tests (~50 written, need 200+)\n\nMISSING:\n  API routes (6 files), forgetting-curve.ts, spaced-repetition.ts,\n  feature cache/normalizer, ANPS module, decision rules/strategies,\n  Genkit flows, ML serving, event streaming, frontend (React/Vite)\n```";
+
+/* ═══════════════════════════════════════════
+   MERMAID INIT
+═══════════════════════════════════════════ */
+mermaid.initialize({
+  startOnLoad: false, theme: 'base',
+  themeVariables: {
+    darkMode:true, background:'transparent',
+    primaryColor:'rgba(99,102,241,.18)', primaryTextColor:'#f8fafc',
+    primaryBorderColor:'#6366f1', lineColor:'#64748b',
+    secondaryColor:'rgba(168,85,247,.15)', tertiaryColor:'rgba(0,0,0,.25)',
+    nodeBorder:'#a855f7', clusterBkg:'rgba(255,255,255,.02)',
+    clusterBorder:'rgba(255,255,255,.08)', edgeLabelBackground:'rgba(3,7,18,.8)',
+    fontFamily:'Inter,system-ui,sans-serif', fontSize:'14px'
+  }
+});
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+var LS_KEY = 'sankalp_dashboard_';
+var activeTab = 'dashboard';
+var phases = [];
+var chatHistory = loadLS('chatHistory') || [];
+var docsPage = '';
+
+function loadLS(k) { try { return JSON.parse(localStorage.getItem(LS_KEY + k)); } catch(e) { return null; } }
+function saveLS(k, v) { try { localStorage.setItem(LS_KEY + k, JSON.stringify(v)); } catch(e) {} }
+
+/* ═══════════════════════════════════════════
+   INIT PHASES
+═══════════════════════════════════════════ */
+function initPhases() {
+  var saved = loadLS('phases') || {};
+  phases = PHASES_RAW.map(function(p) {
+    var s = saved[p.id] || {};
+    return {
+      id: p.id, title: p.title, content: p.content,
+      checklist: p.checklist.map(function(c, i) {
+        return { text: c, done: s.checks ? !!s.checks[i] : false };
+      }),
+      status: s.status || 'pending'
+    };
+  });
+}
+
+function savePhases() {
+  var obj = {};
+  phases.forEach(function(p) {
+    obj[p.id] = {
+      status: p.status,
+      checks: p.checklist.map(function(c) { return c.done; })
+    };
+  });
+  saveLS('phases', obj);
+}
+
+function getPhaseProgress(p) {
+  if (!p.checklist.length) return 0;
+  var done = p.checklist.filter(function(c) { return c.done; }).length;
+  return Math.round((done / p.checklist.length) * 100);
+}
+
+function getOverallProgress() {
+  var total = 0, done = 0;
+  phases.forEach(function(p) {
+    total += p.checklist.length;
+    done += p.checklist.filter(function(c) { return c.done; }).length;
+  });
+  return total ? Math.round((done / total) * 100) : 0;
+}
+
+function getStatusClass(s) { return 's-' + s; }
+
+/* ═══════════════════════════════════════════
+   TAB ROUTER
+═══════════════════════════════════════════ */
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  var view = document.getElementById('view-' + tab);
+  if (view) { view.classList.add('active'); view.style.animation = 'none'; view.offsetHeight; view.style.animation = ''; }
+  var btn = document.querySelector('[data-tab="' + tab + '"]');
+  if (btn) btn.classList.add('active');
+
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'phases') renderPhases();
+  if (tab === 'docs' && !docsPage) initDocs();
+  if (tab === 'pipeline') renderPipeline();
+}
+
+document.getElementById('tab-bar').addEventListener('click', function(e) {
+  var btn = e.target.closest('.tab-btn');
+  if (btn) switchTab(btn.dataset.tab);
+});
+
+/* ═══════════════════════════════════════════
+   DASHBOARD RENDERER
+═══════════════════════════════════════════ */
+function renderDashboard() {
+  var pct = getOverallProgress();
+  var doneCount = phases.filter(function(p) { return p.status === 'done'; }).length;
+  var activeCount = phases.filter(function(p) { return p.status === 'active'; }).length;
+  var pendingCount = phases.filter(function(p) { return p.status === 'pending'; }).length;
+  var blockedCount = phases.filter(function(p) { return p.status === 'blocked'; }).length;
+
+  // Stats
+  document.getElementById('dash-stats').innerHTML =
+    statCard(doneCount, 'Complete', 'green') +
+    statCard(activeCount, 'In Progress', 'blue') +
+    statCard(pendingCount, 'Pending', 'amber') +
+    statCard(phases.length, 'Total Phases', 'purple');
+
+  // Progress ring
+  var circ = 2 * Math.PI * 68;
+  var offset = circ - (pct / 100) * circ;
+  document.getElementById('ring-fg').setAttribute('stroke-dashoffset', offset);
+  document.getElementById('ring-pct').textContent = pct + '%';
+
+  // Active phase label
+  var act = phases.find(function(p) { return p.status === 'active'; });
+  document.getElementById('active-phase-label').textContent = act ? 'Phase ' + act.id + ' — ' + act.title.split('—')[0].trim() : '— None —';
+
+  // Phase overview grid
+  var html = '';
+  phases.forEach(function(p) {
+    var prog = getPhaseProgress(p);
+    var cls = p.status === 'done' ? 'done' : p.status === 'active' ? 'active' : 'pending';
+    html += '<div class="dash-phase-card" onclick="switchTab(\'phases\')">' +
+      '<div class="dash-phase-num ' + cls + '">' + p.id + '</div>' +
+      '<div class="dash-phase-info"><div class="dash-phase-title">' + escH(p.title.split('—')[0].trim()) + '</div>' +
+      '<div class="dash-phase-bar"><div class="dash-phase-bar-fill ' + cls + '" style="width:' + prog + '%"></div></div></div></div>';
+  });
+  document.getElementById('dash-phases-grid').innerHTML = html;
+}
+
+function statCard(val, label, color) {
+  return '<div class="stat-card"><div class="stat-value ' + color + '">' + val + '</div><div class="stat-label">' + label + '</div></div>';
+}
+
+/* ═══════════════════════════════════════════
+   PHASE MANAGER RENDERER
+═══════════════════════════════════════════ */
+var expandedPhase = null;
+
+function renderPhases() {
+  var html = '';
+  phases.forEach(function(p) {
+    var prog = getPhaseProgress(p);
+    var isExpanded = expandedPhase === p.id;
+    var sc = getStatusClass(p.status);
+    var statusLabel = p.status === 'done' ? 'Complete' : p.status === 'active' ? 'In Progress' : p.status === 'blocked' ? 'Blocked' : 'Pending';
+
+    html += '<div class="phase-card' + (isExpanded ? ' expanded' : '') + '" data-phase="' + p.id + '">';
+    html += '<div class="phase-card-head" onclick="togglePhase(' + p.id + ')">';
+    html += '<div class="phase-num ' + sc + '">' + p.id + '</div>';
+    html += '<div class="phase-head-info"><div class="phase-title">' + escH(p.title) + '</div>';
+    html += '<span class="phase-status ' + sc + '">' + statusLabel + '</span></div>';
+    html += '<span class="phase-chevron">▼</span></div>';
+    html += '<div class="phase-progress"><div class="phase-bar"><div class="phase-bar-fill" style="width:' + prog + '%;background:var(--phase-' + p.status + ')"></div></div>';
+    html += '<span class="phase-pct">' + prog + '%</span></div>';
+
+    if (isExpanded) {
+      html += '<div class="phase-body">';
+      html += '<ul class="phase-checklist">';
+      p.checklist.forEach(function(c, i) {
+        html += '<li class="' + (c.done ? 'checked' : '') + '" onclick="toggleCheck(' + p.id + ',' + i + ')">';
+        html += '<span class="phase-check">' + (c.done ? '✓' : '') + '</span>';
+        html += '<span>' + escH(c.text) + '</span></li>';
+      });
+      html += '</ul>';
+      html += '<div class="phase-actions">';
+      html += '<button class="phase-btn phase-btn-copy" onclick="openPromptModal(' + p.id + ')">📋 Copy Full Prompt</button>';
+      if (p.status !== 'active') html += '<button class="phase-btn phase-btn-activate" onclick="activatePhase(' + p.id + ')">▶ Activate</button>';
+      if (p.status !== 'done') html += '<button class="phase-btn phase-btn-activate" onclick="markDone(' + p.id + ')" style="border-color:rgba(52,211,153,.5)">✓ Mark Done</button>';
+      html += '<button class="phase-btn phase-btn-reset" onclick="resetPhase(' + p.id + ')">↺ Reset</button>';
+      html += '</div></div>';
+    }
+    html += '</div>';
+  });
+  document.getElementById('phases-grid').innerHTML = html;
+}
+
+function togglePhase(id) {
+  expandedPhase = expandedPhase === id ? null : id;
+  renderPhases();
+}
+
+function toggleCheck(phaseId, checkIdx) {
+  var p = phases.find(function(x) { return x.id === phaseId; });
+  if (p) {
+    p.checklist[checkIdx].done = !p.checklist[checkIdx].done;
+    savePhases(); renderPhases(); renderDashboard();
+  }
+}
+
+function activatePhase(id) {
+  phases.forEach(function(p) { if (p.status === 'active') p.status = 'pending'; });
+  var p = phases.find(function(x) { return x.id === id; });
+  if (p) p.status = 'active';
+  savePhases(); renderPhases(); renderDashboard();
+}
+
+function markDone(id) {
+  var p = phases.find(function(x) { return x.id === id; });
+  if (p) {
+    p.status = 'done';
+    p.checklist.forEach(function(c) { c.done = true; });
+  }
+  savePhases(); renderPhases(); renderDashboard();
+}
+
+function resetPhase(id) {
+  var p = phases.find(function(x) { return x.id === id; });
+  if (p) {
+    p.status = 'pending';
+    p.checklist.forEach(function(c) { c.done = false; });
+  }
+  savePhases(); renderPhases(); renderDashboard();
+}
+
+/* ═══════════════════════════════════════════
+   PROMPT MODAL (Full Phase Prompt)
+═══════════════════════════════════════════ */
+var currentModalPrompt = '';
+
+function openPromptModal(id) {
+  var p = phases.find(function(x) { return x.id === id; });
+  if (!p) return;
+
+  // Build the complete prompt: Agent Identity + Repo State + Phase Content
+  var fullPrompt = '# SANKALP AEI — PHASE ' + p.id + ' PROMPT\n\n---\n\n';
+  fullPrompt += AGENT_IDENTITY + '\n\n---\n\n';
+  if (REPO_STATE) fullPrompt += REPO_STATE + '\n\n---\n\n';
+  fullPrompt += '## PHASE ' + p.id + ' — ' + p.title + '\n\n' + p.content;
+
+  currentModalPrompt = fullPrompt;
+  document.getElementById('modal-title').textContent = 'Phase ' + p.id + ' — Complete Agent Prompt';
+  document.getElementById('modal-prompt-text').textContent = fullPrompt;
+  document.getElementById('prompt-modal').classList.add('open');
+  document.getElementById('modal-copy-btn').classList.remove('copied');
+  document.getElementById('modal-copy-btn').innerHTML = '📋 Copy Full Prompt';
+}
+
+function closeModal() {
+  document.getElementById('prompt-modal').classList.remove('open');
+}
+
+function copyModalPrompt() {
+  navigator.clipboard.writeText(currentModalPrompt).then(function() {
+    var btn = document.getElementById('modal-copy-btn');
+    btn.classList.add('copied');
+    btn.innerHTML = '✓ Copied!';
+    showToast('Full phase prompt copied to clipboard!');
+    setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = '📋 Copy Full Prompt'; }, 2500);
+  });
+}
+
+// Close modal on overlay click
+document.getElementById('prompt-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+/* ═══════════════════════════════════════════
+   CHAT BUILDER
+═══════════════════════════════════════════ */
+var PRESETS = [
+  { label: '🔧 Fix TypeScript errors', cmd: 'Fix all TypeScript compilation errors and make npm run typecheck pass with zero errors' },
+  { label: '🧠 Wire Brain Map', cmd: 'Integrate BrainMapService with real API calls in the frontend knowledge graph module' },
+  { label: '🛣️ Build API routes', cmd: 'Implement all REST endpoints for student, curriculum, and session resources' },
+  { label: '🧪 Run test suite', cmd: 'Create comprehensive unit and integration tests for all core services' },
+  { label: '🎨 Build frontend scaffold', cmd: 'Set up the React frontend with routing, state management, and design system' },
+  { label: '🤖 ML pipeline', cmd: 'Build the Python ML pipeline for mastery prediction with ensemble models' },
+  { label: '📊 Analytics dashboard', cmd: 'Create the analytics and reporting dashboard with visualization components' },
+  { label: '🔐 Auth system', cmd: 'Implement JWT authentication with role-based access control and session management' }
+];
+
+function initChat() {
+  var presetsDiv = document.getElementById('chat-presets');
+  var html = '';
+  PRESETS.forEach(function(p) {
+    html += '<button class="chat-preset" onclick="setPreset(\'' + escH(p.cmd.replace(/'/g, "\\'")) + '\')">' + p.label + '</button>';
+  });
+  presetsDiv.innerHTML = html;
+  renderChatHistory();
+}
+
+function setPreset(cmd) {
+  document.getElementById('chat-input').value = cmd;
+  generateCommand();
+}
+
+function generateCommand() {
+  var input = document.getElementById('chat-input').value.trim();
+  if (!input) return;
+
+  var cmd = 'npx tsx src/index.ts run "' + input.replace(/"/g, '\\"') + '"';
+  if (document.getElementById('opt-dry-run').checked) cmd += ' --dry-run';
+  if (document.getElementById('opt-no-commit').checked) cmd += ' --no-commit';
+  if (document.getElementById('opt-verbose').checked) cmd += ' --log-level verbose';
+
+  // Show command preview
+  document.getElementById('chat-cmd-preview').style.display = 'flex';
+  document.getElementById('chat-cmd-text').textContent = cmd;
+
+  // Add to messages
+  var msgs = document.getElementById('chat-messages');
+  msgs.innerHTML += '<div class="chat-msg user"><div class="chat-bubble">' + escH(input) + '</div></div>';
+  msgs.innerHTML += '<div class="chat-msg system"><div class="chat-bubble">Generated command:<br><code>' + escH(cmd) + '</code><br><br>Copy and run in your terminal from the <code>agents/</code> directory.</div></div>';
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Save to history
+  chatHistory.unshift({ cmd: cmd, task: input, time: new Date().toISOString() });
+  if (chatHistory.length > 20) chatHistory = chatHistory.slice(0, 20);
+  saveLS('chatHistory', chatHistory);
+  renderChatHistory();
+}
+
+function copyCommand() {
+  var cmd = document.getElementById('chat-cmd-text').textContent;
+  navigator.clipboard.writeText(cmd).then(function() { showToast('Command copied!'); });
+}
+
+function renderChatHistory() {
+  var div = document.getElementById('chat-history');
+  if (!chatHistory.length) { div.innerHTML = '<div style="font-size:11px;color:var(--text-dim)">No commands yet</div>'; return; }
+  var html = '';
+  chatHistory.slice(0, 10).forEach(function(h) {
+    html += '<div class="chat-history-item" onclick="setPreset(\'' + escH(h.task.replace(/'/g, "\\'")) + '\')" title="' + escH(h.cmd) + '">' + escH(h.task) + '</div>';
+  });
+  div.innerHTML = html;
+}
+
+document.getElementById('chat-send').addEventListener('click', generateCommand);
+document.getElementById('chat-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') generateCommand(); });
+
+/* ═══════════════════════════════════════════
+   DOCS VIEWER (preserved wiki)
+═══════════════════════════════════════════ */
+function initDocs() {
+  buildDocsNav(TREE);
+  var initial = TREE.length ? TREE[0].slug : '';
+  if (initial) navigateDoc(initial);
+}
+
+function buildDocsNav(nodes) {
+  var html = '';
+  nodes.forEach(function(n) {
+    html += '<a class="docs-nav-item" data-page="' + escH(n.slug) + '" href="#">' +
+      '<span class="docs-nav-icon">' + n.icon + '</span>' +
+      '<span class="docs-nav-label-text">' + escH(n.name) + '</span>' +
+      '<span class="docs-nav-badge">' + escH(n.badge) + '</span></a>';
+  });
+  document.getElementById('docs-nav-list').innerHTML = html;
+
+  document.querySelectorAll('.docs-nav-item').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.preventDefault();
+      navigateDoc(this.dataset.page);
+    });
+  });
+
+  document.getElementById('docs-search').addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    document.querySelectorAll('.docs-nav-item').forEach(function(el) {
+      var name = el.querySelector('.docs-nav-label-text').textContent.toLowerCase();
+      el.style.display = !q || name.includes(q) ? '' : 'none';
+    });
+  });
+}
+
+function navigateDoc(slug) {
+  docsPage = slug;
+  document.querySelectorAll('.docs-nav-item').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.page === slug);
+  });
+  var md = PAGES[slug] || '# Page not found';
+  document.getElementById('docs-content').innerHTML = marked.parse(md);
+
+  // Render mermaid blocks
+  document.querySelectorAll('#docs-content pre code.language-mermaid').forEach(function(codeEl) {
+    var pre = codeEl.parentElement;
+    var div = document.createElement('div');
+    div.className = 'mermaid';
+    div.textContent = codeEl.textContent;
+    pre.replaceWith(div);
+  });
+  try { mermaid.run({ nodes: document.querySelectorAll('#docs-content .mermaid') }); } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════
+   PIPELINE RENDERER
+═══════════════════════════════════════════ */
+var pipelineRendered = false;
+
+function renderPipeline() {
+  if (pipelineRendered) return;
+  pipelineRendered = true;
+
+  // Build mermaid diagram
+  var diagram = 'graph LR\n';
+  diagram += '  P1[Phase 1\\nTS Compilation] --> P2[Phase 2\\nBrain Map]\n';
+  diagram += '  P2 --> P3[Phase 3\\nDB Schema]\n';
+  diagram += '  P3 --> P4[Phase 4\\nCore Services]\n';
+  diagram += '  P4 --> P5[Phase 5\\nAPI Routes]\n';
+  diagram += '  P5 --> P6[Phase 6\\nSession Engine]\n';
+  diagram += '  P6 --> P7[Phase 7\\nToken Optimizer]\n';
+  diagram += '  P7 --> P8[Phase 8\\nTest Suite]\n';
+  diagram += '  P5 --> P9[Phase 9\\nFrontend Init]\n';
+  diagram += '  P9 --> P10[Phase 10\\nKnowledge UI]\n';
+  diagram += '  P10 --> P11[Phase 11\\nSession UI]\n';
+  diagram += '  P11 --> P12[Phase 12\\nDashboard UI]\n';
+  diagram += '  P8 --> P13[Phase 13\\nIntegration]\n';
+  diagram += '  P12 --> P13\n';
+  diagram += '  P13 --> P14[Phase 14\\nML Pipeline]\n';
+  diagram += '  P14 --> P15[Phase 15\\nML Integration]\n';
+  diagram += '  P15 --> P16[Phase 16\\nPolish]\n';
+
+  // Color nodes by status
+  phases.forEach(function(p) {
+    if (p.status === 'done') diagram += '  style P' + p.id + ' fill:rgba(52,211,153,.2),stroke:#34d399\n';
+    else if (p.status === 'active') diagram += '  style P' + p.id + ' fill:rgba(99,102,241,.2),stroke:#818cf8\n';
+    else if (p.status === 'blocked') diagram += '  style P' + p.id + ' fill:rgba(248,113,113,.15),stroke:#f87171\n';
+  });
+
+  document.getElementById('pipeline-mermaid').textContent = diagram;
+  try { mermaid.run({ nodes: [document.getElementById('pipeline-mermaid')] }); } catch(e) {}
+
+  // Verification matrix
+  var tableHtml = '<thead><tr><th>Phase</th><th>Title</th><th>Checks</th><th>Done</th><th>Status</th></tr></thead><tbody>';
+  phases.forEach(function(p) {
+    var done = p.checklist.filter(function(c) { return c.done; }).length;
+    var total = p.checklist.length;
+    var statusDot = p.status === 'done' ? 'v-done' : done > 0 ? 'v-partial' : 'v-missing';
+    var statusText = p.status === 'done' ? 'Complete' : done > 0 ? 'Partial (' + done + '/' + total + ')' : 'Not Started';
+    tableHtml += '<tr><td><strong>' + p.id + '</strong></td><td>' + escH(p.title.split('—')[0].trim()) + '</td>';
+    tableHtml += '<td>' + total + '</td><td>' + done + '</td>';
+    tableHtml += '<td><span class="v-status ' + statusDot + '"></span>' + statusText + '</td></tr>';
+  });
+  tableHtml += '</tbody>';
+  document.getElementById('verification-table').innerHTML = tableHtml;
+}
+
+/* ═══════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════ */
+function escH(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = '✓ ' + msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+/* ═══════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════ */
+initPhases();
+initChat();
+renderDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "name": "Build Frontend Portal Pages",
+  "description": "Create the Student, Teacher, and Parent portal pages for the Next.js frontend with role-based layouts, Brain Map visualization, and dashboard components.",
+  "subtasks": [
+    {
+      "name": "Build Student Portal",
+      "description": "Create frontend/src/app/student/page.tsx with: 3D Brain Map visualization (via brain-map module), mastery probability display (CI ranges), spaced repetition queue, micro-interaction dashboard. Dark glassmorphism aesthetic.",
+      "agent": "frontend",
+      "dependsOn": []
+    },
+    {
+      "name": "Build Student Revision Page",
+      "description": "Create frontend/src/app/student/revision/page.tsx with: concept review cards sorted by forgetting priority, spaced repetition timer, mastery progress rings showing Beta distribution CIs.",
+      "agent": "frontend",
+      "dependsOn": []
+    },
+    {
+      "name": "Build Teacher Dashboard",
+      "description": "Create frontend/src/app/teacher/page.tsx with: class-wide heatmap (uncertainty-aware), risk stratification tier list, student mastery overview, real-time alert feed.",
+      "agent": "frontend",
+      "dependsOn": []
+    },
+    {
+      "name": "Build Parent Portal",
+      "description": "Create frontend/src/app/parent/page.tsx with: privacy-safe mastery ranges (CI-derived), weekly progress snapshot, engagement metrics, empathetic progress narrative.",
+      "agent": "frontend",
+      "dependsOn": []
+    },
+    {
+      "name": "Build shared components",
+      "description": "Create reusable components: MasteryRing (probability ring), ConfidenceBand (CI visualizer), RiskBadge (tier indicator), BrainMapEmbed (3D viewer wrapper).",
+      "agent": "frontend",
+      "dependsOn": []
+    },
+    {
+      "name": "Wire portal routing",
+      "description": "Update frontend/src/app/layout.tsx with role-based navigation, create shared layouts for each portal, ensure correct Next.js routing.",
+      "agent": "integration",
+      "dependsOn": ["Build Student Portal", "Build Teacher Dashboard", "Build Parent Portal"]
+    }
+  ]
+}

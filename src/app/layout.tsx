@@ -1,30 +1,27 @@
 import type { Metadata } from "next";
 import { Manrope, Inter } from "next/font/google";
-import "./globals.css";
-import { QueryProvider } from "@/providers/QueryProvider";
-import { ThemeProvider } from "@/providers/ThemeProvider";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
+import Sidebar from "@/components/layout/Sidebar";
+import Header from "@/components/layout/Header";
+import "@/app/globals.css";
+import { cookies } from "next/headers";
+import { ActorRole } from "@/types/common";
 
-// The Cognitive Architect Design System: Dual-font setup
+// Load fonts as per The Cognitive Architect design system
 const manrope = Manrope({
-  variable: "--font-headline",
   subsets: ["latin"],
-  display: "swap",
   weight: ["400", "600", "700", "800"],
+  variable: "--font-manrope",
 });
 
 const inter = Inter({
-  variable: "--font-body",
   subsets: ["latin"],
-  display: "swap",
   weight: ["400", "500", "600", "700", "900"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "SANKALP AEI — Adaptive Educational Intelligence",
-  description:
-    "A learning intelligence system hyper-focused on attention retention, active engagement, and Bayesian mastery tracking.",
+  title: "SANKALP-AEI | Adaptive Educational Intelligence",
+  description: "Premium digital curator for the mind. Powered by Bayesian knowledge tracing.",
 };
 
 export default function RootLayout({
@@ -32,53 +29,60 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = cookies();
+  const currentRole = (cookieStore.get("userRole")?.value as ActorRole) || "student";
+
   return (
-    <html
-      lang="en"
-      className={`${manrope.variable} ${inter.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className={`${manrope.variable} ${inter.variable}`}>
       <head>
-        {/* Material Symbols Outlined for system icons */}
+        {/* Material Symbols Outlined - Required for SANKALP Iconography */}
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
-        {/* FOUC Prevention — apply dark class before React hydrates */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const stored = JSON.parse(localStorage.getItem('sankalp-ui-storage') || '{}');
-                const theme = stored?.state?.theme || 'dark';
-                if (theme === 'dark') document.documentElement.classList.add('dark');
-                else if (theme === 'system') {
-                  document.documentElement.classList.add('system');
-                  if (window.matchMedia('(prefers-color-scheme: dark)').matches)
-                    document.documentElement.classList.add('dark');
-                }
-              } catch(e) { document.documentElement.classList.add('dark'); }
-            `,
-          }}
-        />
+        {/* Injecting Neumorphic Base Variables to guarantee design system compliance */}
+        <style>{`
+          :root {
+            --nm-bg: #EBEDF0;
+            --nm-shadow-dark: rgba(163, 177, 198, 0.6);
+            --nm-shadow-light: rgba(255, 255, 255, 1);
+          }
+          body {
+            background-color: var(--nm-bg);
+          }
+          .neumorphic-flat {
+            background: var(--nm-bg);
+            box-shadow: 9px 9px 16px var(--nm-shadow-dark), -9px -9px 16px var(--nm-shadow-light);
+          }
+          .neumorphic-inset {
+            background: var(--nm-bg);
+            box-shadow: inset 6px 6px 12px var(--nm-shadow-dark), inset -6px -6px 12px var(--nm-shadow-light);
+          }
+          .neumorphic-pressed {
+            box-shadow: inset 4px 4px 8px var(--nm-shadow-dark), inset -4px -4px 8px var(--nm-shadow-light);
+          }
+          .glass {
+            background: rgba(235, 237, 240, 0.7);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+          }
+        `}</style>
       </head>
-      <body className="min-h-full flex bg-background text-on-surface font-body selection:bg-primary/20 transition-colors duration-300">
-        <QueryProvider>
-          <ThemeProvider>
-            {/* Global Layout Structure */}
-            <Sidebar />
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-              <Header />
-              <main className="flex-1 overflow-y-auto p-6 md:p-10">
-                {/* 
-                  Content area uses a breathing layout. 
-                  No rigid borders, relying on spacing and neumorphic depth.
-                */}
-                {children}
-              </main>
+      <body className="font-body text-on-surface antialiased min-h-screen flex overflow-hidden selection:bg-primary-container selection:text-primary-dim">
+        {/* Global App Shell */}
+        <Sidebar role={currentRole} />
+        
+        <div className="flex-1 flex flex-col h-screen relative w-full">
+          <Header role={currentRole} />
+          
+          {/* Main Content Area - Expansive white space, breathing layout */}
+          <main className="flex-1 overflow-y-auto p-6 md:p-10 z-0">
+            <div className="max-w-7xl mx-auto w-full h-full">
+              {children}
             </div>
-          </ThemeProvider>
-        </QueryProvider>
+          </main>
+        </div>
       </body>
     </html>
   );

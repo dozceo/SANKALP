@@ -1,0 +1,36 @@
+{
+  "name": "Add Comprehensive Test Coverage",
+  "description": "Generate 200+ unit and integration tests covering all core blocks, services, API routes, and Bayesian math invariants.",
+  "subtasks": [
+    {
+      "name": "Core Block Unit Tests",
+      "description": "Generate tests/unit/core/ tests for all 12 blocks: identity, interaction, memory, knowledge, features, prediction, decision, generation, retrieval, intervention, feedback, upgrade. Each must test the main implementation.ts with edge cases.",
+      "agent": "testing",
+      "dependsOn": []
+    },
+    {
+      "name": "Brain Map Math Tests",
+      "description": "Generate tests/unit/core/brain-map.test.ts with: Beta posterior update invariants, CI computation accuracy, trajectory slope calculation, mastery classification boundaries, forgetting curve decay.",
+      "agent": "testing",
+      "dependsOn": []
+    },
+    {
+      "name": "Service Layer Tests",
+      "description": "Generate tests/unit/services/ tests for: heatmap, risk-stratification, progress-snapshot, parent-analytics, notifications, brain-map-builder.",
+      "agent": "testing",
+      "dependsOn": []
+    },
+    {
+      "name": "API Integration Tests",
+      "description": "Generate tests/integration/api-routes.test.ts using supertest: test all REST endpoints with auth, RBAC, validation, error handling.",
+      "agent": "testing",
+      "dependsOn": []
+    },
+    {
+      "name": "Pipeline End-to-End Tests",
+      "description": "Extend tests/integration/pipeline-full.test.ts with: full pipeline execution with mock data, mastery update verification, decision output validation.",
+      "agent": "testing",
+      "dependsOn": []
+    }
+  ]
+}

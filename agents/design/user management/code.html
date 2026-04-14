@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cognitive Architect | User Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#7C3AED",
+                "surface": "#EBEEF5",
+                "on-surface": "#2D3436",
+                "on-surface-variant": "#636E72",
+                "outline": "#B2BEC3",
+                "outline-variant": "#DFE6E9",
+              },
+              fontFamily: {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "display": ["DM Sans"]
+              },
+              borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<style>
+        body { 
+            font-family: 'DM Sans', sans-serif; 
+            background-color: #EBEEF5; 
+            color: #2D3436;
+        }
+        
+        /* Refined Neumorphic Styles */
+        .neumorphic-card {
+            background: #EBEEF5;
+            box-shadow: 12px 12px 24px #d1d5db, -12px -12px 24px #ffffff;
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .neumorphic-recessed {
+            background: #EBEEF5;
+            box-shadow: inset 4px 4px 8px #d1d5db, inset -4px -4px 8px #ffffff;
+            border-radius: 1.5rem;
+        }
+        
+        .neumorphic-button {
+            background: #EBEEF5;
+            box-shadow: 6px 6px 12px #d1d5db, -6px -6px 12px #ffffff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .neumorphic-button:hover {
+            box-shadow: 4px 4px 8px #d1d5db, -4px -4px 8px #ffffff;
+            transform: translateY(-1px);
+        }
+        
+        .neumorphic-button:active {
+            box-shadow: inset 4px 4px 8px #d1d5db, inset -4px -4px 8px #ffffff;
+            transform: translateY(1px);
+        }
+        
+        .neumorphic-nav-active {
+            background: linear-gradient(145deg, #8b5cf6, #6d28d9);
+            box-shadow: 6px 6px 12px rgba(124, 58, 237, 0.25), -4px -4px 10px #ffffff;
+            color: white;
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Smooth scrollbar for tables */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b2bec3; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-[#EBEEF5]/80 backdrop-blur-md shadow-sm border-b border-white/20">
+<div class="text-xl font-extrabold tracking-tighter text-primary font-headline">Cognitive Architect</div>
+<nav class="hidden md:flex items-center gap-8 font-headline font-bold tracking-tight text-sm">
+<a class="text-on-surface hover:text-primary transition-all" href="#">Nodes</a>
+<a class="text-on-surface hover:text-primary transition-all" href="#">Mastery</a>
+<a class="text-on-surface hover:text-primary transition-all" href="#">Insights</a>
+<a class="text-on-surface hover:text-primary transition-all" href="#">Oracle</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-white/40 transition-all active:scale-95">
+<span class="material-symbols-outlined text-primary">account_circle</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-8 max-w-[1600px] mx-auto grid grid-cols-12 gap-10">
+<!-- Main Workspace -->
+<section class="col-span-12 lg:col-span-9 space-y-10">
+<!-- Header & Sub-Navigation -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h1 class="text-4xl font-extrabold font-display tracking-tight mb-2">User Management</h1>
+<p class="text-on-surface-variant font-medium">Manage your organization's architects and access levels.</p>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-wrap gap-4">
+<button class="px-6 py-3 neumorphic-button rounded-full text-[11px] font-bold uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">upload_file</span> Import CSV
+                </button>
+<button class="px-6 py-3 neumorphic-button rounded-full text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-sm">shield</span> Assign Roles
+                </button>
+<button class="px-6 py-3 neumorphic-button rounded-full text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 text-red-500">
+<span class="material-symbols-outlined text-sm">person_off</span> Deactivate
+                </button>
+</div>
+</div>
+<!-- Uniform Circular Sub-Nav -->
+<div class="flex justify-center items-center gap-10 py-6">
+<div class="flex flex-col items-center gap-3">
+<div class="w-16 h-16 neumorphic-nav-active rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95">
+<span class="material-symbols-outlined text-2xl">group</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Users</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-16 h-16 neumorphic-button rounded-full flex items-center justify-center cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-2xl">shield_person</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Roles</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-16 h-16 neumorphic-button rounded-full flex items-center justify-center cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-2xl">assignment</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Audit</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-16 h-16 neumorphic-button rounded-full flex items-center justify-center cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-2xl">settings</span>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Settings</span>
+</div>
+</div>
+<!-- Directory Search & Filters -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-2 neumorphic-recessed flex items-center px-6 py-1">
+<span class="material-symbols-outlined text-on-surface-variant mr-3">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full py-4 text-sm font-body placeholder:text-outline" placeholder="Search by name, email, or school..." type="text"/>
+</div>
+<div class="flex gap-4">
+<div class="flex-1 neumorphic-recessed rounded-full flex items-center justify-between px-6 py-1 cursor-pointer group">
+<span class="text-xs font-bold text-on-surface-variant/80">Role</span>
+<span class="material-symbols-outlined text-sm text-outline group-hover:text-primary transition-colors">expand_more</span>
+</div>
+<div class="flex-1 neumorphic-recessed rounded-full flex items-center justify-between px-6 py-1 cursor-pointer group">
+<span class="text-xs font-bold text-on-surface-variant/80">Status</span>
+<span class="material-symbols-outlined text-sm text-outline group-hover:text-primary transition-colors">expand_more</span>
+</div>
+</div>
+</div>
+<!-- User Directory Table -->
+<div class="neumorphic-card overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="text-on-surface-variant text-[10px] uppercase tracking-widest border-b border-outline-variant/30">
+<th class="px-8 py-6 font-extrabold">Name &amp; Identity</th>
+<th class="px-8 py-6 font-extrabold">Role</th>
+<th class="px-8 py-6 font-extrabold">School</th>
+<th class="px-8 py-6 font-extrabold">Status</th>
+<th class="px-8 py-6 font-extrabold">Last Login</th>
+<th class="px-8 py-6 font-extrabold"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<!-- Row 1 -->
+<tr class="hover:bg-white/40 transition-colors group">
+<td class="px-8 py-5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full neumorphic-button p-0.5 border-none shadow-sm">
+<img class="w-full h-full rounded-full object-cover" data-alt="profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUEGYYKNg9MJDyeJlwTTgcANxyywAEyYQChShJZ6nuo08VLtszLbL3DF0VOD14nqpaD7NrMxqFjkbPWU3Uowdafxz7Z2G0cJP5A35dnhH_M98triPceTwhYvAG6cjHuyQZWfSLwy_6PjtfMuHmsmiO48VLqjTNmjab8hjLaWrne9oAsvKXCLdTBOjYQr2MjnM4RGSjNpjoABc5WqiqbmSfJ-693RmkdMZ_zAOXw2_moAXkp3Fvk8Uw4bG86zRgM7DrljFR8sMN01c0"/>
+</div>
+<div>
+<p class="font-bold text-sm">Alex Loh</p>
+<p class="text-xs text-on-surface-variant">alex.loh@cognitive.edu</p>
+</div>
+</div>
+</td>
+<td class="px-8 py-5">
+<span class="px-3 py-1 bg-primary/10 text-primary text-[10px] font-extrabold rounded-full uppercase tracking-tighter">Lead Oracle</span>
+</td>
+<td class="px-8 py-5 text-sm font-medium">Vanguard Academy</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
+<span class="text-xs font-bold">Active</span>
+</div>
+</td>
+<td class="px-8 py-5 text-xs text-on-surface-variant">14 mins ago</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 neumorphic-button rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-white/40 transition-colors group">
+<td class="px-8 py-5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full neumorphic-button p-0.5 border-none shadow-sm">
+<img class="w-full h-full rounded-full object-cover" data-alt="profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDH1qaK2fZK7OwD398_jr_WvWcgGm8zRc6TcWDOWdMy8dW-8maTFC8Z0zEtzh48d7XG20VoLM6biamOK06wdDf67zB02eVIJVilDfO7GQxeSDCSWfGVbzlbgOKtBI6kvkAtJ7uYfq8t7jIs7lJcrTkhPk7HMeAafSSsZ583SD2NnlCggmzj27DwUb5q0zliyRuDRjzAk7-S5IvAnuv4AZKmBrPfEYCwJXLd3mS_YvTCNtPx-32yybArY8LM1_k3jw8dcdPpfCqTkqV3"/>
+</div>
+<div>
+<p class="font-bold text-sm">Maya Rossi</p>
+<p class="text-xs text-on-surface-variant">maya.r@architect.com</p>
+</div>
+</div>
+</td>
+<td class="px-8 py-5">
+<span class="px-3 py-1 bg-outline-variant/40 text-on-surface-variant text-[10px] font-extrabold rounded-full uppercase tracking-tighter">Contributor</span>
+</td>
+<td class="px-8 py-5 text-sm font-medium">Design Institute</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span class="text-xs font-bold text-on-surface-variant">Inactive</span>
+</div>
+</td>
+<td class="px-8 py-5 text-xs text-on-surface-variant">3 days ago</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 neumorphic-button rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-white/40 transition-colors group">
+<td class="px-8 py-5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full neumorphic-button p-0.5 border-none shadow-sm">
+<img class="w-full h-full rounded-full object-cover" data-alt="profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUdgcQ1L6_YwHPD-xRNF4SrPH2sonywYnRrsH9nrrCoHSARdQXK4rf-7lRlnjqHp9SrnO42qtKp_36N_HL2Jywx6ZUoXHgDwqS_oUUGr-YnQsiG_V-MKDpa-dvFYO7hXwZjBJmGuKrDdqzRpEv74uicR1ZntKT1TrGRYMPagmiTUzT2oeJ9hjX9DdUb-13UAIei-TTvlKiP6nac5-iqZz0jLXi8-wEP425axK1lF3Iv_A4cqo9TzYxHp9ULAGTXvSNm8wvBWZMEowH"/>
+</div>
+<div>
+<p class="font-bold text-sm">Jordan Dax</p>
+<p class="text-xs text-on-surface-variant">jdax@neuro.link</p>
+</div>
+</div>
+</td>
+<td class="px-8 py-5">
+<span class="px-3 py-1 bg-primary/10 text-primary text-[10px] font-extrabold rounded-full uppercase tracking-tighter">Node Admin</span>
+</td>
+<td class="px-8 py-5 text-sm font-medium">Neuro Science Lab</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
+<span class="text-xs font-bold">Active</span>
+</div>
+</td>
+<td class="px-8 py-5 text-xs text-on-surface-variant">Just now</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 neumorphic-button rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Bottom Section: RBAC & Audit Log -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+<!-- Role Management (RBAC) -->
+<div class="neumorphic-card p-8">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-xl font-extrabold font-display">Role Definitions</h3>
+<button class="w-10 h-10 neumorphic-button rounded-full flex items-center justify-center text-primary transition-all">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<div class="space-y-5">
+<div class="flex items-center justify-between p-5 neumorphic-recessed border border-white/30 group cursor-pointer transition-all">
+<div>
+<p class="font-bold text-sm group-hover:text-primary transition-colors">Lead Architect</p>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">Full system control, billing access</p>
+</div>
+<span class="material-symbols-outlined text-outline text-sm group-hover:translate-x-1 transition-transform">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-5 neumorphic-recessed border border-white/30 group cursor-pointer transition-all">
+<div>
+<p class="font-bold text-sm group-hover:text-primary transition-colors">Reviewer</p>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">Read-only access to all Nodes</p>
+</div>
+<span class="material-symbols-outlined text-outline text-sm group-hover:translate-x-1 transition-transform">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-5 neumorphic-recessed border border-white/30 group cursor-pointer transition-all">
+<div>
+<p class="font-bold text-sm group-hover:text-primary transition-colors">Security Auditor</p>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">Access to Audit Logs &amp; Security Hub</p>
+</div>
+<span class="material-symbols-outlined text-outline text-sm group-hover:translate-x-1 transition-transform">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Audit Log Summary -->
+<div class="neumorphic-card p-8">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-xl font-extrabold font-display">Security Feed</h3>
+<span class="text-xs font-bold text-primary cursor-pointer hover:underline underline-offset-4">View All</span>
+</div>
+<div class="relative space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-outline-variant/30">
+<div class="relative pl-12">
+<div class="absolute left-0 top-0.5 w-6 h-6 rounded-full neumorphic-button flex items-center justify-center bg-surface z-10 border-none shadow-md">
+<span class="material-symbols-outlined text-[12px] text-primary">key</span>
+</div>
+<p class="text-sm font-bold">Password Reset</p>
+<p class="text-xs text-on-surface-variant">Admin triggered reset for user <span class="text-primary font-semibold">@alex_l</span></p>
+<p class="text-[10px] mt-1.5 text-outline font-bold">12:45 PM Today</p>
+</div>
+<div class="relative pl-12">
+<div class="absolute left-0 top-0.5 w-6 h-6 rounded-full neumorphic-button flex items-center justify-center bg-surface z-10 border-none shadow-md">
+<span class="material-symbols-outlined text-[12px] text-emerald-500">person_add</span>
+</div>
+<p class="text-sm font-bold">New Role Created</p>
+<p class="text-xs text-on-surface-variant">'Junior Analyst' role was defined</p>
+<p class="text-[10px] mt-1.5 text-outline font-bold">09:12 AM Today</p>
+</div>
+<div class="relative pl-12">
+<div class="absolute left-0 top-0.5 w-6 h-6 rounded-full neumorphic-button flex items-center justify-center bg-surface z-10 border-none shadow-md">
+<span class="material-symbols-outlined text-[12px] text-red-500">warning</span>
+</div>
+<p class="text-sm font-bold">Failed Login Attempt</p>
+<p class="text-xs text-on-surface-variant">Multiple attempts from IP 192.168.1.1</p>
+<p class="text-[10px] mt-1.5 text-outline font-bold">Yesterday, 11:30 PM</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Sidebar Detail Panel -->
+<aside class="hidden lg:block col-span-3 order-last">
+<div class="neumorphic-card p-8 sticky top-24">
+<div class="flex flex-col items-center text-center mb-8">
+<div class="w-28 h-28 rounded-full neumorphic-button p-1.5 mb-6 shadow-xl border-none">
+<img class="w-full h-full rounded-full object-cover" data-alt="headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA52FcnlDV6u-mRFWUy4FFgQ8Lr_8ZmBN7nP8PuqwDYC4gTWh42HZ8rww9Xxuss1BTVChtSKYO_a3mU2ocR9cP3SoCwhZKHbDkicyGWtRpvtS8tCZiyh1E7k1kF1UfXTquVmDpr6IqjVDb91OaylPwG9WvpGU2MVO2jYAxYgKnr-HTl5zQUe_cmcq3RBthxWDCnw4surN2vVBm__m73mUhdJDPZrGRlMZTbajlH-wrSEDqljpqVgML0ZDoLsSE0PSm8zo4DYd5kU1z2"/>
+</div>
+<h3 class="text-2xl font-bold font-display tracking-tight">Sarah Jenkins</h3>
+<p class="text-primary text-sm font-bold mt-1">Senior Architect</p>
+</div>
+<div class="space-y-8">
+<div class="neumorphic-recessed p-5 border border-white/20">
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-extrabold mb-3">Current Role</p>
+<div class="flex items-center justify-between">
+<span class="font-bold text-on-surface">Administrator</span>
+<span class="material-symbols-outlined text-primary text-lg">verified_user</span>
+</div>
+</div>
+<div>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-extrabold mb-5 px-1">Recent Activity</p>
+<ul class="space-y-6">
+<li class="flex gap-4 items-start group">
+<div class="w-2 h-2 rounded-full bg-primary mt-1.5 shadow-[0_0_6px_rgba(124,58,237,0.4)] group-hover:scale-125 transition-transform"></div>
+<div>
+<p class="text-sm font-bold group-hover:text-primary transition-colors">Updated Node 'Neural-X'</p>
+<p class="text-[11px] text-outline font-medium mt-0.5">2 hours ago</p>
+</div>
+</li>
+<li class="flex gap-4 items-start group">
+<div class="w-2 h-2 rounded-full bg-outline mt-1.5 group-hover:scale-125 transition-transform"></div>
+<div>
+<p class="text-sm font-bold group-hover:text-primary transition-colors">Logged into Mastery Hub</p>
+<p class="text-[11px] text-outline font-medium mt-0.5">Yesterday, 4:12 PM</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="pt-6">
+<button class="w-full py-4 neumorphic-button rounded-full font-bold text-sm text-primary flex items-center justify-center gap-2 group">
+<span class="material-symbols-outlined text-lg transition-transform group-hover:rotate-12">edit</span>
+                        Edit Permissions
+                    </button>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Background Decorative Elements -->
+<div class="fixed -top-48 -left-48 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="fixed -bottom-48 -right-48 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+</body></html>

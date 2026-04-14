@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SANKALP AEI - Teacher Analytics (Neumorphic)</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#7C3AED",
+              "background": "#EBEDF0",
+              "surface": "#EBEDF0",
+              "on-background": "#2c2f31",
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1.5rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #EBEDF0; 
+            color: #4A4A4A;
+        }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        
+        /* Neumorphic Extruded (Outset) */
+        .neu-flat {
+            background: #EBEDF0;
+            box-shadow: 8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff;
+        }
+        
+        /* Neumorphic Recessed (Inset) */
+        .neu-inset {
+            background: #EBEDF0;
+            box-shadow: inset 6px 6px 12px #d1d9e6, inset -6px -6px 12px #ffffff;
+        }
+
+        /* Neumorphic Card (Softer, larger shadow) */
+        .neu-card {
+            background: #EBEDF0;
+            box-shadow: 12px 12px 24px #d1d9e6, -12px -12px 24px #ffffff;
+        }
+
+        /* Neumorphic Button */
+        .neu-btn {
+            background: #EBEDF0;
+            box-shadow: 4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff;
+            transition: all 0.2s ease;
+        }
+        .neu-btn:active {
+            box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
+            transform: scale(0.98);
+        }
+
+        /* Accent Neumorphic (Primary color based) */
+        .neu-accent {
+            background: #7C3AED;
+            box-shadow: 6px 6px 12px #c1b1f0, -6px -6px 12px #ffffff;
+            color: white;
+        }
+        .neu-accent:active {
+            box-shadow: inset 4px 4px 8px #5b28b3;
+        }
+
+        .neu-indicator-green {
+            box-shadow: inset 2px 2px 5px #b8e1d4, inset -2px -2px 5px #ffffff;
+            background: #e6f7f1;
+        }
+        .neu-indicator-red {
+            box-shadow: inset 2px 2px 5px #f7cfd8, inset -2px -2px 5px #ffffff;
+            background: #fff0f3;
+        }
+    </style>
+</head>
+<body class="selection:bg-primary selection:text-white">
+<!-- TopNavBar -->
+<nav class="sticky top-0 z-50 bg-[#EBEDF0]/90 backdrop-blur-xl border-b border-white/20">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
+<div class="text-xl font-extrabold tracking-tighter text-slate-800">SANKALP AEI</div>
+<div class="hidden md:flex items-center space-x-10">
+<a class="text-slate-500 hover:text-primary transition-colors font-semibold" href="#">Nodes</a>
+<a class="text-slate-500 hover:text-primary transition-colors font-semibold" href="#">Mastery</a>
+<a class="text-primary font-bold relative pb-1" href="#">
+                Insights
+                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-full"></span>
+</a>
+<a class="text-slate-500 hover:text-primary transition-colors font-semibold" href="#">Oracle</a>
+</div>
+<div class="flex items-center space-x-6">
+<div class="hidden lg:flex items-center neu-inset px-5 py-2.5 rounded-full">
+<span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 ml-2 placeholder-slate-400" placeholder="Search insights..." type="text"/>
+</div>
+<div class="flex items-center space-x-4">
+<button class="neu-btn p-2.5 rounded-full text-slate-600">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-white shadow-sm neu-flat">
+<img alt="Teacher Profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKjVdKqpYK1qRreR0CT1oVMLui4QCWQWnSsTDpdHQfPdu1WB7rH_dbOTDeTu29plVPAtcy9_Cc9wmB13pQQCPnDNjXa08k9t5_AXKOO_s7xYDeQmvPueLmGdgzl-PTxiS3XLREswGTIbvAmb1ZjrXzHFmknV0JeBz-D1FzZo09lVM2GagmCXnrUgMvRqI8RisuB8-ptR0WRA0iCAtSbFob2L9b0WbBE0PakHRvx2Avop7N7_-rMCzhCX-gy-X6HeTaLLXvawlnYG6j"/>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<!-- Sub-Navigation -->
+<div class="py-6 mb-4">
+<div class="flex justify-center items-center space-x-16 max-w-screen-xl mx-auto">
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="neu-flat h-14 w-14 rounded-full flex items-center justify-center text-primary mb-3">
+<span class="material-symbols-outlined">calendar_view_week</span>
+</div>
+<span class="text-[10px] tracking-widest font-bold uppercase text-primary">Weekly Report</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="neu-flat h-14 w-14 rounded-full flex items-center justify-center text-slate-400 mb-3 opacity-70 group-hover:opacity-100">
+<span class="material-symbols-outlined">query_stats</span>
+</div>
+<span class="text-[10px] tracking-widest font-bold uppercase text-slate-500">Concept Analysis</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="neu-flat h-14 w-14 rounded-full flex items-center justify-center text-slate-400 mb-3 opacity-70 group-hover:opacity-100">
+<span class="material-symbols-outlined">group</span>
+</div>
+<span class="text-[10px] tracking-widest font-bold uppercase text-slate-500">Student Reports</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="neu-flat h-14 w-14 rounded-full flex items-center justify-center text-slate-400 mb-3 opacity-70 group-hover:opacity-100">
+<span class="material-symbols-outlined">verified</span>
+</div>
+<span class="text-[10px] tracking-widest font-bold uppercase text-slate-500">Intervention</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="neu-flat h-14 w-14 rounded-full flex items-center justify-center text-slate-400 mb-3 opacity-70 group-hover:opacity-100">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<span class="text-[10px] tracking-widest font-bold uppercase text-slate-500">Custom Report</span>
+</div>
+</div>
+</div>
+<main class="max-w-screen-2xl mx-auto px-8 pb-20 space-y-12">
+<!-- Header Section -->
+<header class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+<div>
+<label class="text-[11px] tracking-[0.2em] font-black uppercase text-primary mb-2 block">Grade 10 AP Calculus</label>
+<h1 class="text-4xl font-extrabold tracking-tight text-slate-800">Weekly Performance Insights</h1>
+<p class="text-slate-500 mt-2 font-medium">Academic Period: Oct 16 — Oct 22, 2023</p>
+</div>
+<button class="neu-accent px-10 py-4 rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform active:scale-95">
+<span class="material-symbols-outlined">bolt</span>
+            Launch Oracle AI
+        </button>
+</header>
+<!-- Main Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+<!-- Executive Summary Card -->
+<div class="lg:col-span-4 neu-card p-10 rounded-[2.5rem] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-10">
+<h3 class="text-xl font-extrabold text-slate-800">Executive Summary</h3>
+<div class="neu-inset h-12 w-12 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">summarize</span>
+</div>
+</div>
+<div class="flex items-baseline gap-4 mb-6">
+<span class="text-7xl font-black text-slate-800 tracking-tighter">68%</span>
+<div class="flex items-center text-emerald-600 font-bold text-sm neu-inset px-4 py-1.5 rounded-full">
+<span class="material-symbols-outlined text-sm mr-1">trending_up</span>
+                        +3%
+                    </div>
+</div>
+<p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-10">Class Health Index</p>
+<ul class="space-y-6">
+<li class="flex gap-4 items-start">
+<div class="neu-inset h-6 w-6 rounded-full flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-emerald-500 text-[14px] font-bold">check</span>
+</div>
+<span class="text-sm text-slate-600 font-medium leading-relaxed">85% of students completed all assigned Calculus nodes this week.</span>
+</li>
+<li class="flex gap-4 items-start">
+<div class="neu-inset h-6 w-6 rounded-full flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-emerald-500 text-[14px] font-bold">check</span>
+</div>
+<span class="text-sm text-slate-600 font-medium leading-relaxed">Highest engagement spike during 'Chain Rule' interactive lab.</span>
+</li>
+<li class="flex gap-4 items-start">
+<div class="neu-inset h-6 w-6 rounded-full flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-rose-500 text-[14px] font-bold">priority_high</span>
+</div>
+<span class="text-sm text-slate-600 font-medium leading-relaxed">Emerging gap in 'Trigonometric Derivatives' conceptual understanding.</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Class Mastery Metrics -->
+<div class="lg:col-span-8 neu-card p-10 rounded-[2.5rem]">
+<div class="flex items-center justify-between mb-12">
+<h3 class="text-xl font-extrabold text-slate-800">Class Mastery Metrics</h3>
+<div class="neu-inset px-4 py-2 rounded-full">
+<span class="text-[10px] font-black tracking-widest text-slate-400 uppercase">4-WEEK TREND</span>
+</div>
+</div>
+<div class="h-64 w-full flex items-end justify-between px-8 mb-12">
+<!-- Neumorphic Bar Chart -->
+<div class="w-20 bg-transparent flex flex-col items-center gap-4">
+<div class="w-full neu-inset h-40 rounded-3xl relative">
+<div class="absolute bottom-0 w-full bg-primary/20 h-28 rounded-3xl"></div>
+</div>
+<span class="text-[11px] font-bold text-slate-400">W1</span>
+</div>
+<div class="w-20 bg-transparent flex flex-col items-center gap-4">
+<div class="w-full neu-inset h-56 rounded-3xl relative">
+<div class="absolute bottom-0 w-full bg-primary/40 h-44 rounded-3xl"></div>
+</div>
+<span class="text-[11px] font-bold text-slate-400">W2</span>
+</div>
+<div class="w-20 bg-transparent flex flex-col items-center gap-4">
+<div class="w-full neu-inset h-48 rounded-3xl relative">
+<div class="absolute bottom-0 w-full bg-primary/60 h-36 rounded-3xl"></div>
+</div>
+<span class="text-[11px] font-bold text-slate-400">W3</span>
+</div>
+<div class="w-20 bg-transparent flex flex-col items-center gap-4">
+<div class="w-full neu-inset h-64 rounded-3xl relative">
+<div class="absolute bottom-0 w-full bg-primary h-52 rounded-3xl shadow-lg shadow-primary/30"></div>
+</div>
+<span class="text-[11px] font-bold text-primary">W4</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-8 pt-10 border-t border-white/40">
+<div class="neu-inset p-5 rounded-2xl">
+<p class="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-2">Advanced</p>
+<p class="text-3xl font-black text-slate-800">22%</p>
+</div>
+<div class="neu-inset p-5 rounded-2xl">
+<p class="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-2">Proficient</p>
+<p class="text-3xl font-black text-slate-800">46%</p>
+</div>
+<div class="neu-inset p-5 rounded-2xl">
+<p class="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-2">Needs Support</p>
+<p class="text-3xl font-black text-rose-500">32%</p>
+</div>
+</div>
+</div>
+<!-- Concept Breakdown -->
+<div class="lg:col-span-6 neu-card p-10 rounded-[2.5rem]">
+<h3 class="text-xl font-extrabold text-slate-800 mb-10">Concept Breakdown</h3>
+<div class="space-y-8">
+<div class="p-8 neu-flat rounded-3xl flex items-center justify-between">
+<div class="flex items-center gap-6">
+<div class="h-14 w-14 rounded-full neu-indicator-green flex items-center justify-center">
+<span class="material-symbols-outlined text-emerald-600 font-bold">check_circle</span>
+</div>
+<div>
+<p class="font-extrabold text-slate-800 text-lg">Quadratic Equations</p>
+<p class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Historical Review Node</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-black text-emerald-600 uppercase">Target Achieved</p>
+<p class="text-lg font-bold text-slate-500">92% Mastery</p>
+</div>
+</div>
+<div class="p-8 neu-flat rounded-3xl flex items-center justify-between">
+<div class="flex items-center gap-6">
+<div class="h-14 w-14 rounded-full neu-indicator-red flex items-center justify-center">
+<span class="material-symbols-outlined text-rose-500 font-bold">warning</span>
+</div>
+<div>
+<p class="font-extrabold text-slate-800 text-lg">Exponential Functions</p>
+<p class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Core Calculus Node</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-black text-rose-500 uppercase">Below Target</p>
+<p class="text-lg font-bold text-slate-500">54% Mastery</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Student Highlights -->
+<div class="lg:col-span-6 neu-card p-10 rounded-[2.5rem]">
+<div class="flex justify-between items-center mb-10">
+<h3 class="text-xl font-extrabold text-slate-800">Student Highlights</h3>
+<button class="neu-btn h-10 w-10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl">add</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="p-5 neu-inset rounded-3xl">
+<div class="flex items-center gap-4 mb-4">
+<img class="h-12 w-12 rounded-2xl object-cover neu-flat p-0.5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChrd-BKagJnLIC4B8XVduAN2saaEV0HoHtqtIKffYD026i_VYGZbBfcPubmtxuy16zNzyKRjcOdz3W1nHfzdFIlTMPSGYgw4uMWIsCTKAexlv9BerT0lQIym08voKhfpPKF-DEn706dlmio2iP2uZnpZUmGx2NX-kCnvrMBwtZ7zyy0F3WX_PINvGiozfU2-CAx6R6gEuAwBdHk0PxtRd0eqPKwkvA5aJ6b_3-BCt-3yEB1nJV0HlgF4FWpuFfid9deAuk8pgvEUvs"/>
+<div>
+<p class="font-bold text-slate-800">Liam O'Brien</p>
+<p class="text-[10px] text-emerald-600 font-black uppercase">Rising Star</p>
+</div>
+</div>
+<p class="text-xs text-slate-600 font-medium leading-relaxed">+15% Mastery growth in Derivatives this week.</p>
+</div>
+<div class="p-5 neu-inset rounded-3xl">
+<div class="flex items-center gap-4 mb-4">
+<img class="h-12 w-12 rounded-2xl object-cover neu-flat p-0.5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGCmyOl1v1zQt-B3h2HOob_NJM2RFiZXBs9PahRPiQzcxr05N4m8JgXgOW1LeeFTW1EsE8rw6UfkTFdxwoV7zZvgh1PUeEeu6dtN7PURJIJlriCfS2bKIgUd4KkvK-ebhh4i4j4idouF-k9FcxnmaErpY5HibW9detCapntbaJus71romUepwrg1vYnbLILeWNLQTgAWWOnIHyZgWeZ8R3GqOodOdR-luwehh7LIOco0mJS9LF9r_KRzeXPaVIATWfNjOzZK4_ejV7"/>
+<div>
+<p class="font-bold text-slate-800">Sophia Chen</p>
+<p class="text-[10px] text-emerald-600 font-black uppercase">Concept Leader</p>
+</div>
+</div>
+<p class="text-xs text-slate-600 font-medium leading-relaxed">Perfect score on Chain Rule complex assessment.</p>
+</div>
+<div class="md:col-span-2 p-6 neu-flat rounded-3xl border border-rose-100">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-4">
+<img class="h-12 w-12 rounded-2xl object-cover neu-flat p-0.5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXl_Awgp0L-UBU6GvHb1sP_I4KF4_pW_B1vRBGQ-ODbvZ7Qxau6Xu3wsvLOGTu-NENRKcM02xmyqJRCz77bPIo0iQX5dbaaNornKQWTIZWteldKFs-eMJdbMZ385ffeM3-CjawQrCW2xccGcBsVZSyeHF7FwxYZ3BZdopIWUIGs9lFidMCb5PbBcl1VKUtQIDem1rBQZwKldP091HsE-CNkZQLla6SHrTx0aqJFhkx4i-qdBnOYBjV9wzspzAybWh9WWTOAnyeU-d3"/>
+<div>
+<p class="font-bold text-slate-800">Marcus Brown</p>
+<p class="text-[10px] text-rose-500 font-black uppercase">Urgent Intervention</p>
+</div>
+</div>
+<button class="text-[10px] font-black bg-rose-500 text-white px-4 py-2 rounded-xl shadow-md shadow-rose-200">ACTION NEEDED</button>
+</div>
+<p class="text-xs text-slate-600 font-medium leading-relaxed">Dropped from 72% to 41% in 'Natural Logs'. Consistent error pattern in logarithmic differentiation.</p>
+</div>
+</div>
+</div>
+<!-- Interventions & Outcomes -->
+<div class="lg:col-span-7 neu-card p-10 rounded-[2.5rem]">
+<div class="flex items-center justify-between mb-10">
+<h3 class="text-xl font-extrabold text-slate-800">Interventions &amp; Outcomes</h3>
+<button class="text-xs font-black text-primary hover:underline uppercase tracking-widest">View History</button>
+</div>
+<div class="neu-inset rounded-3xl overflow-hidden p-4">
+<table class="w-full text-left">
+<thead>
+<tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+<th class="px-6 pb-6">Intervention</th>
+<th class="px-6 pb-6">Group</th>
+<th class="px-6 pb-6">Outcome</th>
+<th class="px-6 pb-6 text-right">Status</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<tr class="border-t border-white/40">
+<td class="px-6 py-6 font-bold text-slate-700">Extra Credit Lab: Logarithms</td>
+<td class="px-6 py-6 text-slate-500 font-medium">Tier 3 (Marcus B. + 4)</td>
+<td class="px-6 py-6 font-black text-emerald-600">+12% Gain</td>
+<td class="px-6 py-6 text-right">
+<span class="px-3 py-1.5 rounded-lg neu-indicator-green text-emerald-600 text-[10px] font-black">COMPLETED</span>
+</td>
+</tr>
+<tr class="border-t border-white/40">
+<td class="px-6 py-6 font-bold text-slate-700">Concept Re-alignment: Limits</td>
+<td class="px-6 py-6 text-slate-500 font-medium">Full Class</td>
+<td class="px-6 py-6 text-slate-400 font-medium italic">Pending</td>
+<td class="px-6 py-6 text-right">
+<span class="px-3 py-1.5 rounded-lg neu-inset text-primary text-[10px] font-black bg-primary/5">IN PROGRESS</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Recommendations Card -->
+<div class="lg:col-span-5 neu-card p-10 rounded-[2.5rem] relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-16 -mt-16"></div>
+<h3 class="text-xl font-extrabold text-slate-800 mb-10 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+                AI Recommendations
+            </h3>
+<div class="space-y-6">
+<div class="flex gap-6 p-5 neu-flat rounded-3xl items-start">
+<div class="h-10 w-10 rounded-2xl neu-accent flex-shrink-0 flex items-center justify-center font-black text-sm">1</div>
+<div>
+<p class="font-extrabold text-slate-800 leading-snug">Prioritize "Natural Log" Deep Dive</p>
+<p class="text-xs text-slate-500 mt-2 leading-relaxed">Schedule 15min focus session for Tuesday to address class-wide friction.</p>
+</div>
+</div>
+<div class="flex gap-6 p-5 neu-flat rounded-3xl items-start">
+<div class="h-10 w-10 rounded-2xl neu-flat flex-shrink-0 flex items-center justify-center font-black text-primary text-sm">2</div>
+<div>
+<p class="font-extrabold text-slate-800 leading-snug">Unlock Mastery Node: Integration</p>
+<p class="text-xs text-slate-500 mt-2 leading-relaxed">Based on current derivative mastery, students are ready for early introduction.</p>
+</div>
+</div>
+<div class="flex gap-6 p-5 neu-flat rounded-3xl items-start">
+<div class="h-10 w-10 rounded-2xl neu-flat flex-shrink-0 flex items-center justify-center font-black text-primary text-sm">3</div>
+<div>
+<p class="font-extrabold text-slate-800 leading-snug">Peer Tutoring Pairing</p>
+<p class="text-xs text-slate-500 mt-2 leading-relaxed">Pair Sophia Chen with Marcus Brown for 'Logarithmic' worksheet drills.</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-10 py-5 rounded-2xl neu-inset text-primary font-black text-sm hover:neu-flat transition-all active:neu-inset">
+<span class="flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-xl">add_circle</span>
+                    ADD CUSTOM ACTION
+                </span>
+</button>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<div class="fixed bottom-12 right-12 z-[60]">
+<button class="h-20 w-20 rounded-full neu-accent flex items-center justify-center shadow-2xl hover:scale-110 active:scale-90 transition-all">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">add</span>
+</button>
+</div>
+</body></html>

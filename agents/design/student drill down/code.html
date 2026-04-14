@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cognitive Architect - Priya Kumar Drill-Down</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "background": "#e0e5ec",
+              "primary": "#7C3AED",
+              "on-surface": "#2d3436",
+              "on-surface-variant": "#636e72",
+              "error": "#d63031",
+              "success": "#00b894"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1.5rem", "lg": "2.5rem", "xl": "3.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #e0e5ec;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neumorphic-flat {
+            background: #e0e5ec;
+            box-shadow: 9px 9px 16px #bebebe, -9px -9px 16px #ffffff;
+        }
+        .neumorphic-recessed {
+            background: #e0e5ec;
+            box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+        }
+        .neumorphic-convex {
+            background: linear-gradient(145deg, #f0f5ff, #cacfd4);
+            box-shadow: 9px 9px 16px #bebebe, -9px -9px 16px #ffffff;
+        }
+        .neumorphic-active-purple {
+            background: #7C3AED;
+            box-shadow: inset 4px 4px 8px #5e2bb3, inset -4px -4px 8px #9a49ff;
+            color: white;
+        }
+        .neumorphic-button {
+            background: #e0e5ec;
+            box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+            transition: all 0.2s ease;
+        }
+        .neumorphic-button:active {
+            box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+            transform: scale(0.98);
+        }
+        .neumorphic-purple-btn {
+            background: #7C3AED;
+            box-shadow: 6px 6px 12px #9e9e9e, -6px -6px 12px #ffffff;
+            color: white;
+        }
+        .neumorphic-purple-btn:active {
+            box-shadow: inset 4px 4px 8px #5e2bb3, inset -4px -4px 8px #9a49ff;
+        }
+        .glass-overlay {
+            background: rgba(224, 229, 236, 0.6);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="font-body text-on-surface min-h-screen pb-20">
+<!-- TopNavBar -->
+<header class="w-full px-8 py-6 max-w-screen-2xl mx-auto flex justify-between items-center">
+<div class="text-2xl font-black text-primary tracking-tighter font-headline">Cognitive Architect</div>
+<nav class="hidden md:flex items-center gap-10 font-manrope text-sm font-bold tracking-tight">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Nodes</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Mastery</a>
+<a class="text-primary relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-full after:h-0.5 after:bg-primary" href="#">Insights</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Oracle</a>
+</nav>
+<div class="flex items-center gap-5">
+<button class="w-10 h-10 neumorphic-button rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-xl">notifications</span>
+</button>
+<button class="w-10 h-10 neumorphic-button rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-xl">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full neumorphic-flat p-0.5">
+<img alt="Teacher Profile" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi2sZuSURNfKpGPbGnA1e0fc7zoKrfEeE-aRsfpzLLt1Fmbi6vn34myCpHVlXc_YvpP0pGMaRYp4ngNyABvgcv5Df4yI0uM7D3NqMFtcIeU4dBUF35HnLnk2J7bT0cGA8OeLoVSQR0ZJakJ-Eog4wqvfdxbV-ptDMolpetOFgQDria7Vw7lXj6EYSaj52Ox3LmkfiztnZDFwWZ26u1Pf9vquE5GK66qkdbjiggIoSRysiVYYuIxizaVJhD9wkoeITF8bhds5Jv8NKG"/>
+</div>
+</div>
+</header>
+<!-- Sub-Navigation -->
+<div class="w-full mb-10">
+<div class="max-w-screen-2xl mx-auto flex justify-center items-center gap-10">
+<div class="flex flex-col items-center gap-3">
+<button class="w-14 h-14 neumorphic-button rounded-full flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">dashboard</span>
+</button>
+<span class="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Dashboard</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<button class="w-14 h-14 neumorphic-recessed rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">group</span>
+</button>
+<span class="text-[10px] uppercase font-bold tracking-widest text-primary">Cohorts</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<button class="w-14 h-14 neumorphic-button rounded-full flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">import_contacts</span>
+</button>
+<span class="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Curriculum</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<button class="w-14 h-14 neumorphic-button rounded-full flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">quiz</span>
+</button>
+<span class="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Assessments</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<button class="w-14 h-14 neumorphic-button rounded-full flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">analytics</span>
+</button>
+<span class="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Reports</span>
+</div>
+</div>
+</div>
+<main class="max-w-screen-2xl mx-auto px-8 space-y-12">
+<!-- Student Header Card -->
+<section class="neumorphic-flat p-10 rounded-lg flex flex-col lg:flex-row items-center gap-12">
+<div class="flex items-center gap-8">
+<div class="relative">
+<div class="w-28 h-28 rounded-full p-1 neumorphic-flat">
+<img alt="Priya Kumar" class="w-full h-full rounded-full object-cover grayscale-[20%]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsQLSLRB4W1vnBabulNxljH6jWhZvi1WS51pMiaBC6912SolYCbHdZFsBUMsXh2T8i26FInmYa95-5yVIMKIKtXmVtqs5Vjjq2a5mdX3TcW_8NfC1RALjsH5Lg5wQvQ_6NTMm0sUzFLBJ2qvIoy0Fjy2KtMBhKhLyWnbsX7kbq0N3P8r4fjcfhsKL5VdXbu6U7Yz0MnBc2JpVenOePC4OcpAlFLgXlLqM0laKB1xNkYLNvux4crUQZllm4uvKjxXiwhnV0n0e5fMPH"/>
+</div>
+<div class="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-error flex items-center justify-center shadow-lg border-2 border-background">
+<span class="material-symbols-outlined text-white text-base" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+</div>
+<div>
+<h1 class="font-headline text-4xl font-extrabold text-on-surface tracking-tight">Priya Kumar</h1>
+<p class="text-on-surface-variant font-semibold mt-1">Grade 10-A • ID: #ST-88291</p>
+<div class="mt-4 inline-block px-4 py-1.5 rounded-full neumorphic-recessed text-error text-[10px] font-black uppercase tracking-widest">
+                        Critical Intervention Required
+                    </div>
+</div>
+</div>
+<div class="flex-grow grid grid-cols-2 md:grid-cols-4 gap-8 w-full">
+<div class="neumorphic-recessed p-6 rounded-2xl text-center">
+<p class="text-[10px] text-on-surface-variant font-black uppercase tracking-widest mb-2">Mastery</p>
+<p class="font-headline text-3xl font-black text-primary">28%</p>
+</div>
+<div class="neumorphic-recessed p-6 rounded-2xl text-center">
+<p class="text-[10px] text-on-surface-variant font-black uppercase tracking-widest mb-2">Trend</p>
+<p class="font-headline text-3xl font-black text-error flex items-center justify-center gap-1">
+<span class="material-symbols-outlined font-black">trending_down</span> 8%
+                    </p>
+</div>
+<div class="neumorphic-recessed p-6 rounded-2xl text-center">
+<p class="text-[10px] text-on-surface-variant font-black uppercase tracking-widest mb-2">Confidence</p>
+<p class="font-headline text-3xl font-black text-on-surface">Low</p>
+</div>
+<div class="neumorphic-recessed p-6 rounded-2xl text-center">
+<p class="text-[10px] text-on-surface-variant font-black uppercase tracking-widest mb-2">Last Active</p>
+<p class="font-headline text-2xl font-black text-on-surface">42m ago</p>
+</div>
+</div>
+</section>
+<!-- Main Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Left: Knowledge Map -->
+<div class="lg:col-span-7 space-y-10">
+<div class="neumorphic-flat rounded-lg p-10 flex flex-col h-[550px]">
+<div class="flex justify-between items-center mb-8">
+<h2 class="font-headline text-xl font-extrabold text-on-surface">Cognitive Knowledge Map</h2>
+<div class="flex gap-4">
+<span class="flex items-center gap-2 text-[10px] font-black uppercase text-on-surface-variant">
+<span class="w-2.5 h-2.5 rounded-full bg-primary shadow-sm"></span> Mastered
+                            </span>
+<span class="flex items-center gap-2 text-[10px] font-black uppercase text-on-surface-variant">
+<span class="w-2.5 h-2.5 rounded-full bg-error shadow-sm"></span> Struggle
+                            </span>
+</div>
+</div>
+<div class="flex-grow neumorphic-recessed rounded-2xl relative overflow-hidden flex items-center justify-center p-8">
+<!-- Simplified Visualization -->
+<div class="w-full h-full opacity-70">
+<svg class="w-full h-full" viewbox="0 0 400 300">
+<path d="M100,150 L200,100 L300,150 L200,200 Z" fill="none" stroke="#bebebe" stroke-dasharray="4" stroke-width="2"></path>
+<circle class="shadow-xl" cx="200" cy="150" fill="#d63031" r="35"></circle>
+<text fill="white" font-size="9" font-weight="900" text-anchor="middle" x="200" y="153">CALCULUS</text>
+<circle cx="100" cy="80" fill="#7C3AED" r="18"></circle>
+<circle cx="300" cy="80" fill="#7C3AED" r="18"></circle>
+<circle cx="100" cy="220" fill="#7C3AED" r="18"></circle>
+<circle cx="300" cy="220" fill="#bebebe" r="18"></circle>
+</svg>
+</div>
+<div class="absolute bottom-6 left-6 right-6 p-5 rounded-xl neumorphic-flat border border-white/20">
+<p class="text-[10px] font-black text-primary uppercase mb-1">System Diagnostic</p>
+<p class="text-sm text-on-surface-variant leading-relaxed font-medium">Priya's struggle with <strong>Limits</strong> is cascading into <strong>Derivatives</strong>. Prerequisite Algebra skills are stable, suggesting a conceptual block rather than foundational gaps.</p>
+</div>
+</div>
+</div>
+<!-- Diagnostic Annotation -->
+<div class="neumorphic-flat rounded-lg p-10 border-l-[12px] border-primary">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-10 h-10 neumorphic-recessed rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">edit_note</span>
+</div>
+<h3 class="font-headline text-lg font-extrabold">Teacher Observations</h3>
+</div>
+<div class="neumorphic-recessed p-5 rounded-xl">
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant italic leading-relaxed min-h-[120px] resize-none" placeholder="Add observations...">Priya appears to be struggling with visual representation of functions. Recommend 3D graphing modules for Calculus visualization. Intervention scheduled for Wednesday.</textarea>
+</div>
+<div class="flex justify-end mt-6">
+<button class="px-10 py-3 neumorphic-purple-btn rounded-full font-black text-xs uppercase tracking-widest transition-transform hover:scale-[1.02]">
+                            Save Diagnosis
+                        </button>
+</div>
+</div>
+</div>
+<!-- Right: Analytics & Actions -->
+<div class="lg:col-span-5 space-y-10">
+<!-- Tabs -->
+<div class="neumorphic-flat rounded-full p-2 flex items-center justify-between gap-1">
+<button class="flex-1 py-3 px-4 neumorphic-active-purple rounded-full text-[10px] font-black uppercase tracking-widest">Analytics</button>
+<button class="flex-1 py-3 px-4 text-on-surface-variant hover:text-primary transition-all rounded-full text-[10px] font-black uppercase tracking-widest">Interventions</button>
+<button class="flex-1 py-3 px-4 text-on-surface-variant hover:text-primary transition-all rounded-full text-[10px] font-black uppercase tracking-widest">Timeline</button>
+</div>
+<!-- Analytics Card -->
+<div class="neumorphic-flat rounded-lg p-10 space-y-10">
+<div>
+<div class="flex justify-between items-end mb-8">
+<div>
+<h4 class="font-headline text-xs font-black text-on-surface uppercase tracking-widest">Mastery Trajectory</h4>
+<p class="text-[10px] font-bold text-on-surface-variant mt-1">Performance (Last 30 Days)</p>
+</div>
+<span class="text-error font-black text-base">-14.2%</span>
+</div>
+<div class="h-44 w-full neumorphic-recessed rounded-2xl p-6 relative flex items-center">
+<svg class="w-full h-full" viewbox="0 0 400 100">
+<path class="drop-shadow-sm" d="M0,50 L50,45 L100,55 L150,65 L200,75 L250,85 L300,90 L350,92 L400,95" fill="none" stroke="#7C3AED" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+<circle cx="400" cy="95" fill="#7C3AED" r="5"></circle>
+</svg>
+</div>
+</div>
+<div class="space-y-6">
+<h4 class="font-headline text-xs font-black text-on-surface uppercase tracking-widest">Subject Breakdown</h4>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-black">
+<span class="text-on-surface">Advanced Mathematics</span>
+<span class="text-error">12%</span>
+</div>
+<div class="w-full h-3 neumorphic-recessed rounded-full overflow-hidden p-0.5">
+<div class="h-full bg-error rounded-full shadow-inner" style="width: 12%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-black">
+<span class="text-on-surface">Thermodynamics</span>
+<span class="text-on-surface-variant">42%</span>
+</div>
+<div class="w-full h-3 neumorphic-recessed rounded-full overflow-hidden p-0.5">
+<div class="h-full bg-primary rounded-full shadow-inner" style="width: 42%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-black">
+<span class="text-on-surface">Cognitive Psychology</span>
+<span class="text-on-surface-variant">68%</span>
+</div>
+<div class="w-full h-3 neumorphic-recessed rounded-full overflow-hidden p-0.5">
+<div class="h-full bg-success rounded-full shadow-inner" style="width: 68%"></div>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-5 neumorphic-purple-btn rounded-full font-black text-sm uppercase tracking-[0.25em] transition-transform hover:scale-[1.03]">
+                        Launch Remedial Path
+                    </button>
+</div>
+<!-- Recent Activity -->
+<div class="neumorphic-flat rounded-lg p-10">
+<h4 class="font-headline text-xs font-black text-on-surface uppercase tracking-widest mb-8">Activity Stream</h4>
+<div class="space-y-8">
+<div class="flex gap-5 items-start">
+<div class="w-10 h-10 rounded-xl neumorphic-recessed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error text-xl">quiz</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Failed Calculus Drill #4</p>
+<p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider mt-1">Score: 12/100 • 2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-5 items-start">
+<div class="w-10 h-10 rounded-xl neumorphic-recessed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-success text-xl">menu_book</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Completed Intro to Physics</p>
+<p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider mt-1">1h 12m spent • Yesterday</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-10 right-10 w-16 h-16 rounded-full neumorphic-purple-btn flex items-center justify-center hover:scale-110 transition-transform z-50">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</button>
+</body></html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cognitive Architect | System Health</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed-variant": "#006544",
+              "primary": "#702ae1",
+              "on-error": "#ffefef",
+              "tertiary": "#006947",
+              "secondary": "#4647d3",
+              "error-dim": "#a70138",
+              "on-tertiary-fixed": "#00452d",
+              "secondary-fixed-dim": "#bdbeff",
+              "primary-dim": "#6411d5",
+              "on-primary": "#f8f0ff",
+              "surface-container-high": "#dfe3e6",
+              "secondary-fixed": "#cdcdff",
+              "on-background": "#2c2f31",
+              "on-primary-container": "#2e006c",
+              "outline": "#747779",
+              "surface-container": "#e5e9eb",
+              "on-surface": "#2c2f31",
+              "primary-fixed-dim": "#a67aff",
+              "error-container": "#f74b6d",
+              "surface-container-lowest": "#ffffff",
+              "surface": "#f5f7f9",
+              "on-primary-fixed": "#000000",
+              "surface-container-highest": "#d9dde0",
+              "tertiary-fixed-dim": "#58e7ab",
+              "on-surface-variant": "#595c5e",
+              "surface-bright": "#f5f7f9",
+              "secondary-dim": "#3939c7",
+              "primary-container": "#b28cff",
+              "background": "#f5f7f9",
+              "inverse-on-surface": "#9a9d9f",
+              "surface-dim": "#d0d5d8",
+              "surface-variant": "#d9dde0",
+              "outline-variant": "#abadaf",
+              "inverse-surface": "#0b0f10",
+              "on-error-container": "#510017",
+              "on-primary-fixed-variant": "#390083",
+              "error": "#b41340",
+              "on-secondary-fixed": "#160bae",
+              "inverse-primary": "#a476ff",
+              "tertiary-container": "#69f6b8",
+              "tertiary-fixed": "#69f6b8",
+              "on-secondary": "#f4f1ff",
+              "on-secondary-fixed-variant": "#3a3ac8",
+              "on-secondary-container": "#2f2ebf",
+              "tertiary-dim": "#005c3d",
+              "surface-container-low": "#eef1f3",
+              "secondary-container": "#cdcdff",
+              "primary-fixed": "#b28cff",
+              "on-tertiary": "#c8ffe0",
+              "on-tertiary-container": "#005a3c",
+              "surface-tint": "#702ae1"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neumorphic-flat {
+            background: #f5f7f9;
+            box-shadow: 8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff;
+        }
+        .neumorphic-inset {
+            background: #f5f7f9;
+            box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
+        }
+        .neumorphic-pressed {
+            box-shadow: inset 2px 2px 5px #babecc, inset -5px -5px 10px #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface">
+<!-- TopNavBar (Shared Component Execution) -->
+<header class="bg-slate-50 dark:bg-slate-900 docked full-width top-0 shadow-sm dark:shadow-none transition-all duration-300 ease-in-out flex flex-col w-full h-auto px-8 py-4 space-y-4 max-w-full">
+<div class="flex items-center justify-between">
+<div class="text-2xl font-black text-violet-700 dark:text-violet-300 tracking-tighter font-headline">
+                Cognitive Architect
+            </div>
+<nav class="hidden md:flex items-center space-x-8">
+<a class="font-manrope text-sm font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400 hover:text-violet-500 transition-colors" href="#">Nodes</a>
+<a class="font-manrope text-sm font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400 hover:text-violet-500 transition-colors" href="#">Mastery</a>
+<a class="font-manrope text-sm font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400 hover:text-violet-500 transition-colors" href="#">Insights</a>
+<a class="font-manrope text-sm font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400 hover:text-violet-500 transition-colors" href="#">Oracle</a>
+</nav>
+<div class="flex items-center space-x-4">
+<div class="neumorphic-inset px-4 py-2 rounded-full flex items-center space-x-2">
+<span class="material-symbols-outlined text-outline">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 font-body" placeholder="Search architecture..." type="text"/>
+</div>
+<div class="flex space-x-2">
+<button class="p-2 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-all active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+</button>
+<button class="p-2 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-all active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Sub-navigation Tier: Centered Circular Neumorphic Icons -->
+<div class="flex justify-center items-center py-4 space-x-12">
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-16 h-16 rounded-full flex items-center justify-center neumorphic-flat transition-all group-hover:scale-110 active:scale-90 bg-gradient-to-tr from-violet-600 to-violet-400 text-white shadow-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dns</span>
+</div>
+<span class="mt-2 font-headline text-[10px] font-extrabold uppercase tracking-widest text-primary">System</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-16 h-16 rounded-full flex items-center justify-center neumorphic-flat transition-all group-hover:scale-110 active:scale-90 text-slate-400">
+<span class="material-symbols-outlined">hub</span>
+</div>
+<span class="mt-2 font-headline text-[10px] font-extrabold uppercase tracking-widest text-slate-400">ML Pipeline</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-16 h-16 rounded-full flex items-center justify-center neumorphic-flat transition-all group-hover:scale-110 active:scale-90 text-slate-400">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<span class="mt-2 font-headline text-[10px] font-extrabold uppercase tracking-widest text-slate-400">API Metrics</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-16 h-16 rounded-full flex items-center justify-center neumorphic-flat transition-all group-hover:scale-110 active:scale-90 text-slate-400">
+<span class="material-symbols-outlined">notifications_active</span>
+</div>
+<span class="mt-2 font-headline text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Alerts</span>
+</div>
+</div>
+</header>
+<main class="max-w-[1600px] mx-auto px-8 py-10 space-y-10">
+<!-- Hero Section: High-level Metrics -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-8">
+<div class="neumorphic-flat p-6 rounded-lg flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-extrabold tracking-widest text-outline uppercase font-headline">API Latency</span>
+<span class="text-xs font-bold text-error px-2 py-1 rounded-full bg-error/10">+2.4%</span>
+</div>
+<div class="text-3xl font-black font-headline text-on-surface">120ms</div>
+<div class="absolute -right-2 -bottom-2 opacity-5">
+<span class="material-symbols-outlined text-8xl">speed</span>
+</div>
+</div>
+<div class="neumorphic-flat p-6 rounded-lg flex flex-col justify-between h-32 relative overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-extrabold tracking-widest text-outline uppercase font-headline">Error Rate</span>
+<span class="text-xs font-bold text-tertiary px-2 py-1 rounded-full bg-tertiary/10">-0.01%</span>
+</div>
+<div class="text-3xl font-black font-headline text-on-surface">0.04%</div>
+<div class="absolute -right-2 -bottom-2 opacity-5">
+<span class="material-symbols-outlined text-8xl">error_outline</span>
+</div>
+</div>
+<div class="neumorphic-flat p-6 rounded-lg flex flex-col justify-between h-32 relative overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-extrabold tracking-widest text-outline uppercase font-headline">Throughput</span>
+<span class="text-xs font-bold text-secondary px-2 py-1 rounded-full bg-secondary/10">Stable</span>
+</div>
+<div class="text-3xl font-black font-headline text-on-surface">5k <span class="text-lg font-bold">req/s</span></div>
+<div class="absolute -right-2 -bottom-2 opacity-5">
+<span class="material-symbols-outlined text-8xl">bolt</span>
+</div>
+</div>
+<div class="neumorphic-flat p-6 rounded-lg flex flex-col justify-between h-32 relative overflow-hidden ring-2 ring-error/20">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-extrabold tracking-widest text-outline uppercase font-headline">Storage</span>
+<span class="text-xs font-bold text-error-dim px-2 py-1 rounded-full bg-error-dim/10">Warning</span>
+</div>
+<div class="text-3xl font-black font-headline text-on-surface">65%</div>
+<div class="absolute -right-2 -bottom-2 opacity-5">
+<span class="material-symbols-outlined text-8xl">storage</span>
+</div>
+</div>
+</section>
+<!-- Main Workspace -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+<!-- Left Panel: Cloud Node Infrastructure -->
+<div class="lg:col-span-3 space-y-6">
+<div class="flex flex-col">
+<h2 class="text-xl font-black font-headline tracking-tight text-on-surface">Cloud Node Infrastructure</h2>
+<p class="text-xs text-on-surface-variant font-medium">Real-time sync active</p>
+</div>
+<div class="space-y-4">
+<!-- Node Alpha -->
+<div class="neumorphic-flat p-5 rounded-lg border-l-4 border-tertiary flex items-center justify-between">
+<div class="flex items-center space-x-4">
+<div class="w-10 h-10 rounded-full neumorphic-inset flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-xl">dataset</span>
+</div>
+<div>
+<div class="font-bold text-sm">Alpha-Region-1</div>
+<div class="text-[10px] text-tertiary font-bold uppercase tracking-wider">Operational</div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-xs font-bold">12ms</div>
+<div class="w-12 h-1 bg-surface-container-high rounded-full overflow-hidden mt-1">
+<div class="w-[85%] h-full bg-tertiary"></div>
+</div>
+</div>
+</div>
+<!-- Node Beta -->
+<div class="neumorphic-flat p-5 rounded-lg border-l-4 border-tertiary flex items-center justify-between">
+<div class="flex items-center space-x-4">
+<div class="w-10 h-10 rounded-full neumorphic-inset flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-xl">dataset</span>
+</div>
+<div>
+<div class="font-bold text-sm">Beta-Region-2</div>
+<div class="text-[10px] text-tertiary font-bold uppercase tracking-wider">Operational</div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-xs font-bold">18ms</div>
+<div class="w-12 h-1 bg-surface-container-high rounded-full overflow-hidden mt-1">
+<div class="w-[92%] h-full bg-tertiary"></div>
+</div>
+</div>
+</div>
+<!-- Node Gamma -->
+<div class="neumorphic-flat p-5 rounded-lg border-l-4 border-tertiary flex items-center justify-between">
+<div class="flex items-center space-x-4">
+<div class="w-10 h-10 rounded-full neumorphic-inset flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-xl">dataset</span>
+</div>
+<div>
+<div class="font-bold text-sm">Gamma-Region-1</div>
+<div class="text-[10px] text-tertiary font-bold uppercase tracking-wider">Operational</div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-xs font-bold">14ms</div>
+<div class="w-12 h-1 bg-surface-container-high rounded-full overflow-hidden mt-1">
+<div class="w-[70%] h-full bg-tertiary"></div>
+</div>
+</div>
+</div>
+<!-- Node Delta -->
+<div class="neumorphic-flat p-5 rounded-lg border-l-4 border-secondary flex items-center justify-between">
+<div class="flex items-center space-x-4">
+<div class="w-10 h-10 rounded-full neumorphic-inset flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-xl">dataset</span>
+</div>
+<div>
+<div class="font-bold text-sm">Delta-Secondary</div>
+<div class="text-[10px] text-secondary font-bold uppercase tracking-wider">Syncing</div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-xs font-bold">45ms</div>
+<div class="w-12 h-1 bg-surface-container-high rounded-full overflow-hidden mt-1">
+<div class="w-[40%] h-full bg-secondary animate-pulse"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Middle Panel: External Services -->
+<div class="lg:col-span-5 space-y-6">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-black font-headline tracking-tight text-on-surface">External Services</h2>
+<span class="px-3 py-1 bg-error/10 text-error rounded-full text-[10px] font-black uppercase tracking-widest">1 Issue Detected</span>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="neumorphic-flat p-6 rounded-lg flex flex-col space-y-3">
+<div class="flex justify-between items-center">
+<span class="font-bold text-sm">AWS Gateway</span>
+<span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#006947]"></span>
+</div>
+<div class="text-2xl font-black font-headline">99.9%</div>
+<div class="text-[10px] text-outline font-bold uppercase">Up 240 days</div>
+</div>
+<div class="neumorphic-flat p-6 rounded-lg flex flex-col space-y-3">
+<div class="flex justify-between items-center">
+<span class="font-bold text-sm">Vector DB</span>
+<span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#006947]"></span>
+</div>
+<div class="text-2xl font-black font-headline">99.7%</div>
+<div class="text-[10px] text-outline font-bold uppercase">Response: 4ms</div>
+</div>
+<div class="neumorphic-flat p-6 rounded-lg flex flex-col space-y-3 col-span-2 ring-1 ring-error/50 bg-error/5">
+<div class="flex justify-between items-center">
+<span class="font-bold text-sm">OAuth Provider</span>
+<span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+</div>
+<div class="text-2xl font-black font-headline text-error">Degraded</div>
+<div class="text-[10px] text-error font-bold uppercase">Auth latency exceeding 2.5s</div>
+</div>
+</div>
+<!-- Network Topology Visualization -->
+<div class="neumorphic-inset p-8 rounded-lg h-56 flex items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 opacity-10">
+<img alt="" class="w-full h-full object-cover grayscale" data-alt="abstract tech blueprint of neural network topology with interconnected nodes and thin glowing lines on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMWaw7HT4V6AFRYtAdcaF836j8ivtI7BTJtGr9dLNcpc5nwH5EudfvGSX04rrE8oAGOoA3yEfo_yBHhzx0lPV7bxTKkyjfX0-aZnuuKlseKACu6vmJoYY25Jf8juKSjKHTjD0Cgv63EDY6Kkk98WQUYhTwrkc4MX6Vm07cT2e7ZYB5IY5pIirk42PsbaWdHLHjTrxhdT48KZPdSIkZZdvPWhEJ9lF7wZKeC4WbjOoNVnH8hn-vPvhM5Fqjf2h-JiTpNg5WFv-oMgrD"/>
+</div>
+<div class="relative flex items-center justify-center w-full h-full">
+<div class="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center z-10 border-2 border-primary/50">
+<div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">hub</span>
+</div>
+</div>
+<!-- Decorative Lines -->
+<div class="absolute w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+<div class="absolute h-full w-px bg-gradient-to-b from-transparent via-primary/30 to-transparent"></div>
+<!-- Satellite Nodes -->
+<div class="absolute top-4 left-1/4 w-4 h-4 rounded-full bg-tertiary shadow-lg"></div>
+<div class="absolute bottom-10 right-1/3 w-6 h-6 rounded-full bg-secondary shadow-lg"></div>
+<div class="absolute top-1/2 right-10 w-3 h-3 rounded-full bg-error shadow-lg"></div>
+</div>
+<div class="absolute bottom-4 left-4 text-[10px] font-bold uppercase text-outline tracking-widest">Network Topology v4.2</div>
+</div>
+</div>
+<!-- Right Panel: ML Pipeline Health -->
+<div class="lg:col-span-4 space-y-6">
+<div class="flex flex-col">
+<h2 class="text-xl font-black font-headline tracking-tight text-on-surface">ML Pipeline Health</h2>
+<p class="text-xs text-on-surface-variant font-medium">Model: BERT-Cognitive-Arch-v2</p>
+</div>
+<div class="neumorphic-flat p-8 rounded-lg flex flex-col items-center space-y-6">
+<div class="relative w-48 h-48 flex items-center justify-center">
+<!-- Radial Gauge -->
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-highest" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" stroke-width="12"></circle>
+<circle cx="96" cy="96" fill="transparent" r="80" stroke="url(#gradient-primary)" stroke-dasharray="502" stroke-dashoffset="30" stroke-linecap="round" stroke-width="12"></circle>
+<defs>
+<lineargradient id="gradient-primary" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#702ae1"></stop>
+<stop offset="100%" stop-color="#b28cff"></stop>
+</lineargradient>
+</defs>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-4xl font-black font-headline">94%</span>
+<span class="text-[10px] font-bold text-outline uppercase tracking-tighter">Model Accuracy</span>
+</div>
+</div>
+<div class="w-full space-y-4">
+<div class="flex justify-between items-center px-2">
+<span class="text-xs font-bold text-on-surface-variant">Drift Score</span>
+<span class="text-xs font-black text-tertiary">LOW (0.02)</span>
+</div>
+<div class="neumorphic-inset h-16 w-full rounded-lg overflow-hidden flex items-end">
+<!-- Simulated Line Chart -->
+<div class="w-full h-full flex items-end justify-between px-2 pb-1">
+<div class="w-2 h-[20%] bg-primary-container rounded-t-sm"></div>
+<div class="w-2 h-[25%] bg-primary-container rounded-t-sm"></div>
+<div class="w-2 h-[15%] bg-primary-container rounded-t-sm"></div>
+<div class="w-2 h-[22%] bg-primary-container rounded-t-sm"></div>
+<div class="w-2 h-[35%] bg-primary-container rounded-t-sm"></div>
+<div class="w-2 h-[30%] bg-primary-container rounded-t-sm"></div>
+<div class="w-2 h-[10%] bg-primary rounded-t-sm"></div>
+</div>
+</div>
+</div>
+<div class="w-full neumorphic-inset p-4 rounded-lg flex items-center justify-between">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">update</span>
+</div>
+<div>
+<div class="text-[10px] font-bold text-outline uppercase">Next Retraining Phase</div>
+<div class="font-black text-sm">4 Days Remaning</div>
+</div>
+</div>
+<button class="bg-gradient-to-tr from-primary to-primary-container text-white text-[10px] font-black uppercase px-4 py-2 rounded-full shadow-lg active:scale-95 transition-all">Manual Trigger</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer Section: Recent System Events -->
+<section class="space-y-6 pb-20">
+<h2 class="text-xl font-black font-headline tracking-tight text-on-surface">Recent System Events</h2>
+<div class="neumorphic-flat rounded-lg overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-surface-container">
+<tr>
+<th class="p-4 text-[10px] font-extrabold uppercase tracking-widest text-outline">Timestamp</th>
+<th class="p-4 text-[10px] font-extrabold uppercase tracking-widest text-outline">Service ID</th>
+<th class="p-4 text-[10px] font-extrabold uppercase tracking-widest text-outline">Description</th>
+<th class="p-4 text-[10px] font-extrabold uppercase tracking-widest text-outline text-center">Severity</th>
+<th class="p-4 text-[10px] font-extrabold uppercase tracking-widest text-outline text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low">
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="p-4 text-xs font-medium font-body text-outline">2023-11-24 14:22:01</td>
+<td class="p-4 text-xs font-bold text-primary">AUTH-SRV-99</td>
+<td class="p-4 text-xs">Unusually high latency in OAuth response cycle detected in Region-1</td>
+<td class="p-4 text-center">
+<span class="px-3 py-1 bg-error-container text-on-error-container rounded-full text-[9px] font-black uppercase">Critical</span>
+</td>
+<td class="p-4 text-right">
+<span class="text-xs font-bold text-secondary">Investigating</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="p-4 text-xs font-medium font-body text-outline">2023-11-24 13:58:12</td>
+<td class="p-4 text-xs font-bold text-primary">ML-CORE-V2</td>
+<td class="p-4 text-xs">Model accuracy dipped below 95% threshold; auto-scaling triggered</td>
+<td class="p-4 text-center">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[9px] font-black uppercase">Warning</span>
+</td>
+<td class="p-4 text-right">
+<span class="text-xs font-bold text-tertiary">Resolved</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="p-4 text-xs font-medium font-body text-outline">2023-11-24 12:45:30</td>
+<td class="p-4 text-xs font-bold text-primary">DB-VECTOR-01</td>
+<td class="p-4 text-xs">Routine maintenance check completed successfully for all index clusters</td>
+<td class="p-4 text-center">
+<span class="px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-[9px] font-black uppercase">Info</span>
+</td>
+<td class="p-4 text-right">
+<span class="text-xs font-bold text-tertiary">Resolved</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Shared Component Execution) -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-center items-center pb-8 pointer-events-none md:hidden">
+<div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-full mx-auto mb-6 w-fit px-6 py-3 shadow-[20px_20px_60px_#d1d9e6,-20px_-20px_60px_#ffffff] dark:shadow-none flex space-x-2 pointer-events-auto">
+<div class="flex flex-col items-center justify-center bg-gradient-to-tr from-violet-600 to-violet-400 text-white rounded-full p-4 shadow-lg scale-110 active:scale-90 transition-all cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dns</span>
+<span class="font-inter text-[10px] font-bold uppercase tracking-widest mt-1">System</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-4 hover:text-violet-400 hover:scale-105 transition-transform duration-200 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-inter text-[10px] font-bold uppercase tracking-widest mt-1">Pipeline</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-4 hover:text-violet-400 hover:scale-105 transition-transform duration-200 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-inter text-[10px] font-bold uppercase tracking-widest mt-1">Metrics</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-4 hover:text-violet-400 hover:scale-105 transition-transform duration-200 active:scale-90 cursor-pointer">
+<span class="material-symbols-outlined">notifications_active</span>
+<span class="font-inter text-[10px] font-bold uppercase tracking-widest mt-1">Alerts</span>
+</div>
+</div>
+</nav>
+</body></html>

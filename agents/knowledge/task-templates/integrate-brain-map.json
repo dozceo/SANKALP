@@ -1,0 +1,36 @@
+{
+  "name": "Integrate Brain Map with Core Pipeline",
+  "description": "Wire Brain Map™ mastery engine into the canonical pipeline, ensuring every interaction triggers Bayesian posterior updates and struggle detection flows through to the decision engine.",
+  "subtasks": [
+    {
+      "name": "Wire Brain Map into Feature Engineering",
+      "description": "Modify src/core/features/implementation.ts to call updateMasteryFull() from brain-map.ts on every interaction event. The mastery update result (posteriorAlpha, posteriorBeta, CI, trajectorySlope, struggleFlags) must be included in the feature vector.",
+      "agent": "integration",
+      "dependsOn": []
+    },
+    {
+      "name": "Build forgetting curve module",
+      "description": "Create src/core/knowledge/forgetting-curve.ts implementing R(t) = e^(-t/S) with S-parameter learning. Create src/core/knowledge/spaced-repetition.ts for review interval scheduling.",
+      "agent": "backend",
+      "dependsOn": []
+    },
+    {
+      "name": "Wire struggle detection to intervention",
+      "description": "Connect struggleFlags from Brain Map updates to src/core/intervention/implementation.ts, triggering early alerts when declining mastery chains or widening CI are detected.",
+      "agent": "integration",
+      "dependsOn": ["Wire Brain Map into Feature Engineering"]
+    },
+    {
+      "name": "Update pipeline orchestrator",
+      "description": "Modify src/lib/pipeline.ts to include Brain Map mastery updates in the pipeline flow between Observe and Model stages.",
+      "agent": "integration",
+      "dependsOn": ["Wire Brain Map into Feature Engineering", "Build forgetting curve module"]
+    },
+    {
+      "name": "Generate Brain Map integration tests",
+      "description": "Create tests/unit/core/brain-map.test.ts and tests/integration/brain-map-pipeline.test.ts verifying Bayesian invariants and end-to-end mastery flow.",
+      "agent": "testing",
+      "dependsOn": ["Update pipeline orchestrator"]
+    }
+  ]
+}

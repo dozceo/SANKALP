@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AdeptAI | Grade 10 - Biology - AP Calculus Block A</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        :root {
+            --bg-color: #f0f2f5;
+            --shadow-light: rgba(255, 255, 255, 0.8);
+            --shadow-dark: rgba(163, 177, 198, 0.5);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neumorphic-flat {
+            background: var(--bg-color);
+            box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+        }
+        .neumorphic-recessed {
+            background: var(--bg-color);
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+        }
+        .neumorphic-icon {
+            background: var(--bg-color);
+            box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+        }
+        .neumorphic-icon-active {
+            background: var(--bg-color);
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+            color: #7C3AED;
+        }
+        .glass-panel {
+            backdrop-filter: blur(24px);
+            background: rgba(240, 242, 245, 0.7);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#b28cff",
+                        "on-surface-variant": "#595c5e",
+                        "primary-fixed": "#b28cff",
+                        "surface-container": "#e5e9eb",
+                        "secondary-container": "#cdcdff",
+                        "inverse-surface": "#0b0f10",
+                        "primary": "#7C3AED",
+                        "on-background": "#2c2f31",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#f0f2f5",
+                        "surface-tint": "#7C3AED",
+                        "background": "#f0f2f5",
+                        "surface-container-low": "#eceff3",
+                        "surface": "#f0f2f5",
+                        "on-surface": "#2c2f31",
+                        "surface-bright": "#f8f9fa",
+                        "surface-variant": "#d9dde0",
+                        "secondary": "#4647d3",
+                        "surface-container-high": "#dfe3e6",
+                        "outline-variant": "#abadaf",
+                        "surface-container-highest": "#d1d9e6",
+                        "on-primary-container": "#2e006c",
+                        "tertiary": "#00a18e",
+                        "error": "#b3261e"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/20">
+<!-- TopNavBar Execution -->
+<header class="bg-background sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-12">
+<span class="text-2xl font-black text-primary tracking-tighter font-headline">AdeptAI</span>
+</div>
+<nav class="hidden md:flex items-center gap-10">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Nodes</a>
+<a class="text-primary font-bold relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary" href="#">Mastery</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Insights</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Oracle</a>
+</nav>
+<div class="flex items-center gap-6">
+<div class="neumorphic-recessed px-5 py-2 rounded-full flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 font-body placeholder:text-on-surface-variant/50" placeholder="Search cohorts..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant neumorphic-icon hover:scale-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 neumorphic-icon">
+<img alt="Teacher Profile" class="w-full h-full object-cover" data-alt="professional portrait of a confident educator with a warm smile in a brightly lit academic setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDR47qdODLDJ-sfrJVZis5_nNgxfnmFzS6SpVMocjN0UqsN_rexqnSzARCqRfDw5EOWyvcqYvCQmW-EVmLjOA2T1qAgYwkwRPJggvkH2jPPgDdgZc9RVIDq1F6q5z6DlQvyUL8-zLSxQkasP177-V3H5nZpo0vlewou42Aj847cWqeePSM3gywKCrbyV2v_yXQjNJWyUbdK1Hjx0UXzeCBZLH4QxXzXHS5yHYyODr4-wkfQbSD7DttH0ehvCMOIk8YNbR9YQnkJT4Z"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Sub-navigation centered icon bar -->
+<nav class="max-w-screen-xl mx-auto py-8">
+<div class="flex justify-center items-start gap-12 md:gap-16">
+<div class="flex flex-col items-center gap-3">
+<button class="w-16 h-16 flex items-center justify-center rounded-2xl neumorphic-icon-active group">
+<span class="material-symbols-outlined text-3xl" data-icon="dashboard">dashboard</span>
+</button>
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Dashboard</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<button class="w-16 h-16 flex items-center justify-center rounded-2xl neumorphic-icon text-on-surface-variant hover:text-primary transition-all group">
+<span class="material-symbols-outlined text-3xl" data-icon="school">school</span>
+</button>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Classes</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<button class="w-16 h-16 flex items-center justify-center rounded-2xl neumorphic-icon text-on-surface-variant hover:text-primary transition-all group">
+<span class="material-symbols-outlined text-3xl" data-icon="account_tree">account_tree</span>
+</button>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Brain Map</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<button class="w-16 h-16 flex items-center justify-center rounded-2xl neumorphic-icon text-on-surface-variant hover:text-primary transition-all group">
+<span class="material-symbols-outlined text-3xl" data-icon="bolt">bolt</span>
+</button>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Action</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<button class="w-16 h-16 flex items-center justify-center rounded-2xl neumorphic-icon text-on-surface-variant hover:text-primary transition-all group">
+<span class="material-symbols-outlined text-3xl" data-icon="analytics">analytics</span>
+</button>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Reports</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<button class="w-16 h-16 flex items-center justify-center rounded-2xl neumorphic-icon text-on-surface-variant hover:text-primary transition-all group">
+<span class="material-symbols-outlined text-3xl" data-icon="settings">settings</span>
+</button>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Settings</span>
+</div>
+</div>
+</nav>
+<main class="max-w-screen-2xl mx-auto px-8 py-4 space-y-12 pb-24">
+<!-- Hero Section / Title Area -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-2">
+<p class="font-label text-primary font-semibold tracking-widest text-[10px] uppercase">Cognitive Dashboard</p>
+<h1 class="font-headline text-5xl font-extrabold tracking-tight text-on-surface">AP Calculus <span class="text-primary opacity-40">(Block A)</span></h1>
+<p class="text-on-surface-variant max-w-xl">Cohort Overview for Grade 10 spring semester. Analyzing bimodal distributions and concept-specific mastery gaps.</p>
+</div>
+</section>
+<!-- Bento Grid: Class Summary & Distributions -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+<!-- Summary Card -->
+<div class="lg:col-span-4 rounded-3xl p-8 neumorphic-flat flex flex-col justify-between">
+<div class="space-y-6">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<h3 class="font-headline text-xl font-bold">Class Summary</h3>
+<p class="text-xs text-on-surface-variant">Active: 28 Enrolled Students</p>
+</div>
+<div class="neumorphic-icon w-12 h-12 flex items-center justify-center rounded-xl">
+<span class="material-symbols-outlined text-primary" data-icon="hub">hub</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="neumorphic-recessed p-5 rounded-2xl">
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Absentees</p>
+<p class="text-3xl font-black mt-1">2</p>
+</div>
+<div class="neumorphic-recessed p-5 rounded-2xl border-l-4 border-error/50">
+<p class="text-[10px] uppercase tracking-wider text-error font-bold">At-Risk</p>
+<p class="text-3xl font-black text-error mt-1">6</p>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between text-xs font-bold uppercase tracking-wider">
+<span>Class Mastery</span>
+<span class="text-primary">68% <span class="text-tertiary ml-1">↑ +3%</span></span>
+</div>
+<div class="h-3 w-full neumorphic-recessed rounded-full overflow-hidden p-0.5">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full shadow-inner" style="width: 68%;"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant font-medium italic">Std Deviation: ±4%</p>
+</div>
+</div>
+<button class="mt-8 w-full py-4 rounded-full font-black text-on-primary bg-primary neumorphic-icon hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/30">
+                Launch Oracle AI Analysis
+            </button>
+</div>
+<!-- Performance Distribution (Logarithms) -->
+<div class="lg:col-span-8 rounded-3xl p-8 neumorphic-flat">
+<div class="flex justify-between items-center mb-10">
+<div>
+<h3 class="font-headline text-xl font-bold italic">'Logarithms' Mastery Distribution</h3>
+<p class="text-sm text-on-surface-variant">Bimodal pattern identified across 28 students</p>
+</div>
+<div class="flex gap-3">
+<span class="px-4 py-1.5 neumorphic-recessed rounded-full text-[10px] font-bold uppercase tracking-tighter">Mean: 72</span>
+<span class="px-4 py-1.5 neumorphic-recessed rounded-full text-[10px] font-bold uppercase tracking-tighter">Median: 68</span>
+</div>
+</div>
+<div class="h-64 flex items-end justify-between gap-2 px-6 relative">
+<!-- Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between py-2 pointer-events-none opacity-20 px-6">
+<div class="w-full border-t border-on-surface"></div>
+<div class="w-full border-t border-on-surface"></div>
+<div class="w-full border-t border-on-surface"></div>
+</div>
+<!-- Histogram Bars (Neumorphic) -->
+<div class="w-full h-[20%] bg-surface-container-highest rounded-t-lg neumorphic-icon"></div>
+<div class="w-full h-[45%] bg-surface-container-highest rounded-t-lg neumorphic-icon"></div>
+<div class="w-full h-[75%] bg-primary/40 rounded-t-lg neumorphic-icon relative">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-black text-primary uppercase">Peak</div>
+</div>
+<div class="w-full h-[55%] bg-surface-container-highest rounded-t-lg neumorphic-icon"></div>
+<div class="w-full h-[35%] bg-surface-container-highest rounded-t-lg neumorphic-icon"></div>
+<div class="w-full h-[50%] bg-surface-container-highest rounded-t-lg neumorphic-icon"></div>
+<div class="w-full h-[85%] bg-secondary/40 rounded-t-lg neumorphic-icon relative">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-black text-secondary uppercase">Mode</div>
+</div>
+<div class="w-full h-[65%] bg-surface-container-highest rounded-t-lg neumorphic-icon"></div>
+<div class="w-full h-[40%] bg-surface-container-highest rounded-t-lg neumorphic-icon"></div>
+<div class="w-full h-[25%] bg-surface-container-highest rounded-t-lg neumorphic-icon"></div>
+<div class="w-full h-[15%] bg-surface-container-highest rounded-t-lg neumorphic-icon"></div>
+</div>
+<div class="flex justify-between mt-6 px-6 text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">
+<span>0%</span>
+<span>25%</span>
+<span>50%</span>
+<span>75%</span>
+<span>100%</span>
+</div>
+</div>
+</section>
+<!-- Concept Mastery Heatmap -->
+<section class="rounded-3xl p-10 neumorphic-flat">
+<h3 class="font-headline text-2xl font-extrabold mb-10 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="grid_view">grid_view</span>
+            Concept Mastery Heatmap
+        </h3>
+<div class="overflow-x-auto p-2">
+<div class="min-w-[900px]">
+<div class="grid grid-cols-7 gap-6 mb-6 text-center">
+<div class="text-left font-bold text-xs uppercase text-on-surface-variant tracking-widest pl-4">Student</div>
+<div class="text-[10px] font-bold uppercase text-on-surface-variant tracking-wider">Algebra</div>
+<div class="text-[10px] font-bold uppercase text-on-surface-variant tracking-wider">Geometry</div>
+<div class="text-[10px] font-bold uppercase text-on-surface-variant tracking-wider">Calculus</div>
+<div class="text-[10px] font-bold uppercase text-on-surface-variant tracking-wider">Trig</div>
+<div class="text-[10px] font-bold uppercase text-on-surface-variant tracking-wider">Limits</div>
+<div class="text-[10px] font-bold uppercase text-on-surface-variant tracking-wider">Logarithms</div>
+</div>
+<div class="space-y-6">
+<!-- Alex Rivera Row -->
+<div class="grid grid-cols-7 gap-6 items-center">
+<div class="flex items-center gap-3 pl-4">
+<div class="w-10 h-10 rounded-full neumorphic-icon flex items-center justify-center font-bold text-sm text-primary">AR</div>
+<span class="text-sm font-bold">Alex Rivera</span>
+</div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-tertiary rounded-full" style="width: 92%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-tertiary rounded-full" style="width: 88%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-primary rounded-full" style="width: 65%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-tertiary rounded-full" style="width: 82%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-primary rounded-full" style="width: 45%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-error rounded-full" style="width: 30%;"></div></div>
+</div>
+<!-- Jordan Smith Row -->
+<div class="grid grid-cols-7 gap-6 items-center">
+<div class="flex items-center gap-3 pl-4">
+<div class="w-10 h-10 rounded-full neumorphic-icon flex items-center justify-center font-bold text-sm text-primary">JS</div>
+<span class="text-sm font-bold">Jordan Smith</span>
+</div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-primary rounded-full" style="width: 72%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-primary rounded-full" style="width: 61%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-error rounded-full" style="width: 28%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-primary rounded-full" style="width: 55%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-error rounded-full" style="width: 32%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-error rounded-full" style="width: 15%;"></div></div>
+</div>
+<!-- Sarah Chen Row -->
+<div class="grid grid-cols-7 gap-6 items-center">
+<div class="flex items-center gap-3 pl-4">
+<div class="w-10 h-10 rounded-full neumorphic-icon flex items-center justify-center font-bold text-sm text-primary">SC</div>
+<span class="text-sm font-bold">Sarah Chen</span>
+</div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-tertiary rounded-full" style="width: 98%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-tertiary rounded-full" style="width: 95%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-tertiary rounded-full" style="width: 91%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-tertiary rounded-full" style="width: 99%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-tertiary rounded-full" style="width: 94%;"></div></div>
+<div class="h-5 neumorphic-recessed rounded-full p-1"><div class="h-full bg-tertiary rounded-full" style="width: 89%;"></div></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Student Roster Table -->
+<section class="rounded-3xl p-10 neumorphic-flat">
+<div class="flex justify-between items-center mb-12">
+<h3 class="font-headline text-2xl font-extrabold italic">Student Roster</h3>
+<div class="flex gap-4">
+<button class="flex items-center gap-2 px-8 py-3 neumorphic-icon rounded-full text-xs font-black uppercase tracking-widest hover:brightness-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+                    Filter
+                </button>
+<button class="flex items-center gap-2 px-8 py-3 neumorphic-icon rounded-full text-xs font-black uppercase tracking-widest hover:brightness-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+                    Export
+                </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="border-b-2 border-surface-container-highest">
+<tr>
+<th class="pb-8 font-black text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">Name</th>
+<th class="pb-8 font-black text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">Mastery %</th>
+<th class="pb-8 font-black text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">Trend</th>
+<th class="pb-8 font-black text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">At-Risk Concepts</th>
+<th class="pb-8 font-black text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">Interventions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-highest">
+<tr>
+<td class="py-8 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full neumorphic-icon flex items-center justify-center font-black text-primary">AR</div>
+<span class="font-bold text-lg">Alex Rivera</span>
+</td>
+<td class="py-8"><span class="font-bold text-lg">62.4%</span></td>
+<td class="py-8">
+<div class="flex items-end gap-1 h-8">
+<div class="w-1.5 bg-tertiary h-3 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-tertiary h-5 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-error h-7 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-tertiary h-6 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-tertiary h-8 rounded-full neumorphic-icon"></div>
+</div>
+</td>
+<td class="py-8">
+<div class="flex items-center gap-2">
+<span class="neumorphic-recessed text-error px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">Logarithms</span>
+<span class="text-xl">🚨</span>
+</div>
+</td>
+<td class="py-8">
+<button class="text-primary text-xs font-black uppercase tracking-widest border-b-2 border-primary/20 hover:border-primary transition-all pb-1">Schedule 1-on-1</button>
+</td>
+</tr>
+<tr>
+<td class="py-8 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full neumorphic-icon flex items-center justify-center font-black text-primary">SC</div>
+<span class="font-bold text-lg">Sarah Chen</span>
+</td>
+<td class="py-8"><span class="font-bold text-lg">94.8%</span></td>
+<td class="py-8">
+<div class="flex items-end gap-1 h-8">
+<div class="w-1.5 bg-tertiary h-6 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-tertiary h-8 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-tertiary h-8 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-tertiary h-7 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-tertiary h-8 rounded-full neumorphic-icon"></div>
+</div>
+</td>
+<td class="py-8 text-on-surface-variant text-xs font-bold tracking-widest">—</td>
+<td class="py-8">
+<button class="text-primary text-xs font-black uppercase tracking-widest border-b-2 border-primary/20 hover:border-primary transition-all pb-1">Advanced Study</button>
+</td>
+</tr>
+<tr>
+<td class="py-8 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full neumorphic-icon flex items-center justify-center font-black text-primary">JS</div>
+<span class="font-bold text-lg">Jordan Smith</span>
+</td>
+<td class="py-8"><span class="font-bold text-lg">45.2%</span></td>
+<td class="py-8">
+<div class="flex items-end gap-1 h-8">
+<div class="w-1.5 bg-error h-5 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-error h-4 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-error h-3 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-primary h-6 rounded-full neumorphic-icon"></div>
+<div class="w-1.5 bg-error h-4 rounded-full neumorphic-icon"></div>
+</div>
+</td>
+<td class="py-8">
+<div class="flex flex-wrap gap-2">
+<span class="neumorphic-recessed text-error px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">Calculus</span>
+<span class="neumorphic-recessed text-error px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">Limits</span>
+<span class="text-xl">⚠️</span>
+</div>
+</td>
+<td class="py-8">
+<button class="text-error text-xs font-black uppercase tracking-widest border-b-2 border-error/20 hover:border-error transition-all pb-1">Urgent Intervention</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Subgroup Analysis: Collapsible Sections -->
+<section class="space-y-8">
+<h3 class="font-headline text-2xl font-extrabold flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="layers">layers</span>
+            Tier Analysis &amp; Recommendations
+        </h3>
+<!-- Tier 1: Advanced -->
+<details class="group rounded-3xl overflow-hidden neumorphic-flat" open="">
+<summary class="flex justify-between items-center p-8 cursor-pointer list-none">
+<div class="flex items-center gap-6">
+<div class="w-16 h-16 flex items-center justify-center rounded-2xl neumorphic-icon text-tertiary">
+<span class="material-symbols-outlined text-3xl" data-icon="star">star</span>
+</div>
+<div>
+<h4 class="font-black text-xl">Advanced Tier</h4>
+<p class="text-sm font-medium text-on-surface-variant uppercase tracking-widest mt-1">8 Students (28%) • Mastery &gt; 85%</p>
+</div>
+</div>
+<span class="material-symbols-outlined group-open:rotate-180 transition-transform text-3xl" data-icon="expand_more">expand_more</span>
+</summary>
+<div class="p-8 pt-0 space-y-8">
+<div class="grid md:grid-cols-2 gap-10">
+<div class="neumorphic-recessed p-8 rounded-2xl space-y-4">
+<h5 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Recommendations</h5>
+<p class="text-sm leading-relaxed font-medium">Transition students to higher-order derivative applications. Introduce "Oracle Challenge" modules on related rates.</p>
+</div>
+<div class="space-y-4">
+<h5 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Top Performers</h5>
+<div class="flex flex-wrap gap-3">
+<span class="px-6 py-2 neumorphic-icon rounded-full text-xs font-bold">Chen, S. (94%)</span>
+<span class="px-6 py-2 neumorphic-icon rounded-full text-xs font-bold">Patel, R. (91%)</span>
+<span class="px-6 py-2 neumorphic-icon rounded-full text-xs font-bold">Gomez, L. (89%)</span>
+</div>
+</div>
+</div>
+</div>
+</details>
+<!-- Tier 2: At-Risk -->
+<details class="group rounded-3xl overflow-hidden neumorphic-flat">
+<summary class="flex justify-between items-center p-8 cursor-pointer list-none">
+<div class="flex items-center gap-6">
+<div class="w-16 h-16 flex items-center justify-center rounded-2xl neumorphic-icon text-error">
+<span class="material-symbols-outlined text-3xl" data-icon="warning">warning</span>
+</div>
+<div>
+<h4 class="font-black text-xl">At-Risk Tier</h4>
+<p class="text-sm font-medium text-on-surface-variant uppercase tracking-widest mt-1">6 Students (21%) • Mastery &lt; 50%</p>
+</div>
+</div>
+<span class="material-symbols-outlined group-open:rotate-180 transition-transform text-3xl" data-icon="expand_more">expand_more</span>
+</summary>
+<div class="p-8 pt-0 space-y-8">
+<div class="grid md:grid-cols-2 gap-10">
+<div class="neumorphic-recessed p-8 rounded-2xl space-y-4">
+<h5 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Immediate Action</h5>
+<p class="text-sm leading-relaxed font-medium">Remedial session scheduled for Tuesday: "Re-conceptualizing Limits". AI-generated scaffolding prompts enabled for all future assessments.</p>
+</div>
+<div class="space-y-4">
+<h5 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Critical Status</h5>
+<div class="flex flex-wrap gap-3">
+<span class="px-6 py-2 neumorphic-recessed text-error rounded-full text-xs font-black uppercase tracking-wider">Smith, J. (45%)</span>
+<span class="px-6 py-2 neumorphic-recessed text-error rounded-full text-xs font-black uppercase tracking-wider">Thompson, K. (41%)</span>
+</div>
+</div>
+</div>
+</div>
+</details>
+</section>
+</main>
+</body></html>

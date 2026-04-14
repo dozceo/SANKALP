@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cognitive Cockpit | Metacognition &amp; Reflection</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#702ae1",
+              "secondary": "#4647d3",
+              "tertiary": "#006947",
+              "background": "#e6e9ef",
+              "surface": "#e6e9ef",
+              "on-surface": "#2c2f31",
+              "on-surface-variant": "#595c5e",
+              "outline": "#747779",
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #e6e9ef;
+            color: #2c2f31;
+        }
+        /* Neumorphic Styles */
+        .neumorphic-flat {
+            background: #e6e9ef;
+            box-shadow: 12px 12px 24px #c8cbd0, -12px -12px 24px #ffffff;
+        }
+        .neumorphic-inset {
+            background: #e6e9ef;
+            box-shadow: inset 6px 6px 12px #c8cbd0, inset -6px -6px 12px #ffffff;
+        }
+        .neumorphic-button {
+            background: #e6e9ef;
+            box-shadow: 6px 6px 12px #c8cbd0, -6px -6px 12px #ffffff;
+            transition: all 0.2s ease;
+        }
+        .neumorphic-button:active {
+            box-shadow: inset 4px 4px 8px #c8cbd0, inset -4px -4px 8px #ffffff;
+            transform: scale(0.98);
+        }
+        .neumorphic-nav-active {
+            background: #e6e9ef;
+            box-shadow: inset 4px 4px 8px #c8cbd0, inset -4px -4px 8px #ffffff;
+        }
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #702ae1 0%, #b28cff 100%);
+        }
+        .neumorphic-fab {
+            background: linear-gradient(135deg, #702ae1, #b28cff);
+            box-shadow: 8px 8px 16px #c8cbd0, -8px -8px 16px #ffffff;
+        }
+        .neumorphic-progress-bg {
+            background: #e6e9ef;
+            box-shadow: inset 2px 2px 5px #c8cbd0, inset -2px -2px 5px #ffffff;
+        }
+    </style>
+</head>
+<body class="font-body selection:bg-primary/20 selection:text-primary">
+<!-- Top Navigation Shell -->
+<header class="fixed top-0 left-0 right-0 z-50 px-8 py-4">
+<nav class="flex justify-between items-center w-full max-w-screen-2xl mx-auto neumorphic-flat px-8 py-4 rounded-full">
+<div class="text-2xl font-black text-primary tracking-tighter">Cognitive Cockpit</div>
+<div class="hidden md:flex items-center gap-2">
+<a class="font-manrope font-bold text-sm px-6 py-2 rounded-full neumorphic-nav-active text-primary" href="#">Focus</a>
+<a class="font-manrope font-bold text-sm px-6 py-2 rounded-full text-on-surface/60 hover:text-primary transition-all duration-300" href="#">Reflect</a>
+<a class="font-manrope font-bold text-sm px-6 py-2 rounded-full text-on-surface/60 hover:text-primary transition-all duration-300" href="#">Insights</a>
+<a class="font-manrope font-bold text-sm px-6 py-2 rounded-full text-on-surface/60 hover:text-primary transition-all duration-300" href="#">Library</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 neumorphic-button rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="w-10 h-10 neumorphic-button rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">account_circle</span>
+</button>
+</div>
+</nav>
+</header>
+<!-- Sidebar Shell -->
+<aside class="fixed left-6 top-32 bottom-8 w-64 z-40 hidden lg:flex flex-col neumorphic-flat rounded-[2.5rem] py-10">
+<div class="px-8 mb-10">
+<h2 class="font-headline font-extrabold text-2xl text-on-surface">Reflection</h2>
+<p class="text-[10px] font-bold uppercase tracking-widest text-on-surface/40 mt-1">Metacognitive Space</p>
+</div>
+<nav class="flex-1 space-y-3 px-4">
+<a class="flex items-center gap-4 text-on-surface/50 px-6 py-3 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="font-label font-bold uppercase tracking-widest text-[10px]">Daily Log</span>
+</a>
+<a class="flex items-center gap-4 neumorphic-inset text-primary rounded-full px-6 py-3 transition-all" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-label font-bold uppercase tracking-widest text-[10px]">Skill Tree</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface/50 px-6 py-3 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label font-bold uppercase tracking-widest text-[10px]">Mental Models</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface/50 px-6 py-3 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">ads_click</span>
+<span class="font-label font-bold uppercase tracking-widest text-[10px]">Goals</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface/50 px-6 py-3 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label font-bold uppercase tracking-widest text-[10px]">Archive</span>
+</a>
+</nav>
+<div class="px-6 space-y-6">
+<button class="w-full bg-gradient-primary text-white font-bold py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-[0.98] transition-all duration-200">
+            Start Journaling
+        </button>
+<div class="pt-6 border-t border-on-surface/5">
+<a class="flex items-center gap-4 text-on-surface/40 px-6 py-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Settings</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-72 pt-32 px-8 pb-12 min-h-screen">
+<div class="max-w-screen-xl mx-auto grid grid-cols-12 gap-8">
+<!-- Left Rail: Strategy Effectiveness -->
+<div class="col-span-12 lg:col-span-3 space-y-8">
+<section class="neumorphic-flat p-6 rounded-[2rem]">
+<h3 class="font-headline font-bold text-lg mb-6 flex items-center gap-3">
+<span class="w-8 h-8 rounded-full neumorphic-inset flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+</span>
+                    Efficiency
+                </h3>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+<span>Retrieval</span>
+<span class="text-primary">+2.3d</span>
+</div>
+<div class="h-2 w-full neumorphic-progress-bg rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary/60 w-[85%] rounded-full"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+<span>Feynman</span>
+<span class="text-tertiary">+1.8d</span>
+</div>
+<div class="h-2 w-full neumorphic-progress-bg rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-tertiary to-tertiary/60 w-[70%] rounded-full"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+<span>Spaced Rep</span>
+<span class="text-secondary">+4.1d</span>
+</div>
+<div class="h-2 w-full neumorphic-progress-bg rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-secondary to-secondary/60 w-[95%] rounded-full"></div>
+</div>
+</div>
+</div>
+</section>
+<section class="neumorphic-flat p-6 rounded-[2rem]">
+<h3 class="font-headline font-bold text-lg mb-4">Recent Insights</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 neumorphic-inset text-[10px] font-bold uppercase tracking-tight text-on-surface-variant rounded-full">Focus Block: 90m</span>
+<span class="px-4 py-2 neumorphic-inset text-[10px] font-bold uppercase tracking-tight text-on-surface-variant rounded-full">Late Night Decay</span>
+<span class="px-4 py-2 neumorphic-inset text-[10px] font-bold uppercase tracking-tight text-on-surface-variant rounded-full">Visual Learner</span>
+</div>
+</section>
+</div>
+<!-- Center Workspace: Dashboard & Reflection -->
+<div class="col-span-12 lg:col-span-6 space-y-8">
+<!-- Confidence Calibration -->
+<section class="neumorphic-flat p-8 rounded-[2.5rem]">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h2 class="font-headline font-extrabold text-2xl text-on-surface">Confidence</h2>
+<p class="text-sm text-on-surface-variant">Prediction accuracy over time</p>
+</div>
+<div class="neumorphic-inset text-tertiary px-4 py-2 rounded-full font-bold text-xs">
+                        +15% Growth
+                    </div>
+</div>
+<div class="h-48 w-full flex items-end gap-3 relative px-2">
+<div class="flex-1 neumorphic-inset rounded-t-2xl h-[40%]"></div>
+<div class="flex-1 neumorphic-inset rounded-t-2xl h-[55%]"></div>
+<div class="flex-1 neumorphic-inset rounded-t-2xl h-[48%]"></div>
+<div class="flex-1 neumorphic-inset rounded-t-2xl h-[72%]"></div>
+<div class="flex-1 bg-primary/20 border-t-4 border-primary rounded-t-2xl h-[85%] relative group">
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">94% Accuracy</div>
+</div>
+<div class="flex-1 neumorphic-inset rounded-t-2xl h-[65%]"></div>
+<div class="flex-1 neumorphic-inset rounded-t-2xl h-[78%]"></div>
+</div>
+<div class="flex justify-between mt-6 text-[10px] font-bold uppercase tracking-widest text-outline px-2">
+<span>WK 1</span>
+<span>WK 2</span>
+<span>WK 3</span>
+<span>WK 4</span>
+<span class="text-primary">Current</span>
+</div>
+</section>
+<!-- Daily Reflection Input -->
+<section class="neumorphic-flat p-8 rounded-[2.5rem]">
+<h3 class="font-headline font-bold text-xl mb-6">Daily Reflection</h3>
+<div class="space-y-6">
+<div>
+<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface/40 mb-4">What strategy worked today?</label>
+<div class="flex flex-wrap gap-4 mb-6">
+<button class="px-6 py-3 neumorphic-button rounded-2xl text-sm font-semibold hover:text-primary transition-all">
+                                Practice problems
+                            </button>
+<button class="px-6 py-3 neumorphic-button rounded-2xl text-sm font-semibold hover:text-primary transition-all">
+                                Re-read notes
+                            </button>
+<button class="px-6 py-3 neumorphic-button rounded-2xl text-sm font-semibold hover:text-primary transition-all">
+                                Drew a diagram
+                            </button>
+</div>
+<textarea class="w-full neumorphic-inset border-none rounded-3xl p-6 text-on-surface placeholder:text-on-surface/30 min-h-[140px] focus:ring-0" placeholder="Synthesize your session..."></textarea>
+</div>
+<div class="flex justify-end">
+<button class="bg-gradient-primary text-white font-bold px-10 py-4 rounded-full flex items-center gap-3 hover:scale-105 transition-all shadow-lg shadow-primary/20">
+<span>Commit to Memory</span>
+<span class="material-symbols-outlined text-sm">memory</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Rail: Goals & Brain Map -->
+<div class="col-span-12 lg:col-span-3 space-y-8">
+<section class="space-y-4">
+<h3 class="font-headline font-bold text-lg px-2">Mastery Goals</h3>
+<div class="neumorphic-flat p-6 rounded-[2rem] border border-white/20">
+<span class="text-[9px] font-black uppercase tracking-widest text-primary mb-2 block">By Nov 15</span>
+<h4 class="font-bold text-on-surface text-sm mb-4 leading-snug">Quantum Mechanics Fundamentals</h4>
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1.5 neumorphic-progress-bg rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[65%] rounded-full"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">65%</span>
+</div>
+</div>
+<div class="neumorphic-flat p-6 rounded-[2rem] border border-white/20">
+<span class="text-[9px] font-black uppercase tracking-widest text-secondary mb-2 block">By Dec 01</span>
+<h4 class="font-bold text-on-surface text-sm mb-4 leading-snug">Advanced Neural Architecture</h4>
+<div class="flex items-center gap-3">
+<div class="flex-1 h-1.5 neumorphic-progress-bg rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[40%] rounded-full"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">40%</span>
+</div>
+</div>
+</section>
+<section class="neumorphic-flat p-6 rounded-[2rem]">
+<h3 class="font-headline font-bold text-lg mb-6">Brain Map Delta</h3>
+<div class="flex flex-col items-center">
+<div class="grid grid-cols-2 gap-4 w-full mb-6">
+<div class="text-center">
+<div class="w-full aspect-square neumorphic-inset rounded-2xl flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-on-surface/20 text-3xl">hub</span>
+</div>
+<span class="text-[9px] font-bold uppercase tracking-widest text-on-surface/40">Last Week</span>
+</div>
+<div class="text-center">
+<div class="w-full aspect-square neumorphic-flat rounded-2xl flex items-center justify-center mb-2 relative">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">hub</span>
+<div class="absolute top-3 right-3 w-2 h-2 bg-tertiary rounded-full animate-pulse"></div>
+</div>
+<span class="text-[9px] font-bold uppercase tracking-widest text-primary">This Week</span>
+</div>
+</div>
+<div class="w-full space-y-3">
+<div class="flex items-start gap-3">
+<span class="w-2 h-2 mt-1 rounded-full bg-tertiary shadow-[0_0_8px_rgba(0,105,71,0.4)]"></span>
+<span class="text-[11px] leading-tight text-on-surface-variant"><strong class="text-on-surface">12 New Nodes</strong> in Cognitive Bias</span>
+</div>
+<div class="flex items-start gap-3">
+<span class="w-2 h-2 mt-1 rounded-full bg-error-dim shadow-[0_0_8px_rgba(167,1,56,0.4)]"></span>
+<span class="text-[11px] leading-tight text-on-surface-variant"><strong class="text-on-surface">Decay Warning:</strong> Latin Vocab</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Floating Action Button Contextual -->
+<button class="fixed bottom-10 right-10 w-16 h-16 neumorphic-fab rounded-full text-white flex items-center justify-center group hover:scale-110 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform">add</span>
+</button>
+</body></html>

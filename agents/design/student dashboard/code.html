@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SANKALP AEI | Student Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#58e7ab",
+              "error-container": "#f74b6d",
+              "surface-container-high": "#dfe3e6",
+              "surface-container-low": "#eef1f3",
+              "on-tertiary-fixed-variant": "#006544",
+              "secondary-fixed-dim": "#bdbeff",
+              "secondary-dim": "#3939c7",
+              "on-secondary": "#f4f1ff",
+              "on-secondary-fixed": "#160bae",
+              "on-error-container": "#510017",
+              "surface-container": "#e5e9eb",
+              "tertiary-container": "#69f6b8",
+              "on-primary": "#f8f0ff",
+              "inverse-primary": "#a476ff",
+              "on-primary-fixed": "#000000",
+              "surface-container-lowest": "#ffffff",
+              "outline": "#747779",
+              "error-dim": "#a70138",
+              "on-tertiary": "#c8ffe0",
+              "secondary-container": "#cdcdff",
+              "tertiary-fixed": "#69f6b8",
+              "on-surface-variant": "#595c5e",
+              "tertiary-dim": "#005c3d",
+              "primary": "#702ae1",
+              "primary-fixed": "#b28cff",
+              "on-primary-container": "#2e006c",
+              "on-background": "#2c2f31",
+              "primary-dim": "#6411d5",
+              "on-tertiary-fixed": "#00452d",
+              "surface-container-highest": "#d9dde0",
+              "secondary": "#4647d3",
+              "inverse-surface": "#0b0f10",
+              "surface-variant": "#d9dde0",
+              "surface": "#EBEDF0",
+              "on-error": "#ffefef",
+              "surface-dim": "#d0d5d8",
+              "on-secondary-container": "#2f2ebf",
+              "on-surface": "#2c2f31",
+              "on-secondary-fixed-variant": "#3a3ac8",
+              "on-primary-fixed-variant": "#390083",
+              "outline-variant": "#abadaf",
+              "primary-container": "#b28cff",
+              "background": "#EBEDF0",
+              "tertiary": "#006947",
+              "surface-bright": "#EBEDF0",
+              "secondary-fixed": "#cdcdff",
+              "primary-fixed-dim": "#a67aff",
+              "error": "#b41340",
+              "surface-tint": "#702ae1",
+              "on-tertiary-container": "#005a3c",
+              "inverse-on-surface": "#9a9d9f"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        :root {
+            --nm-bg: #EBEDF0;
+            --nm-shadow-dark: rgba(163, 177, 198, 0.6);
+            --nm-shadow-light: rgba(255, 255, 255, 1);
+        }
+        body {
+            background-color: var(--nm-bg);
+        }
+        .neumorphic-flat {
+            background: var(--nm-bg);
+            box-shadow: 9px 9px 16px var(--nm-shadow-dark), -9px -9px 16px var(--nm-shadow-light);
+        }
+        .neumorphic-inset {
+            background: var(--nm-bg);
+            box-shadow: inset 6px 6px 12px var(--nm-shadow-dark), inset -6px -6px 12px var(--nm-shadow-light);
+        }
+        .neumorphic-pressed {
+            box-shadow: inset 4px 4px 8px var(--nm-shadow-dark), inset -4px -4px 8px var(--nm-shadow-light);
+        }
+        .mastery-arc {
+            background: conic-gradient(from 0deg, #702ae1 0%, #b28cff 78%, transparent 78% 100%);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container min-h-screen">
+<!-- Top Navigation Shell -->
+<header class="fixed top-0 w-full z-50 px-8 h-20 bg-[#EBEDF0] flex justify-between items-center font-['Manrope'] font-semibold tracking-tight">
+<div class="flex items-center gap-12">
+<span class="text-2xl font-black text-[#7C3AED] tracking-tighter uppercase">SANKALP AEI</span>
+<nav class="hidden md:flex gap-8">
+<a class="text-[#7C3AED] relative pb-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#7C3AED]" href="#">Dashboard</a>
+<a class="text-[#2c2f31] opacity-70 hover:text-[#7C3AED] transition-colors duration-300" href="#">Curriculum</a>
+<a class="text-[#2c2f31] opacity-70 hover:text-[#7C3AED] transition-colors duration-300" href="#">Assessments</a>
+<a class="text-[#2c2f31] opacity-70 hover:text-[#7C3AED] transition-colors duration-300" href="#">Insights</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="neumorphic-inset px-5 py-2.5 rounded-full flex items-center gap-3">
+<span class="material-symbols-outlined text-primary scale-90" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Focus Level: 88%</span>
+</div>
+<div class="flex gap-4">
+<button class="w-10 h-10 rounded-full neumorphic-flat flex items-center justify-center hover:scale-95 transition-transform active:shadow-inner">
+<span class="material-symbols-outlined text-on-surface-variant text-xl">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full neumorphic-flat p-0.5">
+<img alt="Student Profile Avatar" class="w-full h-full rounded-full border border-white/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxcMi-CGKA--fu385KAp7LpugeGjQM0zGol67pYo9wkiZLZRPRUTGMMQ88VAff9uz_7DV7owM0tta7omiV6QwaqVP9cfP2kojTezg6PnZj3D69fWi5eAnc28i36t-rdOBjkwr107l_9Sq1L0PgrJIyE_2TXCXf281kCCrXtbNOArrc1ek4UTZR2acPhUl02DewdhzHP0VrchAa5FiojbPjVeh1ezJeS9A3Pv8CY93FCuwoaCIblSVzZJTL1Vyuzym1oZfbNm65GfrC"/>
+</div>
+</div>
+</div>
+</header>
+<main class="pt-28 pb-12 px-8 max-w-[1600px] mx-auto">
+<!-- Cognitive State Snapshot Header -->
+<section class="mb-10 flex flex-col md:flex-row justify-between items-end gap-6">
+<div>
+<h1 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight mb-2">Good morning, Aarav.</h1>
+<p class="text-on-surface-variant text-lg">Your cognitive clarity is peaking. Perfect time for <span class="text-primary font-bold">Quantum Mechanics</span>.</p>
+</div>
+<div class="flex gap-6">
+<div class="neumorphic-flat px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[200px]">
+<div class="w-12 h-12 rounded-full neumorphic-inset flex items-center justify-center p-1">
+<div class="w-full h-full rounded-full mastery-arc flex items-center justify-center relative">
+<div class="w-[85%] h-[85%] bg-[#EBEDF0] rounded-full flex items-center justify-center">
+<span class="text-[10px] font-black">78%</span>
+</div>
+</div>
+</div>
+<div>
+<p class="text-[10px] uppercase font-black text-on-surface-variant leading-none mb-1">Overall Mastery</p>
+<p class="text-lg font-bold text-primary tracking-tighter leading-none">Architect Level</p>
+</div>
+</div>
+<div class="neumorphic-flat px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[180px]">
+<div class="w-12 h-12 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div>
+<p class="text-[10px] uppercase font-black text-on-surface-variant leading-none mb-1">Current Streak</p>
+<p class="text-lg font-bold text-primary tracking-tighter leading-none">14 Days</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Tri-Pane Cognitive Cockpit -->
+<div class="grid grid-cols-12 gap-10">
+<!-- Left Rail -->
+<aside class="col-span-12 lg:col-span-3 space-y-10">
+<div class="neumorphic-flat p-6 rounded-2xl">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline font-bold text-on-surface-variant uppercase text-[10px] tracking-[0.2em]">Cognitive Brain Map</h3>
+<button class="w-6 h-6 rounded-full neumorphic-flat flex items-center justify-center group">
+<span class="material-symbols-outlined text-primary text-xs group-hover:scale-110 transition-transform">open_in_full</span>
+</button>
+</div>
+<div class="relative h-56 w-full neumorphic-inset rounded-2xl flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5"></div>
+<div class="relative z-10 flex gap-4">
+<div class="w-12 h-12 rounded-full neumorphic-flat flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">functions</span>
+</div>
+<div class="w-12 h-12 rounded-full neumorphic-flat flex items-center justify-center translate-y-6 bg-tertiary-container/10 border border-tertiary-fixed-dim/30">
+<span class="material-symbols-outlined text-tertiary text-sm" style="font-variation-settings: 'FILL' 1;">science</span>
+</div>
+<div class="w-12 h-12 rounded-full neumorphic-flat flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-dim text-sm" style="font-variation-settings: 'FILL' 1;">history_edu</span>
+</div>
+</div>
+</div>
+</div>
+<div class="space-y-6">
+<h3 class="font-headline font-bold text-on-surface-variant uppercase text-[10px] tracking-[0.2em] px-2">Subject Mastery</h3>
+<div class="space-y-4">
+<div class="neumorphic-flat p-4 rounded-xl flex items-center justify-between group hover:scale-[1.02] transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-primary">architecture</span>
+</div>
+<span class="font-bold text-sm">Mathematics</span>
+</div>
+<span class="text-xs font-black text-primary px-2">82%</span>
+</div>
+<div class="neumorphic-flat p-4 rounded-xl flex items-center justify-between group hover:scale-[1.02] transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-secondary">experiment</span>
+</div>
+<span class="font-bold text-sm text-on-surface-variant">Physics</span>
+</div>
+<span class="text-xs font-black text-on-surface-variant px-2">64%</span>
+</div>
+<div class="neumorphic-flat p-4 rounded-xl flex items-center justify-between group hover:scale-[1.02] transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-tertiary">biotech</span>
+</div>
+<span class="font-bold text-sm text-on-surface-variant">Biochemistry</span>
+</div>
+<span class="text-xs font-black text-on-surface-variant px-2">91%</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Center Workspace -->
+<section class="col-span-12 lg:col-span-6 space-y-10">
+<div class="neumorphic-flat p-10 rounded-[2.5rem] relative overflow-hidden">
+<div class="absolute top-6 right-6">
+<span class="px-4 py-1.5 neumorphic-inset text-primary text-[10px] font-black rounded-full uppercase tracking-widest border border-primary/10">Challenge Mode</span>
+</div>
+<div class="relative z-10">
+<div class="mb-8">
+<h2 class="text-xs font-black text-primary uppercase tracking-[0.3em] mb-3">Today's Mission</h2>
+<h3 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight leading-tight">Advanced Thermodynamics: <br/>Phase Transitions</h3>
+</div>
+<div class="neumorphic-inset p-8 rounded-3xl mb-10">
+<div class="flex items-start gap-6 mb-8">
+<div class="w-14 h-14 rounded-2xl neumorphic-flat flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+</div>
+<div>
+<h4 class="font-extrabold text-on-surface text-lg">Deep Dive Challenge</h4>
+<p class="text-sm text-on-surface-variant leading-relaxed opacity-80">Solve 5 complex problems regarding entropy changes in non-ideal gases to unlock the 'Thermodynamic Titan' badge.</p>
+</div>
+</div>
+<div class="w-full h-3 neumorphic-pressed rounded-full overflow-hidden bg-[#EBEDF0]">
+<div class="w-[60%] h-full bg-gradient-to-r from-primary to-primary-fixed shadow-[0_0_15px_rgba(112,42,225,0.4)]"></div>
+</div>
+<div class="flex justify-between mt-4">
+<span class="text-[10px] font-black text-on-surface-variant uppercase tracking-tighter">3/5 Completed</span>
+<span class="text-[10px] font-black text-primary uppercase tracking-tighter">+250 XP at completion</span>
+</div>
+</div>
+<div class="flex gap-6">
+<button class="flex-1 py-5 rounded-2xl neumorphic-flat bg-primary text-white font-black text-sm tracking-widest hover:scale-[0.98] transition-all active:shadow-inner uppercase">
+                            Launch Mission
+                        </button>
+<button class="flex-1 py-5 rounded-2xl neumorphic-flat text-on-surface font-black text-sm tracking-widest hover:scale-[0.98] transition-all active:shadow-inner uppercase">
+                            Review Theory
+                        </button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+<div class="neumorphic-flat p-8 rounded-3xl">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-8 h-8 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-lg">fact_check</span>
+</div>
+<h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Prerequisite Readiness</h4>
+</div>
+<div class="space-y-5">
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold text-on-surface-variant">Partial Derivatives</span>
+<span class="material-symbols-outlined text-tertiary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold text-on-surface-variant">Ideal Gas Laws</span>
+<span class="material-symbols-outlined text-tertiary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold text-on-surface-variant">Statistical Mechanics</span>
+<span class="material-symbols-outlined text-primary text-lg animate-spin" style="animation-duration: 3s">sync</span>
+</div>
+</div>
+</div>
+<div class="neumorphic-flat p-8 rounded-3xl">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-8 h-8 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-lg">trending_up</span>
+</div>
+<h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Progress Velocity</h4>
+</div>
+<div class="h-24 flex items-end gap-2.5 px-2">
+<div class="flex-1 neumorphic-inset rounded-t-lg h-[40%] bg-surface-container"></div>
+<div class="flex-1 neumorphic-inset rounded-t-lg h-[60%] bg-surface-container"></div>
+<div class="flex-1 neumorphic-inset rounded-t-lg h-[55%] bg-surface-container"></div>
+<div class="flex-1 neumorphic-flat rounded-t-lg h-[85%] bg-primary-container/40"></div>
+<div class="flex-1 neumorphic-flat rounded-t-lg h-[95%] bg-primary"></div>
+<div class="flex-1 neumorphic-flat rounded-t-lg h-[80%] bg-primary/80"></div>
+<div class="flex-1 neumorphic-flat rounded-t-lg h-[100%] bg-primary shadow-lg"></div>
+</div>
+<p class="text-[10px] text-primary mt-4 text-center uppercase font-black tracking-widest">Velocity: +12% vs last week</p>
+</div>
+</div>
+<div class="neumorphic-flat p-8 rounded-3xl">
+<h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant mb-6">Unlocked Achievements</h4>
+<div class="flex gap-8 overflow-x-auto pb-4 scrollbar-hide">
+<div class="shrink-0 flex flex-col items-center gap-3">
+<div class="w-16 h-16 rounded-full neumorphic-flat flex items-center justify-center p-2.5">
+<div class="w-full h-full rounded-full bg-tertiary-container flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-on-tertiary-container text-2xl" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+</div>
+<span class="text-[10px] font-black text-on-surface-variant uppercase tracking-tighter">Night Owl</span>
+</div>
+<div class="shrink-0 flex flex-col items-center gap-3">
+<div class="w-16 h-16 rounded-full neumorphic-flat flex items-center justify-center p-2.5 grayscale opacity-60">
+<div class="w-full h-full rounded-full bg-secondary-container flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-on-secondary-container text-2xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+</div>
+<span class="text-[10px] font-black text-on-surface-variant uppercase tracking-tighter">Polymath</span>
+</div>
+<div class="shrink-0 flex flex-col items-center gap-3">
+<div class="w-16 h-16 rounded-full neumorphic-flat flex items-center justify-center p-2.5">
+<div class="w-full h-full rounded-full bg-primary-container flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-on-primary-container text-2xl" style="font-variation-settings: 'FILL' 1;">psychology_alt</span>
+</div>
+</div>
+<span class="text-[10px] font-black text-on-surface-variant uppercase tracking-tighter">Deep Thinker</span>
+</div>
+<div class="shrink-0 flex flex-col items-center gap-3">
+<div class="w-16 h-16 rounded-full neumorphic-flat flex items-center justify-center p-2.5">
+<div class="w-full h-full rounded-full bg-orange-200 flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-orange-800 text-2xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+</div>
+<span class="text-[10px] font-black text-on-surface-variant uppercase tracking-tighter">Consistent</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Rail -->
+<aside class="col-span-12 lg:col-span-3 space-y-10">
+<div class="neumorphic-flat p-8 rounded-3xl border-l-8 border-primary relative overflow-hidden">
+<div class="absolute -right-8 -top-8 w-24 h-24 bg-primary/5 rounded-full blur-2xl"></div>
+<div class="flex items-center gap-4 mb-4">
+<div class="w-8 h-8 rounded-full neumorphic-inset flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl">help_center</span>
+</div>
+<h4 class="font-headline font-black text-on-surface uppercase text-[10px] tracking-[0.2em]">Why this now?</h4>
+</div>
+<p class="text-sm leading-relaxed text-on-surface-variant font-medium">
+                    Our AI detected a <span class="text-primary font-bold">cognitive resonance</span> between your recent progress in <span class="font-bold">Vector Calculus</span> and the concepts in <span class="font-bold">Thermodynamics</span>. 
+                </p>
+</div>
+<div class="space-y-6">
+<h3 class="font-headline font-bold text-on-surface-variant uppercase text-[10px] tracking-[0.2em] px-2">Revision Queue</h3>
+<div class="space-y-6 relative before:content-[''] before:absolute before:left-6 before:top-4 before:bottom-4 before:w-1 before:bg-[#D1D9E6] before:rounded-full">
+<div class="relative pl-14">
+<div class="absolute left-4 top-1 w-5 h-5 rounded-full neumorphic-flat bg-[#EBEDF0] flex items-center justify-center z-10 border border-white/50">
+<div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(112,42,225,0.6)]"></div>
+</div>
+<div class="neumorphic-flat p-5 rounded-2xl hover:scale-[1.03] transition-transform cursor-pointer">
+<p class="text-[10px] font-black text-primary uppercase mb-1.5 tracking-widest">In 2 hours</p>
+<p class="text-sm font-extrabold text-on-surface mb-1">Organic Chemistry</p>
+<p class="text-[11px] text-on-surface-variant font-medium opacity-70">Forgetting curve alert (80%)</p>
+</div>
+</div>
+<div class="relative pl-14 opacity-70">
+<div class="absolute left-4 top-1 w-5 h-5 rounded-full neumorphic-flat bg-[#EBEDF0] flex items-center justify-center z-10 border border-white/50">
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+</div>
+<div class="neumorphic-flat p-5 rounded-2xl">
+<p class="text-[10px] font-black text-on-surface-variant uppercase mb-1.5 tracking-widest">Tomorrow, 09:00</p>
+<p class="text-sm font-extrabold text-on-surface mb-1">Linear Algebra Mock</p>
+<p class="text-[11px] text-on-surface-variant font-medium opacity-70">Mastery consolidation</p>
+</div>
+</div>
+</div>
+</div>
+<div class="neumorphic-inset p-2 rounded-full flex items-center px-5">
+<span class="material-symbols-outlined text-on-surface-variant text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full py-4 px-3 placeholder:text-on-surface-variant/40 font-medium" placeholder="Ask your AI tutor..." type="text"/>
+<button class="w-10 h-10 rounded-full neumorphic-flat bg-primary text-white flex items-center justify-center hover:scale-95 transition-transform active:shadow-inner">
+<span class="material-symbols-outlined text-lg">arrow_forward</span>
+</button>
+</div>
+</aside>
+</div>
+</main>
+<footer class="w-full py-16 px-8 mt-12 bg-[#E2E6EB] flex flex-col md:flex-row justify-between items-center gap-10 font-['Inter'] text-sm">
+<div class="flex flex-col gap-3">
+<span class="font-['Manrope'] font-black text-[#2c2f31] text-lg tracking-tighter">SANKALP AEI</span>
+<p class="text-on-surface-variant opacity-60 font-medium">© 2024 SANKALP AEI. Powered by Fluid Intelligence.</p>
+</div>
+<div class="flex gap-10">
+<a class="text-on-surface-variant font-bold hover:text-primary transition-all uppercase text-[10px] tracking-widest" href="#">Privacy</a>
+<a class="text-on-surface-variant font-bold hover:text-primary transition-all uppercase text-[10px] tracking-widest" href="#">Terms</a>
+<a class="text-on-surface-variant font-bold hover:text-primary transition-all uppercase text-[10px] tracking-widest" href="#">Help</a>
+<a class="text-on-surface-variant font-bold hover:text-primary transition-all uppercase text-[10px] tracking-widest" href="#">Feedback</a>
+</div>
+</footer>
+<!-- FAB -->
+<button class="fixed bottom-10 right-10 w-20 h-20 rounded-full neumorphic-flat bg-primary text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40 group">
+<div class="absolute inset-0 bg-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</button>
+</body></html>

@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SANKALP-AEI — Mission Control</title>
+<meta name="description" content="Phase execution dashboard for the SANKALP-AEI autonomous multi-agent orchestration system.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked@11.0.0/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --bg:#030712;--surface:rgba(15,23,42,.7);--surface-hover:rgba(30,41,59,.7);
+  --surface-glass:rgba(15,23,42,.5);--border:rgba(255,255,255,.07);
+  --border-active:rgba(129,140,248,.35);--text:#e2e8f0;--text-muted:#94a3b8;
+  --text-dim:#64748b;--primary:#818cf8;--primary-glow:rgba(99,102,241,.25);
+  --primary-soft:rgba(99,102,241,.12);--accent:#a78bfa;--green:#34d399;
+  --teal:#2dd4bf;--amber:#fbbf24;--red:#f87171;
+  --radius-sm:8px;--radius:14px;--radius-lg:20px;
+  --shadow-md:0 4px 24px rgba(0,0,0,.45);--shadow-lg:0 8px 40px rgba(0,0,0,.55);
+  --font-sans:'Inter',system-ui,sans-serif;
+  --font-display:'Outfit',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --transition:.22s cubic-bezier(.4,0,.2,1);
+  --topbar-h:60px;--docs-sidebar-w:260px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-sans);background:var(--bg);
+  background-image:radial-gradient(ellipse 80% 60% at 20% -10%,rgba(99,102,241,.09) 0%,transparent 60%),
+  radial-gradient(ellipse 60% 50% at 80% 110%,rgba(168,85,247,.07) 0%,transparent 60%);
+  background-attachment:fixed;color:var(--text);line-height:1.7;min-height:100vh;
+  -webkit-font-smoothing:antialiased}
+
+/* ═══════════════════════════════════════════
+   TOP BAR
+═══════════════════════════════════════════ */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-h);
+  background:rgba(3,7,18,.88);backdrop-filter:blur(24px) saturate(1.5);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 24px;z-index:100;gap:20px}
+.topbar-logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.topbar-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#6366f1,#a855f7);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:17px;box-shadow:0 0 14px rgba(99,102,241,.4)}
+.topbar-logo-text{font-family:var(--font-display);font-weight:700;font-size:14px;color:#fff;letter-spacing:.3px}
+.topbar-logo-text span{display:block;font-size:9.5px;font-weight:400;color:var(--text-dim);letter-spacing:.5px}
+
+/* ═══════════════════════════════════════════
+   TAB BAR
+═══════════════════════════════════════════ */
+.tab-bar{display:flex;gap:4px;flex:1;justify-content:center}
+.tab-btn{background:none;border:none;color:var(--text-muted);font-family:var(--font-sans);
+  font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius-sm);
+  cursor:pointer;transition:all var(--transition);display:flex;align-items:center;
+  gap:6px;white-space:nowrap}
+.tab-btn:hover{background:var(--surface-hover);color:var(--text)}
+.tab-btn.active{background:var(--primary-soft);color:#c7d2fe;font-weight:600}
+.tab-icon{font-size:15px}
+.tab-badge{font-size:10px;padding:1px 6px;border-radius:99px;background:rgba(255,255,255,.06);color:var(--text-dim)}
+.tab-btn.active .tab-badge{background:rgba(129,140,248,.2);color:var(--primary)}
+.topbar-pills{display:flex;gap:6px;flex-shrink:0}
+.topbar-pill{font-size:10px;padding:3px 8px;border-radius:99px;font-weight:500}
+.pill-green{background:rgba(52,211,153,.12);color:var(--green)}
+.pill-purple{background:rgba(167,139,250,.12);color:var(--accent)}
+
+/* ═══════════════════════════════════════════
+   VIEWS
+═══════════════════════════════════════════ */
+.view{display:none;padding-top:calc(var(--topbar-h) + 16px);min-height:100vh;
+  animation:viewFade .3s ease-out}
+.view.active{display:block}
+@keyframes viewFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.view-inner{max-width:1200px;margin:0 auto;padding:20px 32px 80px}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD VIEW
+═══════════════════════════════════════════ */
+.dash-header{text-align:center;margin-bottom:40px}
+.dash-header h1{font-family:var(--font-display);font-size:36px;font-weight:800;
+  background:linear-gradient(135deg,#fff 30%,#94a3b8);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.dash-header p{color:var(--text-muted);font-size:15px}
+
+.dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;text-align:center;transition:all var(--transition)}
+.stat-card:hover{border-color:var(--border-active);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat-value{font-family:var(--font-display);font-size:32px;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.stat-value.green{color:var(--green)}.stat-value.purple{color:var(--accent)}
+.stat-value.amber{color:var(--amber)}.stat-value.blue{color:var(--primary)}
+
+.dash-progress-section{display:grid;grid-template-columns:280px 1fr;gap:24px;margin-bottom:32px}
+.progress-ring-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.progress-ring{position:relative;width:160px;height:160px}
+.progress-ring svg{transform:rotate(-90deg);width:160px;height:160px}
+.progress-ring circle{fill:none;stroke-width:12;stroke-linecap:round}
+.progress-ring .ring-bg{stroke:rgba(255,255,255,.06)}
+.progress-ring .ring-fg{stroke:url(#ringGrad);transition:stroke-dashoffset 1s ease-out}
+.progress-ring .ring-label{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.progress-ring .ring-pct{font-family:var(--font-display);font-size:36px;font-weight:800;color:#fff}
+.progress-ring .ring-sub{font-size:11px;color:var(--text-muted)}
+
+.dash-phases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.dash-phase-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all var(--transition)}
+.dash-phase-card:hover{border-color:var(--border-active);background:var(--surface-hover)}
+.dash-phase-num{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:700;flex-shrink:0}
+.dash-phase-num.done{background:rgba(52,211,153,.15);color:var(--green)}
+.dash-phase-num.active{background:rgba(129,140,248,.2);color:var(--primary);box-shadow:0 0 10px rgba(99,102,241,.3)}
+.dash-phase-num.pending{background:rgba(255,255,255,.05);color:var(--text-dim)}
+.dash-phase-info{flex:1;min-width:0}
+.dash-phase-title{font-size:12.5px;font-weight:500;color:var(--text);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.dash-phase-bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:6px}
+.dash-phase-bar-fill{height:100%;border-radius:2px;transition:width .6s ease-out}
+.dash-phase-bar-fill.done{background:var(--green)}.dash-phase-bar-fill.active{background:var(--primary)}
+.dash-phase-bar-fill.pending{background:var(--text-dim)}
+
+.quick-actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;justify-content:center}
+.qa-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:12px 20px;color:var(--text);font-family:var(--font-sans);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all var(--transition);display:flex;align-items:center;gap:8px}
+.qa-btn:hover{border-color:var(--border-active);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.qa-btn.primary{background:var(--primary-soft);border-color:var(--border-active);color:#c7d2fe}
+
+/* ═══════════════════════════════════════════
+   PHASES VIEW
+═══════════════════════════════════════════ */
+.phases-header{margin-bottom:28px}
+.phases-header h2{font-family:var(--font-display);font-size:28px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.phases-header p{color:var(--text-muted);font-size:14px}
+.phases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+
+.phase-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;transition:all var(--transition)}
+.phase-card:hover{border-color:var(--border-active);box-shadow:var(--shadow-md)}
+.phase-card.expanded{grid-column:1/-1}
+.phase-card-head{padding:18px 20px;cursor:pointer;display:flex;align-items:flex-start;gap:14px}
+.phase-num{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-display);font-size:15px;font-weight:700;flex-shrink:0}
+.phase-num.s-done{background:rgba(52,211,153,.15);color:var(--green)}
+.phase-num.s-active{background:rgba(129,140,248,.2);color:var(--primary);box-shadow:0 0 12px rgba(99,102,241,.3)}
+.phase-num.s-pending{background:rgba(255,255,255,.05);color:var(--text-dim)}
+.phase-num.s-blocked{background:rgba(248,113,113,.12);color:var(--red)}
+.phase-head-info{flex:1;min-width:0}
+.phase-title{font-family:var(--font-display);font-size:15px;font-weight:600;color:#f1f5f9;margin-bottom:4px}
+.phase-status{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;
+  text-transform:uppercase;letter-spacing:.5px}
+.phase-status.s-done{background:rgba(52,211,153,.12);color:var(--green)}
+.phase-status.s-active{background:rgba(129,140,248,.15);color:var(--primary)}
+.phase-status.s-pending{background:rgba(255,255,255,.06);color:var(--text-dim)}
+.phase-status.s-blocked{background:rgba(248,113,113,.1);color:var(--red)}
+.phase-chevron{color:var(--text-dim);font-size:14px;transition:transform var(--transition);padding-top:4px}
+.phase-card.expanded .phase-chevron{transform:rotate(180deg)}
+
+.phase-progress{padding:0 20px 12px;display:flex;align-items:center;gap:10px}
+.phase-bar{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px}
+.phase-bar-fill{height:100%;border-radius:2px;transition:width .5s ease-out}
+.phase-pct{font-size:11px;color:var(--text-dim);font-weight:500;width:32px;text-align:right}
+
+.phase-body{display:none;border-top:1px solid var(--border);padding:20px;max-height:600px;overflow-y:auto}
+.phase-card.expanded .phase-body{display:block}
+.phase-checklist{list-style:none;margin:0 0 20px}
+.phase-checklist li{display:flex;align-items:flex-start;gap:10px;padding:6px 0;font-size:13.5px;
+  color:var(--text-muted);cursor:pointer;transition:color var(--transition)}
+.phase-checklist li:hover{color:var(--text)}
+.phase-checklist li.checked{color:var(--green);text-decoration:line-through;opacity:.7}
+.phase-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;
+  transition:all var(--transition)}
+.phase-checklist li.checked .phase-check{background:rgba(52,211,153,.15);border-color:var(--green);color:var(--green)}
+
+.phase-actions{display:flex;gap:10px;flex-wrap:wrap}
+.phase-btn{padding:9px 18px;border-radius:var(--radius-sm);font-family:var(--font-sans);
+  font-size:12.5px;font-weight:600;cursor:pointer;transition:all var(--transition);border:1px solid}
+.phase-btn-copy{background:var(--primary-soft);border-color:var(--border-active);color:#c7d2fe}
+.phase-btn-copy:hover{background:rgba(99,102,241,.25);transform:translateY(-1px)}
+.phase-btn-activate{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--green)}
+.phase-btn-activate:hover{background:rgba(52,211,153,.2);transform:translateY(-1px)}
+.phase-btn-reset{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.2);color:var(--red)}
+.phase-btn-reset:hover{background:rgba(248,113,113,.15)}
+
+/* ═══════════════════════════════════════════
+   CHAT VIEW
+═══════════════════════════════════════════ */
+.chat-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;min-height:calc(100vh - 120px)}
+.chat-main{display:flex;flex-direction:column}
+.chat-header h2{font-family:var(--font-display);font-size:22px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.chat-header p{color:var(--text-muted);font-size:13px;margin-bottom:20px}
+.chat-messages{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;overflow-y:auto;min-height:200px;max-height:calc(100vh - 360px);margin-bottom:16px}
+.chat-msg{margin-bottom:16px;display:flex;flex-direction:column}
+.chat-msg.user .chat-bubble{background:var(--primary-soft);border:1px solid var(--border-active);
+  margin-left:auto;border-radius:var(--radius) var(--radius) 4px var(--radius)}
+.chat-msg.system .chat-bubble{background:rgba(255,255,255,.04);border:1px solid var(--border);
+  margin-right:auto;border-radius:var(--radius) var(--radius) var(--radius) 4px}
+.chat-bubble{padding:12px 16px;max-width:85%;font-size:13.5px;line-height:1.6}
+.chat-bubble code{font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.4);
+  padding:2px 6px;border-radius:4px}
+.chat-cmd-preview{background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:14px 18px;font-family:var(--font-mono);font-size:12.5px;color:var(--green);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;
+  word-break:break-all}
+.chat-input-row{display:flex;gap:10px}
+.chat-input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 16px;color:var(--text);font-family:var(--font-sans);
+  font-size:13.5px;outline:none;transition:border-color var(--transition)}
+.chat-input:focus{border-color:var(--border-active)}
+.chat-input::placeholder{color:var(--text-dim)}
+.chat-send{background:var(--primary-soft);border:1px solid var(--border-active);border-radius:var(--radius-sm);
+  padding:12px 20px;color:#c7d2fe;font-family:var(--font-sans);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all var(--transition);white-space:nowrap}
+.chat-send:hover{background:rgba(99,102,241,.25);transform:translateY(-1px)}
+
+.chat-sidebar{display:flex;flex-direction:column;gap:16px}
+.chat-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.chat-panel h3{font-family:var(--font-display);font-size:14px;font-weight:600;color:#f1f5f9;margin-bottom:12px}
+.chat-option{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12.5px;color:var(--text-muted)}
+.chat-option input[type=checkbox]{accent-color:var(--primary)}
+.chat-preset{padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:var(--radius-sm);cursor:pointer;transition:all var(--transition);font-size:12px;
+  color:var(--text-muted);margin-bottom:6px;display:block;width:100%;text-align:left;
+  font-family:var(--font-sans)}
+.chat-preset:hover{border-color:var(--border-active);color:var(--text);background:var(--surface-hover)}
+.chat-history-item{padding:6px 0;font-size:11.5px;color:var(--text-dim);border-bottom:1px solid rgba(255,255,255,.04);
+  cursor:pointer;transition:color var(--transition);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-history-item:hover{color:var(--text)}
+
+/* ═══════════════════════════════════════════
+   DOCS VIEW (preserved wiki)
+═══════════════════════════════════════════ */
+.docs-layout{display:flex;min-height:calc(100vh - var(--topbar-h))}
+.docs-sidebar{width:var(--docs-sidebar-w);background:rgba(7,11,22,.82);
+  backdrop-filter:blur(20px) saturate(1.4);border-right:1px solid var(--border);
+  position:fixed;top:var(--topbar-h);bottom:0;overflow-y:auto;padding-top:8px;
+  scrollbar-width:thin;scrollbar-color:rgba(129,140,248,.2) transparent}
+.docs-sidebar::-webkit-scrollbar{width:3px}
+.docs-sidebar::-webkit-scrollbar-thumb{background:rgba(129,140,248,.2);border-radius:2px}
+.docs-sidebar-search{padding:14px 16px 10px}
+.docs-search-wrap{position:relative}
+.docs-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px;pointer-events:none}
+.docs-search-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:8px 10px 8px 30px;color:var(--text);
+  font-family:var(--font-sans);font-size:12.5px;outline:none;transition:border-color var(--transition)}
+.docs-search-input::placeholder{color:var(--text-dim)}
+.docs-search-input:focus{border-color:var(--border-active);background:rgba(99,102,241,.07)}
+.docs-nav-label{font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;
+  letter-spacing:.8px;padding:8px 20px 4px}
+.docs-nav-list{padding:4px 10px}
+.docs-nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);
+  cursor:pointer;font-size:13.5px;color:var(--text-muted);text-decoration:none;
+  transition:all var(--transition);margin-bottom:2px;font-weight:500;position:relative;
+  overflow:hidden;border:1px solid transparent}
+.docs-nav-item:hover{background:var(--surface-hover);color:var(--text);border-color:var(--border)}
+.docs-nav-item.active{background:var(--primary-soft);color:#c7d2fe;border-color:var(--border-active);font-weight:600}
+.docs-nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;
+  background:var(--primary);border-radius:0 3px 3px 0}
+.docs-nav-icon{font-size:15px;flex-shrink:0}
+.docs-nav-label-text{flex:1}
+.docs-nav-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;
+  background:rgba(255,255,255,.07);color:var(--text-dim);white-space:nowrap;flex-shrink:0}
+.docs-nav-item.active .docs-nav-badge{background:rgba(129,140,248,.2);color:var(--primary)}
+
+.docs-content-wrap{margin-left:var(--docs-sidebar-w);flex:1;display:flex;justify-content:center}
+.docs-content{width:100%;max-width:880px;padding:32px 60px 100px;animation:viewFade .35s ease-out}
+/* Typography reuse for docs content */
+.docs-content h1{font-family:var(--font-display);font-size:40px;font-weight:800;line-height:1.15;
+  letter-spacing:-.8px;margin-bottom:20px;background:linear-gradient(135deg,#fff 30%,#94a3b8 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.docs-content h2{font-family:var(--font-display);font-size:24px;font-weight:700;margin:52px 0 18px;
+  padding-bottom:14px;border-bottom:1px solid var(--border);color:#f1f5f9;letter-spacing:-.3px}
+.docs-content h3{font-family:var(--font-display);font-size:18px;font-weight:600;margin:36px 0 14px;color:#e2e8f0}
+.docs-content h4{font-size:15px;font-weight:600;margin:24px 0 10px;color:var(--primary);
+  text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-sans)}
+.docs-content p{margin:14px 0;color:#cbd5e1;font-size:15px;line-height:1.75}
+.docs-content a{color:#a5b4fc;text-decoration:none;border-bottom:1px solid transparent;
+  transition:border-color var(--transition),color var(--transition)}
+.docs-content a:hover{color:#c7d2fe;border-color:#a5b4fc}
+.docs-content ul,.docs-content ol{padding-left:26px;color:#cbd5e1;margin:14px 0}
+.docs-content li{margin:7px 0;font-size:15px;line-height:1.7}
+.docs-content li::marker{color:var(--primary)}
+.docs-content code{font-family:var(--font-mono);font-size:12.5px;background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.07);padding:2px 7px;border-radius:5px;color:#c7d2fe;white-space:nowrap}
+.docs-content pre{background:rgba(0,0,0,.65);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px 24px;overflow-x:auto;margin:22px 0;box-shadow:inset 0 0 20px rgba(0,0,0,.3);position:relative}
+.docs-content pre::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(129,140,248,.3),transparent)}
+.docs-content pre code{background:none;border:none;padding:0;font-size:13px;line-height:1.65;
+  color:#e2e8f0;white-space:pre}
+.docs-content blockquote{border-left:3px solid var(--primary);background:var(--primary-soft);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:14px 20px;margin:20px 0;
+  color:var(--text-muted);font-style:italic}
+.docs-content blockquote p{margin:0;color:var(--text-muted)}
+.docs-content table{width:100%;border-collapse:separate;border-spacing:0;margin:24px 0;
+  background:var(--surface);border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--border);box-shadow:var(--shadow-md);font-size:13.5px}
+.docs-content thead{background:rgba(0,0,0,.25)}
+.docs-content th{padding:13px 18px;text-align:left;color:#f8fafc;font-family:var(--font-display);
+  font-weight:600;font-size:13px;letter-spacing:.2px;border-bottom:1px solid var(--border)}
+.docs-content td{padding:11px 18px;border-bottom:1px solid rgba(255,255,255,.04);color:#cbd5e1;vertical-align:top}
+.docs-content tr:last-child td{border-bottom:none}
+.docs-content tbody tr:hover td{background:rgba(255,255,255,.025)}
+.docs-content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.docs-content .mermaid{background:rgba(5,10,20,.6);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px 20px;display:flex;justify-content:center;align-items:center;overflow-x:auto;
+  margin:28px 0;box-shadow:var(--shadow-md)}
+
+/* ═══════════════════════════════════════════
+   PIPELINE VIEW
+═══════════════════════════════════════════ */
+.pipeline-header h2{font-family:var(--font-display);font-size:28px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.pipeline-header p{color:var(--text-muted);font-size:14px;margin-bottom:24px}
+.pipeline-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;margin-bottom:20px}
+.pipeline-section h3{font-family:var(--font-display);font-size:16px;font-weight:600;color:#f1f5f9;margin-bottom:16px}
+.verification-table{width:100%;border-collapse:collapse;font-size:13px}
+.verification-table th{text-align:left;padding:10px 14px;color:var(--text-muted);font-weight:600;
+  border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.verification-table td{padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.03);color:#cbd5e1}
+.verification-table tr:hover td{background:rgba(255,255,255,.02)}
+.v-status{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.v-done{background:var(--green)}.v-partial{background:var(--amber)}.v-missing{background:var(--red)}
+
+/* ═══════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  z-index:200;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal-box{background:rgba(15,23,42,.95);border:1px solid var(--border);border-radius:var(--radius-lg);
+  width:100%;max-width:900px;max-height:85vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+.modal-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;
+  align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-head h3{font-family:var(--font-display);font-size:18px;font-weight:700;color:#fff}
+.modal-close{background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;
+  padding:4px 8px;border-radius:6px;transition:all var(--transition)}
+.modal-close:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.modal-body{flex:1;overflow-y:auto;padding:24px}
+.modal-body pre{background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;font-family:var(--font-mono);font-size:12.5px;line-height:1.7;color:#e2e8f0;
+  white-space:pre-wrap;word-wrap:break-word;max-height:none}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;
+  justify-content:flex-end;flex-shrink:0}
+
+/* ═══════════════════════════════════════════
+   COPY BUTTON
+═══════════════════════════════════════════ */
+.copy-btn{background:var(--primary-soft);border:1px solid var(--border-active);
+  border-radius:var(--radius-sm);padding:8px 16px;color:#c7d2fe;font-family:var(--font-sans);
+  font-size:12px;font-weight:600;cursor:pointer;transition:all var(--transition);
+  display:inline-flex;align-items:center;gap:6px}
+.copy-btn:hover{background:rgba(99,102,241,.25);transform:translateY(-1px)}
+.copy-btn.copied{background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:var(--green)}
+.copy-btn-lg{padding:10px 24px;font-size:13px}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+.toast{position:fixed;bottom:28px;right:28px;background:rgba(52,211,153,.15);
+  border:1px solid rgba(52,211,153,.3);border-radius:var(--radius-sm);padding:12px 20px;
+  color:var(--green);font-size:13px;font-weight:500;z-index:300;
+  transform:translateY(80px);opacity:0;transition:all .3s ease-out;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media(max-width:1024px){
+  .dash-progress-section{grid-template-columns:1fr}
+  .chat-layout{grid-template-columns:1fr}
+  .chat-sidebar{flex-direction:row;flex-wrap:wrap}
+  .chat-sidebar .chat-panel{flex:1;min-width:200px}
+}
+@media(max-width:768px){
+  .topbar{padding:0 12px;gap:8px}
+  .tab-btn{padding:6px 10px;font-size:12px}
+  .tab-btn .tab-label{display:none}
+  .view-inner{padding:16px 16px 60px}
+  .phases-grid{grid-template-columns:1fr}
+  .dash-phases-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .docs-sidebar{display:none}
+  .docs-content-wrap{margin-left:0}
+  .docs-content{padding:20px 18px 80px}
+  .modal-box{max-width:100%;margin:10px}
+  .topbar-pills{display:none}
+}
+@media(max-width:480px){
+  .dash-stats{grid-template-columns:1fr 1fr}
+  .stat-value{font-size:24px}
+  .quick-actions{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ TOP BAR ═══════════════════ -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-icon">🤖</div>
+    <div class="topbar-logo-text">SANKALP-AEI<span>Mission Control</span></div>
+  </div>
+  <nav class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-tab="dashboard"><span class="tab-icon">📊</span><span class="tab-label">Dashboard</span></button>
+    <button class="tab-btn" data-tab="phases"><span class="tab-icon">📋</span><span class="tab-label">Phases</span><span class="tab-badge">16</span></button>
+    <button class="tab-btn" data-tab="chat"><span class="tab-icon">💬</span><span class="tab-label">Agent Chat</span></button>
+    <button class="tab-btn" data-tab="docs"><span class="tab-icon">📚</span><span class="tab-label">Docs</span></button>
+    <button class="tab-btn" data-tab="pipeline"><span class="tab-icon">⚡</span><span class="tab-label">Pipeline</span></button>
+  </nav>
+  <div class="topbar-pills">
+    <span class="topbar-pill pill-green">30 Keys</span>
+    <span class="topbar-pill pill-purple">6 Agents</span>
+  </div>
+</header>
+
+<!-- ═══════════════════ DASHBOARD VIEW ═══════════════════ -->
+<section id="view-dashboard" class="view active">
+  <div class="view-inner">
+    <div class="dash-header">
+      <h1>Phase Execution Dashboard</h1>
+      <p>Real-time overview of the 16-phase SANKALP-AEI development roadmap</p>
+    </div>
+    <div class="dash-stats" id="dash-stats"></div>
+    <div class="dash-progress-section">
+      <div class="progress-ring-wrap">
+        <div class="progress-ring">
+          <svg viewBox="0 0 160 160">
+            <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/>
+            </linearGradient></defs>
+            <circle class="ring-bg" cx="80" cy="80" r="68"/>
+            <circle class="ring-fg" id="ring-fg" cx="80" cy="80" r="68" stroke-dasharray="427.26" stroke-dashoffset="427.26"/>
+          </svg>
+          <div class="ring-label">
+            <span class="ring-pct" id="ring-pct">0%</span>
+            <span class="ring-sub">Overall Progress</span>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:12px;color:var(--text-dim)">Active Phase</div>
+          <div id="active-phase-label" style="font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--primary);margin-top:4px">—</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;color:#f1f5f9;margin-bottom:14px">Phase Overview</div>
+        <div class="dash-phases-grid" id="dash-phases-grid"></div>
+      </div>
+    </div>
+    <div class="quick-actions">
+      <button class="qa-btn primary" onclick="switchTab('phases')">📋 Manage Phases</button>
+      <button class="qa-btn" onclick="switchTab('chat')">💬 Agent Chat</button>
+      <button class="qa-btn" onclick="switchTab('pipeline')">⚡ Pipeline Analysis</button>
+      <button class="qa-btn" onclick="switchTab('docs')">📚 Documentation</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PHASES VIEW ═══════════════════ -->
+<section id="view-phases" class="view">
+  <div class="view-inner">
+    <div class="phases-header">
+      <h2>Phase Manager</h2>
+      <p>Click a phase to expand. Use "Copy Full Prompt" to get the complete agent prompt with identity preamble.</p>
+    </div>
+    <div class="phases-grid" id="phases-grid"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ CHAT VIEW ═══════════════════ -->
+<section id="view-chat" class="view">
+  <div class="view-inner">
+    <div class="chat-layout">
+      <div class="chat-main">
+        <div class="chat-header">
+          <h2>Agent Command Builder</h2>
+          <p>Build commands for the SANKALP-AEI agent CLI. Copy and run in your terminal.</p>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-msg system"><div class="chat-bubble">Welcome! Type a task description below to generate an agent command. Use the presets on the right for common tasks.</div></div>
+        </div>
+        <div class="chat-cmd-preview" id="chat-cmd-preview" style="display:none">
+          <code id="chat-cmd-text"></code>
+          <button class="copy-btn" onclick="copyCommand()">📋 Copy</button>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" class="chat-input" id="chat-input" placeholder="Describe your task… e.g. Build the student portfolio dashboard" autocomplete="off">
+          <button class="chat-send" id="chat-send">Generate ⚡</button>
+        </div>
+      </div>
+      <div class="chat-sidebar">
+        <div class="chat-panel">
+          <h3>⚙️ Options</h3>
+          <label class="chat-option"><input type="checkbox" id="opt-dry-run"> --dry-run</label>
+          <label class="chat-option"><input type="checkbox" id="opt-no-commit"> --no-commit</label>
+          <label class="chat-option"><input type="checkbox" id="opt-verbose"> --log-level verbose</label>
+        </div>
+        <div class="chat-panel">
+          <h3>🚀 Quick Presets</h3>
+          <div id="chat-presets"></div>
+        </div>
+        <div class="chat-panel">
+          <h3>📜 History</h3>
+          <div id="chat-history"><div style="font-size:11px;color:var(--text-dim)">No commands yet</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ DOCS VIEW ═══════════════════ -->
+<section id="view-docs" class="view">
+  <div class="docs-layout">
+    <nav class="docs-sidebar" id="docs-sidebar">
+      <div class="docs-sidebar-search">
+        <div class="docs-search-wrap">
+          <span class="docs-search-icon">🔍</span>
+          <input type="search" class="docs-search-input" id="docs-search" placeholder="Search docs…" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div class="docs-nav-label">Documentation</div>
+      <div class="docs-nav-list" id="docs-nav-list"></div>
+    </nav>
+    <div class="docs-content-wrap">
+      <main class="docs-content" id="docs-content">
+        <div style="text-align:center;padding:100px 20px;color:var(--text-muted)">
+          <div style="font-size:48px;margin-bottom:16px">📚</div>
+          <h2 style="font-family:var(--font-display);font-size:22px;font-weight:600;color:#e2e8f0;margin-bottom:8px">Loading Documentation…</h2>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PIPELINE VIEW ═══════════════════ -->
+<section id="view-pipeline" class="view">
+  <div class="view-inner">
+    <div class="pipeline-header">
+      <h2>Pipeline Analysis</h2>
+      <p>Phase dependency flow and verification matrix for the 16-phase roadmap.</p>
+    </div>
+    <div class="pipeline-section">
+      <h3>📐 Phase Dependency Flow</h3>
+      <div class="mermaid" id="pipeline-mermaid"></div>
+    </div>
+    <div class="pipeline-section">
+      <h3>✅ Verification Matrix</h3>
+      <div style="overflow-x:auto">
+        <table class="verification-table" id="verification-table"></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ MODAL ═══════════════════ -->
+<div class="modal-overlay" id="prompt-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-title">Phase Prompt</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <pre id="modal-prompt-text"></pre>
+    </div>
+    <div class="modal-foot">
+      <button class="copy-btn copy-btn-lg" id="modal-copy-btn" onclick="copyModalPrompt()">📋 Copy Full Prompt</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">✓ Copied to clipboard!</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA (injected by build-doc.cjs)
+═══════════════════════════════════════════ */
+var PAGES = __PAGES_DATA__;
+var TREE  = __TREE_DATA__;
+var PHASES_RAW = __PHASES_DATA__;
+var AGENT_IDENTITY = __IDENTITY_DATA__;
+var REPO_STATE = __REPOSTATE_DATA__;
+
+/* ═══════════════════════════════════════════
+   MERMAID INIT
+═══════════════════════════════════════════ */
+mermaid.initialize({
+  startOnLoad: false, theme: 'base',
+  themeVariables: {
+    darkMode:true, background:'transparent',
+    primaryColor:'rgba(99,102,241,.18)', primaryTextColor:'#f8fafc',
+    primaryBorderColor:'#6366f1', lineColor:'#64748b',
+    secondaryColor:'rgba(168,85,247,.15)', tertiaryColor:'rgba(0,0,0,.25)',
+    nodeBorder:'#a855f7', clusterBkg:'rgba(255,255,255,.02)',
+    clusterBorder:'rgba(255,255,255,.08)', edgeLabelBackground:'rgba(3,7,18,.8)',
+    fontFamily:'Inter,system-ui,sans-serif', fontSize:'14px'
+  }
+});
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+var LS_KEY = 'sankalp_dashboard_';
+var activeTab = 'dashboard';
+var phases = [];
+var chatHistory = loadLS('chatHistory') || [];
+var docsPage = '';
+
+function loadLS(k) { try { return JSON.parse(localStorage.getItem(LS_KEY + k)); } catch(e) { return null; } }
+function saveLS(k, v) { try { localStorage.setItem(LS_KEY + k, JSON.stringify(v)); } catch(e) {} }
+
+/* ═══════════════════════════════════════════
+   INIT PHASES
+═══════════════════════════════════════════ */
+function initPhases() {
+  var saved = loadLS('phases') || {};
+  phases = PHASES_RAW.map(function(p) {
+    var s = saved[p.id] || {};
+    return {
+      id: p.id, title: p.title, content: p.content,
+      checklist: p.checklist.map(function(c, i) {
+        return { text: c, done: s.checks ? !!s.checks[i] : false };
+      }),
+      status: s.status || 'pending'
+    };
+  });
+}
+
+function savePhases() {
+  var obj = {};
+  phases.forEach(function(p) {
+    obj[p.id] = {
+      status: p.status,
+      checks: p.checklist.map(function(c) { return c.done; })
+    };
+  });
+  saveLS('phases', obj);
+}
+
+function getPhaseProgress(p) {
+  if (!p.checklist.length) return 0;
+  var done = p.checklist.filter(function(c) { return c.done; }).length;
+  return Math.round((done / p.checklist.length) * 100);
+}
+
+function getOverallProgress() {
+  var total = 0, done = 0;
+  phases.forEach(function(p) {
+    total += p.checklist.length;
+    done += p.checklist.filter(function(c) { return c.done; }).length;
+  });
+  return total ? Math.round((done / total) * 100) : 0;
+}
+
+function getStatusClass(s) { return 's-' + s; }
+
+/* ═══════════════════════════════════════════
+   TAB ROUTER
+═══════════════════════════════════════════ */
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  var view = document.getElementById('view-' + tab);
+  if (view) { view.classList.add('active'); view.style.animation = 'none'; view.offsetHeight; view.style.animation = ''; }
+  var btn = document.querySelector('[data-tab="' + tab + '"]');
+  if (btn) btn.classList.add('active');
+
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'phases') renderPhases();
+  if (tab === 'docs' && !docsPage) initDocs();
+  if (tab === 'pipeline') renderPipeline();
+}
+
+document.getElementById('tab-bar').addEventListener('click', function(e) {
+  var btn = e.target.closest('.tab-btn');
+  if (btn) switchTab(btn.dataset.tab);
+});
+
+/* ═══════════════════════════════════════════
+   DASHBOARD RENDERER
+═══════════════════════════════════════════ */
+function renderDashboard() {
+  var pct = getOverallProgress();
+  var doneCount = phases.filter(function(p) { return p.status === 'done'; }).length;
+  var activeCount = phases.filter(function(p) { return p.status === 'active'; }).length;
+  var pendingCount = phases.filter(function(p) { return p.status === 'pending'; }).length;
+  var blockedCount = phases.filter(function(p) { return p.status === 'blocked'; }).length;
+
+  // Stats
+  document.getElementById('dash-stats').innerHTML =
+    statCard(doneCount, 'Complete', 'green') +
+    statCard(activeCount, 'In Progress', 'blue') +
+    statCard(pendingCount, 'Pending', 'amber') +
+    statCard(phases.length, 'Total Phases', 'purple');
+
+  // Progress ring
+  var circ = 2 * Math.PI * 68;
+  var offset = circ - (pct / 100) * circ;
+  document.getElementById('ring-fg').setAttribute('stroke-dashoffset', offset);
+  document.getElementById('ring-pct').textContent = pct + '%';
+
+  // Active phase label
+  var act = phases.find(function(p) { return p.status === 'active'; });
+  document.getElementById('active-phase-label').textContent = act ? 'Phase ' + act.id + ' — ' + act.title.split('—')[0].trim() : '— None —';
+
+  // Phase overview grid
+  var html = '';
+  phases.forEach(function(p) {
+    var prog = getPhaseProgress(p);
+    var cls = p.status === 'done' ? 'done' : p.status === 'active' ? 'active' : 'pending';
+    html += '<div class="dash-phase-card" onclick="switchTab(\'phases\')">' +
+      '<div class="dash-phase-num ' + cls + '">' + p.id + '</div>' +
+      '<div class="dash-phase-info"><div class="dash-phase-title">' + escH(p.title.split('—')[0].trim()) + '</div>' +
+      '<div class="dash-phase-bar"><div class="dash-phase-bar-fill ' + cls + '" style="width:' + prog + '%"></div></div></div></div>';
+  });
+  document.getElementById('dash-phases-grid').innerHTML = html;
+}
+
+function statCard(val, label, color) {
+  return '<div class="stat-card"><div class="stat-value ' + color + '">' + val + '</div><div class="stat-label">' + label + '</div></div>';
+}
+
+/* ═══════════════════════════════════════════
+   PHASE MANAGER RENDERER
+═══════════════════════════════════════════ */
+var expandedPhase = null;
+
+function renderPhases() {
+  var html = '';
+  phases.forEach(function(p) {
+    var prog = getPhaseProgress(p);
+    var isExpanded = expandedPhase === p.id;
+    var sc = getStatusClass(p.status);
+    var statusLabel = p.status === 'done' ? 'Complete' : p.status === 'active' ? 'In Progress' : p.status === 'blocked' ? 'Blocked' : 'Pending';
+
+    html += '<div class="phase-card' + (isExpanded ? ' expanded' : '') + '" data-phase="' + p.id + '">';
+    html += '<div class="phase-card-head" onclick="togglePhase(' + p.id + ')">';
+    html += '<div class="phase-num ' + sc + '">' + p.id + '</div>';
+    html += '<div class="phase-head-info"><div class="phase-title">' + escH(p.title) + '</div>';
+    html += '<span class="phase-status ' + sc + '">' + statusLabel + '</span></div>';
+    html += '<span class="phase-chevron">▼</span></div>';
+    html += '<div class="phase-progress"><div class="phase-bar"><div class="phase-bar-fill" style="width:' + prog + '%;background:var(--phase-' + p.status + ')"></div></div>';
+    html += '<span class="phase-pct">' + prog + '%</span></div>';
+
+    if (isExpanded) {
+      html += '<div class="phase-body">';
+      html += '<ul class="phase-checklist">';
+      p.checklist.forEach(function(c, i) {
+        html += '<li class="' + (c.done ? 'checked' : '') + '" onclick="toggleCheck(' + p.id + ',' + i + ')">';
+        html += '<span class="phase-check">' + (c.done ? '✓' : '') + '</span>';
+        html += '<span>' + escH(c.text) + '</span></li>';
+      });
+      html += '</ul>';
+      html += '<div class="phase-actions">';
+      html += '<button class="phase-btn phase-btn-copy" onclick="openPromptModal(' + p.id + ')">📋 Copy Full Prompt</button>';
+      if (p.status !== 'active') html += '<button class="phase-btn phase-btn-activate" onclick="activatePhase(' + p.id + ')">▶ Activate</button>';
+      if (p.status !== 'done') html += '<button class="phase-btn phase-btn-activate" onclick="markDone(' + p.id + ')" style="border-color:rgba(52,211,153,.5)">✓ Mark Done</button>';
+      html += '<button class="phase-btn phase-btn-reset" onclick="resetPhase(' + p.id + ')">↺ Reset</button>';
+      html += '</div></div>';
+    }
+    html += '</div>';
+  });
+  document.getElementById('phases-grid').innerHTML = html;
+}
+
+function togglePhase(id) {
+  expandedPhase = expandedPhase === id ? null : id;
+  renderPhases();
+}
+
+function toggleCheck(phaseId, checkIdx) {
+  var p = phases.find(function(x) { return x.id === phaseId; });
+  if (p) {
+    p.checklist[checkIdx].done = !p.checklist[checkIdx].done;
+    savePhases(); renderPhases(); renderDashboard();
+  }
+}
+
+function activatePhase(id) {
+  phases.forEach(function(p) { if (p.status === 'active') p.status = 'pending'; });
+  var p = phases.find(function(x) { return x.id === id; });
+  if (p) p.status = 'active';
+  savePhases(); renderPhases(); renderDashboard();
+}
+
+function markDone(id) {
+  var p = phases.find(function(x) { return x.id === id; });
+  if (p) {
+    p.status = 'done';
+    p.checklist.forEach(function(c) { c.done = true; });
+  }
+  savePhases(); renderPhases(); renderDashboard();
+}
+
+function resetPhase(id) {
+  var p = phases.find(function(x) { return x.id === id; });
+  if (p) {
+    p.status = 'pending';
+    p.checklist.forEach(function(c) { c.done = false; });
+  }
+  savePhases(); renderPhases(); renderDashboard();
+}
+
+/* ═══════════════════════════════════════════
+   PROMPT MODAL (Full Phase Prompt)
+═══════════════════════════════════════════ */
+var currentModalPrompt = '';
+
+function openPromptModal(id) {
+  var p = phases.find(function(x) { return x.id === id; });
+  if (!p) return;
+
+  // Build the complete prompt: Agent Identity + Repo State + Phase Content
+  var fullPrompt = '# SANKALP AEI — PHASE ' + p.id + ' PROMPT\n\n---\n\n';
+  fullPrompt += AGENT_IDENTITY + '\n\n---\n\n';
+  if (REPO_STATE) fullPrompt += REPO_STATE + '\n\n---\n\n';
+  fullPrompt += '## PHASE ' + p.id + ' — ' + p.title + '\n\n' + p.content;
+
+  currentModalPrompt = fullPrompt;
+  document.getElementById('modal-title').textContent = 'Phase ' + p.id + ' — Complete Agent Prompt';
+  document.getElementById('modal-prompt-text').textContent = fullPrompt;
+  document.getElementById('prompt-modal').classList.add('open');
+  document.getElementById('modal-copy-btn').classList.remove('copied');
+  document.getElementById('modal-copy-btn').innerHTML = '📋 Copy Full Prompt';
+}
+
+function closeModal() {
+  document.getElementById('prompt-modal').classList.remove('open');
+}
+
+function copyModalPrompt() {
+  navigator.clipboard.writeText(currentModalPrompt).then(function() {
+    var btn = document.getElementById('modal-copy-btn');
+    btn.classList.add('copied');
+    btn.innerHTML = '✓ Copied!';
+    showToast('Full phase prompt copied to clipboard!');
+    setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = '📋 Copy Full Prompt'; }, 2500);
+  });
+}
+
+// Close modal on overlay click
+document.getElementById('prompt-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+/* ═══════════════════════════════════════════
+   CHAT BUILDER
+═══════════════════════════════════════════ */
+var PRESETS = [
+  { label: '🔧 Fix TypeScript errors', cmd: 'Fix all TypeScript compilation errors and make npm run typecheck pass with zero errors' },
+  { label: '🧠 Wire Brain Map', cmd: 'Integrate BrainMapService with real API calls in the frontend knowledge graph module' },
+  { label: '🛣️ Build API routes', cmd: 'Implement all REST endpoints for student, curriculum, and session resources' },
+  { label: '🧪 Run test suite', cmd: 'Create comprehensive unit and integration tests for all core services' },
+  { label: '🎨 Build frontend scaffold', cmd: 'Set up the React frontend with routing, state management, and design system' },
+  { label: '🤖 ML pipeline', cmd: 'Build the Python ML pipeline for mastery prediction with ensemble models' },
+  { label: '📊 Analytics dashboard', cmd: 'Create the analytics and reporting dashboard with visualization components' },
+  { label: '🔐 Auth system', cmd: 'Implement JWT authentication with role-based access control and session management' }
+];
+
+function initChat() {
+  var presetsDiv = document.getElementById('chat-presets');
+  var html = '';
+  PRESETS.forEach(function(p) {
+    html += '<button class="chat-preset" onclick="setPreset(\'' + escH(p.cmd.replace(/'/g, "\\'")) + '\')">' + p.label + '</button>';
+  });
+  presetsDiv.innerHTML = html;
+  renderChatHistory();
+}
+
+function setPreset(cmd) {
+  document.getElementById('chat-input').value = cmd;
+  generateCommand();
+}
+
+function generateCommand() {
+  var input = document.getElementById('chat-input').value.trim();
+  if (!input) return;
+
+  var cmd = 'npx tsx src/index.ts run "' + input.replace(/"/g, '\\"') + '"';
+  if (document.getElementById('opt-dry-run').checked) cmd += ' --dry-run';
+  if (document.getElementById('opt-no-commit').checked) cmd += ' --no-commit';
+  if (document.getElementById('opt-verbose').checked) cmd += ' --log-level verbose';
+
+  // Show command preview
+  document.getElementById('chat-cmd-preview').style.display = 'flex';
+  document.getElementById('chat-cmd-text').textContent = cmd;
+
+  // Add to messages
+  var msgs = document.getElementById('chat-messages');
+  msgs.innerHTML += '<div class="chat-msg user"><div class="chat-bubble">' + escH(input) + '</div></div>';
+  msgs.innerHTML += '<div class="chat-msg system"><div class="chat-bubble">Generated command:<br><code>' + escH(cmd) + '</code><br><br>Copy and run in your terminal from the <code>agents/</code> directory.</div></div>';
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Save to history
+  chatHistory.unshift({ cmd: cmd, task: input, time: new Date().toISOString() });
+  if (chatHistory.length > 20) chatHistory = chatHistory.slice(0, 20);
+  saveLS('chatHistory', chatHistory);
+  renderChatHistory();
+}
+
+function copyCommand() {
+  var cmd = document.getElementById('chat-cmd-text').textContent;
+  navigator.clipboard.writeText(cmd).then(function() { showToast('Command copied!'); });
+}
+
+function renderChatHistory() {
+  var div = document.getElementById('chat-history');
+  if (!chatHistory.length) { div.innerHTML = '<div style="font-size:11px;color:var(--text-dim)">No commands yet</div>'; return; }
+  var html = '';
+  chatHistory.slice(0, 10).forEach(function(h) {
+    html += '<div class="chat-history-item" onclick="setPreset(\'' + escH(h.task.replace(/'/g, "\\'")) + '\')" title="' + escH(h.cmd) + '">' + escH(h.task) + '</div>';
+  });
+  div.innerHTML = html;
+}
+
+document.getElementById('chat-send').addEventListener('click', generateCommand);
+document.getElementById('chat-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') generateCommand(); });
+
+/* ═══════════════════════════════════════════
+   DOCS VIEWER (preserved wiki)
+═══════════════════════════════════════════ */
+function initDocs() {
+  buildDocsNav(TREE);
+  var initial = TREE.length ? TREE[0].slug : '';
+  if (initial) navigateDoc(initial);
+}
+
+function buildDocsNav(nodes) {
+  var html = '';
+  nodes.forEach(function(n) {
+    html += '<a class="docs-nav-item" data-page="' + escH(n.slug) + '" href="#">' +
+      '<span class="docs-nav-icon">' + n.icon + '</span>' +
+      '<span class="docs-nav-label-text">' + escH(n.name) + '</span>' +
+      '<span class="docs-nav-badge">' + escH(n.badge) + '</span></a>';
+  });
+  document.getElementById('docs-nav-list').innerHTML = html;
+
+  document.querySelectorAll('.docs-nav-item').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.preventDefault();
+      navigateDoc(this.dataset.page);
+    });
+  });
+
+  document.getElementById('docs-search').addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    document.querySelectorAll('.docs-nav-item').forEach(function(el) {
+      var name = el.querySelector('.docs-nav-label-text').textContent.toLowerCase();
+      el.style.display = !q || name.includes(q) ? '' : 'none';
+    });
+  });
+}
+
+function navigateDoc(slug) {
+  docsPage = slug;
+  document.querySelectorAll('.docs-nav-item').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.page === slug);
+  });
+  var md = PAGES[slug] || '# Page not found';
+  document.getElementById('docs-content').innerHTML = marked.parse(md);
+
+  // Render mermaid blocks
+  document.querySelectorAll('#docs-content pre code.language-mermaid').forEach(function(codeEl) {
+    var pre = codeEl.parentElement;
+    var div = document.createElement('div');
+    div.className = 'mermaid';
+    div.textContent = codeEl.textContent;
+    pre.replaceWith(div);
+  });
+  try { mermaid.run({ nodes: document.querySelectorAll('#docs-content .mermaid') }); } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════
+   PIPELINE RENDERER
+═══════════════════════════════════════════ */
+var pipelineRendered = false;
+
+function renderPipeline() {
+  if (pipelineRendered) return;
+  pipelineRendered = true;
+
+  // Build mermaid diagram
+  var diagram = 'graph LR\n';
+  diagram += '  P1[Phase 1\\nTS Compilation] --> P2[Phase 2\\nBrain Map]\n';
+  diagram += '  P2 --> P3[Phase 3\\nDB Schema]\n';
+  diagram += '  P3 --> P4[Phase 4\\nCore Services]\n';
+  diagram += '  P4 --> P5[Phase 5\\nAPI Routes]\n';
+  diagram += '  P5 --> P6[Phase 6\\nSession Engine]\n';
+  diagram += '  P6 --> P7[Phase 7\\nToken Optimizer]\n';
+  diagram += '  P7 --> P8[Phase 8\\nTest Suite]\n';
+  diagram += '  P5 --> P9[Phase 9\\nFrontend Init]\n';
+  diagram += '  P9 --> P10[Phase 10\\nKnowledge UI]\n';
+  diagram += '  P10 --> P11[Phase 11\\nSession UI]\n';
+  diagram += '  P11 --> P12[Phase 12\\nDashboard UI]\n';
+  diagram += '  P8 --> P13[Phase 13\\nIntegration]\n';
+  diagram += '  P12 --> P13\n';
+  diagram += '  P13 --> P14[Phase 14\\nML Pipeline]\n';
+  diagram += '  P14 --> P15[Phase 15\\nML Integration]\n';
+  diagram += '  P15 --> P16[Phase 16\\nPolish]\n';
+
+  // Color nodes by status
+  phases.forEach(function(p) {
+    if (p.status === 'done') diagram += '  style P' + p.id + ' fill:rgba(52,211,153,.2),stroke:#34d399\n';
+    else if (p.status === 'active') diagram += '  style P' + p.id + ' fill:rgba(99,102,241,.2),stroke:#818cf8\n';
+    else if (p.status === 'blocked') diagram += '  style P' + p.id + ' fill:rgba(248,113,113,.15),stroke:#f87171\n';
+  });
+
+  document.getElementById('pipeline-mermaid').textContent = diagram;
+  try { mermaid.run({ nodes: [document.getElementById('pipeline-mermaid')] }); } catch(e) {}
+
+  // Verification matrix
+  var tableHtml = '<thead><tr><th>Phase</th><th>Title</th><th>Checks</th><th>Done</th><th>Status</th></tr></thead><tbody>';
+  phases.forEach(function(p) {
+    var done = p.checklist.filter(function(c) { return c.done; }).length;
+    var total = p.checklist.length;
+    var statusDot = p.status === 'done' ? 'v-done' : done > 0 ? 'v-partial' : 'v-missing';
+    var statusText = p.status === 'done' ? 'Complete' : done > 0 ? 'Partial (' + done + '/' + total + ')' : 'Not Started';
+    tableHtml += '<tr><td><strong>' + p.id + '</strong></td><td>' + escH(p.title.split('—')[0].trim()) + '</td>';
+    tableHtml += '<td>' + total + '</td><td>' + done + '</td>';
+    tableHtml += '<td><span class="v-status ' + statusDot + '"></span>' + statusText + '</td></tr>';
+  });
+  tableHtml += '</tbody>';
+  document.getElementById('verification-table').innerHTML = tableHtml;
+}
+
+/* ═══════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════ */
+function escH(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = '✓ ' + msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+/* ═══════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════ */
+initPhases();
+initChat();
+renderDashboard();
+</script>
+</body>
+</html>

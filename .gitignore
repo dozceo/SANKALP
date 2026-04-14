@@ -60,3 +60,4 @@ __pycache__/
 chaos-state.json
 mock-db.json
 server.log
+.gitnexus
