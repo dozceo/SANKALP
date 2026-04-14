@@ -1,0 +1,222 @@
+﻿scripts/adversarial-stress-test.ts(2,35): error TS2307: Cannot find module '@/ai/flows/syllabus-generator' or its corresponding type declarations.
+scripts/adversarial-stress-test.ts(3,30): error TS2307: Cannot find module '@/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/adversarial-stress-test.ts(4,49): error TS2307: Cannot find module '@/ai/flows/custom-cognitive-chatbot' or its corresponding type declarations.
+scripts/adversarial-stress-test/prompts.ts(2,31): error TS2307: Cannot find module '@/ai/flows/syllabus-generator' or its corresponding type declarations.
+scripts/adversarial-stress-test/prompts.ts(3,35): error TS2307: Cannot find module '@/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/adversarial-stress-test/prompts.ts(4,45): error TS2307: Cannot find module '@/ai/flows/mindful-mentor' or its corresponding type declarations.
+scripts/adversarial-stress-test/run.ts(2,35): error TS2307: Cannot find module '@/ai/flows/syllabus-generator' or its corresponding type declarations.
+scripts/adversarial-stress-test/run.ts(3,30): error TS2307: Cannot find module '@/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/adversarial-stress-test/run.ts(4,43): error TS2307: Cannot find module '@/ai/flows/mindful-mentor' or its corresponding type declarations.
+scripts/analyze-quiz-difficulty.ts(2,49): error TS2307: Cannot find module '@/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/assess-intervention-quality.ts(2,42): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/assess-intervention-quality.ts(3,71): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/audit-causal-integrity.ts(4,103): error TS2307: Cannot find module '../src/ml/features/student_features' or its corresponding type declarations.
+scripts/audit-causal-integrity.ts(5,38): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/audit-causal-integrity.ts(6,75): error TS2307: Cannot find module '../src/ml/inference/types' or its corresponding type declarations.
+scripts/audit-causal-integrity.ts(7,88): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/audit-chatbot-context.ts(2,32): error TS2307: Cannot find module '../src/ai/flows/multilingual-cognitive-chatbot' or its corresponding type declarations.
+scripts/audit-fairness-bias.ts(9,8): error TS2307: Cannot find module '../src/ml/features/student_features' or its corresponding type declarations.
+scripts/audit-fairness-bias.ts(13,8): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/audit-fairness-bias.ts(19,8): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/audit-form-errors.ts(5,60): error TS2307: Cannot find module '../src/lib/validations/auth' or its corresponding type declarations.
+scripts/audit-quiz-difficulty.ts(2,30): error TS2307: Cannot find module '../src/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/audit-teacher-rbac.test.ts(2,21): error TS2307: Cannot find module '../src/app/api/teacher/students/route' or its corresponding type declarations.
+scripts/audit-temporal-consistency.ts(10,8): error TS2307: Cannot find module '../src/ml/features/student_features' or its corresponding type declarations.
+scripts/audit-temporal-consistency.ts(13,8): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/audit-temporal-consistency.ts(19,8): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/benchmark_student_features.ts(1,71): error TS2307: Cannot find module '../src/ml/features/student_features' or its corresponding type declarations.
+scripts/bias-analysis.ts(10,8): error TS2307: Cannot find module '../src/ml/features/student_features' or its corresponding type declarations.
+scripts/bias-analysis.ts(15,8): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/bias-analysis.ts(16,49): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/bias-analysis.ts(74,58): error TS7006: Parameter 'q' implicitly has an 'any' type.
+scripts/bias-analysis.ts(74,61): error TS7006: Parameter 'i' implicitly has an 'any' type.
+scripts/causal-trace.ts(2,114): error TS2307: Cannot find module '../src/ml/features/student_features' or its corresponding type declarations.
+scripts/causal-trace.ts(3,32): error TS2307: Cannot find module '../src/ml/inference/ml-bridge' or its corresponding type declarations.
+scripts/causal-trace.ts(4,38): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/causal-trace.ts(5,83): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/causal-trace.ts(13,14): error TS7006: Parameter 'r' implicitly has an 'any' type.
+scripts/causal-trace.ts(15,12): error TS7006: Parameter 'a' implicitly has an 'any' type.
+scripts/causal-trace.ts(15,15): error TS7006: Parameter 'b' implicitly has an 'any' type.
+scripts/causal-trace.ts(27,44): error TS7006: Parameter 'q' implicitly has an 'any' type.
+scripts/causal-trace.ts(28,46): error TS7006: Parameter 'q' implicitly has an 'any' type.
+scripts/causal-trace.ts(31,44): error TS7006: Parameter 'q' implicitly has an 'any' type.
+scripts/causal-trace.ts(32,46): error TS7006: Parameter 'q' implicitly has an 'any' type.
+scripts/causal-trace.ts(36,51): error TS7006: Parameter 'q' implicitly has an 'any' type.
+scripts/causal-trace.ts(37,64): error TS7006: Parameter 'q' implicitly has an 'any' type.
+scripts/chaos-engineering-test.ts(61,49): error TS2307: Cannot find module '@/ai/flows/smart-revision-planner' or its corresponding type declarations.
+scripts/chaos-engineering-test.ts(103,55): error TS7006: Parameter 'r' implicitly has an 'any' type.
+scripts/chaos-experiment.ts(16,45): error TS2307: Cannot find module '@/ml/inference/ml-bridge' or its corresponding type declarations.
+scripts/chaos-test-suite.ts(27,51): error TS2307: Cannot find module '../src/ai/flows/smart-revision-planner' or its corresponding type declarations.
+scripts/chaos-test-suite.ts(120,63): error TS7006: Parameter 'r' implicitly has an 'any' type.
+scripts/chaos-test-suite.ts(125,62): error TS7006: Parameter 'r' implicitly has an 'any' type.
+scripts/detect-drift.ts(1,88): error TS2307: Cannot find module '../src/ml/features/student_features' or its corresponding type declarations.
+scripts/detect-drift.ts(280,71): error TS2345: Argument of type 'string | number | symbol' is not assignable to parameter of type 'string'.
+  Type 'number' is not assignable to type 'string'.
+scripts/detect-drift.ts(286,35): error TS2538: Type 'symbol' cannot be used as an index type.
+scripts/detect-quiz-drift.ts(2,30): error TS2307: Cannot find module '../src/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/detect-schema-drift.ts(8,38): error TS2307: Cannot find module '../src/ai/flows/syllabus-generator' or its corresponding type declarations.
+scripts/detect-schema-drift.ts(9,42): error TS2307: Cannot find module '../src/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/detect-schema-drift.ts(10,50): error TS2307: Cannot find module '../src/ai/flows/smart-revision-planner' or its corresponding type declarations.
+scripts/detect-schema-drift.ts(11,52): error TS2307: Cannot find module '../src/ai/flows/mindful-mentor' or its corresponding type declarations.
+scripts/detect-schema-drift.ts(12,44): error TS2307: Cannot find module '../src/ai/flows/multilingual-cognitive-chatbot' or its corresponding type declarations.
+scripts/evaluate-interventions.ts(2,42): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/evaluate-interventions.ts(3,71): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/fairness-analysis.ts(2,32): error TS2307: Cannot find module '../src/ml/inference/ml-bridge' or its corresponding type declarations.
+scripts/fairness-analysis.ts(3,87): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/fairness-analysis.ts(4,40): error TS2307: Cannot find module '../src/ml/inference/types' or its corresponding type declarations.
+scripts/fairness-analysis.ts(5,77): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/measure-latency.ts(1,32): error TS2307: Cannot find module '../src/ml/inference/ml-bridge' or its corresponding type declarations.
+scripts/measure-latency.ts(2,38): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/measure-latency.ts(3,45): error TS2307: Cannot find module '../src/ml/inference/types' or its corresponding type declarations.
+scripts/measure-latency.ts(4,49): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/run-batch-prediction.ts(2,37): error TS2307: Cannot find module '../src/ml/inference/ml-bridge' or its corresponding type declarations.
+scripts/run-prediction.ts(2,32): error TS2307: Cannot find module '../src/ml/inference/ml-bridge' or its corresponding type declarations.
+scripts/security-testing/adversarial-prompts.ts(2,31): error TS2307: Cannot find module '../../src/ai/flows/syllabus-generator' or its corresponding type declarations.
+scripts/security-testing/adversarial-prompts.ts(3,35): error TS2307: Cannot find module '../../src/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/security-testing/adversarial-prompts.ts(4,47): error TS2307: Cannot find module '../../src/ai/flows/custom-cognitive-chatbot' or its corresponding type declarations.
+scripts/security-testing/run-adversarial-tests.ts(5,50): error TS2307: Cannot find module '../../src/ai/flows/syllabus-generator' or its corresponding type declarations.
+scripts/security-testing/run-adversarial-tests.ts(6,49): error TS2307: Cannot find module '../../src/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/security-testing/run-adversarial-tests.ts(7,80): error TS2307: Cannot find module '../../src/ai/flows/custom-cognitive-chatbot' or its corresponding type declarations.
+scripts/security/adversarial-stress-test.ts(13,35): error TS2307: Cannot find module '../../src/ai/flows/syllabus-generator' or its corresponding type declarations.
+scripts/security/adversarial-stress-test.ts(14,30): error TS2307: Cannot find module '../../src/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/security/adversarial-stress-test.ts(15,32): error TS2307: Cannot find module '../../src/ai/flows/multilingual-cognitive-chatbot' or its corresponding type declarations.
+scripts/simulate-causal-flow.ts(4,81): error TS2307: Cannot find module '../src/ml/features/student_features' or its corresponding type declarations.
+scripts/simulate-causal-flow.ts(5,32): error TS2307: Cannot find module '../src/ml/inference/ml-bridge' or its corresponding type declarations.
+scripts/simulate-causal-flow.ts(6,79): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/simulate-causal-flow.ts(7,75): error TS2307: Cannot find module '../src/ml/inference/types' or its corresponding type declarations.
+scripts/simulate-causal-flow.ts(8,49): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/simulate-ml-burst.ts(2,32): error TS2307: Cannot find module '@/ml/inference/ml-bridge' or its corresponding type declarations.
+scripts/simulate-ml-burst.ts(30,15): error TS7006: Parameter 'res' implicitly has an 'any' type.
+scripts/simulate-ml-burst.ts(31,16): error TS7006: Parameter 'err' implicitly has an 'any' type.
+scripts/simulate-ml-burst.ts(39,39): error TS7006: Parameter 'r' implicitly has an 'any' type.
+scripts/simulate-ml-burst.ts(40,39): error TS7006: Parameter 'r' implicitly has an 'any' type.
+scripts/simulate-ml-burst.ts(49,52): error TS7006: Parameter 'r' implicitly has an 'any' type.
+scripts/simulate-ml-burst.ts(49,98): error TS7006: Parameter 'r' implicitly has an 'any' type.
+scripts/test-quiz-gen.ts(2,30): error TS2307: Cannot find module '../src/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+scripts/trace-causal-integrity.ts(4,81): error TS2307: Cannot find module '../src/ml/features/student_features' or its corresponding type declarations.
+scripts/trace-causal-integrity.ts(5,38): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/trace-causal-integrity.ts(6,50): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/validate-adk-logic.ts(5,8): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/validate-adk-logic.ts(13,8): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/validate-adk.ts(2,38): error TS2307: Cannot find module '../src/ai/adk/decision-engine' or its corresponding type declarations.
+scripts/validate-adk.ts(3,73): error TS2307: Cannot find module '../src/ai/adk/types' or its corresponding type declarations.
+scripts/verify-teacher-permissions.ts(15,34): error TS2307: Cannot find module '@/app/api/teacher/students/route' or its corresponding type declarations.
+src/ai/detect_drift.ts(5,38): error TS2307: Cannot find module './flows/syllabus-generator' or its corresponding type declarations.
+src/ai/detect_drift.ts(6,42): error TS2307: Cannot find module './flows/adaptive-quiz-engine' or its corresponding type declarations.
+src/ai/detect_drift.ts(7,50): error TS2307: Cannot find module './flows/smart-revision-planner' or its corresponding type declarations.
+src/ai/detect_drift.ts(8,52): error TS2307: Cannot find module './flows/mindful-mentor' or its corresponding type declarations.
+src/ai/detect_drift.ts(9,44): error TS2307: Cannot find module './flows/multilingual-cognitive-chatbot' or its corresponding type declarations.
+src/app/student/map/page.tsx(5,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/app/student/onboarding/page.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/app/student/progress/page.tsx(4,49): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/app/student/revision/page.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/app/student/study/page.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/app/teacher/layout.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/app/teacher/onboarding/page.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/app/teacher/overview/page.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/components/3d-map/StudentBrainMap.tsx(8,58): error TS2307: Cannot find module '@/types' or its corresponding type declarations.
+src/components/3d-map/TeacherNetworkMap.tsx(8,58): error TS2307: Cannot find module '@/types' or its corresponding type declarations.
+src/components/3d-map/TeacherNetworkMap.tsx(354,66): error TS7006: Parameter 'flag' implicitly has an 'any' type.
+src/components/3d-map/TeacherNetworkMap.tsx(354,72): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/dashboard/ProgressWidget.tsx(4,24): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/components/dashboard/ProgressWidget.tsx(5,43): error TS2307: Cannot find module '@/types' or its corresponding type declarations.
+src/components/dashboard/RecentActivityFeed.tsx(4,24): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/components/dashboard/UpcomingTasksList.tsx(4,24): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/components/dashboard/UpcomingTasksList.tsx(5,55): error TS2307: Cannot find module '@/types' or its corresponding type declarations.
+src/components/InteractiveGraph.tsx(11,74): error TS2307: Cannot find module '@/components/ui/tooltip' or its corresponding type declarations.
+src/components/InteractiveGraph.tsx(17,8): error TS2307: Cannot find module '@/components/ui/dropdown-menu' or its corresponding type declarations.
+src/components/InteractiveGraph.tsx(40,34): error TS2307: Cannot find module '@/lib/styles/graph-tokens' or its corresponding type declarations.
+src/components/layout/Header.tsx(5,24): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/components/layout/PageTransition.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/components/layout/Sidebar.tsx(6,24): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/components/LearningStateCard.test.tsx(4,33): error TS2307: Cannot find module '@/components/ui/tooltip' or its corresponding type declarations.
+src/components/LearningStateCard.tsx(11,16): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardContent'.
+src/components/LearningStateCard.tsx(11,29): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardHeader'.
+src/components/LearningStateCard.tsx(11,41): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardTitle'.
+src/components/LearningStateCard.tsx(11,58): error TS1149: File name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/card.tsx' differs from already included file name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/Card.tsx' only in casing.
+  The file is in the program because:
+    Imported via "./Card" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/index.ts'
+    Imported via "@/components/ui/card" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/LearningStateCard.tsx'
+    Imported via '@/components/ui/card' from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/SankalpSwitch.tsx'
+    Imported via "@/components/ui/card" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/TopicMasteryGrid.tsx'
+    Matched by include pattern '**/*.tsx' in 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/tsconfig.json'
+src/components/LearningStateCard.tsx(12,23): error TS2307: Cannot find module '@/components/ui/badge' or its corresponding type declarations.
+src/components/LearningStateCard.tsx(19,8): error TS2307: Cannot find module '@/components/ui/tooltip' or its corresponding type declarations.
+src/components/LogoutButton.tsx(11,24): error TS1149: File name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/button.tsx' differs from already included file name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/Button.tsx' only in casing.
+  The file is in the program because:
+    Imported via "./Button" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/index.ts'
+    Imported via "./Button" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/Modal.tsx'
+    Imported via '@/components/ui/button' from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/LogoutButton.tsx'
+    Imported via '@/components/ui/button' from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/SankalpSwitch.tsx'
+    Imported via "@/components/ui/button" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/theme-toggle.tsx'
+    Matched by include pattern '**/*.tsx' in 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/tsconfig.json'
+src/components/LogoutButton.tsx(59,13): error TS2322: Type '{ children: (string | Element)[]; variant: "ghost"; size: string; onClick: () => Promise<void>; disabled: boolean; className: string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'size' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+src/components/PersonalKnowledgeGraph.tsx(10,34): error TS2307: Cannot find module '@/lib/styles/graph-tokens' or its corresponding type declarations.
+src/components/SankalpSwitch.tsx(4,16): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardContent'.
+src/components/SankalpSwitch.tsx(4,29): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardDescription'.
+src/components/SankalpSwitch.tsx(4,46): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardHeader'.
+src/components/SankalpSwitch.tsx(4,58): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardTitle'.
+src/components/SankalpSwitch.tsx(4,75): error TS1149: File name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/card.tsx' differs from already included file name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/Card.tsx' only in casing.
+  The file is in the program because:
+    Imported via "./Card" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/index.ts'
+    Imported via "@/components/ui/card" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/LearningStateCard.tsx'
+    Imported via '@/components/ui/card' from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/SankalpSwitch.tsx'
+    Imported via "@/components/ui/card" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/TopicMasteryGrid.tsx'
+    Matched by include pattern '**/*.tsx' in 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/tsconfig.json'
+src/components/SankalpSwitch.tsx(5,24): error TS1149: File name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/button.tsx' differs from already included file name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/Button.tsx' only in casing.
+  The file is in the program because:
+    Imported via "./Button" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/index.ts'
+    Imported via "./Button" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/Modal.tsx'
+    Imported via '@/components/ui/button' from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/LogoutButton.tsx'
+    Imported via '@/components/ui/button' from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/SankalpSwitch.tsx'
+    Imported via "@/components/ui/button" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/theme-toggle.tsx'
+    Matched by include pattern '**/*.tsx' in 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/tsconfig.json'
+src/components/SankalpSwitch.tsx(6,79): error TS2307: Cannot find module '@/components/ui/select' or its corresponding type declarations.
+src/components/SankalpSwitch.tsx(183,49): error TS7006: Parameter 'val' implicitly has an 'any' type.
+src/components/SankalpSwitch.tsx(200,29): error TS2322: Type '{ children: (string | false | Element)[]; onClick: () => Promise<void>; className: string; size: string; disabled: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+  Property 'size' does not exist on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'.
+src/components/SankalpSwitch.tsx(220,29): error TS2322: Type '"destructive"' is not assignable to type '"primary" | "secondary" | "icon" | "ghost" | undefined'.
+src/components/StudentSelector.tsx(4,40): error TS2307: Cannot find module '@/components/ui/avatar' or its corresponding type declarations.
+src/components/StudentSelector.tsx(6,26): error TS2307: Cannot find module '@/components/ui/skeleton' or its corresponding type declarations.
+src/components/theme-toggle.tsx(7,24): error TS1149: File name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/button.tsx' differs from already included file name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/Button.tsx' only in casing.
+  The file is in the program because:
+    Imported via "./Button" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/index.ts'
+    Imported via "./Button" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/Modal.tsx'
+    Imported via '@/components/ui/button' from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/LogoutButton.tsx'
+    Imported via '@/components/ui/button' from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/SankalpSwitch.tsx'
+    Imported via "@/components/ui/button" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/theme-toggle.tsx'
+    Matched by include pattern '**/*.tsx' in 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/tsconfig.json'
+src/components/theme-toggle.tsx(13,8): error TS2307: Cannot find module '@/components/ui/dropdown-menu' or its corresponding type declarations.
+src/components/theme-toggle.tsx(21,17): error TS2322: Type '"outline"' is not assignable to type '"primary" | "secondary" | "icon" | "ghost" | undefined'.
+src/components/TopicMasteryGrid.tsx(11,16): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardContent'.
+src/components/TopicMasteryGrid.tsx(11,29): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardHeader'.
+src/components/TopicMasteryGrid.tsx(11,41): error TS2305: Module '"@/components/ui/card"' has no exported member 'CardTitle'.
+src/components/TopicMasteryGrid.tsx(11,58): error TS1149: File name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/card.tsx' differs from already included file name 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/Card.tsx' only in casing.
+  The file is in the program because:
+    Imported via "./Card" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/ui/index.ts'
+    Imported via "@/components/ui/card" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/LearningStateCard.tsx'
+    Imported via '@/components/ui/card' from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/SankalpSwitch.tsx'
+    Imported via "@/components/ui/card" from file 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/src/components/TopicMasteryGrid.tsx'
+    Matched by include pattern '**/*.tsx' in 'C:/Users/dlprh/Desktop/DASH/MY WORKS/SANKALP/tsconfig.json'
+src/components/TopicMasteryGrid.tsx(12,26): error TS2307: Cannot find module '@/components/ui/progress' or its corresponding type declarations.
+src/components/TopicMasteryGrid.tsx(13,23): error TS2307: Cannot find module '@/components/ui/badge' or its corresponding type declarations.
+src/components/ui/AnimatedButton.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/components/ui/GlassCard.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/components/ui/GlassCard.tsx(35,3): error TS2339: Property 'className' does not exist on type 'GlassCardProps'.
+src/components/ui/PageTransition.tsx(4,41): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+src/hooks/use-toast.ts(9,8): error TS2307: Cannot find module '@/components/ui/toast' or its corresponding type declarations.
+src/hooks/use-toast.ts(161,22): error TS7006: Parameter 'open' implicitly has an 'any' type.
+src/lib/db-helpers-extended.ts(67,26): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/lib/db-helpers-extended.ts(118,26): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/lib/db-helpers-extended.ts(234,26): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/lib/db-helpers-extended.ts(305,38): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/lib/db-helpers-extended.ts(335,37): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/lib/generateEnhancedGraph.ts(3,34): error TS2307: Cannot find module '@/lib/styles/graph-tokens' or its corresponding type declarations.
+src/lib/generatePersonalGraph.ts(20,34): error TS2307: Cannot find module '@/lib/styles/graph-tokens' or its corresponding type declarations.
+src/lib/graph-helpers.ts(4,34): error TS2307: Cannot find module '@/lib/styles/graph-tokens' or its corresponding type declarations.
+src/lib/quiz-fallback.ts(1,36): error TS2307: Cannot find module '@/ai/flows/adaptive-quiz-engine' or its corresponding type declarations.
+src/lib/syllabus-fallback.ts(1,32): error TS2307: Cannot find module '@/ai/flows/syllabus-generator' or its corresponding type declarations.
+src/store/uiStore.ts(3,37): error TS2307: Cannot find module '@/types/decision' or its corresponding type declarations.
+src/tests/integration.test.ts(39,38): error TS2307: Cannot find module '@/ai/flows/smart-revision-planner' or its corresponding type declarations.
+src/tests/integration.test.ts(41,37): error TS2307: Cannot find module '@/ml/inference/ml-bridge' or its corresponding type declarations.

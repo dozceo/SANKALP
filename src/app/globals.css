@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+@layer theme, base, components, utilities;
+
+@theme inline {
+  --color-primary: #702ae1;
+  --color-primary-container: #b28cff;
+  --color-primary-fixed: #b28cff;
+  --color-primary-dim: #6411d5;
+  --color-secondary: #4647d3;
+  --color-secondary-container: #cdcdff;
+  --color-tertiary: #006947;
+  --color-tertiary-container: #69f6b8;
+  --color-surface: #EBEDF0;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eef1f3;
+  --color-surface-container: #e5e9eb;
+  --color-surface-container-high: #dfe3e6;
+  --color-surface-container-highest: #d9dde0;
+  --color-surface-dim: #d0d5d8;
+  --color-on-surface: #2c2f31;
+  --color-on-surface-variant: #595c5e;
+  --color-outline-variant: #abadaf;
+  --color-inverse-surface: #0b0f10;
+  --color-error: #b41340;
+  --color-error-container: #f74b6d;
+
+  --font-headline: "Manrope", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+
+  --shadow-neumorphic-sm: 4px 4px 8px rgba(0,0,0,0.05), -4px -4px 8px rgba(255,255,255,0.8);
+  --shadow-neumorphic-md: 8px 8px 16px rgba(0,0,0,0.06), -8px -8px 16px rgba(255,255,255,0.9);
+  --shadow-neumorphic-lg: 12px 12px 24px rgba(0,0,0,0.08), -12px -12px 24px rgba(255,255,255,1);
+  --shadow-neumorphic-inset: inset 6px 6px 12px rgba(163, 177, 198, 0.6), inset -6px -6px 12px rgba(255, 255, 255, 1);
+  --shadow-neumorphic-flat: 9px 9px 16px rgba(163, 177, 198, 0.6), -9px -9px 16px rgba(255, 255, 255, 1);
+  --shadow-neumorphic-pressed: inset 4px 4px 8px rgba(163, 177, 198, 0.6), inset -4px -4px 8px rgba(255, 255, 255, 1);
+
+  --color-glass: rgba(235, 237, 240, 0.7);
+  --color-glass-border: rgba(255, 255, 255, 0.3);
+}
+
+.dark {
+  --color-surface: #12151F;
+  --color-surface-container-lowest: #060810;
+  --color-surface-container-low: #0E1018;
+  --color-surface-container: #12151F;
+  --color-surface-container-high: #1A1E2E;
+  --color-surface-container-highest: #222738;
+  --color-surface-dim: #080A10;
+  
+  --color-on-surface: #E2E8F0;
+  --color-on-surface-variant: #94A3B8;
+  
+  --color-primary: #b28cff;
+  --color-primary-container: #702ae1;
+  
+  --shadow-neumorphic-sm: 4px 4px 8px rgba(0,0,0,0.3), -4px -4px 8px rgba(255,255,255,0.05);
+  --shadow-neumorphic-md: 8px 8px 16px rgba(0,0,0,0.4), -8px -8px 16px rgba(255,255,255,0.05);
+  --shadow-neumorphic-lg: 12px 12px 24px rgba(0,0,0,0.5), -12px -12px 24px rgba(255,255,255,0.05);
+  --shadow-neumorphic-inset: inset 6px 6px 12px rgba(0,0,0,0.5), inset -6px -6px 12px rgba(255, 255, 255, 0.05);
+  --shadow-neumorphic-flat: 9px 9px 16px rgba(0,0,0,0.5), -9px -9px 16px rgba(255, 255, 255, 0.05);
+  --shadow-neumorphic-pressed: inset 4px 4px 8px rgba(0,0,0,0.5), inset -4px -4px 8px rgba(255, 255, 255, 0.05);
+
+  --color-glass: rgba(18, 21, 31, 0.7);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    font-family: var(--font-body);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  ::selection {
+    background-color: rgba(112, 42, 225, 0.2);
+  }
+}
+
+@layer components {
+  .neumorphic-flat {
+    background: var(--color-surface);
+    box-shadow: var(--shadow-neumorphic-flat);
+  }
+  .neumorphic-inset {
+    background: var(--color-surface);
+    box-shadow: var(--shadow-neumorphic-inset);
+  }
+  .neumorphic-pressed {
+    background: var(--color-surface);
+    box-shadow: var(--shadow-neumorphic-pressed);
+  }
+  .neumorphic-sm {
+    box-shadow: var(--shadow-neumorphic-sm);
+  }
+  .neumorphic-md {
+    box-shadow: var(--shadow-neumorphic-md);
+  }
+  .neumorphic-lg {
+    box-shadow: var(--shadow-neumorphic-lg);
+  }
+
+  .glass {
+    background: var(--color-glass);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  .glass-strong {
+    background: rgba(235, 237, 240, 0.85);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+  }
+  
+  .dark .glass-strong {
+    background: rgba(18, 21, 31, 0.85);
+  }
+
+  .label-md {
+    font-family: var(--font-label);
+    font-size: 0.625rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+}
+
+@layer utilities {
+  .mastery-arc {
+    background: conic-gradient(from 0deg, var(--color-primary) 0%, var(--color-primary-container) 78%, transparent 78% 100%);
+  }
+}

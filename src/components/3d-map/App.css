@@ -1,0 +1,381 @@
+/* ═══════════════════════════════════════════════════════
+   SANKALP Brain Map — Premium CSS
+   ALL styles scoped under .brain-map-root to prevent
+   leaking into the global Next.js CSS cascade.
+   ═══════════════════════════════════════════════════════ */
+
+.brain-map-root {
+  --bm-bg: #0a0b14;
+  --bm-glass: rgba(12, 14, 28, 0.78);
+  --bm-glass-border: rgba(255, 255, 255, 0.06);
+  --bm-glass-hover: rgba(255, 255, 255, 0.08);
+  --bm-text: #e2e8f0;
+  --bm-muted: #64748b;
+  --bm-accent: #7c3aed;
+  --bm-blue: #3b82f6;
+  --bm-cyan: #06b6d4;
+  --bm-green: #22c55e;
+  --bm-red: #ef4444;
+  --bm-amber: #f59e0b;
+  --bm-radius: 16px;
+  
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bm-bg);
+  color: var(--bm-text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
+}
+
+.brain-map-root *, .brain-map-root *::before, .brain-map-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.brain-map-root .app { 
+  position: relative; 
+  width: 100%; 
+  height: 100%;
+  overflow: hidden;
+  background: var(--bm-bg);
+}
+
+.brain-map-root .canvas-3d {
+  position: absolute !important;
+  top: 0; left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 0;
+}
+
+/* ── Glass Panel Base ───────────────────────────────── */
+.brain-map-root .glass {
+  background: var(--bm-glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--bm-glass-border);
+  border-radius: var(--bm-radius);
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.brain-map-root .header {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 10;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(10,11,20,0.85) 0%, transparent 100%);
+}
+
+.brain-map-root .header-logo {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--bm-accent), var(--bm-blue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+
+.brain-map-root .header-brand {
+  display: flex; flex-direction: column;
+}
+
+.brain-map-root .header-sub {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--bm-muted);
+}
+
+.brain-map-root .header-title {
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #a78bfa, #60a5fa, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+.brain-map-root .header-tags {
+  display: flex; gap: 8px; margin-left: 12px;
+}
+
+.brain-map-root .tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+}
+
+.brain-map-root .tag-3d     { background: rgba(6,182,212,.12); color: #22d3ee; border: 1px solid rgba(6,182,212,.2); }
+.brain-map-root .tag-knn    { background: rgba(59,130,246,.12); color: #60a5fa; border: 1px solid rgba(59,130,246,.2); }
+.brain-map-root .tag-louv   { background: rgba(124,58,237,.12); color: #a78bfa; border: 1px solid rgba(124,58,237,.2); }
+.brain-map-root .tag-prev   { background: rgba(239,68,68,.1);   color: #f87171; border: 1px solid rgba(239,68,68,.15); }
+
+/* ── Left Sidebar ───────────────────────────────────── */
+.brain-map-root .sidebar {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 6px;
+}
+
+.brain-map-root .sb-btn {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--bm-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.brain-map-root .sb-btn:hover,
+.brain-map-root .sb-btn.active {
+  background: var(--bm-glass-hover);
+  color: var(--bm-accent);
+}
+
+.brain-map-root .sb-btn.active {
+  background: rgba(124,58,237,.15);
+  color: #a78bfa;
+  box-shadow: inset 0 0 0 1px rgba(124,58,237,.3);
+}
+
+/* ── Stats Panel (Top-Right) ────────────────────────── */
+.brain-map-root .stats-panel {
+  position: absolute;
+  top: 70px;
+  right: 16px;
+  width: 240px;
+  z-index: 10;
+  padding: 16px;
+}
+
+.brain-map-root .sp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.brain-map-root .sp-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bm-text);
+  display: flex; align-items: center; gap: 6px;
+}
+
+.brain-map-root .sp-icon { font-size: 14px; opacity: 0.7; }
+
+.brain-map-root .sp-dropdown {
+  font-size: 10px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--bm-glass-border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: var(--bm-muted);
+  cursor: pointer;
+}
+
+.brain-map-root .sp-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--bm-muted);
+  margin: 14px 0 8px;
+}
+
+.brain-map-root .sp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.02);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.brain-map-root .sp-row:hover { background: rgba(255,255,255,.05); }
+
+.brain-map-root .sp-row-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brain-map-root .sp-row-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+
+.brain-map-root .sp-row-label { font-size: 10px; color: var(--bm-muted); }
+.brain-map-root .sp-row-value { font-size: 16px; font-weight: 700; }
+
+.brain-map-root .sp-row-right {
+  font-size: 14px;
+  color: var(--bm-muted);
+}
+
+/* ── Mini Cards (Bottom-Left) ───────────────────────── */
+.brain-map-root .mini-cards {
+  position: absolute;
+  bottom: 16px;
+  left: 72px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 220px;
+}
+
+.brain-map-root .mc-card {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brain-map-root .mc-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.brain-map-root .mc-body { flex: 1; min-width: 0; }
+.brain-map-root .mc-label { font-size: 9px; color: var(--bm-muted); text-transform: uppercase; letter-spacing: .6px; }
+.brain-map-root .mc-value { font-size: 16px; font-weight: 700; margin-top: 1px; }
+.brain-map-root .mc-sub { font-size: 9px; color: var(--bm-muted); }
+
+.brain-map-root .mc-spark {
+  width: 48px;
+  height: 20px;
+  opacity: 0.5;
+}
+
+/* ── Legend (Bottom-Right) ──────────────────────────── */
+.brain-map-root .legend {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brain-map-root .lg-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--bm-muted);
+}
+
+.brain-map-root .lg-line {
+  width: 28px;
+  height: 0;
+}
+
+.brain-map-root .lg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ── Tooltip ────────────────────────────────────────── */
+.brain-map-root .tooltip {
+  position: absolute;
+  z-index: 30;
+  pointer-events: none;
+  padding: 14px 16px;
+  min-width: 210px;
+  max-width: 260px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.6);
+}
+
+.brain-map-root .tooltip.hidden { display: none; }
+
+.brain-map-root .tt-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.brain-map-root .tt-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  font-size: 11px;
+}
+
+.brain-map-root .tt-label { color: var(--bm-muted); }
+.brain-map-root .tt-value { font-weight: 600; }
+
+.brain-map-root .tt-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,.06);
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.brain-map-root .tt-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* ── Perf Counter ───────────────────────────────────── */
+.brain-map-root .perf-counter {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: rgba(100,116,139,.5);
+  z-index: 10;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .5px;
+}
+
+/* ── Color Utilities ────────────────────────────────── */
+.brain-map-root .c-green  { color: var(--bm-green); }
+.brain-map-root .c-red    { color: var(--bm-red); }
+.brain-map-root .c-amber  { color: var(--bm-amber); }
+.brain-map-root .c-blue   { color: var(--bm-blue); }
+.brain-map-root .c-purple { color: var(--bm-accent); }
+.brain-map-root .c-cyan   { color: var(--bm-cyan); }
+
+.brain-map-root .bg-green  { background: rgba(34,197,94,.12); }
+.brain-map-root .bg-red    { background: rgba(239,68,68,.12); }
+.brain-map-root .bg-amber  { background: rgba(245,158,11,.12); }
+.brain-map-root .bg-blue   { background: rgba(59,130,246,.12); }
+.brain-map-root .bg-purple { background: rgba(124,58,237,.12); }
+.brain-map-root .bg-cyan   { background: rgba(6,182,212,.12); }

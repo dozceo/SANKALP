@@ -1,0 +1,375 @@
+src/data/studentsDataStatic.ts:            if (!linkKeys.has(key)) {
+src/data/docsData.ts:            if (!linkKeys.has(key)) {
+src/ml/training/train_mastery_model.py:        print("❌ Error: training_data.csv not found!")
+src/ml/training/train_mastery_model.py:    print("\n🎉 Training complete!")
+src/ml/inference/api.py:        print("Run train_mastery_model.py first!")
+src/ml/inference/ml-bridge.ts:        if (!this.process || this.process.killed) {
+src/ml/inference/ml-bridge.ts:        return this.process!;
+src/ml/inference/ml-bridge.ts:            if (code !== 0 && code !== null) {
+src/ml/inference/ml-bridge.ts:        if (!line.trim()) return;
+src/ml/inference/ml-bridge.ts:                const req = this.pendingRequests.get(id)!;
+src/ml/features/student_features.test.ts:console.log('All tests passed!');
+src/hooks/useTeacher.ts:        if (!teacherId) {
+src/hooks/useTeacher.ts:                if (!res.ok) throw new Error('Failed to fetch teacher data');
+src/hooks/use-toast.ts:      // ! Side effects ! - This could be extracted into a dismissToast() action,
+src/hooks/use-toast.ts:        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+src/hooks/use-toast.ts:        if (!open) dismiss()
+src/hooks/use-mobile.tsx:  return !!isMobile
+src/components/SankalpSwitch.tsx:        if (!isActive || !session) return;
+src/components/SankalpSwitch.tsx:        if (!user) {
+src/components/SankalpSwitch.tsx:            if (!response.ok) {
+src/components/SankalpSwitch.tsx:                description: `${duration} minute session begun!`,
+src/components/SankalpSwitch.tsx:        if (!session) return;
+src/components/SankalpSwitch.tsx:            if (!response.ok) {
+src/components/SankalpSwitch.tsx:                {!isActive ? (
+src/components/planner/AddStudyMaterial.tsx:        const newLinks = formData.referenceLinks.filter((_, i) => i !== index);
+src/components/planner/AddStudyMaterial.tsx:        if (!user) {
+src/components/planner/AddStudyMaterial.tsx:                title: 'Study material added!',
+src/components/planner/AddStudyMaterial.tsx:        if (!lastSavedId) return;
+src/components/planner/AddStudyMaterial.tsx:            if (!response.ok) {
+src/components/planner/AddStudyMaterial.tsx:                title: 'Converted to brain map!',
+src/components/planner/ScheduleView.tsx:                            <CardTitle>All Caught Up!</CardTitle>
+src/components/planner/ScheduleView.tsx:                                No priority revisions for today. Feel free to explore new topics!
+src/components/planner/FocusTimer.tsx:        "Great job! Your brain needs a recharge. Take a breath and stretch.",
+src/components/planner/FocusTimer.tsx:        "You've earned a break! Stepping away now will help you focus better next time.",
+src/components/planner/FocusTimer.tsx:        "Well done! Rest is part of the work. Go grab some water."
+src/components/planner/FocusTimer.tsx:        "Break is over. Let's get back into the flow!",
+src/components/planner/FocusTimer.tsx:        "Time's up! Bring your attention back to your studies."
+src/components/planner/FocusTimer.tsx:            if (!AudioContext) return;
+src/components/planner/FocusTimer.tsx:            if (!audioContextRef.current) {
+src/components/planner/FocusTimer.tsx:            if (!audioContextRef.current) return;
+src/components/planner/FocusTimer.tsx:        const title = isFocusMode ? "Focus Session Complete!" : "Break Over!";
+src/components/planner/FocusTimer.tsx:        if (!selectedTopic) {
+src/components/planner/FocusTimer.tsx:                        {!isRunning ? (
+src/components/planner/StudyLibrary.tsx:    if (!currentStudent) {
+src/components/planner/StudyLibrary.tsx:                                {searchTerm || filterSubject !== "all"
+src/components/planner/StudyLibrary.tsx:            <Dialog open={!!selectedMaterial} onOpenChange={(open: boolean) => !open && setSelectedMaterial(null)}>
+src/components/PersonalKnowledgeGraph.tsx:                if (!node._cachedLightColor) {
+src/components/PersonalKnowledgeGraph.tsx:        if (globalScale < 1.5 && !isCenter && !isHovered) {
+src/components/PersonalKnowledgeGraph.tsx:        if (!start || !end || start.x === undefined || start.y === undefined || end.x === undefined || end.y === undefined) return;
+src/components/PersonalKnowledgeGraph.tsx:                    onClick={() => setIsExpanded(!isExpanded)}
+src/components/InteractiveGraph.tsx:      if (!adjMap.has(sourceId)) adjMap.set(sourceId, new Set());
+src/components/InteractiveGraph.tsx:      if (!adjMap.has(targetId)) adjMap.set(targetId, new Set());
+src/components/InteractiveGraph.tsx:      adjMap.get(sourceId)!.add(targetId);
+src/components/InteractiveGraph.tsx:      adjMap.get(targetId)!.add(sourceId);
+src/components/InteractiveGraph.tsx:      if (!linkMap.has(sourceId)) linkMap.set(sourceId, []);
+src/components/InteractiveGraph.tsx:      if (!linkMap.has(targetId)) linkMap.set(targetId, []);
+src/components/InteractiveGraph.tsx:      linkMap.get(sourceId)!.push(l as ExtendedLinkObject);
+src/components/InteractiveGraph.tsx:      linkMap.get(targetId)!.push(l as ExtendedLinkObject);
+src/components/InteractiveGraph.tsx:    if (!highlightedNode || isGlobalView) return fullGraphData;
+src/components/InteractiveGraph.tsx:         n.type !== 'student' // Keep context nodes (topics) so it's not empty?
+src/components/InteractiveGraph.tsx:    if (ref.current && node.x !== undefined && node.y !== undefined) {
+src/components/InteractiveGraph.tsx:        if (!node._cachedLightColor) {
+src/components/InteractiveGraph.tsx:    if (globalScale < 1.5 && !isHighlighted && !isHovered) {
+src/components/InteractiveGraph.tsx:    if (!start || !end || start.x === undefined || start.y === undefined || end.x === undefined || end.y === undefined) return;
+src/components/InteractiveGraph.tsx:                width={typeof window !== 'undefined' ? window.innerWidth * 0.9 : 1200}
+src/components/InteractiveGraph.tsx:                height={typeof window !== 'undefined' ? window.innerHeight * 0.85 - 48 : 800}
+src/components/InteractiveGraph.tsx:              className={`p-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background ${filter !== 'all' ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+src/components/InteractiveGraph.tsx:                onClick={() => setIsGlobalView(!isGlobalView)}
+src/components/InteractiveGraph.tsx:          {!isModalOpen && (
+src/components/InteractiveGraph.tsx:                  onClick={() => setIsExpanded(!isExpanded)}
+src/components/InteractiveGraph.tsx:          {!isModalOpen && (
+src/components/LogoutButton.tsx:                description: 'See you next time!',
+src/components/StudentSelector.tsx:    if (!currentStudent) {
+src/components/profile/StudentProfile.tsx:    if (!currentStudent) {
+src/components/profile/TeacherProfile.tsx:    if (error || !teacher) {
+src/components/settings/TeacherProfileForm.tsx:            if (!user?.uid) {
+src/components/settings/TeacherProfileForm.tsx:                ? prev.subjects.filter(s => s !== subject)
+src/components/settings/TeacherProfileForm.tsx:                ? prev.gradeLevels.filter(g => g !== grade)
+src/components/settings/TeacherProfileForm.tsx:            if (!user) throw new Error('User not authenticated');
+src/components/settings/StudentProfileForm.tsx:            if (!user?.uid) {
+src/components/settings/StudentProfileForm.tsx:                ? prev.subjects.filter(s => s !== subject)
+src/components/settings/StudentProfileForm.tsx:            if (!user) throw new Error('User not authenticated');
+src/components/ui/chart.tsx:  if (!context) {
+src/components/ui/chart.tsx:  if (!colorConfig.length) {
+src/components/ui/chart.tsx:      if (hideLabel || !payload?.length) {
+src/components/ui/chart.tsx:        !labelKey && typeof label === "string"
+src/components/ui/chart.tsx:      if (!value) {
+src/components/ui/chart.tsx:    if (!active || !payload?.length) {
+src/components/ui/chart.tsx:    const nestLabel = payload.length === 1 && indicator !== "dot"
+src/components/ui/chart.tsx:        {!nestLabel ? tooltipLabel : null}
+src/components/ui/chart.tsx:                {formatter && item?.value !== undefined && item.name ? (
+src/components/ui/chart.tsx:                      !hideIndicator && (
+src/components/ui/chart.tsx:    if (!payload?.length) {
+src/components/ui/chart.tsx:              {itemConfig?.icon && !hideIcon ? (
+src/components/ui/chart.tsx:  if (typeof payload !== "object" || payload === null) {
+src/components/ui/chart.tsx:    payload.payload !== null
+src/components/ui/form.tsx:  if (!fieldContext) {
+src/components/ui/form.tsx:        !error
+src/components/ui/form.tsx:      aria-invalid={!!error}
+src/components/ui/form.tsx:  if (!body) {
+src/components/ui/sidebar.tsx:  if (!context) {
+src/components/ui/sidebar.tsx:        ? setOpenMobile((open) => !open)
+src/components/ui/sidebar.tsx:        : setOpen((open) => !open)
+src/components/ui/sidebar.tsx:  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+src/components/ui/sidebar.tsx:        lg: "h-12 text-sm group-data-[collapsible=icon]:!p-0",
+src/components/ui/sidebar.tsx:    if (!tooltip) {
+src/components/ui/sidebar.tsx:          hidden={state !== "collapsed" || isMobile}
+src/components/ui/carousel.tsx:  if (!context) {
+src/components/ui/carousel.tsx:      if (!api) {
+src/components/ui/carousel.tsx:      if (!api || !setApi) {
+src/components/ui/carousel.tsx:      if (!api) {
+src/components/ui/carousel.tsx:      disabled={!canScrollPrev}
+src/components/ui/carousel.tsx:      disabled={!canScrollNext}
+src/components/app/sidebar-nav.tsx:                  <Link href={item.href!}>
+src/components/app/audio-conversation.tsx:    if (!audioPlayerRef.current) {
+src/contexts/StudentContext.tsx:        if (!user || role !== 'student') {
+src/contexts/StudentContext.tsx:            if (!user?.uid || user.uid === 'undefined') {
+src/contexts/StudentContext.tsx:        if (!user?.uid) throw new Error("User not authenticated");
+src/contexts/StudentContext.tsx:                attachments: material.referenceLinks?.filter(l => l.trim() !== '') || [],
+src/contexts/StudentContext.tsx:            if (!response.ok) {
+src/contexts/StudentContext.tsx:                    referenceLinks: material.referenceLinks?.filter(l => l.trim() !== '') || [],
+src/contexts/StudentContext.tsx:        if (!user) throw new Error("User not authenticated");
+src/contexts/StudentContext.tsx:            if (!response.ok) {
+src/contexts/StudentContext.tsx:        if (!user) throw new Error("User not authenticated");
+src/contexts/StudentContext.tsx:            if (!response.ok) {
+src/contexts/AuthContext.tsx:        if (!auth) return;
+src/contexts/AuthContext.tsx:        if (!auth) throw new Error('Auth not initialized'); // Added guard
+src/contexts/AuthContext.tsx:        if (!auth) throw new Error('Auth not initialized'); // Added guard
+src/contexts/AuthContext.tsx:        if (!auth) throw new Error('Auth not initialized');
+src/ai/adk/README.md:  return "Great job! Keep going."; // No LLM needed
+src/ai/genkit.ts:  console.log('[Genkit Init] GOOGLE_GENAI_API_KEY present:', !!process.env.GOOGLE_GENAI_API_KEY);
+src/ai/genkit.ts:  console.log('[Genkit Init] GEMINI_API_KEY present:', !!process.env.GEMINI_API_KEY);
+src/ai/genkit.ts:  if (!apiKey) {
+src/ai/detect_drift.ts:  if (!fs.existsSync(MOCK_DATA_PATH)) {
+src/ai/detect_drift.ts:    if (!schema) {
+src/ai/detect_drift.ts:    if (!result.success) {
+src/ai/detect_drift.ts:          if (key !== '_errors') {
+src/ai/detect_drift.ts:      const extraKeys = responseKeys.filter(k => !parsedKeys.includes(k));
+src/ai/flows/mindful-mentor.ts:    if (!output) {
+src/ai/flows/text-to-speech.ts:    if (!media) {
+src/ai/flows/syllabus-generator.ts:    if (!output) {
+src/ai/flows/multilingual-cognitive-chatbot.ts:    if (!output) {
+src/ai/flows/speech-to-speech.ts:    if (!ttsResponse.media) {
+src/ai/flows/adaptive-quiz-engine.ts:    if (!output) {
+src/ai/flows/custom-cognitive-chatbot.ts:    return output!;
+src/ai/flows/smart-revision-planner.ts:    if (a.priority !== b.priority) {
+src/ai/flows/smart-revision-planner.ts:      if (!decision.adkDecision) {
+src/lib/graph-helpers.ts:        if (!studentDoc.exists) return { nodes: [], links: [] };
+src/lib/graph-helpers.ts:                if (!data.parentNodeId && data.subject) {
+src/lib/graph-helpers.ts:                    if (!addedNodeIds.has(subjectId)) {
+src/lib/graph-helpers.ts:                if (data.topic && data.topic !== 'Root') {
+src/lib/graph-helpers.ts:                if (!topicNodes.has(r.topic)) {
+src/lib/graph-helpers.ts:                if (!existingLinks.has(key)) {
+src/lib/db-helpers.ts:        if (!studentDoc.exists) {
+src/lib/db-helpers.ts:    if (!studentIds.length) {
+src/lib/db-helpers.ts:                if (!existing) {
+src/lib/db-helpers.ts:        if (!userDoc.exists) {
+src/lib/db-helpers.ts:        if (!teacherDoc.exists) {
+src/lib/db-helpers.ts:            if (!existing) {
+src/lib/db-helpers.ts:        if (!classDoc || !classDoc.id) {
+src/lib/db-helpers.ts:            if (student.classId !== classDoc.id) {
+src/lib/db-helpers.ts:        if (!batch) {
+src/lib/eventTracker.ts:        if (typeof window !== 'undefined') {
+src/lib/eventTracker.ts:                    if (!db.objectStoreNames.contains('failedEvents')) {
+src/lib/eventTracker.ts:                    if (!db.objectStoreNames.contains('sessions')) {
+src/lib/eventTracker.ts:        if (!this.studentId) {
+src/lib/eventTracker.ts:                clickTime: typeof performance !== 'undefined' ? performance.now() : Date.now(),
+src/lib/eventTracker.ts:                online: typeof navigator !== 'undefined' ? navigator.onLine : true,
+src/lib/eventTracker.ts:        if (!this.studentId) {
+src/lib/eventTracker.ts:            if (!response.ok) {
+src/lib/eventTracker.ts:        if (!this.db) return;
+src/lib/eventTracker.ts:        if (!this.db) return;
+src/lib/eventTracker.ts:        if (!this.db) return;
+src/lib/eventTracker.ts:        if (!sessionId) {
+src/lib/color-utils.ts:    return colorCache.get(key)!;
+src/lib/logger.ts:    if (process.env.NODE_ENV !== 'production') {
+src/lib/logger.ts:    if (process.env.NODE_ENV !== 'production') {
+src/lib/firebase.ts:        (key) => !firebaseConfig[key as keyof typeof firebaseConfig]
+src/lib/firebase.ts:        if (!validateConfig()) {
+src/lib/db-helpers-extended.ts:        if (filters?.completed !== undefined) {
+src/lib/db-helpers-extended.ts:        if (!itemDoc.exists) {
+src/lib/db-helpers-extended.ts:        if (!nodeDoc.exists) {
+src/lib/db-helpers-extended.ts:        if (!plannerDoc.exists) {
+src/lib/db-helpers-extended.ts:        if (!resolvedParentNodeId && plannerData?.subject) {
+src/lib/db-helpers-extended.ts:            if (!parentSnapshot.empty) {
+src/lib/rewards/calculateRewards.ts:    if (!student || !student.masteryScores) return [];
+src/lib/generatePersonalGraph.ts:    if (!studentMapCache || studentsData.length !== lastDataLength) {
+src/lib/generatePersonalGraph.ts:        studentsData.forEach(s => studentMapCache!.set(s.id, s));
+src/lib/generatePersonalGraph.ts:        if (!existingNodeIds.has(node.id)) {
+src/lib/generatePersonalGraph.ts:            if (node.color && !node.lightColor) {
+src/lib/firebase-admin.ts: * IMPORTANT: Never import this in client components!
+src/lib/generateEnhancedGraph.ts:        if (!existingNodeIds.has(node.id)) {
+src/lib/generateEnhancedGraph.ts:            if (node.color && !node.lightColor) {
+src/lib/storage.ts:    if (!storage) {
+src/lib/storage.ts:    if (!storage) {
+src/lib/storage.ts:    if (!storage) {
+src/lib/storage.ts:    if (!storage) {
+src/lib/storage.ts:    if (!storage) {
+src/lib/storage.ts:    if (!storage) {
+src/lib/firestore.ts:    if (!db) {
+src/lib/firestore.ts:    if (!db) {
+src/lib/auth.ts:    if (!auth) {
+src/lib/auth.ts:    if (!auth) {
+src/lib/auth.ts:    if (!auth) {
+src/lib/auth.ts:    if (!auth) {
+src/lib/auth.ts:    if (!auth) {
+src/lib/auth.ts:        if (!auth) {
+src/lib/syllabus-fallback.ts:    title: baseSyllabus.title!,
+src/lib/syllabus-fallback.ts:    structure: baseSyllabus.structure!,
+src/lib/syllabus-fallback.ts:    strategy: baseSyllabus.strategy!,
+src/lib/syllabus-fallback.ts:    references: baseSyllabus.references!,
+src/lib/middleware/auth.ts:        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+src/lib/middleware/auth.ts:        if (!token) {
+src/lib/middleware/auth.ts:        if (!authResult.authenticated || !authResult.user) {
+src/lib/student-analytics.ts:    if (!student) {
+src/lib/student-analytics.ts:        if (!topicStats[r.topic]) {
+src/app/(auth)/sign-up/page.tsx:        title: 'Account created!',
+src/app/(auth)/sign-up/page.tsx:                onClick={() => setShowPassword(!showPassword)}
+src/app/(auth)/login/page.tsx:        title: 'Welcome back!',
+src/app/(auth)/login/page.tsx:      if (userData && !userData.onboardingCompleted) {
+src/app/(auth)/login/page.tsx:      if (userData && !userData.onboardingCompleted) {
+src/app/(auth)/login/page.tsx:                onClick={() => setShowPassword(!showPassword)}
+src/app/(auth)/join-class/page.tsx:        if (!user) {
+src/app/(auth)/join-class/page.tsx:            if (!response.ok) {
+src/app/(auth)/join-class/page.tsx:                title: 'Success!',
+src/app/(auth)/join-class/page.tsx:                        <Button type="submit" className="w-full" disabled={loading || classCode.length !== 6}>
+src/app/(auth)/onboarding/page.tsx:        if (user?.displayName && !formData.name) {
+src/app/(auth)/onboarding/page.tsx:            setFormData(prev => ({ ...prev, name: user.displayName! }));
+src/app/(auth)/onboarding/page.tsx:                ? prev.subjects.filter(s => s !== subject)
+src/app/(auth)/onboarding/page.tsx:                ? prev.goals.filter(g => g !== goal)
+src/app/(auth)/onboarding/page.tsx:                    title: 'Onboarding complete!',
+src/app/(auth)/onboarding/page.tsx:                            disabled={!canProceed() || loading}
+src/app/(auth)/teacher-onboarding/page.tsx:            setFormData(prev => ({ ...prev, name: user.displayName! }));
+src/app/(auth)/teacher-onboarding/page.tsx:                ? prev.subjects.filter(s => s !== subject)
+src/app/(auth)/teacher-onboarding/page.tsx:                ? prev.gradeLevels.filter(g => g !== grade)
+src/app/(auth)/teacher-onboarding/page.tsx:                    title: 'Onboarding complete!',
+src/app/(auth)/teacher-onboarding/page.tsx:                                <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">Welcome, Teacher!</h1>
+src/app/(auth)/teacher-onboarding/page.tsx:                            disabled={!canProceed() || loading}
+src/app/(auth)/teacher-onboarding/page.tsx:                            disabled={!canProceed() || loading}
+src/app/(main)/home/page.tsx:      if (!currentStudent) return;
+src/app/(main)/home/page.tsx:    if (currentStudent && !studentLoading) {
+src/app/(main)/home/page.tsx:  if (!intelligence) {
+src/app/(main)/home/page.tsx:        <h1 className="text-3xl font-bold font-headline">Welcome back, {currentStudent.name}!</h1>
+src/app/(main)/home/page.tsx:      {!currentStudent.classId && (
+src/app/(main)/home/page.tsx:                🎉 All caught up! Great work!
+src/app/(main)/teacher/student/[studentId]/page.tsx:  if (!data) {
+src/app/(main)/teacher/page.tsx:    if (!graphData.nodes.length || !students.length) return graphData;
+src/app/(main)/teacher/page.tsx:      if (!user?.uid || user.uid === 'undefined') return;
+src/app/(main)/teacher/classes/page.tsx:    if (!user?.uid) return;
+src/app/(main)/teacher/classes/page.tsx:          title: "Success!",
+src/app/(main)/teacher/classes/page.tsx:        title: "Copied!",
+src/app/(main)/teacher/classes/page.tsx:    if (subjectFilter !== "all") {
+src/app/(main)/teacher/classes/page.tsx:    if (gradeFilter !== "all") {
+src/app/(main)/teacher/classes/page.tsx:            {(searchQuery || subjectFilter !== "all" || gradeFilter !== "all") && (
+src/app/(main)/teacher/classes/page.tsx:                {(searchQuery || subjectFilter !== "all" || gradeFilter !== "all") && (
+src/app/(main)/teacher/classes/[classId]/page.tsx:        if (!classDetails) return;
+src/app/(main)/teacher/classes/[classId]/page.tsx:                title: "Copied!",
+src/app/(main)/teacher/classes/[classId]/page.tsx:        if (!searchQuery) return students;
+src/app/(main)/teacher/classes/[classId]/page.tsx:            if (!s.lastLoginDate) return false;
+src/app/(main)/teacher/classes/[classId]/page.tsx:            if (!s.joinedClassAt) return false;
+src/app/(main)/teacher/classes/[classId]/page.tsx:    if (!classDetails) {
+src/app/(main)/teacher/classes/[classId]/page.tsx:                                {students.length} student{students.length !== 1 ? "s" : ""} enrolled in this class
+src/app/(main)/teacher/classes/[classId]/page.tsx:                                    const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
+src/app/(main)/teacher/students/page.tsx:    if (!lastActivity) return false;
+src/app/(main)/teacher/students/page.tsx:        if (classFilter !== "all") {
+src/app/(main)/teacher/students/page.tsx:        if (performanceFilter !== "all") {
+src/app/(main)/teacher/students/page.tsx:        if (activityFilter !== "all") {
+src/app/(main)/teacher/students/page.tsx:                return activityFilter === "active" ? active : !active;
+src/app/(main)/teacher/students/page.tsx:                        {(searchQuery || classFilter !== "all" || performanceFilter !== "all" || activityFilter !== "all") && (
+src/app/(main)/teacher/students/[studentId]/page.tsx:    if (!student || !performance) {
+src/app/(main)/teacher/students/[studentId]/page.tsx:                                                {data.count} quiz{data.count !== 1 ? 'zes' : ''}
+src/app/(main)/brain-map/page.tsx:            if (!user?.uid || user.uid === 'undefined') {
+src/app/(main)/brain-map/page.tsx:                                    {selectedNode.mastery !== undefined && (
+src/app/(main)/mentor/page.tsx:            content: "Hello! I'm your Mindful Mentor. How are you feeling today? Whether you're stressed about exams or just need some encouragement, I'm here to help."
+src/app/(main)/mentor/page.tsx:        if (!input.trim() || isLoading) return;
+src/app/(main)/mentor/page.tsx:                        <Button type="submit" disabled={isLoading || !input.trim()}>
+src/app/(main)/mentor/actions.ts:        if (!response || !response.advice) {
+src/app/(main)/classes/page.tsx:        if (!classCode.trim()) return;
+src/app/(main)/classes/page.tsx:                title: "Success!",
+src/app/(main)/classes/page.tsx:                            disabled={joining || !classCode.trim()}
+src/app/(main)/chat/page.tsx:        if (!input.trim() || isLoading) return;
+src/app/(main)/chat/page.tsx:            if (!audioRef.current) {
+src/app/(main)/chat/page.tsx:                            disabled={isLoading || !input.trim()}
+src/app/(main)/chat/actions.ts:        if (!response || !response.explanation) {
+src/app/(main)/rewards/page.tsx:            <p className="text-xs text-muted-foreground mt-1">Keep it going to unlock new badges!</p>
+src/app/(main)/rewards/page.tsx:              <p className="text-sm text-muted-foreground italic">No subject data available yet. Start practicing to see your progress!</p>
+src/app/(main)/rewards/page.tsx:              <p className="text-sm text-muted-foreground">Complete quizzes and maintain streaks to earn badges!</p>
+src/app/(main)/quiz/page.tsx:      setIsFallback(!!result.isFallback);
+src/app/(main)/quiz/page.tsx:    if (!selectedAnswer) return;
+src/app/(main)/quiz/page.tsx:    const correctAnswer = quiz![currentQuestionIndex].correctAnswer;
+src/app/(main)/quiz/page.tsx:    if (currentQuestionIndex < quiz!.length - 1) {
+src/app/(main)/quiz/page.tsx:        const finalScore = score / quiz!.length;
+src/app/(main)/quiz/page.tsx:              questionsAttempted: quiz!.length,
+src/app/(main)/quiz/page.tsx:              title: 'Quiz results saved!',
+src/app/(main)/quiz/page.tsx:          <CardTitle className="font-headline text-3xl">Quiz Complete!</CardTitle>
+src/app/(main)/quiz/page.tsx:              if (isAnswered && isSelected && !isCorrect) variant = "incorrect";
+src/app/(main)/quiz/page.tsx:                  {isAnswered && isSelected && !isCorrect && <XCircle className="ml-auto text-red-500" />}
+src/app/(main)/quiz/page.tsx:              <Button onClick={handleAnswerSubmit} disabled={!selectedAnswer}>Submit Answer</Button>
+src/app/(main)/quiz/actions.ts:      if (!result || !result.quiz || result.quiz.length === 0) {
+src/app/(main)/profile/page.tsx:    if (!user) {
+src/app/(main)/settings/page.tsx:          {!role && (
+src/app/(main)/syllabus/page.tsx:    if (!user || !syllabus) return;
+src/app/(main)/syllabus/page.tsx:          title: "Syllabus Saved!",
+src/app/(main)/syllabus/page.tsx:    if (!query.trim()) return;
+src/app/(main)/syllabus/page.tsx:          <TabsTrigger value="cramming" disabled={!isCrammingTime} className="py-2">
+src/app/(main)/syllabus/page.tsx:            {!isCrammingTime && <span className="ml-2 text-xs text-muted-foreground">(Activates 3 days before exam)</span>}
+src/app/(main)/syllabus/page.tsx:              <CardDescription>It's go-time! Here are some focused tips for the final push before your exam on {examDate.toLocaleDateString()}.</CardDescription>
+src/app/(main)/syllabus/actions.ts:            if (!result || !result.structure) {
+src/app/page.tsx:      if (!user) {
+src/app/page.tsx:            if (!teacherResponse.ok) {
+src/app/page.tsx:            if (!studentResponse.ok) {
+src/app/api/planner/data/route.ts:        if (!studentId || !subject || !topic || !content || !type) {
+src/app/api/planner/data/route.ts:        if (!studentId) {
+src/app/api/planner/review/route.ts:        if (!studentId) {
+src/app/api/planner/convert-to-node/route.ts:        if (!plannerItemId) {
+src/app/api/brainmap/nodes/route.ts:        if (!studentId && !nodeId) {
+src/app/api/teacher/route.ts:        if (!teacherId || teacherId === 'undefined') {
+src/app/api/teacher/route.ts:        if (!teacher) {
+src/app/api/teacher/route.ts:        if (!authHeader?.startsWith('Bearer ')) {
+src/app/api/teacher/route.ts:        if (teacherId !== decodedToken.uid) {
+src/app/api/teacher/route.ts:        if (!teacherId) {
+src/app/api/teacher/graph/route.ts:        if (!teacherId) {
+src/app/api/teacher/onboard/route.ts:        if (!userId) {
+src/app/api/teacher/classes/route.ts:        if (!teacherId || teacherId === 'undefined') {
+src/app/api/teacher/classes/[classId]/route.ts:        if (!classId) {
+src/app/api/teacher/classes/[classId]/route.ts:        if (!classDoc.exists) {
+src/app/api/teacher/classes/[classId]/students/route.ts:        if (!classId) {
+src/app/api/teacher/students/route.ts:        if (!teacherId) {
+src/app/api/teacher/students/route.ts:                if (!topicStats[r.topic]) {
+src/app/api/teacher/students/[studentId]/route.ts:        if (!studentId) {
+src/app/api/teacher/students/[studentId]/route.ts:        if (!data) {
+src/app/api/student/route.ts:        if (!studentId || studentId === 'undefined') {
+src/app/api/student/route.ts:        if (!student) {
+src/app/api/student/route.ts:        if (!authHeader?.startsWith('Bearer ')) {
+src/app/api/student/route.ts:        if (studentId !== decodedToken.uid) {
+src/app/api/student/route.ts:        if (!studentId) {
+src/app/api/student/graph/route.ts:        if (!studentId) {
+src/app/api/student/onboard/route.ts:        if (!userId) {
+src/app/api/student/onboard/route.ts:            if (!classesSnapshot.empty) {
+src/app/api/sankalp/session/start/route.ts:        if (!studentId || !targetDuration) {
+src/app/api/sankalp/session/start/route.ts:        if (!activeSessionSnapshot.empty) {
+src/app/api/sankalp/session/end/route.ts:        if (!sessionId) {
+src/app/api/sankalp/session/end/route.ts:        if (!sessionDoc.exists) {
+src/app/api/classes/create/route.ts:        if (!teacherId || !className || !subject || !grade) {
+src/app/api/classes/create/route.ts:        if (!teacher) {
+src/app/api/classes/join/route.ts:        if (!authHeader?.startsWith('Bearer ')) {
+src/app/api/classes/join/route.ts:            if (studentId !== decodedToken.uid) {
+src/app/api/classes/join/route.ts:        if (!studentId || !classCode) {
+src/app/api/classes/join/route.ts:        if (!classDoc) {
+src/app/api/classes/leave/route.ts:        if (!authHeader?.startsWith('Bearer ')) {
+src/app/api/classes/leave/route.ts:            if (studentId !== decodedToken.uid) {
+src/app/api/classes/leave/route.ts:        if (!studentId) {
+src/app/api/classes/leave/route.ts:        if (!student || !student.classId) {
+src/app/api/activity/log/route.ts:        if (!body) {
+src/app/api/activity/log/route.ts:                    if (!event.studentId) {
+src/app/api/activity/log/route.ts:        if (!studentId || !activityType) {
+src/app/api/users/create/route.ts:        if (!uid || !email || !name || !role) {
+src/app/api/users/create/route.ts:        if (role !== 'student' && role !== 'teacher') {
+src/app/api/users/[userId]/route.ts:        if (!userId) {
+src/app/api/users/[userId]/route.ts:        if (!user) {
+src/app/api/quiz/submit/route.ts:        if (!studentId || !topic || score === undefined || !timeSpent || !questionsAttempted) {
+src/app/api/teachers/create/route.ts:        if (!id || !name || !email) {
+src/app/api/intelligence/student/route.ts:        if (!studentId) {
+src/app/api/intelligence/student/route.ts:        if (!student) {
+src/app/api/intelligence/student/route.ts:            if (!mlPrediction) {
+src/app/api/intelligence/student/route.ts:                if (!mlPrediction || mlPrediction.predicted_class === "error") {
+src/app/api/intelligence/student/route.ts:                    masteryProbability: mlPrediction.mastery_probability!,
+src/app/api/intelligence/student/route.ts:                    confidence: mlPrediction.confidence!,
+src/app/api/intelligence/student/route.ts:            } else if (highestUrgency !== "URGENT" && adkDecision.action === DecisionAction.SCHEDULED_REVISION) {
+src/app/api/intelligence/student/route.ts:                needsRevision: adkDecision.priority !== "LOW",
+src/app/api/students/create/route.ts:        if (!id || !name || !email || !userId) {
+src/app/api/syllabus/save/route.ts:        if (!studentId || !examName || !title || !structure || !strategy) {
+src/app/actions/ai-error.ts:    return errorCache.get(cacheKey)!;
+src/app/actions/ai-error.ts:      if (firstKey !== undefined) {
+src/app/actions/student-configuration.ts:    if (!studentId) {

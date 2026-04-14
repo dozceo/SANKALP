@@ -1,0 +1,73 @@
+# Settings to manage and configure a Firebase App Hosting backend.
+# https://firebase.google.com/docs/app-hosting/configure
+
+# App Hosting / Cloud Run configuration
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+# Environment variables and secrets
+env:
+  # ---- Firebase (Next.js public env vars) ----
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyDi02bguXjGanHb7vetdFK0XX-rqxA42WI
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: sankalp-prerollout.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: sankalp-prerollout
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: sankalp-prerollout.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: 934191983030
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:934191983030:web:3afeab3a4ffabb9ae63917
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: G-5ZJ851W3TP
+    availability:
+      - BUILD
+      - RUNTIME
+
+secrets:
+  # Gemini/Google AI API Key
+  - variable: GOOGLE_GENAI_API_KEY
+    reference: GOOGLE_GENAI_API_KEY
+    availability:
+      - RUNTIME
+
+  # Firebase Admin SDK credentials
+  - variable: FIREBASE_PRIVATE_KEY
+    reference: FIREBASE_PRIVATE_KEY
+    availability:
+      - RUNTIME
+
+  - variable: FIREBASE_CLIENT_EMAIL
+    reference: FIREBASE_CLIENT_EMAIL
+    availability:
+      - RUNTIME

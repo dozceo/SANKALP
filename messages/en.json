@@ -1,0 +1,51 @@
+{
+  "Syllabus": {
+    "title": "Academic Syllabus",
+    "description": "Your AI-powered guide to mastering every topic.",
+    "generateButton": "Generate Syllabus",
+    "saveButton": "Save to Library"
+  },
+  "Teacher": {
+    "dashboardTitle": "Teacher Risk Dashboard",
+    "classOverview": "Class Overview",
+    "studentNetwork": "Student Learning Network",
+    "riskLevels": {
+      "high": "High Risk",
+      "medium": "Medium Risk",
+      "low": "Low Risk"
+    }
+  },
+  "Chat": {
+    "title": "Multilingual Cognitive Chatbot",
+    "description": "Ask for an explanation of any concept from your syllabus.",
+    "botName": "CognitoBot",
+    "botDescription": "Your personal AI learning assistant.",
+    "selectLanguage": "Select Language",
+    "emptyState": "Ask me something like \"Explain photosynthesis\" or \"What is a quadratic equation?\"",
+    "placeholder": "Ask a question...",
+    "audioTitle": "Real-time Audio Conversation"
+  },
+  "Onboarding": {
+    "welcome": "Welcome to Sankalp",
+    "getStarted": "Let's get started",
+    "nameLabel": "Your Full Name",
+    "gradeLabel": "Grade / Level",
+    "subjectsTitle": "What subjects are you studying?",
+    "goalsTitle": "Tell us about your goals",
+    "goalsLabel": "Your Learning Goals",
+    "studyTimeLabel": "Daily Study Commitment",
+    "classCodeTitle": "Join Your Class",
+    "classCodeLabel": "Class Code (Optional)",
+    "skipClassCode": "Skip for now",
+    "nextButton": "Next",
+    "backButton": "Back",
+    "completeButton": "Complete Setup"
+  },
+  "Common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit"
+  }
+}
