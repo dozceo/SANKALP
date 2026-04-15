@@ -11,8 +11,11 @@ export default function StudentStudyPage() {
       {/* Top Navigation Bar */}
       <nav className="h-20 w-full flex items-center justify-between px-6 md:px-10 z-50 relative">
         <div className="flex items-center gap-4">
-          <button className="w-10 h-10 rounded-full neumorphic-flat flex items-center justify-center hover:scale-[0.95] transition-transform">
-            <span className="material-symbols-outlined text-on-surface-variant">close</span>
+          <button
+            className="w-10 h-10 rounded-full neumorphic-flat flex items-center justify-center hover:scale-[0.95] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background"
+            aria-label="Close session"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant" aria-hidden="true">close</span>
           </button>
           <div className="h-4 w-px bg-outline-variant/15" />
           <span className="font-label text-[10px] uppercase tracking-[0.2em] font-black text-on-surface-variant">
@@ -48,10 +51,10 @@ export default function StudentStudyPage() {
                 <div className="pt-6 flex justify-center">
                   <button 
                     onClick={() => setIsRevealed(true)}
-                    className="neumorphic-flat px-8 py-4 rounded-full text-primary font-bold text-sm tracking-widest uppercase hover:scale-[1.02] transition-transform flex items-center gap-3"
+                    className="neumorphic-flat px-8 py-4 rounded-full text-primary font-bold text-sm tracking-widest uppercase hover:scale-[1.02] transition-transform flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background"
                   >
                     <span>Reveal Mathematical Proof</span>
-                    <span className="material-symbols-outlined">expand_more</span>
+                    <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>
                   </button>
                 </div>
               ) : (
@@ -72,21 +75,27 @@ export default function StudentStudyPage() {
 
       {/* Bottom Action Bar (Glassmorphism) */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl glass rounded-full p-2 flex items-center justify-between z-50 shadow-[0_20px_40px_rgba(163,177,198,0.3)]">
-        <button className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors">
-          <span className="material-symbols-outlined text-on-surface-variant">arrow_back</span>
+        <button
+          className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background"
+          aria-label="Previous topic"
+        >
+          <span className="material-symbols-outlined text-on-surface-variant" aria-hidden="true">arrow_back</span>
         </button>
         
         <div className="flex gap-2">
-          <button className="px-6 py-4 rounded-full neumorphic-flat text-on-surface font-black text-xs tracking-widest hover:scale-[0.98] transition-all uppercase">
+          <button className="px-6 py-4 rounded-full neumorphic-flat text-on-surface font-black text-xs tracking-widest hover:scale-[0.98] transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background">
             Need Review
           </button>
-          <button className="px-8 py-4 rounded-full bg-gradient-to-r from-primary to-primary-fixed text-white font-black text-xs tracking-widest hover:scale-[0.98] transition-all active:shadow-inner uppercase shadow-[0_4px_15px_rgba(112,42,225,0.3)]">
+          <button className="px-8 py-4 rounded-full bg-gradient-to-r from-primary to-primary-fixed text-white font-black text-xs tracking-widest hover:scale-[0.98] transition-all active:shadow-inner uppercase shadow-[0_4px_15px_rgba(112,42,225,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background">
             Understood
           </button>
         </div>
 
-        <button className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors">
-          <span className="material-symbols-outlined text-on-surface-variant">arrow_forward</span>
+        <button
+          className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background"
+          aria-label="Next topic"
+        >
+          <span className="material-symbols-outlined text-on-surface-variant" aria-hidden="true">arrow_forward</span>
         </button>
       </div>
 
