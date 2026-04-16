@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-06-21 - Form Toggle Buttons Accessibility
+**Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
+**Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
