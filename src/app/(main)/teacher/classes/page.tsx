@@ -194,12 +194,20 @@ export default function ClassesPage() {
 
   // Get unique subjects and grades for filters
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
+    // Optimization: Single-pass iteration to populate Set to avoid intermediate map array
+    const subjects = new Set<string>();
+    for (const c of classes) {
+      if (c.subject) subjects.add(c.subject);
+    }
     return Array.from(subjects).sort();
   }, [classes]);
 
   const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
+    // Optimization: Single-pass iteration to populate Set to avoid intermediate map array
+    const grades = new Set<string>();
+    for (const c of classes) {
+      if (c.grade) grades.add(c.grade);
+    }
     return Array.from(grades).sort();
   }, [classes]);
 
@@ -209,10 +217,12 @@ export default function ClassesPage() {
 
     // Search filter
     if (searchQuery) {
+      // Optimization: Hoist toLowerCase outside the filter loop to prevent redundant allocations
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+        cls.className.toLowerCase().includes(query) ||
+        cls.subject.toLowerCase().includes(query) ||
+        cls.classCode.toLowerCase().includes(query)
       );
     }
 
