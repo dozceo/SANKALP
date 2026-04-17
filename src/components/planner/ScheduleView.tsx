@@ -18,9 +18,16 @@ export function ScheduleView() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get upcoming deadlines (Due or upcoming soon)
-    const upcomingDeadlines = useMemo(() => studyMaterials
-        .filter(m => m.status === 'Due' || m.status === 'Upcoming')
-        .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime()), [studyMaterials]);
+    const upcomingDeadlines = useMemo(() => {
+        // Optimization: Use Schwartzian transform to avoid O(N log N) Date parsing in sort
+        const filtered = studyMaterials.filter(m => m.status === 'Due' || m.status === 'Upcoming');
+        return filtered.map(item => ({
+            item,
+            time: new Date(item.nextReview).getTime()
+        }))
+        .sort((a, b) => a.time - b.time)
+        .map(entry => entry.item);
+    }, [studyMaterials]);
 
     const handleGeneratePlan = async () => {
         setLoading(true);
@@ -125,11 +132,14 @@ export function ScheduleView() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {upcomingDeadlines.map(material => {
-                                    const daysUntil = Math.ceil(
-                                        (new Date(material.nextReview).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-                                    );
-                                    const isOverdue = daysUntil < 0;
+                                {(() => {
+                                    // Optimization: Hoist Date.now() outside map loop
+                                    const now = Date.now();
+                                    return upcomingDeadlines.map(material => {
+                                        const daysUntil = Math.ceil(
+                                            (new Date(material.nextReview).getTime() - now) / (1000 * 60 * 60 * 24)
+                                        );
+                                        const isOverdue = daysUntil < 0;
 
                                     return (
                                         <div
@@ -150,16 +160,17 @@ export function ScheduleView() {
                                             <div className="text-sm text-muted-foreground">
                                                 {isOverdue
                                                     ? `${Math.abs(daysUntil)} days overdue`
-                                                    : daysUntil === 0
-                                                        ? "Due today"
-                                                        : `Due in ${daysUntil} ${daysUntil === 1 ? "day" : "days"}`}
+                                                        : daysUntil === 0
+                                                            ? "Due today"
+                                                            : `Due in ${daysUntil} ${daysUntil === 1 ? "day" : "days"}`}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-1">
+                                                    {new Date(material.nextReview).toLocaleDateString()}
+                                                </div>
                                             </div>
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                                {new Date(material.nextReview).toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    });
+                                })()}
                             </div>
                         )}
                     </CardContent>
