@@ -117,9 +117,15 @@ export default function MentorPage() {
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Tell me what's on your mind..."
                             disabled={isLoading}
+                            aria-label="Your message"
                         />
-                        <Button type="submit" disabled={isLoading || !input.trim()}>
-                            <Send className="h-4 w-4" />
+                        <Button
+                            type="submit"
+                            disabled={isLoading || !input.trim()}
+                            aria-label="Send message"
+                            title="Send message"
+                        >
+                            <Send className="h-4 w-4" aria-hidden="true" />
                         </Button>
                     </form>
                 </CardFooter>
