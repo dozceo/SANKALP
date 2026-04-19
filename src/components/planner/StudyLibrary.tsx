@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useStudent } from "@/hooks/useStudent";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,77 @@ import {
 import { BookOpen, Search, Filter, ExternalLink, X } from "lucide-react";
 import type { StudyMaterial } from "@/data/docsData";
 
+// Status badge styles
+const getStatusVariant = (status: string) => {
+    switch (status) {
+        case 'Due':
+            return 'destructive';
+        case 'Upcoming':
+            return 'default';
+        case 'Reviewed':
+            return 'secondary';
+        default:
+            return 'outline';
+    }
+};
+
+const StudyMaterialCard = memo(function StudyMaterialCard({
+    material,
+    onSelect
+}: {
+    material: StudyMaterial;
+    onSelect: (material: StudyMaterial) => void;
+}) {
+    return (
+        <Card className="hover:border-primary transition-colors">
+            <CardHeader>
+                <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                        <div className="text-sm text-muted-foreground mb-1">
+                            {material.subject}
+                        </div>
+                        <CardTitle className="text-lg">{material.topic}</CardTitle>
+                        {material.chapter && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                                {material.chapter}
+                            </p>
+                        )}
+                    </div>
+                    <Badge variant={getStatusVariant(material.status)}>
+                        {material.status}
+                    </Badge>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <div className="text-sm">
+                        <span className="text-muted-foreground">Next Review:</span>{" "}
+                        <span className="font-medium">
+                            {new Date(material.nextReview).toLocaleDateString()}
+                        </span>
+                    </div>
+                    {material.lastReviewed && (
+                        <div className="text-sm">
+                            <span className="text-muted-foreground">Last Reviewed:</span>{" "}
+                            <span className="font-medium">
+                                {new Date(material.lastReviewed).toLocaleDateString()}
+                            </span>
+                        </div>
+                    )}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-4"
+                        onClick={() => onSelect(material)}
+                    >
+                        View Details
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+});
+
 export function StudyLibrary() {
     const { currentStudent } = useStudent();
     const [searchTerm, setSearchTerm] = useState("");
@@ -36,26 +107,16 @@ export function StudyLibrary() {
     const subjects = useMemo(() => Array.from(new Set(studyMaterials.map(m => m.subject))), [studyMaterials]);
 
     // Filter materials
-    const filteredMaterials = useMemo(() => studyMaterials.filter(material => {
-        const matchesSearch = material.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            material.subject.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
-        return matchesSearch && matchesFilter;
-    }), [studyMaterials, searchTerm, filterSubject]);
-
-    // Status badge styles
-    const getStatusVariant = (status: string) => {
-        switch (status) {
-            case 'Due':
-                return 'destructive';
-            case 'Upcoming':
-                return 'default';
-            case 'Reviewed':
-                return 'secondary';
-            default:
-                return 'outline';
-        }
-    };
+    const filteredMaterials = useMemo(() => {
+        const searchLower = searchTerm.toLowerCase();
+        return studyMaterials.filter(material => {
+            const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
+            if (!matchesFilter) return false;
+            if (!searchLower) return true;
+            return material.topic.toLowerCase().includes(searchLower) ||
+                material.subject.toLowerCase().includes(searchLower);
+        });
+    }, [studyMaterials, searchTerm, filterSubject]);
 
     if (!currentStudent) {
         return <div>Loading...</div>;
@@ -124,52 +185,7 @@ export function StudyLibrary() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {filteredMaterials.map(material => (
-                                <Card key={material.id} className="hover:border-primary transition-colors">
-                                    <CardHeader>
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <div className="text-sm text-muted-foreground mb-1">
-                                                    {material.subject}
-                                                </div>
-                                                <CardTitle className="text-lg">{material.topic}</CardTitle>
-                                                {material.chapter && (
-                                                    <p className="text-sm text-muted-foreground mt-1">
-                                                        {material.chapter}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <Badge variant={getStatusVariant(material.status)}>
-                                                {material.status}
-                                            </Badge>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-2">
-                                            <div className="text-sm">
-                                                <span className="text-muted-foreground">Next Review:</span>{" "}
-                                                <span className="font-medium">
-                                                    {new Date(material.nextReview).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            {material.lastReviewed && (
-                                                <div className="text-sm">
-                                                    <span className="text-muted-foreground">Last Reviewed:</span>{" "}
-                                                    <span className="font-medium">
-                                                        {new Date(material.lastReviewed).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-full mt-4"
-                                                onClick={() => setSelectedMaterial(material)}
-                                            >
-                                                View Details
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                <StudyMaterialCard key={material.id} material={material} onSelect={setSelectedMaterial} />
                             ))}
                         </div>
                     )}
