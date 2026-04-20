@@ -201,8 +201,11 @@ export function AddStudyMaterial() {
                                         variant="outline"
                                         size="icon"
                                         onClick={() => removeReferenceLink(index)}
+                                        aria-label="Remove reference link"
+                                        title="Remove reference link"
+                                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
                                     >
-                                        <X className="h-4 w-4" />
+                                        <X className="h-4 w-4" aria-hidden="true" />
                                     </Button>
                                 )}
                             </div>
