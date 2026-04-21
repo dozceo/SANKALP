@@ -194,12 +194,20 @@ export default function ClassesPage() {
 
   // Get unique subjects and grades for filters
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
+    // Optimization: Single pass Set population avoids map() array allocation
+    const subjects = new Set<string>();
+    for (const c of classes) {
+      subjects.add(c.subject);
+    }
     return Array.from(subjects).sort();
   }, [classes]);
 
   const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
+    // Optimization: Single pass Set population avoids map() array allocation
+    const grades = new Set<string>();
+    for (const c of classes) {
+      grades.add(c.grade);
+    }
     return Array.from(grades).sort();
   }, [classes]);
 
@@ -209,10 +217,12 @@ export default function ClassesPage() {
 
     // Search filter
     if (searchQuery) {
+      // Optimization: Hoist lowerCase string conversion
+      const searchLower = searchQuery.toLowerCase();
       filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+        cls.className.toLowerCase().includes(searchLower) ||
+        cls.subject.toLowerCase().includes(searchLower) ||
+        cls.classCode.toLowerCase().includes(searchLower)
       );
     }
 
@@ -247,11 +257,19 @@ export default function ClassesPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalStudents = classes.reduce((acc, cls) => acc + (cls.studentIds?.length || 0), 0);
+    // Optimization: Single pass loop for stats calculation avoids multiple reduce() passes
+    let totalStudents = 0;
+    let mostPopularClass = classes[0];
+
+    for (const cls of classes) {
+      const studentCount = cls.studentIds?.length || 0;
+      totalStudents += studentCount;
+      if (studentCount > (mostPopularClass?.studentIds?.length || 0)) {
+        mostPopularClass = cls;
+      }
+    }
+
     const avgStudents = classes.length > 0 ? Math.round(totalStudents / classes.length) : 0;
-    const mostPopularClass = classes.reduce((max, cls) =>
-      (cls.studentIds?.length || 0) > (max.studentIds?.length || 0) ? cls : max
-      , classes[0]);
 
     return {
       totalClasses: classes.length,

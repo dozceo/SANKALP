@@ -60,7 +60,7 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
 
 const isActive = (lastActivity?: Date): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    const daysSince = (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -111,7 +111,13 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // Optimization: Single pass Set population avoids map() and filter() allocations
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) {
+                classNames.add(s.className);
+            }
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -121,10 +127,12 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // Optimization: Hoist string lowerCase conversion
+            const searchLower = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(searchLower) ||
+                student.email.toLowerCase().includes(searchLower) ||
+                student.className?.toLowerCase().includes(searchLower)
             );
         }
 
@@ -172,10 +180,19 @@ export default function StudentsPage() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        // Optimization: Single pass loop for stats calculation avoids O(3N) passes and intermediate array allocations
+        let atRisk = 0;
+        let activeStudents = 0;
+        let progressSum = 0;
+
+        for (const s of students) {
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity)) activeStudents++;
+            progressSum += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(progressSum / students.length)
             : 0;
 
         return {
