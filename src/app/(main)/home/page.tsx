@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -71,6 +71,17 @@ export default function HomePage() {
       </div>
     );
   }
+
+  const derivedMastery = useMemo(() => {
+    if (!intelligence) return { urgentTopics: [], priorityTopics: [], hasNeedsRevision: false };
+
+    const entries = Object.entries(intelligence.mastery);
+    const urgentTopics = entries.filter(([_, signal]) => signal.priority === "HIGH");
+    const priorityTopics = entries.filter(([_, signal]) => signal.needsRevision);
+    const hasNeedsRevision = priorityTopics.length > 0;
+
+    return { urgentTopics, priorityTopics, hasNeedsRevision };
+  }, [intelligence]);
 
   if (!intelligence) {
     return (
@@ -207,9 +218,7 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.priority === "HIGH")
-              .map(([topic, signal]) => (
+            {derivedMastery.urgentTopics.map(([topic, signal]) => (
                 <div key={topic} className="p-3 border rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-medium">{topic}</h4>
@@ -272,10 +281,7 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.needsRevision)
-              .slice(0, 3)
-              .map(([topic, signal]) => (
+            {derivedMastery.priorityTopics.slice(0, 3).map(([topic, signal]) => (
                 <div key={topic} className="p-3 border rounded-lg">
                   <div className="flex justify-between items-center">
                     <h4 className="font-medium">{topic}</h4>
@@ -288,7 +294,7 @@ export default function HomePage() {
                   </p>
                 </div>
               ))}
-            {Object.values(intelligence.mastery).filter(s => s.needsRevision).length === 0 && (
+            {!derivedMastery.hasNeedsRevision && (
               <p className="text-sm text-muted-foreground text-center py-4">
                 🎉 All caught up! Great work!
               </p>
