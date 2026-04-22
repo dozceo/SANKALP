@@ -164,18 +164,22 @@ export function extractAttentionFeatures(
     const now = referenceDate.getTime();
     const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-    // Session frequency (quizzes taken in last week)
-    const recentQuizzes = history.quizResults.filter(
-        (r) => r.timestamp.getTime() > oneWeekAgo
-    );
-    const session_frequency = recentQuizzes.length;
+    // Session frequency (quizzes taken in last week) and duration
+    let session_frequency = 0;
+    let recentTimeSpent = 0;
 
-    // Average session duration (avg time per quiz)
+    for (let i = 0; i < history.quizResults.length; i++) {
+        const q = history.quizResults[i];
+        if (q.timestamp.getTime() > oneWeekAgo) {
+            session_frequency++;
+            recentTimeSpent += q.timeSpent;
+        }
+    }
+
+    // Average session duration (avg time per quiz in minutes)
     const avg_session_duration =
-        recentQuizzes.length > 0
-            ? recentQuizzes.reduce((sum, q) => sum + q.timeSpent, 0) /
-            recentQuizzes.length /
-            60
+        session_frequency > 0
+            ? (recentTimeSpent / session_frequency) / 60
             : 0;
 
     // Quiz completion rate (assumed all completed for now - would need start/finish tracking)
@@ -195,11 +199,9 @@ export function extractAttentionFeatures(
         const sorted = [...history.quizResults].sort(
             (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
         );
-        const recent3 = sorted.slice(0, 3).map((q) => q.score);
-        const previous3 = sorted.slice(3, 6).map((q) => q.score);
 
-        const recentAvg = recent3.reduce((s, v) => s + v, 0) / 3;
-        const previousAvg = previous3.reduce((s, v) => s + v, 0) / 3;
+        const recentAvg = (sorted[0].score + sorted[1].score + sorted[2].score) / 3;
+        const previousAvg = (sorted[3].score + sorted[4].score + sorted[5].score) / 3;
 
         if (recentAvg > previousAvg + 0.1) performance_trend = 1;
         else if (recentAvg < previousAvg - 0.1) performance_trend = -1;
