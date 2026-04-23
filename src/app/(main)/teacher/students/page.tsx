@@ -111,7 +111,11 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // ⚡ Bolt: Single pass Set population to avoid intermediate array allocation
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) classNames.add(s.className);
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -121,10 +125,12 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // ⚡ Bolt: Hoist lowercasing outside loop
+            const query = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(query) ||
+                student.email.toLowerCase().includes(query) ||
+                student.className?.toLowerCase().includes(query)
             );
         }
 
@@ -157,8 +163,8 @@ export default function StudentsPage() {
                 case "performance":
                     return b.progress - a.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+                    const aTime = a.lastActivity ? Date.parse(a.lastActivity) : 0;
+                    const bTime = b.lastActivity ? Date.parse(b.lastActivity) : 0;
                     return bTime - aTime;
                 case "quizzes":
                     return b.quizzesTaken - a.quizzesTaken;
@@ -172,10 +178,19 @@ export default function StudentsPage() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        // ⚡ Bolt: Consolidate stats calculation into a single pass
+        let atRisk = 0;
+        let activeStudents = 0;
+        let totalProgress = 0;
+
+        for (const s of students) {
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity)) activeStudents++;
+            totalProgress += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(totalProgress / students.length)
             : 0;
 
         return {

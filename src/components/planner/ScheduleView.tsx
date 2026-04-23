@@ -18,9 +18,14 @@ export function ScheduleView() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get upcoming deadlines (Due or upcoming soon)
-    const upcomingDeadlines = useMemo(() => studyMaterials
-        .filter(m => m.status === 'Due' || m.status === 'Upcoming')
-        .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime()), [studyMaterials]);
+    const upcomingDeadlines = useMemo(() => {
+        // ⚡ Bolt: Schwartzian transform (map-sort-map) to avoid O(N log N) Date parsing overhead
+        const filtered = studyMaterials.filter(m => m.status === 'Due' || m.status === 'Upcoming');
+        return filtered
+            .map(m => ({ item: m, time: Date.parse(m.nextReview) }))
+            .sort((a, b) => a.time - b.time)
+            .map(m => m.item);
+    }, [studyMaterials]);
 
     const handleGeneratePlan = async () => {
         setLoading(true);
@@ -123,15 +128,19 @@ export function ScheduleView() {
                                     No upcoming deadlines
                                 </p>
                             </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {upcomingDeadlines.map(material => {
-                                    const daysUntil = Math.ceil(
-                                        (new Date(material.nextReview).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-                                    );
-                                    const isOverdue = daysUntil < 0;
+                        ) : (() => {
+                            // ⚡ Bolt: Calculate Date.now() once outside the map loop to prevent redundant calls
+                            const now = Date.now();
+                            return (
+                                <div className="space-y-3">
+                                    {upcomingDeadlines.map(material => {
+                                        // ⚡ Bolt: Use Date.parse to avoid object allocation inside render loop
+                                        const daysUntil = Math.ceil(
+                                            (Date.parse(material.nextReview) - now) / (1000 * 60 * 60 * 24)
+                                        );
+                                        const isOverdue = daysUntil < 0;
 
-                                    return (
+                                        return (
                                         <div
                                             key={material.id}
                                             className="p-4 rounded-lg border hover:border-primary transition-colors"
@@ -144,24 +153,25 @@ export function ScheduleView() {
                                                     </div>
                                                 </div>
                                                 <Badge variant={isOverdue ? "destructive" : "default"}>
-                                                    {isOverdue ? "Overdue" : material.status}
-                                                </Badge>
+                                                        {isOverdue ? "Overdue" : material.status}
+                                                    </Badge>
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    {isOverdue
+                                                        ? `${Math.abs(daysUntil)} days overdue`
+                                                        : daysUntil === 0
+                                                            ? "Due today"
+                                                            : `Due in ${daysUntil} ${daysUntil === 1 ? "day" : "days"}`}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-1">
+                                                    {new Date(material.nextReview).toLocaleDateString()}
+                                                </div>
                                             </div>
-                                            <div className="text-sm text-muted-foreground">
-                                                {isOverdue
-                                                    ? `${Math.abs(daysUntil)} days overdue`
-                                                    : daysUntil === 0
-                                                        ? "Due today"
-                                                        : `Due in ${daysUntil} ${daysUntil === 1 ? "day" : "days"}`}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                                {new Date(material.nextReview).toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
                     </CardContent>
                 </Card>
             </div>
