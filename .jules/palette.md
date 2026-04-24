@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessible Clear Button for Search Inputs
+**Learning:** Adding a clear button to search inputs greatly improves usability, especially for mobile or keyboard users. However, it's critical to ensure the button is accessible: it needs a `type="button"` to prevent form submission, an `aria-label`, an `aria-hidden="true"` on the icon itself, and correct `focus-visible` styles to ensure it integrates seamlessly into the application's keyboard navigation flow without breaking form behaviors.
+**Action:** When adding clear buttons to text inputs, strictly enforce the inclusion of `type="button"`, ARIA labels, `focus-visible` styling, and padding adjustments (`pr-10`) on the input to prevent text overlap.
