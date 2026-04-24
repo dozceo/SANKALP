@@ -20,7 +20,8 @@ export function ScheduleView() {
     // Get upcoming deadlines (Due or upcoming soon)
     const upcomingDeadlines = useMemo(() => studyMaterials
         .filter(m => m.status === 'Due' || m.status === 'Upcoming')
-        .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime()), [studyMaterials]);
+        // Optimization: Use Date.parse directly instead of allocating Date objects during O(N log N) sort
+        .sort((a, b) => Date.parse(a.nextReview) - Date.parse(b.nextReview)), [studyMaterials]);
 
     const handleGeneratePlan = async () => {
         setLoading(true);
@@ -125,14 +126,18 @@ export function ScheduleView() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {upcomingDeadlines.map(material => {
-                                    const daysUntil = Math.ceil(
-                                        (new Date(material.nextReview).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-                                    );
-                                    const isOverdue = daysUntil < 0;
+                                {(() => {
+                                    // Optimization: Hoist Date.now() outside the map loop
+                                    const now = Date.now();
+                                    return upcomingDeadlines.map(material => {
+                                        // Optimization: Use Date.parse directly instead of new Date().getTime()
+                                        const daysUntil = Math.ceil(
+                                            (Date.parse(material.nextReview) - now) / (1000 * 60 * 60 * 24)
+                                        );
+                                        const isOverdue = daysUntil < 0;
 
-                                    return (
-                                        <div
+                                        return (
+                                            <div
                                             key={material.id}
                                             className="p-4 rounded-lg border hover:border-primary transition-colors"
                                         >
