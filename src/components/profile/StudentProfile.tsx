@@ -18,6 +18,9 @@ interface StudentProfileProps {
 export default function StudentProfile({ userId }: StudentProfileProps) {
     const { currentStudent, loading } = useStudent();
 
+    // Optimization: Calculate mastery entries once to avoid Object.keys followed by Object.entries
+    const masteryEntries = currentStudent?.masteryScores ? Object.entries(currentStudent.masteryScores) : [];
+
     if (loading) {
         return (
             <div className="space-y-6">
@@ -136,8 +139,8 @@ export default function StudentProfile({ userId }: StudentProfileProps) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            {currentStudent.masteryScores && Object.keys(currentStudent.masteryScores).length > 0 ? (
-                                Object.entries(currentStudent.masteryScores).map(([subject, score]) => (
+                            {masteryEntries.length > 0 ? (
+                                masteryEntries.map(([subject, score]) => (
                                     <div key={subject} className="space-y-2">
                                         <div className="flex justify-between text-sm font-medium">
                                             <span className="capitalize">{subject}</span>
