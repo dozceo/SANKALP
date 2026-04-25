@@ -194,12 +194,20 @@ export default function ClassesPage() {
 
   // Get unique subjects and grades for filters
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
+    // ⚡ Bolt Performance Optimization: Replace chaining array.map().filter() for single-pass Set population
+    const subjects = new Set<string>();
+    for (const c of classes) {
+      if (c.subject) subjects.add(c.subject);
+    }
     return Array.from(subjects).sort();
   }, [classes]);
 
   const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
+    // ⚡ Bolt Performance Optimization: Replace chaining array.map().filter() for single-pass Set population
+    const grades = new Set<string>();
+    for (const c of classes) {
+      if (c.grade) grades.add(c.grade);
+    }
     return Array.from(grades).sort();
   }, [classes]);
 
@@ -209,10 +217,12 @@ export default function ClassesPage() {
 
     // Search filter
     if (searchQuery) {
+      // ⚡ Bolt Performance Optimization: Hoisted toLowerCase() outside the loop to avoid redundant string allocations
+      const lowerQuery = searchQuery.toLowerCase();
       filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+        cls.className.toLowerCase().includes(lowerQuery) ||
+        cls.subject.toLowerCase().includes(lowerQuery) ||
+        cls.classCode.toLowerCase().includes(lowerQuery)
       );
     }
 
@@ -234,7 +244,8 @@ export default function ClassesPage() {
         case "students":
           return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
         case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          // ⚡ Bolt Performance Optimization: using Date.parse to avoid instantiating unecessary Date objects inside sort callback
+          return Date.parse(b.createdAt as unknown as string) - Date.parse(a.createdAt as unknown as string);
         case "subject":
           return a.subject.localeCompare(b.subject);
         default:
