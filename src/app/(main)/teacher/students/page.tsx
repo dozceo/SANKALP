@@ -60,7 +60,8 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
 
 const isActive = (lastActivity?: Date): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    // ⚡ Bolt Performance Optimization: Replace new Date().getTime() with Date.now() and Date.parse to avoid unnecessary Date object allocation
+    const daysSince = (Date.now() - Date.parse(lastActivity as unknown as string)) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -111,7 +112,11 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // ⚡ Bolt Performance Optimization: Replace chaining array.map().filter() with single-pass for...of loop for Set population
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) classNames.add(s.className);
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -121,10 +126,12 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // ⚡ Bolt Performance Optimization: Hoisted toLowerCase() outside the loop to avoid redundant string allocations
+            const lowerQuery = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(lowerQuery) ||
+                student.email.toLowerCase().includes(lowerQuery) ||
+                student.className?.toLowerCase().includes(lowerQuery)
             );
         }
 
@@ -157,8 +164,9 @@ export default function StudentsPage() {
                 case "performance":
                     return b.progress - a.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+                    // ⚡ Bolt Performance Optimization: using Date.parse to avoid instantiating unecessary Date objects inside sort callback
+                    const aTime = a.lastActivity ? Date.parse(a.lastActivity as unknown as string) : 0;
+                    const bTime = b.lastActivity ? Date.parse(b.lastActivity as unknown as string) : 0;
                     return bTime - aTime;
                 case "quizzes":
                     return b.quizzesTaken - a.quizzesTaken;

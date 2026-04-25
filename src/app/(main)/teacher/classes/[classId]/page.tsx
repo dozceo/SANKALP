@@ -125,24 +125,27 @@ export default function ClassDetailsPage() {
     // Filter students by search query
     const filteredStudents = useMemo(() => {
         if (!searchQuery) return students;
+        // ⚡ Bolt Performance Optimization: Hoisted toLowerCase() outside the loop to avoid redundant string allocations
+        const lowerQuery = searchQuery.toLowerCase();
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchQuery.toLowerCase())
+            student.name.toLowerCase().includes(lowerQuery) ||
+            student.email.toLowerCase().includes(lowerQuery)
         );
     }, [students, searchQuery]);
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
+        // ⚡ Bolt Performance Optimization: Replace new Date().getTime() with Date.now() and Date.parse to avoid unnecessary Date object allocation
+        const now = Date.now();
         const activeStudents = students.filter(s => {
             if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
+            const daysSinceLogin = (now - Date.parse(s.lastLoginDate as unknown as string)) / (1000 * 60 * 60 * 24);
             return daysSinceLogin <= 7;
         });
 
         const recentJoins = students.filter(s => {
             if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
+            const daysSinceJoin = (now - Date.parse(s.joinedClassAt as unknown as string)) / (1000 * 60 * 60 * 24);
             return daysSinceJoin <= 7;
         });
 
@@ -355,8 +358,9 @@ export default function ClassDetailsPage() {
                             </TableHeader>
                             <TableBody>
                                 {filteredStudents.map((student) => {
+                                    // ⚡ Bolt Performance Optimization: Replace new Date().getTime() with Date.now() and Date.parse to avoid unnecessary Date object allocation
                                     const daysSinceLogin = student.lastLoginDate
-                                        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
+                                        ? (Date.now() - Date.parse(student.lastLoginDate as unknown as string)) / (1000 * 60 * 60 * 24)
                                         : null;
                                     const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
 
