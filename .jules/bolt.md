@@ -1,6 +1,3 @@
-## 2024-05-22 - Performance Optimizations
-**Learning:** React Context providers often trigger unnecessary re-renders when callback functions depend on state that changes frequently (like `currentStudent`). Using functional state updates (`setCurrentStudent(prev => ...)`) removes the dependency and stabilizes the callback reference, preventing context value churn.
-**Action:** Always check context provider values for unstable callback references and use functional updates where possible.
-
-**Learning:** Micro-optimizations in utility functions (like hex parsing in `lightenColor` or avoiding object allocation in `calculateTrend`) can add up in tight loops, especially when used in render cycles or data processing pipelines.
-**Action:** Look for object allocation in loops and see if primitive arrays can be used instead.
+## 2024-05-18 - Teacher Dashboards Loop Optimization
+**Learning:** Found widespread O(N) array allocation overhead in teacher dashboard views (`StudentsPage`, `ClassesPage`) due to chained array methods (`.map().filter()`, `.filter().length`, two separate `.reduce()` calls) inside `useMemo` hooks running on relatively large datasets.
+**Action:** Replace map/filter chains and multiple reductions with single-pass `for` loops to eliminate intermediate garbage collection. Hoist `Date.now()` outside of loops to prevent redundant timestamp lookups.

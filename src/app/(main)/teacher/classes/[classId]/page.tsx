@@ -133,24 +133,31 @@ export default function ClassDetailsPage() {
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
-        const activeStudents = students.filter(s => {
-            if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceLogin <= 7;
-        });
+        // Bolt: Optimize stats calculation with a single pass
+        // Avoids two separate filter iterations and pre-calculates nowTime
+        let activeStudentsCount = 0;
+        let recentJoinsCount = 0;
+        const nowTime = Date.now();
 
-        const recentJoins = students.filter(s => {
-            if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceJoin <= 7;
-        });
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+
+            if (s.lastLoginDate) {
+                const daysSinceLogin = (nowTime - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSinceLogin <= 7) activeStudentsCount++;
+            }
+
+            if (s.joinedClassAt) {
+                const daysSinceJoin = (nowTime - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSinceJoin <= 7) recentJoinsCount++;
+            }
+        }
 
         return {
             total: students.length,
-            activeThisWeek: activeStudents.length,
-            recentJoins: recentJoins.length,
-            activityRate: students.length > 0 ? Math.round((activeStudents.length / students.length) * 100) : 0,
+            activeThisWeek: activeStudentsCount,
+            recentJoins: recentJoinsCount,
+            activityRate: students.length > 0 ? Math.round((activeStudentsCount / students.length) * 100) : 0,
         };
     }, [students]);
 
