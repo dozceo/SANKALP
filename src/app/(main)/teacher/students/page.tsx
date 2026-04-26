@@ -58,9 +58,10 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
     return { level: "excelling", label: "Excelling", variant: "default" };
 };
 
-const isActive = (lastActivity?: Date): boolean => {
+const isActive = (lastActivity?: Date, nowTime?: number): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    const current = nowTime ?? Date.now();
+    const daysSince = (current - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -111,7 +112,14 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // Bolt: Optimize Set creation by replacing map/filter with a single loop
+        // Avoids allocating intermediate arrays for both operations
+        const classNames = new Set<string>();
+        for (let i = 0; i < students.length; i++) {
+            if (students[i].className) {
+                classNames.add(students[i].className);
+            }
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -143,8 +151,9 @@ export default function StudentsPage() {
 
         // Activity filter
         if (activityFilter !== "all") {
+            const nowTime = Date.now();
             filtered = filtered.filter(s => {
-                const active = isActive(s.lastActivity);
+                const active = isActive(s.lastActivity, nowTime);
                 return activityFilter === "active" ? active : !active;
             });
         }
@@ -172,10 +181,22 @@ export default function StudentsPage() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        // Bolt: Optimize stats calculation with a single pass
+        // Replaces multiple .filter() and .reduce() iterations
+        let atRisk = 0;
+        let activeStudents = 0;
+        let totalProgress = 0;
+        const nowTime = Date.now();
+
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity, nowTime)) activeStudents++;
+            totalProgress += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(totalProgress / students.length)
             : 0;
 
         return {
@@ -195,6 +216,8 @@ export default function StudentsPage() {
             </div>
         );
     }
+
+    const nowTime = Date.now();
 
     return (
         <div className="space-y-6">
@@ -348,7 +371,7 @@ export default function StudentsPage() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {filteredAndSortedStudents.map((student) => {
                         const performance = getPerformanceLevel(student.progress);
-                        const active = isActive(student.lastActivity);
+                        const active = isActive(student.lastActivity, nowTime);
                         const topicCount = Object.keys(student.topicMastery).length;
 
                         return (
