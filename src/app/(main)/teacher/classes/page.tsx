@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -52,7 +52,8 @@ import {
   Filter,
   SortAsc,
   TrendingUp,
-  GraduationCap
+  GraduationCap,
+  X
 } from "lucide-react";
 import Link from "next/link";
 
@@ -82,6 +83,7 @@ export default function ClassesPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [classes, setClasses] = useState<ClassData[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -399,11 +401,25 @@ export default function ClassesPage() {
               <div className="relative md:col-span-2">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
+                  ref={searchInputRef}
                   placeholder="Search classes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 pr-10"
                 />
+                {searchQuery.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      searchInputRef.current?.focus();
+                    }}
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background rounded-sm"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                )}
               </div>
               <Select value={subjectFilter} onValueChange={setSubjectFilter}>
                 <SelectTrigger>
