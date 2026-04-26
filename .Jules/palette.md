@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-06-21 - Accessible Search Clear Buttons
+**Learning:** Text search inputs frequently lack an easy way to clear their content. Implementing a custom clear button (`X` icon) inside a relative container requires explicit accessibility handling (like `type="button"`, `aria-label`, and `focus-visible` styles) to ensure it doesn't submit forms accidentally and is reachable via keyboard navigation. It also requires padding adjustments (`pr-10`) on the input to prevent text overlap.
+**Action:** When adding clear buttons to inputs, always ensure they are `type="button"`, have a clear `aria-label`, proper keyboard focus styles, and programmatically restore focus to the input via a `ref` upon clicking.

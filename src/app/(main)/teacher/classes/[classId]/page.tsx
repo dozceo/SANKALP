@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import {
     Search,
     TrendingUp,
     Clock,
+    X,
 } from "lucide-react";
 
 interface Student {
@@ -64,6 +65,7 @@ export default function ClassDetailsPage() {
 
     const [classDetails, setClassDetails] = useState<ClassDetails | null>(null);
     const [students, setStudents] = useState<Student[]>([]);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [copiedCode, setCopiedCode] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -316,11 +318,25 @@ export default function ClassDetailsPage() {
                             <div className="relative w-64">
                                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
+                                    ref={searchInputRef}
                                     placeholder="Search students..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-9"
+                                    className="pl-9 pr-10"
                                 />
+                                {searchQuery.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchQuery("");
+                                            searchInputRef.current?.focus();
+                                        }}
+                                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background rounded-sm"
+                                        aria-label="Clear search"
+                                    >
+                                        <X className="h-4 w-4" aria-hidden="true" />
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
