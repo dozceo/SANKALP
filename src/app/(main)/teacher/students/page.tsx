@@ -58,9 +58,11 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
     return { level: "excelling", label: "Excelling", variant: "default" };
 };
 
-const isActive = (lastActivity?: Date): boolean => {
+const isActive = (lastActivity?: Date, now: number = Date.now()): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    // Bolt Optimization: Replace new Date().getTime() with Date.now() and avoid redundant new Date() wrapping
+    const activityTime = lastActivity instanceof Date ? lastActivity.getTime() : new Date(lastActivity).getTime();
+    const daysSince = (now - activityTime) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -111,54 +113,62 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // Bolt Optimization: Replace map().filter() with single loop to avoid intermediate array allocations
+        const classNames = new Set<string>();
+        for (const student of students) {
+            if (student.className) {
+                classNames.add(student.className);
+            }
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
     // Filter and sort students
     const filteredAndSortedStudents = useMemo(() => {
-        let filtered = students;
+        // Bolt Optimization: Pre-calculate searchQuery to lower case
+        const searchLower = searchQuery ? searchQuery.toLowerCase() : "";
+        const now = Date.now();
 
-        // Search filter
-        if (searchQuery) {
-            filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
+        // Bolt Optimization: Single loop for all filters instead of chained .filter() arrays
+        const filtered: Student[] = [];
+        for (let i = 0; i < students.length; i++) {
+            const student = students[i];
 
-        // Class filter
-        if (classFilter !== "all") {
-            filtered = filtered.filter(s => s.className === classFilter);
-        }
+            if (searchLower) {
+                const matchesSearch = student.name.toLowerCase().includes(searchLower) ||
+                    student.email.toLowerCase().includes(searchLower) ||
+                    (student.className && student.className.toLowerCase().includes(searchLower));
+                if (!matchesSearch) continue;
+            }
 
-        // Performance filter
-        if (performanceFilter !== "all") {
-            filtered = filtered.filter(s => {
-                const level = getPerformanceLevel(s.progress).level;
-                return level === performanceFilter;
-            });
-        }
+            if (classFilter !== "all" && student.className !== classFilter) {
+                continue;
+            }
 
-        // Activity filter
-        if (activityFilter !== "all") {
-            filtered = filtered.filter(s => {
-                const active = isActive(s.lastActivity);
-                return activityFilter === "active" ? active : !active;
-            });
+            if (performanceFilter !== "all" && getPerformanceLevel(student.progress).level !== performanceFilter) {
+                continue;
+            }
+
+            if (activityFilter !== "all") {
+                const active = isActive(student.lastActivity, now);
+                if (activityFilter === "active" && !active) continue;
+                if (activityFilter === "inactive" && active) continue;
+            }
+
+            filtered.push(student);
         }
 
         // Sort
-        const sorted = [...filtered].sort((a, b) => {
+        const sorted = filtered.sort((a, b) => {
             switch (sortBy) {
                 case "name":
                     return a.name.localeCompare(b.name);
                 case "performance":
                     return b.progress - a.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+                    // Bolt Optimization: Replace new Date(x).getTime() with x.getTime() if Date object
+                    const aTime = a.lastActivity ? (a.lastActivity instanceof Date ? a.lastActivity.getTime() : new Date(a.lastActivity).getTime()) : 0;
+                    const bTime = b.lastActivity ? (b.lastActivity instanceof Date ? b.lastActivity.getTime() : new Date(b.lastActivity).getTime()) : 0;
                     return bTime - aTime;
                 case "quizzes":
                     return b.quizzesTaken - a.quizzesTaken;
@@ -172,19 +182,29 @@ export default function StudentsPage() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
-        const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
-            : 0;
+        // Bolt Optimization: Single pass calculation to avoid multiple loop passes for stats
+        let atRisk = 0;
+        let activeStudents = 0;
+        let progressSum = 0;
+        const now = Date.now();
+        const total = students.length;
+
+        for (let i = 0; i < total; i++) {
+            const s = students[i];
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity, now)) activeStudents++;
+            progressSum += s.progress;
+        }
+
+        const avgPerformance = total > 0 ? Math.round(progressSum / total) : 0;
 
         return {
-            total: students.length,
+            total,
             atRisk,
-            atRiskPercent: students.length > 0 ? Math.round((atRisk / students.length) * 100) : 0,
+            atRiskPercent: total > 0 ? Math.round((atRisk / total) * 100) : 0,
             avgPerformance,
             activeThisWeek: activeStudents,
-            activeRate: students.length > 0 ? Math.round((activeStudents / students.length) * 100) : 0,
+            activeRate: total > 0 ? Math.round((activeStudents / total) * 100) : 0,
         };
     }, [students]);
 
