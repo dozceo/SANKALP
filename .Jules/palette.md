@@ -13,3 +13,6 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+## 2024-04-27 - [Accessibility for Icon-only Buttons]
+**Learning:** For icon-only buttons like those in AddStudyMaterial, `aria-label` must be paired with `aria-hidden="true"` on the inner icon to prevent screen readers from announcing both the label and the generic "icon" role.
+**Action:** Always check icon-only buttons for this pairing during code reviews.
