@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2024-05-18 - [Add Clear Button to Search Inputs]
+**Learning:** Search inputs typically need an accessible clear button for better UX, and doing so requires right-padding the input to avoid overlap, along with proper use of React `useRef` to programmatically restore focus to the input after clearing.
+**Action:** When adding search inputs, implement a conditional "clear" button that uses `type="button"`, has an `aria-label`, restores focus to the input via a `ref`, and ensure the input has `pr-10` padding to accommodate the icon.
