@@ -33,15 +33,24 @@ export function StudyLibrary() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get unique subjects
-    const subjects = useMemo(() => Array.from(new Set(studyMaterials.map(m => m.subject))), [studyMaterials]);
+    const subjects = useMemo(() => {
+        const uniqueSubjects = new Set<string>();
+        for (const m of studyMaterials) {
+            if (m.subject) uniqueSubjects.add(m.subject);
+        }
+        return Array.from(uniqueSubjects);
+    }, [studyMaterials]);
 
     // Filter materials
-    const filteredMaterials = useMemo(() => studyMaterials.filter(material => {
-        const matchesSearch = material.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            material.subject.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
-        return matchesSearch && matchesFilter;
-    }), [studyMaterials, searchTerm, filterSubject]);
+    const filteredMaterials = useMemo(() => {
+        const lowerSearch = searchTerm.toLowerCase();
+        return studyMaterials.filter(material => {
+            const matchesSearch = material.topic.toLowerCase().includes(lowerSearch) ||
+                material.subject.toLowerCase().includes(lowerSearch);
+            const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
+            return matchesSearch && matchesFilter;
+        });
+    }, [studyMaterials, searchTerm, filterSubject]);
 
     // Status badge styles
     const getStatusVariant = (status: string) => {
