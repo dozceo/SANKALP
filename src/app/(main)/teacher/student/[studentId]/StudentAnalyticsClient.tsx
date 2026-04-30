@@ -18,11 +18,18 @@ import { useToast } from "@/hooks/use-toast";
 
 // Get initials for avatar
 const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+    let initials = '';
+    let isNewWord = true;
+    for (let i = 0; i < name.length; i++) {
+        const char = name[i];
+        if (char === ' ') {
+            isNewWord = true;
+        } else if (isNewWord) {
+            initials += char;
+            isNewWord = false;
+        }
+    }
+    return initials.toUpperCase().slice(0, 2);
 };
 
 interface StudentAnalyticsClientProps {
