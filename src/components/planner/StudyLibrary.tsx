@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useStudent } from "@/hooks/useStudent";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import type { StudyMaterial } from "@/data/docsData";
 export function StudyLibrary() {
     const { currentStudent } = useStudent();
     const [searchTerm, setSearchTerm] = useState("");
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const [filterSubject, setFilterSubject] = useState("all");
     const [selectedMaterial, setSelectedMaterial] = useState<StudyMaterial | null>(null);
 
@@ -75,12 +76,26 @@ export function StudyLibrary() {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
+                                ref={searchInputRef}
                                 placeholder="Search topics..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
+                                className="pl-10 pr-10"
                                 aria-label="Search study materials"
                             />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSearchTerm("");
+                                        searchInputRef.current?.focus();
+                                    }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                                    aria-label="Clear search"
+                                >
+                                    <X className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                            )}
                         </div>
                         <Select value={filterSubject} onValueChange={setFilterSubject}>
                             <SelectTrigger className="w-full sm:w-[200px]" aria-label="Filter by subject">

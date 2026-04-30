@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -34,6 +34,7 @@ import {
     ExternalLink,
     Award,
     Clock,
+    X,
 } from "lucide-react";
 
 interface Student {
@@ -75,6 +76,7 @@ export default function StudentsPage() {
 
     // Filters and search
     const [searchQuery, setSearchQuery] = useState("");
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const [classFilter, setClassFilter] = useState<string>("all");
     const [performanceFilter, setPerformanceFilter] = useState<PerformanceLevel>("all");
     const [activityFilter, setActivityFilter] = useState<ActivityStatus>("all");
@@ -263,11 +265,25 @@ export default function StudentsPage() {
                             <div className="relative md:col-span-2">
                                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
+                                    ref={searchInputRef}
                                     placeholder="Search students..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-9"
+                                    className="pl-9 pr-10"
                                 />
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchQuery("");
+                                            searchInputRef.current?.focus();
+                                        }}
+                                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                                        aria-label="Clear search"
+                                    >
+                                        <X className="h-4 w-4" aria-hidden="true" />
+                                    </button>
+                                )}
                             </div>
                             <Select value={classFilter} onValueChange={setClassFilter}>
                                 <SelectTrigger>
