@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+## 2026-04-30 - Added accessible Clear buttons to Search Inputs\n**Learning:** When using text inputs for search, providing a visually intuitive 'clear' button inside the input field improves UX. The  is crucial to return focus to the input after clearing, allowing the user to seamlessly type a new query without an extra click.\n**Action:** Ensure all future search/filter inputs incorporate an accessible internal clear button (, ARIA label, conditional rendering, ref focusing) instead of relying solely on external "Clear Filters" buttons.
+## 2026-04-30 - Added accessible Clear buttons to Search Inputs
+**Learning:** When using text inputs for search, providing a visually intuitive 'clear' button inside the input field improves UX. The `useRef` is crucial to return focus to the input after clearing, allowing the user to seamlessly type a new query without an extra click.
+**Action:** Ensure all future search/filter inputs incorporate an accessible internal clear button (`type="button"`, ARIA label, conditional rendering, ref focusing) instead of relying solely on external "Clear Filters" buttons.
