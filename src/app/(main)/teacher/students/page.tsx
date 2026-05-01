@@ -60,7 +60,8 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
 
 const isActive = (lastActivity?: Date): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    // Optimization: Use Date.now() instead of new Date().getTime() to prevent object allocation
+    const daysSince = (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -121,10 +122,12 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // Optimization: Hoist .toLowerCase() outside the filter loop to prevent redundant string allocations
+            const lowerQuery = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(lowerQuery) ||
+                student.email.toLowerCase().includes(lowerQuery) ||
+                student.className?.toLowerCase().includes(lowerQuery)
             );
         }
 
@@ -172,10 +175,20 @@ export default function StudentsPage() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        let atRisk = 0;
+        let activeStudents = 0;
+        let totalProgress = 0;
+
+        // Optimization: Consolidate multiple O(N) array passes (.filter and .reduce) into a single loop
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity)) activeStudents++;
+            totalProgress += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(totalProgress / students.length)
             : 0;
 
         return {
