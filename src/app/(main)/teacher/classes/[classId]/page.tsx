@@ -125,32 +125,39 @@ export default function ClassDetailsPage() {
     // Filter students by search query
     const filteredStudents = useMemo(() => {
         if (!searchQuery) return students;
+        // Optimization: Hoist .toLowerCase() outside the filter loop to prevent redundant string allocations
+        const lowerQuery = searchQuery.toLowerCase();
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchQuery.toLowerCase())
+            student.name.toLowerCase().includes(lowerQuery) ||
+            student.email.toLowerCase().includes(lowerQuery)
         );
     }, [students, searchQuery]);
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
-        const activeStudents = students.filter(s => {
-            if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceLogin <= 7;
-        });
+        // Optimization: Use Date.now() instead of new Date().getTime() to prevent object allocation
+        const nowTime = Date.now();
+        let activeStudentsCount = 0;
+        let recentJoinsCount = 0;
 
-        const recentJoins = students.filter(s => {
-            if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceJoin <= 7;
-        });
+        // Optimization: Consolidate multiple O(N) array passes (.filter) into a single loop
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+            if (s.lastLoginDate) {
+                const daysSinceLogin = (nowTime - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSinceLogin <= 7) activeStudentsCount++;
+            }
+            if (s.joinedClassAt) {
+                const daysSinceJoin = (nowTime - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSinceJoin <= 7) recentJoinsCount++;
+            }
+        }
 
         return {
             total: students.length,
-            activeThisWeek: activeStudents.length,
-            recentJoins: recentJoins.length,
-            activityRate: students.length > 0 ? Math.round((activeStudents.length / students.length) * 100) : 0,
+            activeThisWeek: activeStudentsCount,
+            recentJoins: recentJoinsCount,
+            activityRate: students.length > 0 ? Math.round((activeStudentsCount / students.length) * 100) : 0,
         };
     }, [students]);
 

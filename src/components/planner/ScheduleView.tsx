@@ -18,9 +18,15 @@ export function ScheduleView() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get upcoming deadlines (Due or upcoming soon)
-    const upcomingDeadlines = useMemo(() => studyMaterials
-        .filter(m => m.status === 'Due' || m.status === 'Upcoming')
-        .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime()), [studyMaterials]);
+    const upcomingDeadlines = useMemo(() => {
+        // Optimization: Use Schwartzian transform to map Date objects to primitives once before sorting,
+        // rather than parsing dates in O(N log N) sort comparisons
+        return studyMaterials
+            .filter(m => m.status === 'Due' || m.status === 'Upcoming')
+            .map(m => ({ item: m, time: new Date(m.nextReview).getTime() }))
+            .sort((a, b) => a.time - b.time)
+            .map(x => x.item);
+    }, [studyMaterials]);
 
     const handleGeneratePlan = async () => {
         setLoading(true);
