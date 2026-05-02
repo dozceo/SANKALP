@@ -20,7 +20,9 @@ export function ScheduleView() {
     // Get upcoming deadlines (Due or upcoming soon)
     const upcomingDeadlines = useMemo(() => studyMaterials
         .filter(m => m.status === 'Due' || m.status === 'Upcoming')
-        .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime()), [studyMaterials]);
+        .map(m => ({ material: m, time: new Date(m.nextReview).getTime() }))
+        .sort((a, b) => a.time - b.time)
+        .map(m => m.material), [studyMaterials]);
 
     const handleGeneratePlan = async () => {
         setLoading(true);

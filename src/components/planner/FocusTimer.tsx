@@ -135,7 +135,7 @@ export function FocusTimer() {
 
     // Timer logic
     useEffect(() => {
-        if (isRunning && timeLeft > 0) {
+        if (isRunning) {
             intervalRef.current = setInterval(() => {
                 setTimeLeft(prev => {
                     if (prev <= 0) return 0;
@@ -149,7 +149,7 @@ export function FocusTimer() {
                 clearInterval(intervalRef.current);
             }
         };
-    }, [isRunning, timeLeft]);
+    }, [isRunning]);
 
     // Check for completion
     useEffect(() => {
