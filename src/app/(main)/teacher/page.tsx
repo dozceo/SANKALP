@@ -119,7 +119,10 @@ export default function TeacherPage() {
   // Pseudo-random streak generator
   const getStreak = (studentId: string) => {
     // Deterministic hash based on ID
-    const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    let hash = 0;
+    for (let i = 0; i < studentId.length; i++) {
+      hash += studentId.charCodeAt(i);
+    }
     return hash % 15; // 0-14 days
   };
 
