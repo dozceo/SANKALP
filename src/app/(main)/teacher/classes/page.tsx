@@ -247,11 +247,23 @@ export default function ClassesPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalStudents = classes.reduce((acc, cls) => acc + (cls.studentIds?.length || 0), 0);
+    let totalStudents = 0;
+    let mostPopularClass = classes[0];
+
+    for (let i = 0; i < classes.length; i++) {
+        const cls = classes[i];
+        const studentCount = cls.studentIds?.length || 0;
+        totalStudents += studentCount;
+
+        if (mostPopularClass) {
+            const maxCount = mostPopularClass.studentIds?.length || 0;
+            if (studentCount > maxCount) {
+                mostPopularClass = cls;
+            }
+        }
+    }
+
     const avgStudents = classes.length > 0 ? Math.round(totalStudents / classes.length) : 0;
-    const mostPopularClass = classes.reduce((max, cls) =>
-      (cls.studentIds?.length || 0) > (max.studentIds?.length || 0) ? cls : max
-      , classes[0]);
 
     return {
       totalClasses: classes.length,
