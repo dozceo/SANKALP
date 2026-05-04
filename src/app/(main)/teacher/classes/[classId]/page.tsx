@@ -125,24 +125,25 @@ export default function ClassDetailsPage() {
     // Filter students by search query
     const filteredStudents = useMemo(() => {
         if (!searchQuery) return students;
+        const query = searchQuery.toLowerCase();
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchQuery.toLowerCase())
+            student.name.toLowerCase().includes(query) ||
+            student.email.toLowerCase().includes(query)
         );
     }, [students, searchQuery]);
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
+        const now = Date.now();
         const activeStudents = students.filter(s => {
             if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
+            const daysSinceLogin = (now - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
             return daysSinceLogin <= 7;
         });
 
         const recentJoins = students.filter(s => {
             if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
+            const daysSinceJoin = (now - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
             return daysSinceJoin <= 7;
         });
 
@@ -356,7 +357,7 @@ export default function ClassDetailsPage() {
                             <TableBody>
                                 {filteredStudents.map((student) => {
                                     const daysSinceLogin = student.lastLoginDate
-                                        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
+                                        ? (Date.now() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
                                         : null;
                                     const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
 
