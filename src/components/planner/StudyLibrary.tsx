@@ -33,7 +33,14 @@ export function StudyLibrary() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get unique subjects
-    const subjects = useMemo(() => Array.from(new Set(studyMaterials.map(m => m.subject))), [studyMaterials]);
+    const subjects = useMemo(() => {
+        // Optimization: Avoid intermediate array allocation from .map()
+        const subjectSet = new Set<string>();
+        for (const m of studyMaterials) {
+            if (m.subject) subjectSet.add(m.subject);
+        }
+        return Array.from(subjectSet).sort();
+    }, [studyMaterials]);
 
     // Filter materials
     const filteredMaterials = useMemo(() => studyMaterials.filter(material => {

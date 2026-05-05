@@ -59,7 +59,11 @@ export default function TeacherPage() {
   const enrichedGraphData = useMemo(() => {
     if (!graphData.nodes.length || !students.length) return graphData;
 
-    const studentMap = new Map(students.map(s => [s.id, s]));
+    // Optimization: Avoid intermediate array allocation from .map()
+    const studentMap = new Map<string, any>();
+    for (const s of students) {
+      if (s.id) studentMap.set(s.id, s);
+    }
 
     const newNodes = graphData.nodes.map((node: any) => {
       if (node.type === 'student') {
