@@ -183,7 +183,10 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
       filteredNodes = baseGraphData.nodes.filter(n => n.type === 'topic');
     }
 
-    const nodeIds = new Set(filteredNodes.map(n => n.id));
+    const nodeIds = new Set<string>();
+    for (const n of filteredNodes) {
+      nodeIds.add(n.id);
+    }
     const filteredLinks = baseGraphData.links.filter(l => {
       const s = typeof l.source === 'object' ? (l.source as any).id : l.source;
       const t = typeof l.target === 'object' ? (l.target as any).id : l.target;

@@ -160,20 +160,29 @@ export function checkAndAwardBadges(
     student: StudentNode,
     context: GamificationContext
 ): Badge[] {
-    const existingIds = new Set((student.badges || []).map(b => b.id));
+    const existingIds = new Set<string>();
+    for (const b of (student.badges || [])) {
+        existingIds.add(b.id);
+    }
     const newBadges: Badge[] = [];
+    let currentTimestamp: string | null = null;
 
     for (const def of BADGE_CATALOG) {
         if (existingIds.has(def.id)) continue; // Already earned
 
         if (def.check(student, context)) {
+            // Lazy evaluate timestamp so we only create it if at least one badge is earned
+            if (!currentTimestamp) {
+                currentTimestamp = new Date().toISOString();
+            }
+
             newBadges.push({
                 id: def.id,
                 title: def.title,
                 description: def.description,
                 icon: def.icon,
                 color: def.color,
-                earnedAt: new Date().toISOString(),
+                earnedAt: currentTimestamp,
             });
         }
     }

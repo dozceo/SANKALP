@@ -194,12 +194,18 @@ export default function ClassesPage() {
 
   // Get unique subjects and grades for filters
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
+    const subjects = new Set<string>();
+    for (const c of classes) {
+      subjects.add(c.subject);
+    }
     return Array.from(subjects).sort();
   }, [classes]);
 
   const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
+    const grades = new Set<string>();
+    for (const c of classes) {
+      grades.add(c.grade);
+    }
     return Array.from(grades).sort();
   }, [classes]);
 
@@ -209,10 +215,11 @@ export default function ClassesPage() {
 
     // Search filter
     if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
       filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+        cls.className.toLowerCase().includes(lowerQuery) ||
+        cls.subject.toLowerCase().includes(lowerQuery) ||
+        cls.classCode.toLowerCase().includes(lowerQuery)
       );
     }
 
@@ -227,31 +234,49 @@ export default function ClassesPage() {
     }
 
     // Sort
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case "name":
-          return a.className.localeCompare(b.className);
-        case "students":
-          return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
-        case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "subject":
-          return a.subject.localeCompare(b.subject);
-        default:
-          return 0;
-      }
-    });
+    let sorted;
+    if (sortBy === "recent") {
+      // Schwartzian transform: parse dates once per item
+      const mapped = filtered.map(item => ({
+        item,
+        time: new Date(item.createdAt).getTime()
+      }));
+      mapped.sort((a, b) => b.time - a.time);
+      sorted = mapped.map(el => el.item);
+    } else {
+      sorted = [...filtered].sort((a, b) => {
+        switch (sortBy) {
+          case "name":
+            return a.className.localeCompare(b.className);
+          case "students":
+            return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
+          case "subject":
+            return a.subject.localeCompare(b.subject);
+          default:
+            return 0;
+        }
+      });
+    }
 
     return sorted;
   }, [classes, searchQuery, subjectFilter, gradeFilter, sortBy]);
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalStudents = classes.reduce((acc, cls) => acc + (cls.studentIds?.length || 0), 0);
+    let totalStudents = 0;
+    let mostPopularClass = classes.length > 0 ? classes[0] : null;
+
+    for (const cls of classes) {
+      const studentCount = cls.studentIds?.length || 0;
+      totalStudents += studentCount;
+      if (mostPopularClass && studentCount > (mostPopularClass.studentIds?.length || 0)) {
+        mostPopularClass = cls;
+      } else if (!mostPopularClass) {
+        mostPopularClass = cls;
+      }
+    }
+
     const avgStudents = classes.length > 0 ? Math.round(totalStudents / classes.length) : 0;
-    const mostPopularClass = classes.reduce((max, cls) =>
-      (cls.studentIds?.length || 0) > (max.studentIds?.length || 0) ? cls : max
-      , classes[0]);
 
     return {
       totalClasses: classes.length,
