@@ -111,7 +111,10 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) classNames.add(s.className);
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -121,10 +124,11 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            const lowerQuery = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(lowerQuery) ||
+                student.email.toLowerCase().includes(lowerQuery) ||
+                student.className?.toLowerCase().includes(lowerQuery)
             );
         }
 
@@ -150,32 +154,48 @@ export default function StudentsPage() {
         }
 
         // Sort
-        const sorted = [...filtered].sort((a, b) => {
-            switch (sortBy) {
-                case "name":
-                    return a.name.localeCompare(b.name);
-                case "performance":
-                    return b.progress - a.progress;
-                case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
-                    return bTime - aTime;
-                case "quizzes":
-                    return b.quizzesTaken - a.quizzesTaken;
-                default:
-                    return 0;
-            }
-        });
+        // Optimize sorting with Schwartzian Transform for activity dates
+        let sorted;
+        if (sortBy === "activity") {
+            // Schwartzian transform: parse dates once per item
+            const mapped = filtered.map(item => {
+                const time = item.lastActivity ? new Date(item.lastActivity).getTime() : 0;
+                return { item, time };
+            });
+            mapped.sort((a, b) => b.time - a.time);
+            sorted = mapped.map(el => el.item);
+        } else {
+            sorted = [...filtered].sort((a, b) => {
+                switch (sortBy) {
+                    case "name":
+                        return a.name.localeCompare(b.name);
+                    case "performance":
+                        return b.progress - a.progress;
+                    case "quizzes":
+                        return b.quizzesTaken - a.quizzesTaken;
+                    default:
+                        return 0;
+                }
+            });
+        }
 
         return sorted;
     }, [students, searchQuery, classFilter, performanceFilter, activityFilter, sortBy]);
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        let atRisk = 0;
+        let activeStudents = 0;
+        let sumProgress = 0;
+
+        for (const s of students) {
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity)) activeStudents++;
+            sumProgress += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(sumProgress / students.length)
             : 0;
 
         return {
