@@ -13,3 +13,6 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+## 2024-05-18 - [Add focus-visible to custom radio/toggle buttons]
+**Learning:** When using custom raw HTML `<button>` elements to simulate radio buttons or toggle groups (like the `role="radiogroup"` or `role="group"` implementations in `StudentProfileForm`), they often miss the default focus ring styles that semantic native elements might receive depending on the CSS reset/framework. This leads to a loss of keyboard navigability visibility.
+**Action:** Always explicitly apply `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background` to custom interactive buttons built with raw `<button>` tags within complex widgets to ensure keyboard focus states are maintained.
