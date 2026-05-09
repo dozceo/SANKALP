@@ -111,7 +111,13 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        const classNames = new Set<string>();
+        for (let i = 0; i < students.length; i++) {
+            const className = students[i].className;
+            if (className) {
+                classNames.add(className);
+            }
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -172,10 +178,19 @@ export default function StudentsPage() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        let atRisk = 0;
+        let activeStudents = 0;
+        let sumProgress = 0;
+
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity)) activeStudents++;
+            sumProgress += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(sumProgress / students.length)
             : 0;
 
         return {
