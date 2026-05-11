@@ -191,6 +191,7 @@ export function AddStudyMaterial() {
                         {formData.referenceLinks.map((link, index) => (
                             <div key={index} className="flex gap-2">
                                 <Input
+                                    aria-label={`Reference link ${index + 1}`}
                                     placeholder="https://example.com"
                                     value={link}
                                     onChange={(e) => updateReferenceLink(index, e.target.value)}
@@ -201,8 +202,10 @@ export function AddStudyMaterial() {
                                         variant="outline"
                                         size="icon"
                                         onClick={() => removeReferenceLink(index)}
+                                        aria-label={`Remove reference link ${index + 1}`}
+                                        title="Remove link"
                                     >
-                                        <X className="h-4 w-4" />
+                                        <X className="h-4 w-4" aria-hidden="true" />
                                     </Button>
                                 )}
                             </div>
