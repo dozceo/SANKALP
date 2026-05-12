@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-05-12 - Keyboard Accessibility for Password Visibility Toggles
+**Learning:** Interactive elements nested inside inputs (like password show/hide toggle buttons) often mistakenly receive `tabIndex={-1}` to prevent interrupting the form flow, but this completely blocks keyboard and screen-reader users from verifying their inputted password.
+**Action:** Never use `tabIndex={-1}` on interactive form controls like password toggles; they must remain in the natural tab order so users relying on keyboards can access them.
