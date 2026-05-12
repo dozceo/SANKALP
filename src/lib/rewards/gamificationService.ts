@@ -160,7 +160,13 @@ export function checkAndAwardBadges(
     student: StudentNode,
     context: GamificationContext
 ): Badge[] {
-    const existingIds = new Set((student.badges || []).map(b => b.id));
+    // ⚡ Bolt: Use explicit loop over student.badges to avoid mapping a potentially large intermediate array
+    const existingIds = new Set<string>();
+    if (student.badges) {
+        for (const b of student.badges) {
+            existingIds.add(b.id);
+        }
+    }
     const newBadges: Badge[] = [];
 
     for (const def of BADGE_CATALOG) {
