@@ -48,14 +48,19 @@ export default function TeacherProfile({ userId }: TeacherProfileProps) {
         );
     }
 
-    // Helper for initials
+    // Helper for initials (optimized: no array allocations)
     const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
+        let initials = "";
+        let isNewWord = true;
+        for (let i = 0; i < name.length && initials.length < 2; i++) {
+            if (name[i] === ' ') {
+                isNewWord = true;
+            } else if (isNewWord) {
+                initials += name[i];
+                isNewWord = false;
+            }
+        }
+        return initials.toUpperCase();
     };
 
     return (

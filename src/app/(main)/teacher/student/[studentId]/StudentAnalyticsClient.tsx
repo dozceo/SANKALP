@@ -16,13 +16,19 @@ import Link from "next/link";
 import { saveChatbotConfiguration } from "@/app/actions/student-configuration";
 import { useToast } from "@/hooks/use-toast";
 
-// Get initials for avatar
+// Get initials for avatar (optimized: no array allocations)
 const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+  let initials = "";
+  let isNewWord = true;
+  for (let i = 0; i < name.length && initials.length < 2; i++) {
+    if (name[i] === ' ') {
+      isNewWord = true;
+    } else if (isNewWord) {
+      initials += name[i];
+      isNewWord = false;
+    }
+  }
+  return initials.toUpperCase();
 };
 
 interface StudentAnalyticsClientProps {
