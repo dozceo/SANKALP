@@ -4,3 +4,7 @@
 
 **Learning:** Micro-optimizations in utility functions (like hex parsing in `lightenColor` or avoiding object allocation in `calculateTrend`) can add up in tight loops, especially when used in render cycles or data processing pipelines.
 **Action:** Look for object allocation in loops and see if primitive arrays can be used instead.
+
+## 2024-05-22 - Optimize String Splitting in Render Pass
+**Learning:** Functions that parse or format strings inside render passes (like `getInitials`) often use chained array methods (e.g., `.split(' ').map().join()`). This creates multiple intermediate array and string allocations on every render for every component instance, creating unnecessary GC pressure.
+**Action:** Replace simple string splitting/formatting chained methods with a single-pass string parsing loop when these functions are called frequently or inside render functions of repeated components (e.g., table rows or lists).

@@ -27,13 +27,19 @@ const InteractiveGraph = dynamic(
   { ssr: false, loading: () => <div className="flex h-[400px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div> }
 );
 
-// Get initials for avatar
+// Get initials for avatar (optimized: no array allocations)
 const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+  let initials = "";
+  let isNewWord = true;
+  for (let i = 0; i < name.length && initials.length < 2; i++) {
+    if (name[i] === ' ') {
+      isNewWord = true;
+    } else if (isNewWord) {
+      initials += name[i];
+      isNewWord = false;
+    }
+  }
+  return initials.toUpperCase();
 };
 
 const getRiskVariant = (risk: string) => {
