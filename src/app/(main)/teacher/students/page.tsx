@@ -111,7 +111,11 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // Performance optimization: Replace Array.map().filter() with single pass to reduce intermediate memory allocations
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) classNames.add(s.className);
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -121,10 +125,12 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // Performance optimization: Hoist toLowerCase() outside the loop to prevent O(N) string allocations
+            const query = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(query) ||
+                student.email.toLowerCase().includes(query) ||
+                student.className?.toLowerCase().includes(query)
             );
         }
 
@@ -149,6 +155,14 @@ export default function StudentsPage() {
             });
         }
 
+        // Performance optimization: Pre-calculate timestamps outside the sort loop to avoid O(N log N) Date allocations
+        const timestampMap = new Map<string, number>();
+        if (sortBy === "activity") {
+            for (const student of filtered) {
+                timestampMap.set(student.id, student.lastActivity ? new Date(student.lastActivity).getTime() : 0);
+            }
+        }
+
         // Sort
         const sorted = [...filtered].sort((a, b) => {
             switch (sortBy) {
@@ -157,9 +171,7 @@ export default function StudentsPage() {
                 case "performance":
                     return b.progress - a.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
-                    return bTime - aTime;
+                    return (timestampMap.get(b.id) || 0) - (timestampMap.get(a.id) || 0);
                 case "quizzes":
                     return b.quizzesTaken - a.quizzesTaken;
                 default:
