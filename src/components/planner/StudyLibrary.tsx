@@ -33,15 +33,26 @@ export function StudyLibrary() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get unique subjects
-    const subjects = useMemo(() => Array.from(new Set(studyMaterials.map(m => m.subject))), [studyMaterials]);
+    const subjects = useMemo(() => {
+        // Performance optimization: Avoid intermediate array allocation from map()
+        const subjectsSet = new Set<string>();
+        for (const m of studyMaterials) {
+            if (m.subject) subjectsSet.add(m.subject);
+        }
+        return Array.from(subjectsSet);
+    }, [studyMaterials]);
 
     // Filter materials
-    const filteredMaterials = useMemo(() => studyMaterials.filter(material => {
-        const matchesSearch = material.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            material.subject.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
-        return matchesSearch && matchesFilter;
-    }), [studyMaterials, searchTerm, filterSubject]);
+    const filteredMaterials = useMemo(() => {
+        // Performance optimization: Hoist searchTerm.toLowerCase() outside loop to prevent O(N) string allocations
+        const term = searchTerm.toLowerCase();
+        return studyMaterials.filter(material => {
+            const matchesSearch = material.topic.toLowerCase().includes(term) ||
+                material.subject.toLowerCase().includes(term);
+            const matchesFilter = filterSubject === "all" || material.subject === filterSubject;
+            return matchesSearch && matchesFilter;
+        });
+    }, [studyMaterials, searchTerm, filterSubject]);
 
     // Status badge styles
     const getStatusVariant = (status: string) => {

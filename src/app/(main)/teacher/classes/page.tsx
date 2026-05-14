@@ -194,12 +194,16 @@ export default function ClassesPage() {
 
   // Get unique subjects and grades for filters
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
+    // Performance optimization: Avoid array allocations from .map()
+    const subjects = new Set<string>();
+    for (const c of classes) if (c.subject) subjects.add(c.subject);
     return Array.from(subjects).sort();
   }, [classes]);
 
   const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
+    // Performance optimization: Avoid array allocations from .map()
+    const grades = new Set<string>();
+    for (const c of classes) if (c.grade) grades.add(c.grade);
     return Array.from(grades).sort();
   }, [classes]);
 
@@ -209,10 +213,12 @@ export default function ClassesPage() {
 
     // Search filter
     if (searchQuery) {
+      // Performance optimization: Hoist .toLowerCase() to avoid string allocations
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+        cls.className.toLowerCase().includes(query) ||
+        cls.subject.toLowerCase().includes(query) ||
+        cls.classCode.toLowerCase().includes(query)
       );
     }
 
@@ -226,6 +232,14 @@ export default function ClassesPage() {
       filtered = filtered.filter(cls => cls.grade === gradeFilter);
     }
 
+    // Performance optimization: Pre-calculate timestamps outside the sort loop
+    const timestampMap = new Map<string, number>();
+    if (sortBy === "recent") {
+      for (const cls of filtered) {
+        timestampMap.set(cls.id, cls.createdAt ? new Date(cls.createdAt).getTime() : 0);
+      }
+    }
+
     // Sort
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
@@ -234,7 +248,7 @@ export default function ClassesPage() {
         case "students":
           return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
         case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (timestampMap.get(b.id) || 0) - (timestampMap.get(a.id) || 0);
         case "subject":
           return a.subject.localeCompare(b.subject);
         default:
