@@ -72,6 +72,30 @@ export default function HomePage() {
     );
   }
 
+  const { urgentTopics, priorityTopics, needsRevisionCount } = useMemo(() => {
+    if (!intelligence?.mastery) return { urgentTopics: [], priorityTopics: [], needsRevisionCount: 0 };
+    const entries = Object.entries(intelligence.mastery);
+    const urgent = [];
+    const priority = [];
+    let needsRevision = 0;
+
+    for (const [topic, signal] of entries) {
+      if (signal.priority === "HIGH") {
+        urgent.push([topic, signal]);
+      }
+      if (signal.needsRevision) {
+        needsRevision++;
+        priority.push([topic, signal]);
+      }
+    }
+
+    return {
+      urgentTopics: urgent,
+      priorityTopics: priority.slice(0, 3),
+      needsRevisionCount: needsRevision
+    };
+  }, [intelligence]);
+
   if (!intelligence) {
     return (
       <div className="text-center py-12">
@@ -207,9 +231,7 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.priority === "HIGH")
-              .map(([topic, signal]) => (
+            {urgentTopics.map(([topic, signal]) => (
                 <div key={topic} className="p-3 border rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-medium">{topic}</h4>
@@ -272,10 +294,7 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {Object.entries(intelligence.mastery)
-              .filter(([_, signal]) => signal.needsRevision)
-              .slice(0, 3)
-              .map(([topic, signal]) => (
+            {priorityTopics.map(([topic, signal]) => (
                 <div key={topic} className="p-3 border rounded-lg">
                   <div className="flex justify-between items-center">
                     <h4 className="font-medium">{topic}</h4>
@@ -288,7 +307,7 @@ export default function HomePage() {
                   </p>
                 </div>
               ))}
-            {Object.values(intelligence.mastery).filter(s => s.needsRevision).length === 0 && (
+            {needsRevisionCount === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">
                 🎉 All caught up! Great work!
               </p>
