@@ -13,3 +13,6 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+## 2025-02-23 - Critical Focus Visible Styles on Custom Button Form Controls
+**Learning:** When using `<button>` elements to create custom radio or checkbox inputs (like the Grade, Subject, and Study Time selectors in `StudentProfileForm`), they often lack default visible focus states, which breaks keyboard accessibility. This makes it impossible for users relying on keyboard navigation to see which option is currently focused before selecting it.
+**Action:** Always ensure that custom button-based form controls include explicit focus styles. In this project, consistently apply `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background` to all such buttons to maintain the application's accessibility standards.
