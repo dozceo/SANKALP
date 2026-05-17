@@ -60,7 +60,7 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
 
 const isActive = (lastActivity?: Date): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    const daysSince = (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -172,10 +172,18 @@ export default function StudentsPage() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        let atRisk = 0;
+        let activeStudents = 0;
+        let totalProgress = 0;
+
+        for (const s of students) {
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity)) activeStudents++;
+            totalProgress += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(totalProgress / students.length)
             : 0;
 
         return {
