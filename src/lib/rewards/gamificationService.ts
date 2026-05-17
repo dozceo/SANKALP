@@ -163,17 +163,24 @@ export function checkAndAwardBadges(
     const existingIds = new Set((student.badges || []).map(b => b.id));
     const newBadges: Badge[] = [];
 
+    // Lazy initialization of timestamp so all badges get the exact same time
+    // and we don't allocate a string if no badges are earned
+    let sharedEarnedAt: string | undefined;
+
     for (const def of BADGE_CATALOG) {
         if (existingIds.has(def.id)) continue; // Already earned
 
         if (def.check(student, context)) {
+            if (!sharedEarnedAt) {
+                sharedEarnedAt = new Date().toISOString();
+            }
             newBadges.push({
                 id: def.id,
                 title: def.title,
                 description: def.description,
                 icon: def.icon,
                 color: def.color,
-                earnedAt: new Date().toISOString(),
+                earnedAt: sharedEarnedAt,
             });
         }
     }
