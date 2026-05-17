@@ -1,0 +1,3 @@
+## 2025-02-12 - Ensure Keyboard Navigation in Custom Form Controls
+**Learning:** Custom interactive elements (like the radio and toggle buttons in the `StudentProfileForm`) must explicitly include focus styles (e.g., `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background`) since they do not inherit default browser focus rings like native inputs. Without these, keyboard users cannot determine which element currently has focus.
+**Action:** Always apply `focus-visible` utility classes when using native HTML elements like `<button>` or custom components mimicking inputs in a form. Utilize the `cn` utility to merge these conditionally.
