@@ -193,14 +193,19 @@ export default function ClassesPage() {
   };
 
   // Get unique subjects and grades for filters
-  const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
-    return Array.from(subjects).sort();
-  }, [classes]);
-
-  const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
-    return Array.from(grades).sort();
+  const { uniqueSubjects, uniqueGrades } = useMemo(() => {
+    // ⚡ Bolt Optimization: Use a single for...of loop to populate both Sets,
+    // avoiding the O(N) array allocation overhead of chained .map() calls.
+    const subjects = new Set<string>();
+    const grades = new Set<string>();
+    for (const c of classes) {
+      if (c.subject) subjects.add(c.subject);
+      if (c.grade) grades.add(c.grade);
+    }
+    return {
+      uniqueSubjects: Array.from(subjects).sort(),
+      uniqueGrades: Array.from(grades).sort(),
+    };
   }, [classes]);
 
   // Filter and sort classes
@@ -234,7 +239,11 @@ export default function ClassesPage() {
         case "students":
           return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
         case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          // ⚡ Bolt Optimization: Use Date.parse() for string dates instead of new Date()
+          // to avoid O(N log N) object instantiation memory overhead during sorting.
+          const timeA = typeof a.createdAt === 'string' ? Date.parse(a.createdAt) : new Date(a.createdAt).getTime();
+          const timeB = typeof b.createdAt === 'string' ? Date.parse(b.createdAt) : new Date(b.createdAt).getTime();
+          return timeB - timeA;
         case "subject":
           return a.subject.localeCompare(b.subject);
         default:
