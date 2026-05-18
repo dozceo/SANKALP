@@ -58,9 +58,12 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
     return { level: "excelling", label: "Excelling", variant: "default" };
 };
 
-const isActive = (lastActivity?: Date): boolean => {
+const isActive = (lastActivity?: Date, nowTimestamp: number = Date.now()): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    // ⚡ Bolt Optimization: Calculate timestamp using Date.parse for string values, avoiding
+    // creating a new Date object for every comparison.
+    const lastActivityTime = typeof lastActivity === 'string' ? Date.parse(lastActivity) : new Date(lastActivity).getTime();
+    const daysSince = (nowTimestamp - lastActivityTime) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -111,7 +114,12 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // ⚡ Bolt Optimization: Use a single for...of loop to gather unique class names,
+        // avoiding chained array method allocations like `.map().filter(Boolean)`.
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) classNames.add(s.className);
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -157,8 +165,10 @@ export default function StudentsPage() {
                 case "performance":
                     return b.progress - a.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+                    // ⚡ Bolt Optimization: Use Date.parse() for string dates instead of new Date()
+                    // to avoid O(N log N) object instantiation memory overhead during sorting.
+                    const aTime = a.lastActivity ? (typeof a.lastActivity === 'string' ? Date.parse(a.lastActivity) : new Date(a.lastActivity).getTime()) : 0;
+                    const bTime = b.lastActivity ? (typeof b.lastActivity === 'string' ? Date.parse(b.lastActivity) : new Date(b.lastActivity).getTime()) : 0;
                     return bTime - aTime;
                 case "quizzes":
                     return b.quizzesTaken - a.quizzesTaken;
@@ -346,12 +356,16 @@ export default function StudentsPage() {
                 </Card>
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredAndSortedStudents.map((student) => {
-                        const performance = getPerformanceLevel(student.progress);
-                        const active = isActive(student.lastActivity);
-                        const topicCount = Object.keys(student.topicMastery).length;
+                    {(() => {
+                        // ⚡ Bolt Optimization: Hoist Date.now() outside of the .map() loop during
+                        // render to prevent calculating the current time repeatedly for each student card.
+                        const nowTimestamp = Date.now();
+                        return filteredAndSortedStudents.map((student) => {
+                            const performance = getPerformanceLevel(student.progress);
+                            const active = isActive(student.lastActivity, nowTimestamp);
+                            const topicCount = Object.keys(student.topicMastery).length;
 
-                        return (
+                            return (
                             <Card key={student.id} className="hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer"
                                 onClick={() => router.push(`/teacher/students/${student.id}`)}>
                                 <CardHeader>
@@ -404,8 +418,9 @@ export default function StudentsPage() {
                                     </Button>
                                 </CardContent>
                             </Card>
-                        );
-                    })}
+                            );
+                        });
+                    })()}
                 </div>
             )}
         </div>

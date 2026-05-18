@@ -133,24 +133,32 @@ export default function ClassDetailsPage() {
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
-        const activeStudents = students.filter(s => {
-            if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceLogin <= 7;
-        });
+        // ⚡ Bolt Optimization: Use Date.now() to avoid new Date() object allocation overhead.
+        const now = Date.now();
+        // ⚡ Bolt Optimization: Replace two O(N) array .filter() chains with a single
+        // O(N) loop that calculates both metrics simultaneously.
+        let activeCount = 0;
+        let recentJoinCount = 0;
 
-        const recentJoins = students.filter(s => {
-            if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceJoin <= 7;
-        });
+        for (const s of students) {
+            if (s.lastLoginDate) {
+                // ⚡ Bolt Optimization: Use Date.parse() for string dates when calculating timestamps
+                const loginTime = typeof s.lastLoginDate === 'string' ? Date.parse(s.lastLoginDate) : new Date(s.lastLoginDate).getTime();
+                const daysSinceLogin = (now - loginTime) / (1000 * 60 * 60 * 24);
+                if (daysSinceLogin <= 7) activeCount++;
+            }
+            if (s.joinedClassAt) {
+                const joinTime = typeof s.joinedClassAt === 'string' ? Date.parse(s.joinedClassAt) : new Date(s.joinedClassAt).getTime();
+                const daysSinceJoin = (now - joinTime) / (1000 * 60 * 60 * 24);
+                if (daysSinceJoin <= 7) recentJoinCount++;
+            }
+        }
 
         return {
             total: students.length,
-            activeThisWeek: activeStudents.length,
-            recentJoins: recentJoins.length,
-            activityRate: students.length > 0 ? Math.round((activeStudents.length / students.length) * 100) : 0,
+            activeThisWeek: activeCount,
+            recentJoins: recentJoinCount,
+            activityRate: students.length > 0 ? Math.round((activeCount / students.length) * 100) : 0
         };
     }, [students]);
 
@@ -355,8 +363,13 @@ export default function ClassDetailsPage() {
                             </TableHeader>
                             <TableBody>
                                 {filteredStudents.map((student) => {
-                                    const daysSinceLogin = student.lastLoginDate
-                                        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
+                                    // ⚡ Bolt Optimization: Replace new Date() with Date.parse() if it's a string,
+                                    // and use Date.now() to avoid Date object creation inside a map loop.
+                                    const loginTime = student.lastLoginDate
+                                        ? (typeof student.lastLoginDate === 'string' ? Date.parse(student.lastLoginDate) : new Date(student.lastLoginDate).getTime())
+                                        : null;
+                                    const daysSinceLogin = loginTime !== null
+                                        ? (Date.now() - loginTime) / (1000 * 60 * 60 * 24)
                                         : null;
                                     const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
 
