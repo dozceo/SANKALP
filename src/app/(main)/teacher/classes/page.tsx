@@ -194,12 +194,18 @@ export default function ClassesPage() {
 
   // Get unique subjects and grades for filters
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
+    const subjects = new Set<string>();
+    for (const c of classes) {
+      if (c.subject) subjects.add(c.subject);
+    }
     return Array.from(subjects).sort();
   }, [classes]);
 
   const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
+    const grades = new Set<string>();
+    for (const c of classes) {
+      if (c.grade) grades.add(c.grade);
+    }
     return Array.from(grades).sort();
   }, [classes]);
 
@@ -247,11 +253,20 @@ export default function ClassesPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalStudents = classes.reduce((acc, cls) => acc + (cls.studentIds?.length || 0), 0);
+    let totalStudents = 0;
+    let mostPopularClass = classes[0];
+    let maxStudents = mostPopularClass?.studentIds?.length || 0;
+
+    for (const cls of classes) {
+      const studentCount = cls.studentIds?.length || 0;
+      totalStudents += studentCount;
+      if (studentCount > maxStudents) {
+        maxStudents = studentCount;
+        mostPopularClass = cls;
+      }
+    }
+
     const avgStudents = classes.length > 0 ? Math.round(totalStudents / classes.length) : 0;
-    const mostPopularClass = classes.reduce((max, cls) =>
-      (cls.studentIds?.length || 0) > (max.studentIds?.length || 0) ? cls : max
-      , classes[0]);
 
     return {
       totalClasses: classes.length,
