@@ -41,17 +41,16 @@ export function StudentSelector() {
     };
 
     return (
-        <Link href="/profile" passHref>
-             <button
-                aria-label={`View profile for ${currentStudent.name}`}
-                className="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-                <Avatar className={`h-8 w-8 ${getAvatarColor(currentStudent.grade)}`}>
-                    <AvatarFallback className="text-white font-medium text-xs">
-                        {getInitials(currentStudent.name)}
-                    </AvatarFallback>
-                </Avatar>
-            </button>
+        <Link
+            href="/profile"
+            aria-label={`View profile for ${currentStudent.name}`}
+            className="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+            <Avatar className={`h-8 w-8 ${getAvatarColor(currentStudent.grade)}`}>
+                <AvatarFallback className="text-white font-medium text-xs">
+                    {getInitials(currentStudent.name)}
+                </AvatarFallback>
+            </Avatar>
         </Link>
     );
 }
