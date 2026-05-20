@@ -194,12 +194,20 @@ export default function ClassesPage() {
 
   // Get unique subjects and grades for filters
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
+    // Bolt: Optimized chained .map() and Set into a single pass loop
+    const subjects = new Set<string>();
+    for (const c of classes) {
+      if (c.subject) subjects.add(c.subject);
+    }
     return Array.from(subjects).sort();
   }, [classes]);
 
   const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
+    // Bolt: Optimized chained .map() and Set into a single pass loop
+    const grades = new Set<string>();
+    for (const c of classes) {
+      if (c.grade) grades.add(c.grade);
+    }
     return Array.from(grades).sort();
   }, [classes]);
 
@@ -209,10 +217,12 @@ export default function ClassesPage() {
 
     // Search filter
     if (searchQuery) {
+      // Bolt: Hoist toLowerCase to avoid recalculation per class
+      const q = searchQuery.toLowerCase();
       filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+        cls.className.toLowerCase().includes(q) ||
+        cls.subject.toLowerCase().includes(q) ||
+        cls.classCode.toLowerCase().includes(q)
       );
     }
 
@@ -227,22 +237,28 @@ export default function ClassesPage() {
     }
 
     // Sort
-    const sorted = [...filtered].sort((a, b) => {
+    // Bolt: Added Schwartzian transform to prevent redundant O(N log N) Date instantiations
+    const mapped = filtered.map(c => ({
+      cls: c,
+      createdTime: new Date(c.createdAt).getTime()
+    }));
+
+    const sorted = mapped.sort((a, b) => {
       switch (sortBy) {
         case "name":
-          return a.className.localeCompare(b.className);
+          return a.cls.className.localeCompare(b.cls.className);
         case "students":
-          return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
+          return (b.cls.studentIds?.length || 0) - (a.cls.studentIds?.length || 0);
         case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return b.createdTime - a.createdTime;
         case "subject":
-          return a.subject.localeCompare(b.subject);
+          return a.cls.subject.localeCompare(b.cls.subject);
         default:
           return 0;
       }
     });
 
-    return sorted;
+    return sorted.map(c => c.cls);
   }, [classes, searchQuery, subjectFilter, gradeFilter, sortBy]);
 
   // Calculate stats
