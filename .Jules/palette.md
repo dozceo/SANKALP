@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-11-20 - Nested Interactivity in Next.js
+**Learning:** Wrapping a native `<button>` element inside a Next.js `<Link>` component creates nested interactive elements, which causes invalid HTML and significantly degrades screen reader accessibility, as the tab order and announcements get confused.
+**Action:** Always apply interactivity, ARIA labels, and focus styles directly to the `<Link>` element instead of nesting interactive tags within it.
