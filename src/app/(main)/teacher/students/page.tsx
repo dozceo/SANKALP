@@ -111,7 +111,11 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // Bolt: Optimized chained .map().filter() into single pass loop
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) classNames.add(s.className);
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -121,10 +125,12 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // Bolt: Hoist toLowerCase to avoid recalculation per student
+            const q = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(q) ||
+                student.email.toLowerCase().includes(q) ||
+                student.className?.toLowerCase().includes(q)
             );
         }
 
@@ -150,24 +156,28 @@ export default function StudentsPage() {
         }
 
         // Sort
-        const sorted = [...filtered].sort((a, b) => {
+        // Bolt: Added Schwartzian transform to prevent redundant O(N log N) Date instantiations
+        const mapped = filtered.map(s => ({
+            student: s,
+            activityTime: s.lastActivity ? new Date(s.lastActivity).getTime() : 0
+        }));
+
+        const sorted = mapped.sort((a, b) => {
             switch (sortBy) {
                 case "name":
-                    return a.name.localeCompare(b.name);
+                    return a.student.name.localeCompare(b.student.name);
                 case "performance":
-                    return b.progress - a.progress;
+                    return b.student.progress - a.student.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
-                    return bTime - aTime;
+                    return b.activityTime - a.activityTime;
                 case "quizzes":
-                    return b.quizzesTaken - a.quizzesTaken;
+                    return b.student.quizzesTaken - a.student.quizzesTaken;
                 default:
                     return 0;
             }
         });
 
-        return sorted;
+        return sorted.map(s => s.student);
     }, [students, searchQuery, classFilter, performanceFilter, activityFilter, sortBy]);
 
     // Calculate stats
