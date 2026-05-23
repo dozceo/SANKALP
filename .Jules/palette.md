@@ -13,3 +13,6 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+## 2026-06-21 - Accessible Dynamic Input Groups
+**Learning:** For dynamically generated form fields in lists where a group `<Label>` exists but individual inputs lack `htmlFor` bindings (e.g., reference links in `AddStudyMaterial.tsx`), wrap the group in a container with `role="group"` and `aria-labelledby` pointing to the group label's ID.
+**Action:** When auditing forms with arrays of inputs, explicitly apply unique `aria-label` attributes to each individual `<Input>` and action `<Button>` using their index to guarantee proper screen reader accessibility.
