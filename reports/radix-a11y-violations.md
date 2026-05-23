@@ -1,6 +1,6 @@
 # Radix UI Accessibility Violation Report
 
-Generated on: 2/19/2026, 7:18:26 PM
+Generated on: 5/23/2026, 6:21:49 AM
 
 Total Violations: 11
 
@@ -10,8 +10,8 @@ Total Violations: 11
 | src/app/(main)/chat/page.tsx | icon-button-label | Button with size="icon" detected without aria-label. | 157 |
 | src/app/(main)/teacher/student/[studentId]/StudentAnalyticsClient.tsx | icon-button-label | Button with size="icon" detected without aria-label. | 101 |
 | src/components/app/header.tsx | icon-button-label | Button with size="icon" detected without aria-label. | 61 |
-| src/components/app/sidebar-nav.tsx | icon-button-label | Button with size="icon" detected without aria-label. | 89 |
-| src/components/app/teacher-sidebar-nav.tsx | icon-button-label | Button with size="icon" detected without aria-label. | 97 |
+| src/components/app/sidebar-nav.tsx | icon-button-label | Button with size="icon" detected without aria-label. | 92 |
+| src/components/app/teacher-sidebar-nav.tsx | icon-button-label | Button with size="icon" detected without aria-label. | 100 |
 | src/components/planner/AddStudyMaterial.tsx | icon-button-label | Button with size="icon" detected without aria-label. | 202 |
 | src/components/theme-toggle.tsx | icon-button-label | Button with size="icon" detected without aria-label. | 21 |
 | src/components/ui/collapsible.tsx | radix-wrapper-forward-ref | Radix primitive wrapper should use forwardRef to maintain accessibility focus management. | - |
