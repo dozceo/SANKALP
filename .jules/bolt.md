@@ -4,3 +4,7 @@
 
 **Learning:** Micro-optimizations in utility functions (like hex parsing in `lightenColor` or avoiding object allocation in `calculateTrend`) can add up in tight loops, especially when used in render cycles or data processing pipelines.
 **Action:** Look for object allocation in loops and see if primitive arrays can be used instead.
+## 2026-05-23 - Avoid Chained Array Iteration in React useMemo Hooks
+
+**Learning:** When generating filtered or computed states in React `useMemo` hooks (such as calculating aggregates or extracting unique sets), chaining multiple array methods (`.map().filter()`, multiple `.reduce()`, or combinations of `.filter().length` and `.reduce()`) results in multiple O(N) passes over potentially large datasets and significant intermediate array allocations, increasing garbage collection pressure and causing rendering performance to degrade.
+**Action:** When computing complex derived states, prefer single-pass iteration using standard `for` or `for...of` loops over chained functional array methods to compute multiple aggregates simultaneously and eliminate intermediate allocations.
