@@ -27,13 +27,23 @@ const InteractiveGraph = dynamic(
   { ssr: false, loading: () => <div className="flex h-[400px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div> }
 );
 
-// Get initials for avatar
+// ⚡ Bolt: Optimize getInitials to prevent intermediate array allocations during render
 const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+  let initials = '';
+  let lastCharWasSpace = true; // Handle leading/multiple spaces
+  for (let i = 0; i < name.length; i++) {
+    const char = name[i];
+    if (char === ' ') {
+        lastCharWasSpace = true;
+        continue;
+    }
+    if (lastCharWasSpace) {
+        initials += char;
+        lastCharWasSpace = false;
+        if (initials.length === 2) break;
+    }
+  }
+  return initials.toUpperCase();
 };
 
 const getRiskVariant = (risk: string) => {
