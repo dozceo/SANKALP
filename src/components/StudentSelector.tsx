@@ -5,6 +5,15 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Skeleton } from "@/components/ui/skeleton";
 
+// ⚡ Bolt: Externalize AVATAR_COLORS to avoid array reallocation on each render
+const AVATAR_COLORS = [
+    'bg-blue-500',
+    'bg-purple-500',
+    'bg-green-500',
+    'bg-orange-500',
+    'bg-pink-500',
+];
+
 export function StudentSelector() {
     const { currentStudent, loading } = useStudent();
 
@@ -18,26 +27,28 @@ export function StudentSelector() {
         return null;
     }
 
-    // Get initials for avatar
+    // ⚡ Bolt: Optimize getInitials to prevent intermediate array allocations during render
     const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
+        let initials = '';
+        let lastCharWasSpace = true; // Handle leading/multiple spaces
+        for (let i = 0; i < name.length; i++) {
+            const char = name[i];
+            if (char === ' ') {
+                lastCharWasSpace = true;
+                continue;
+            }
+            if (lastCharWasSpace) {
+                initials += char;
+                lastCharWasSpace = false;
+                if (initials.length === 2) break;
+            }
+        }
+        return initials.toUpperCase();
     };
 
     // Get color based on student grade
     const getAvatarColor = (grade?: number) => {
-        const colors = [
-            'bg-blue-500',
-            'bg-purple-500',
-            'bg-green-500',
-            'bg-orange-500',
-            'bg-pink-500',
-        ];
-        return colors[(grade || 0) % colors.length];
+        return AVATAR_COLORS[(grade || 0) % AVATAR_COLORS.length];
     };
 
     return (

@@ -4,3 +4,6 @@
 
 **Learning:** Micro-optimizations in utility functions (like hex parsing in `lightenColor` or avoiding object allocation in `calculateTrend`) can add up in tight loops, especially when used in render cycles or data processing pipelines.
 **Action:** Look for object allocation in loops and see if primitive arrays can be used instead.
+## 2024-05-24 - Avoiding Array Allocations in React Render Helpers
+**Learning:** Helper functions called frequently during render (like `getInitials(name)`) that use chainable array methods (`name.split(' ').map().join()`) create multiple short-lived array allocations per call, causing memory thrashing and GC pauses, especially on pages rendering lists or large tables.
+**Action:** Replace chainable string-to-array transformations with single-pass `for` loops in frequently called render helpers, and hoist constants out of components.

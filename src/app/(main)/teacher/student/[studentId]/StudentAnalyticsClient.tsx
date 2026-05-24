@@ -16,13 +16,23 @@ import Link from "next/link";
 import { saveChatbotConfiguration } from "@/app/actions/student-configuration";
 import { useToast } from "@/hooks/use-toast";
 
-// Get initials for avatar
+// ⚡ Bolt: Optimize getInitials to prevent intermediate array allocations during render
 const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+  let initials = '';
+  let lastCharWasSpace = true; // Handle leading/multiple spaces
+  for (let i = 0; i < name.length; i++) {
+    const char = name[i];
+    if (char === ' ') {
+        lastCharWasSpace = true;
+        continue;
+    }
+    if (lastCharWasSpace) {
+        initials += char;
+        lastCharWasSpace = false;
+        if (initials.length === 2) break;
+    }
+  }
+  return initials.toUpperCase();
 };
 
 interface StudentAnalyticsClientProps {
