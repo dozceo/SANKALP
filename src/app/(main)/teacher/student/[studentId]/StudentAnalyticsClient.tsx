@@ -98,9 +98,9 @@ export default function StudentAnalyticsClient({ student, performance }: Student
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" asChild>
+        <Button variant="outline" size="icon" aria-label="Back to teacher dashboard" asChild>
           <Link href="/teacher">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </Link>
         </Button>
         <div>

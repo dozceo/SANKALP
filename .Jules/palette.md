@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-05-25 - Icon-only Buttons and Linter Constraints
+**Learning:** Custom accessibility linters (like the `icon-button-label` rule in Radix a11y audits) may use naive line-by-line regex parsing instead of AST parsing. This causes them to fail if `aria-label` is placed on a different line than `size="icon"`, even if the final HTML is semantically correct.
+**Action:** When fixing accessibility violations flagged by custom scripts, adapt the formatting (e.g., placing `aria-label` adjacent to the trigger prop on the same line) to satisfy the tooling's specific parsing logic, while ensuring the end user experience remains accessible.
