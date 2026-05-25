@@ -157,15 +157,22 @@ export function retrieveRelevantContext(query: string, k = 3): string {
   if (queryTerms.length === 0) return '';
 
   // Score every chunk and pick the top-k.
-  const scored = kb
-    .map(chunk => ({ chunk, score: relevanceScore(queryTerms, chunk) }))
-    .filter(entry => entry.score > 0)
+  const scored: { chunk: DocumentChunk; score: number }[] = [];
+  // Optimize: single pass to score and filter avoiding intermediate array map allocations
+  for (const chunk of kb) {
+    const score = relevanceScore(queryTerms, chunk);
+    if (score > 0) {
+      scored.push({ chunk, score });
+    }
+  }
+
+  const topScored = scored
     .sort((a, b) => b.score - a.score)
     .slice(0, k);
 
-  if (scored.length === 0) return '';
+  if (topScored.length === 0) return '';
 
-  return scored
+  return topScored
     .map(entry => `[Source: ${entry.chunk.source}]\n${entry.chunk.text}`)
     .join('\n\n---\n\n');
 }
