@@ -111,7 +111,11 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // Optimize: single pass, avoid intermediate array allocation from map and filter
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) classNames.add(s.className);
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
