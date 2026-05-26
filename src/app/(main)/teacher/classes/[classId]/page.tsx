@@ -125,32 +125,42 @@ export default function ClassDetailsPage() {
     // Filter students by search query
     const filteredStudents = useMemo(() => {
         if (!searchQuery) return students;
+        // Optimization: Hoist lowercased search query to avoid repeated string allocation in loop
+        const searchLower = searchQuery.toLowerCase();
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchQuery.toLowerCase())
+            student.name.toLowerCase().includes(searchLower) ||
+            student.email.toLowerCase().includes(searchLower)
         );
     }, [students, searchQuery]);
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
-        const activeStudents = students.filter(s => {
-            if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceLogin <= 7;
-        });
+        // Optimization: Use Date.now() and a single pass loop instead of multiple arrays and Date objects
+        const nowMs = Date.now();
+        let activeThisWeek = 0;
+        let recentJoins = 0;
+        const SEVEN_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
 
-        const recentJoins = students.filter(s => {
-            if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceJoin <= 7;
-        });
+        for (const s of students) {
+            if (s.lastLoginDate) {
+                const loginMs = typeof s.lastLoginDate === 'string' ? Date.parse(s.lastLoginDate) : new Date(s.lastLoginDate).getTime();
+                if ((nowMs - loginMs) <= SEVEN_DAYS_MS) {
+                    activeThisWeek++;
+                }
+            }
+            if (s.joinedClassAt) {
+                const joinMs = typeof s.joinedClassAt === 'string' ? Date.parse(s.joinedClassAt) : new Date(s.joinedClassAt).getTime();
+                if ((nowMs - joinMs) <= SEVEN_DAYS_MS) {
+                    recentJoins++;
+                }
+            }
+        }
 
         return {
             total: students.length,
-            activeThisWeek: activeStudents.length,
-            recentJoins: recentJoins.length,
-            activityRate: students.length > 0 ? Math.round((activeStudents.length / students.length) * 100) : 0,
+            activeThisWeek,
+            recentJoins,
+            activityRate: students.length > 0 ? Math.round((activeThisWeek / students.length) * 100) : 0,
         };
     }, [students]);
 
@@ -355,10 +365,12 @@ export default function ClassDetailsPage() {
                             </TableHeader>
                             <TableBody>
                                 {filteredStudents.map((student) => {
-                                    const daysSinceLogin = student.lastLoginDate
-                                        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
-                                        : null;
-                                    const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
+                                    // Optimization: use Date.now() and Date.parse() to avoid Date object creation
+                                    let isActive = false;
+                                    if (student.lastLoginDate) {
+                                        const loginMs = typeof student.lastLoginDate === 'string' ? Date.parse(student.lastLoginDate) : new Date(student.lastLoginDate).getTime();
+                                        isActive = (Date.now() - loginMs) <= (1000 * 60 * 60 * 24 * 7);
+                                    }
 
                                     return (
                                         <TableRow key={student.id}>
