@@ -133,24 +133,39 @@ export default function ClassDetailsPage() {
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
-        const activeStudents = students.filter(s => {
-            if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceLogin <= 7;
-        });
+        // Optimization 4: Consolidate multiple .filter() iterations into a single O(N) loop
+        // and avoid instantiating repeated 'new Date()' objects inside the iteration.
+        // Impact: Eliminates multiple array passes and intermediate array allocations, significantly
+        // reducing garbage collection pressure for classes with many students.
+        const nowMs = Date.now();
+        let activeCount = 0;
+        let recentJoinCount = 0;
 
-        const recentJoins = students.filter(s => {
-            if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
-            return daysSinceJoin <= 7;
-        });
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+
+            if (s.lastLoginDate) {
+                const loginTime = typeof s.lastLoginDate === 'string' ? Date.parse(s.lastLoginDate) : new Date(s.lastLoginDate).getTime();
+                if (!isNaN(loginTime)) {
+                    const daysSinceLogin = (nowMs - loginTime) / (1000 * 60 * 60 * 24);
+                    if (daysSinceLogin <= 7) activeCount++;
+                }
+            }
+
+            if (s.joinedClassAt) {
+                const joinTime = typeof s.joinedClassAt === 'string' ? Date.parse(s.joinedClassAt) : new Date(s.joinedClassAt).getTime();
+                if (!isNaN(joinTime)) {
+                    const daysSinceJoin = (nowMs - joinTime) / (1000 * 60 * 60 * 24);
+                    if (daysSinceJoin <= 7) recentJoinCount++;
+                }
+            }
+        }
 
         return {
             total: students.length,
-            activeThisWeek: activeStudents.length,
-            recentJoins: recentJoins.length,
-            activityRate: students.length > 0 ? Math.round((activeStudents.length / students.length) * 100) : 0,
+            activeThisWeek: activeCount,
+            recentJoins: recentJoinCount,
+            activityRate: students.length > 0 ? Math.round((activeCount / students.length) * 100) : 0,
         };
     }, [students]);
 
@@ -354,13 +369,24 @@ export default function ClassDetailsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredStudents.map((student) => {
-                                    const daysSinceLogin = student.lastLoginDate
-                                        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
-                                        : null;
-                                    const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
+                                {(() => {
+                                    // Optimization 5: Hoist Date.now() outside of the array mapping and replace new Date().getTime()
+                                    // instantiation to prevent allocating a Date object per row during render.
+                                    // Impact: Reduces rendering time and memory usage overhead by preventing unnecessary object allocation.
+                                    const nowMs = Date.now();
+                                    return filteredStudents.map((student) => {
+                                        let isActive = false;
+                                        if (student.lastLoginDate) {
+                                            const loginTime = typeof student.lastLoginDate === 'string'
+                                                ? Date.parse(student.lastLoginDate)
+                                                : new Date(student.lastLoginDate).getTime();
+                                            if (!isNaN(loginTime)) {
+                                                const daysSinceLogin = (nowMs - loginTime) / (1000 * 60 * 60 * 24);
+                                                isActive = daysSinceLogin <= 7;
+                                            }
+                                        }
 
-                                    return (
+                                        return (
                                         <TableRow key={student.id}>
                                             <TableCell className="font-medium">{student.name}</TableCell>
                                             <TableCell>{student.email}</TableCell>
@@ -380,8 +406,9 @@ export default function ClassDetailsPage() {
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>
-                                    );
-                                })}
+                                        );
+                                    });
+                                })()}
                             </TableBody>
                         </Table>
                     )}
