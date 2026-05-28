@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-05-28 - Shadcn UI Icon Buttons Accessibility
+**Learning:** The custom accessibility audit script in this app (scripts/audit-radix-a11y.ts) requires `aria-label` to be placed on the exact same line as `size="icon"` on Shadcn UI `Button` components to be recognized.
+**Action:** When adding `aria-label` to resolve icon-button-label violations, always append it inline with `size="icon"` rather than relying on standard multiline JSX formatting.
