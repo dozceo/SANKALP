@@ -199,7 +199,7 @@ export function AddStudyMaterial() {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        size="icon"
+                                        size="icon" aria-label="Remove link"
                                         onClick={() => removeReferenceLink(index)}
                                     >
                                         <X className="h-4 w-4" />

@@ -97,7 +97,7 @@ export function TeacherSidebarNav() {
                                 </span>
                                 <Button
                                     variant="ghost"
-                                    size="icon"
+                                    size="icon" aria-label="Toggle section"
                                     className="h-6 w-6"
                                     onClick={() => {
                                         navigator.clipboard.writeText(user.uid);
