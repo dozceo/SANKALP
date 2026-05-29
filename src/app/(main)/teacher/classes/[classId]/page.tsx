@@ -125,9 +125,11 @@ export default function ClassDetailsPage() {
     // Filter students by search query
     const filteredStudents = useMemo(() => {
         if (!searchQuery) return students;
+        // Hoist the toLowerCase() operation outside the loop
+        const searchLower = searchQuery.toLowerCase();
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchQuery.toLowerCase())
+            student.name.toLowerCase().includes(searchLower) ||
+            student.email.toLowerCase().includes(searchLower)
         );
     }, [students, searchQuery]);
 

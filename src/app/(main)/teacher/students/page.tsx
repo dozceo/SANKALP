@@ -121,10 +121,12 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // Hoist the toLowerCase() operation outside the loop to avoid redundant computation
+            const searchLower = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(searchLower) ||
+                student.email.toLowerCase().includes(searchLower) ||
+                student.className?.toLowerCase().includes(searchLower)
             );
         }
 
