@@ -209,10 +209,12 @@ export default function ClassesPage() {
 
     // Search filter
     if (searchQuery) {
+      // Performance optimization: Hoist toLowerCase() to avoid redundant string allocations on every loop iteration
+      const lowerQuery = searchQuery.toLowerCase();
       filtered = filtered.filter(cls =>
-        cls.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cls.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+        cls.className.toLowerCase().includes(lowerQuery) ||
+        cls.subject.toLowerCase().includes(lowerQuery) ||
+        cls.classCode.toLowerCase().includes(lowerQuery)
       );
     }
 
