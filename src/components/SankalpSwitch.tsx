@@ -30,7 +30,7 @@ export const SankalpSwitch = memo(function SankalpSwitch() {
         if (!isActive || !session) return;
 
         const timer = setInterval(() => {
-            const now = new Date().getTime();
+            const now = Date.now();
             const start = new Date(session.startTime).getTime();
             const elapsed = Math.floor((now - start) / 1000); // seconds
             const total = session.duration * 60; // convert to seconds

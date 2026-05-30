@@ -4,3 +4,6 @@
 
 **Learning:** Micro-optimizations in utility functions (like hex parsing in `lightenColor` or avoiding object allocation in `calculateTrend`) can add up in tight loops, especially when used in render cycles or data processing pipelines.
 **Action:** Look for object allocation in loops and see if primitive arrays can be used instead.
+## 2026-05-30 - Array Callback String Allocations
+**Learning:** Repeatedly calling `.toLowerCase()` or creating objects inside `Array.prototype.filter` or `map` callbacks causes redundant allocations on every iteration, leading to garbage collection pressure and slower loops.
+**Action:** Always hoist invariant transformations (like `searchQuery.toLowerCase()`) outside of loop and array callback closures.

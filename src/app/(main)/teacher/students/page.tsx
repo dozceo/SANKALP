@@ -60,7 +60,7 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
 
 const isActive = (lastActivity?: Date): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    const daysSince = (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -121,10 +121,12 @@ export default function StudentsPage() {
 
         // Search filter
         if (searchQuery) {
+            // Performance optimization: Hoist toLowerCase() to avoid redundant string allocations on every loop iteration
+            const lowerQuery = searchQuery.toLowerCase();
             filtered = filtered.filter(student =>
-                student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                student.className?.toLowerCase().includes(searchQuery.toLowerCase())
+                student.name.toLowerCase().includes(lowerQuery) ||
+                student.email.toLowerCase().includes(lowerQuery) ||
+                student.className?.toLowerCase().includes(lowerQuery)
             );
         }
 
