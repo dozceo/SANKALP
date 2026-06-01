@@ -194,12 +194,20 @@ export default function ClassesPage() {
 
   // Get unique subjects and grades for filters
   const uniqueSubjects = useMemo(() => {
-    const subjects = new Set(classes.map(c => c.subject));
+    // ⚡ Bolt: Single pass loop for Set creation instead of array map allocation
+    const subjects = new Set<string>();
+    for (const c of classes) {
+      if (c.subject) subjects.add(c.subject);
+    }
     return Array.from(subjects).sort();
   }, [classes]);
 
   const uniqueGrades = useMemo(() => {
-    const grades = new Set(classes.map(c => c.grade));
+    // ⚡ Bolt: Single pass loop for Set creation instead of array map allocation
+    const grades = new Set<string>();
+    for (const c of classes) {
+      if (c.grade) grades.add(c.grade);
+    }
     return Array.from(grades).sort();
   }, [classes]);
 
@@ -227,14 +235,20 @@ export default function ClassesPage() {
     }
 
     // Sort
-    const sorted = [...filtered].sort((a, b) => {
+    // ⚡ Bolt: Schwartzian transform (map-sort-map) to avoid O(N log N) Date allocations for recent sorting
+    const mapped = filtered.map(cls => ({
+      ...cls,
+      _createdAtTime: cls.createdAt ? (typeof cls.createdAt === 'string' ? Date.parse(cls.createdAt) : new Date(cls.createdAt).getTime()) : 0
+    }));
+
+    mapped.sort((a, b) => {
       switch (sortBy) {
         case "name":
           return a.className.localeCompare(b.className);
         case "students":
           return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
         case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return b._createdAtTime - a._createdAtTime;
         case "subject":
           return a.subject.localeCompare(b.subject);
         default:
@@ -242,7 +256,7 @@ export default function ClassesPage() {
       }
     });
 
-    return sorted;
+    return mapped.map(({ _createdAtTime, ...cls }) => cls);
   }, [classes, searchQuery, subjectFilter, gradeFilter, sortBy]);
 
   // Calculate stats

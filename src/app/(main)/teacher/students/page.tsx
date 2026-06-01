@@ -111,7 +111,13 @@ export default function StudentsPage() {
 
     // Get unique classes for filter
     const uniqueClasses = useMemo(() => {
-        const classNames = new Set(students.map(s => s.className).filter(Boolean));
+        // ⚡ Bolt: Single pass loop for Set creation instead of chained map+filter arrays
+        const classNames = new Set<string>();
+        for (const s of students) {
+            if (s.className) {
+                classNames.add(s.className);
+            }
+        }
         return Array.from(classNames).sort();
     }, [students]);
 
@@ -150,16 +156,20 @@ export default function StudentsPage() {
         }
 
         // Sort
-        const sorted = [...filtered].sort((a, b) => {
+        // ⚡ Bolt: Schwartzian transform (map-sort-map) to avoid O(N log N) Date allocations
+        const mapped = filtered.map(student => ({
+            ...student,
+            _activityTime: student.lastActivity ? (typeof student.lastActivity === 'string' ? Date.parse(student.lastActivity) : new Date(student.lastActivity).getTime()) : 0
+        }));
+
+        mapped.sort((a, b) => {
             switch (sortBy) {
                 case "name":
                     return a.name.localeCompare(b.name);
                 case "performance":
                     return b.progress - a.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
-                    return bTime - aTime;
+                    return b._activityTime - a._activityTime;
                 case "quizzes":
                     return b.quizzesTaken - a.quizzesTaken;
                 default:
@@ -167,7 +177,7 @@ export default function StudentsPage() {
             }
         });
 
-        return sorted;
+        return mapped.map(({ _activityTime, ...student }) => student);
     }, [students, searchQuery, classFilter, performanceFilter, activityFilter, sortBy]);
 
     // Calculate stats

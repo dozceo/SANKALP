@@ -29,11 +29,13 @@ export const SankalpSwitch = memo(function SankalpSwitch() {
     useEffect(() => {
         if (!isActive || !session) return;
 
+        // ⚡ Bolt: Hoist constant parsing outside the loop and use Date.now() for efficiency
+        const start = typeof session.startTime === 'string' ? Date.parse(session.startTime) : new Date(session.startTime).getTime();
+        const total = session.duration * 60; // convert to seconds
+
         const timer = setInterval(() => {
-            const now = new Date().getTime();
-            const start = new Date(session.startTime).getTime();
+            const now = Date.now();
             const elapsed = Math.floor((now - start) / 1000); // seconds
-            const total = session.duration * 60; // convert to seconds
             const remaining = Math.max(0, total - elapsed);
 
             setTimeRemaining(remaining);
