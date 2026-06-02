@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-06-02 - Dynamic Form Accessibility
+**Learning:** Dynamically generated input fields that belong to a single label (like a list of reference links) cannot rely on a standard `htmlFor` mapping because IDs must be unique. This causes screen readers to lose context for each individual input.
+**Action:** When auditing forms with arrays of inputs, use `role="group"` with `aria-labelledby` pointing to the main label, and apply specific, index-based `aria-label` attributes to each dynamically generated input and its associated actions.
