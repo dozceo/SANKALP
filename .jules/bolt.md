@@ -1,6 +1,4 @@
-## 2024-05-22 - Performance Optimizations
-**Learning:** React Context providers often trigger unnecessary re-renders when callback functions depend on state that changes frequently (like `currentStudent`). Using functional state updates (`setCurrentStudent(prev => ...)`) removes the dependency and stabilizes the callback reference, preventing context value churn.
-**Action:** Always check context provider values for unstable callback references and use functional updates where possible.
+## 2023-10-27 - O(N log N) Array mutations masquerading as getters
+**Learning:** In `student_features.ts`, the code `const lastActivity = history.quizResults.sort(...)[0]` was silently mutating the original `quizResults` array in place while extracting a max value. This caused O(N log N) GC pressure and potential state corruption in downstream logic that expected chronologically unsorted history.
+**Action:** Always scan for `array.sort()[0]` usage when refactoring analytical components. Replace them with single-pass O(N) loops that maintain array purity and drastically reduce allocation overhead.
 
-**Learning:** Micro-optimizations in utility functions (like hex parsing in `lightenColor` or avoiding object allocation in `calculateTrend`) can add up in tight loops, especially when used in render cycles or data processing pipelines.
-**Action:** Look for object allocation in loops and see if primitive arrays can be used instead.

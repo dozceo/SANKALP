@@ -172,10 +172,20 @@ export default function StudentsPage() {
 
     // Calculate stats
     const stats = useMemo(() => {
-        const atRisk = students.filter(s => s.progress < 60).length;
-        const activeStudents = students.filter(s => isActive(s.lastActivity)).length;
+        // ⚡ Bolt: Single pass calculation for multiple aggregations
+        let atRisk = 0;
+        let activeStudents = 0;
+        let progressSum = 0;
+
+        for (let i = 0; i < students.length; i++) {
+            const s = students[i];
+            if (s.progress < 60) atRisk++;
+            if (isActive(s.lastActivity)) activeStudents++;
+            progressSum += s.progress;
+        }
+
         const avgPerformance = students.length > 0
-            ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+            ? Math.round(progressSum / students.length)
             : 0;
 
         return {
