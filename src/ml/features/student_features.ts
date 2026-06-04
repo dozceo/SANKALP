@@ -58,15 +58,13 @@ export function calculatePerformanceTrend(
     // Actually simpler: linear regression on (time, score)
     // or just compare recent avg vs older avg
 
-    if (recent.length < 2) return "STABLE";
-
-    const scores = recent.map(r => r.score);
+    const n = recent.length;
+    if (n < 2) return "STABLE";
 
     // Simple linear regression slope
     // x = 0, 1, 2... (chronological)
-    // We reverse the array to be chronological
-    const chronoScores = scores.reverse();
-    const n = chronoScores.length;
+    // `recent` is reverse chronological (newest first).
+    // We can iterate backwards to simulate chronological order without reversing the array.
 
     let sumX = 0;
     let sumY = 0;
@@ -74,10 +72,12 @@ export function calculatePerformanceTrend(
     let sumXX = 0;
 
     for (let i = 0; i < n; i++) {
-        sumX += i;
-        sumY += chronoScores[i];
-        sumXY += i * chronoScores[i];
-        sumXX += i * i;
+        const chronoIndex = i;
+        const score = recent[n - 1 - i].score;
+        sumX += chronoIndex;
+        sumY += score;
+        sumXY += chronoIndex * score;
+        sumXX += chronoIndex * chronoIndex;
     }
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
@@ -102,46 +102,43 @@ export function extractMasteryFeatures(
         return {
             avg_quiz_score: 0,
             attempts_per_topic: 0,
-            days_since_last_revision: 30,
+            days_since_last_revision: 999,
             quiz_score_variance: 0,
             time_spent_per_question: 0,
         };
     }
 
-    // Calculate avg_quiz_score
-    const scores = topicQuizzes.map((q) => q.score);
-    const avg_quiz_score =
-        scores.reduce((sum, score) => sum + score, 0) / scores.length;
-
-    // Calculate attempts_per_topic
     const attempts_per_topic = topicQuizzes.length;
 
-    // Calculate days_since_last_revision
-    let latestTimestamp = topicQuizzes[0].timestamp.getTime();
-    for (let i = 1; i < topicQuizzes.length; i++) {
-        const ts = topicQuizzes[i].timestamp.getTime();
+    let sum_scores = 0;
+    let latestTimestamp = -1;
+    let totalTime = 0;
+    let totalQuestions = 0;
+
+    for (let i = 0; i < attempts_per_topic; i++) {
+        const q = topicQuizzes[i];
+        sum_scores += q.score;
+        totalTime += q.timeSpent;
+        totalQuestions += q.questionsAttempted;
+
+        const ts = q.timestamp.getTime();
         if (ts > latestTimestamp) {
             latestTimestamp = ts;
         }
     }
 
-    const days_since_last_revision = Math.max(0, Math.floor(
-        (referenceDate.getTime() - latestTimestamp) / (1000 * 60 * 60 * 24)
-    ));
+    const avg_quiz_score = sum_scores / attempts_per_topic;
 
-    // Calculate quiz_score_variance
-    const mean = avg_quiz_score;
-    const variance =
-        scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
-        scores.length;
-    const quiz_score_variance = variance;
+    const days_since_last_revision = latestTimestamp !== -1
+        ? Math.max(0, Math.floor((referenceDate.getTime() - latestTimestamp) / (1000 * 60 * 60 * 24)))
+        : 30;
 
-    // Calculate time_spent_per_question
-    const totalTime = topicQuizzes.reduce((sum, q) => sum + q.timeSpent, 0);
-    const totalQuestions = topicQuizzes.reduce(
-        (sum, q) => sum + q.questionsAttempted,
-        0
-    );
+    let sum_variance = 0;
+    for (let i = 0; i < attempts_per_topic; i++) {
+        sum_variance += Math.pow(topicQuizzes[i].score - avg_quiz_score, 2);
+    }
+    const quiz_score_variance = sum_variance / attempts_per_topic;
+
     const time_spent_per_question =
         totalQuestions > 0 ? totalTime / totalQuestions : 0;
 
@@ -164,29 +161,33 @@ export function extractAttentionFeatures(
     const now = referenceDate.getTime();
     const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-    // Session frequency (quizzes taken in last week)
-    const recentQuizzes = history.quizResults.filter(
-        (r) => r.timestamp.getTime() > oneWeekAgo
-    );
-    const session_frequency = recentQuizzes.length;
+    let session_frequency = 0;
+    let total_session_duration = 0;
+    let latestTimestamp = -1;
 
-    // Average session duration (avg time per quiz)
-    const avg_session_duration =
-        recentQuizzes.length > 0
-            ? recentQuizzes.reduce((sum, q) => sum + q.timeSpent, 0) /
-            recentQuizzes.length /
-            60
-            : 0;
+    for (let i = 0; i < history.quizResults.length; i++) {
+        const q = history.quizResults[i];
+        const ts = q.timestamp.getTime();
+
+        if (ts > latestTimestamp) {
+            latestTimestamp = ts;
+        }
+
+        if (ts > oneWeekAgo) {
+            session_frequency++;
+            total_session_duration += q.timeSpent;
+        }
+    }
+
+    const avg_session_duration = session_frequency > 0
+        ? total_session_duration / session_frequency / 60
+        : 0;
 
     // Quiz completion rate (assumed all completed for now - would need start/finish tracking)
     const quiz_completion_rate = 1.0;
 
-    // Days inactive
-    const lastActivity = history.quizResults.sort(
-        (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-    )[0];
-    const days_inactive = lastActivity
-        ? Math.floor((now - lastActivity.timestamp.getTime()) / (1000 * 60 * 60 * 24))
+    const days_inactive = latestTimestamp !== -1
+        ? Math.floor((now - latestTimestamp) / (1000 * 60 * 60 * 24))
         : 999;
 
     // Performance trend (compare last 3 quizzes to previous 3)
@@ -195,11 +196,14 @@ export function extractAttentionFeatures(
         const sorted = [...history.quizResults].sort(
             (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
         );
-        const recent3 = sorted.slice(0, 3).map((q) => q.score);
-        const previous3 = sorted.slice(3, 6).map((q) => q.score);
 
-        const recentAvg = recent3.reduce((s, v) => s + v, 0) / 3;
-        const previousAvg = previous3.reduce((s, v) => s + v, 0) / 3;
+        let recentSum = 0;
+        let previousSum = 0;
+        for (let i = 0; i < 3; i++) recentSum += sorted[i].score;
+        for (let i = 3; i < 6; i++) previousSum += sorted[i].score;
+
+        const recentAvg = recentSum / 3;
+        const previousAvg = previousSum / 3;
 
         if (recentAvg > previousAvg + 0.1) performance_trend = 1;
         else if (recentAvg < previousAvg - 0.1) performance_trend = -1;
