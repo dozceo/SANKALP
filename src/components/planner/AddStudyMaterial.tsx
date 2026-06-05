@@ -186,20 +186,21 @@ export function AddStudyMaterial() {
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Reference Links</Label>
+                    <div className="space-y-2" role="group" aria-labelledby="reference-links-label">
+                        <Label id="reference-links-label">Reference Links</Label>
                         {formData.referenceLinks.map((link, index) => (
                             <div key={index} className="flex gap-2">
                                 <Input
                                     placeholder="https://example.com"
                                     value={link}
                                     onChange={(e) => updateReferenceLink(index, e.target.value)}
+                                    aria-label={`Reference link ${index + 1}`}
                                 />
                                 {formData.referenceLinks.length > 1 && (
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        size="icon"
+                                        size="icon" aria-label={`Remove reference link ${index + 1}`}
                                         onClick={() => removeReferenceLink(index)}
                                     >
                                         <X className="h-4 w-4" />
