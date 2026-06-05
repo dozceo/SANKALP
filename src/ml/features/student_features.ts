@@ -60,13 +60,10 @@ export function calculatePerformanceTrend(
 
     if (recent.length < 2) return "STABLE";
 
-    const scores = recent.map(r => r.score);
-
     // Simple linear regression slope
     // x = 0, 1, 2... (chronological)
-    // We reverse the array to be chronological
-    const chronoScores = scores.reverse();
-    const n = chronoScores.length;
+    // Read `recent` (reverse chronological) backwards to treat as chronological
+    const n = recent.length;
 
     let sumX = 0;
     let sumY = 0;
@@ -74,9 +71,10 @@ export function calculatePerformanceTrend(
     let sumXX = 0;
 
     for (let i = 0; i < n; i++) {
+        const score = recent[n - 1 - i].score;
         sumX += i;
-        sumY += chronoScores[i];
-        sumXY += i * chronoScores[i];
+        sumY += score;
+        sumXY += i * score;
         sumXX += i * i;
     }
 
