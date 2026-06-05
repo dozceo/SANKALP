@@ -68,6 +68,9 @@ export default function ClassDetailsPage() {
     const [copiedCode, setCopiedCode] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
+    // Get current time once for rendering to avoid Date object creation in loop
+    const nowTimestamp = Date.now();
+
     useEffect(() => {
         if (classId) {
             fetchClassDetails();
@@ -125,9 +128,10 @@ export default function ClassDetailsPage() {
     // Filter students by search query
     const filteredStudents = useMemo(() => {
         if (!searchQuery) return students;
+        const queryLower = searchQuery.toLowerCase();
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchQuery.toLowerCase())
+            student.name.toLowerCase().includes(queryLower) ||
+            student.email.toLowerCase().includes(queryLower)
         );
     }, [students, searchQuery]);
 
@@ -356,7 +360,7 @@ export default function ClassDetailsPage() {
                             <TableBody>
                                 {filteredStudents.map((student) => {
                                     const daysSinceLogin = student.lastLoginDate
-                                        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
+                                        ? (nowTimestamp - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
                                         : null;
                                     const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
 

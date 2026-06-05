@@ -169,16 +169,10 @@ export function InteractiveGraph({ onNodeClick, highlightedNode, graphData: exte
 
     if (filter === 'high-risk') {
       // Show high risk students and their connected topics
-      filteredNodes = baseGraphData.nodes.filter(n => {
-        if (n.type === 'student') {
-          return (n as any).risk?.toLowerCase() === 'high';
-        }
-        return true;
-      });
-       filteredNodes = baseGraphData.nodes.filter(n =>
-         (n.type === 'student' && (n as any).risk?.toLowerCase() === 'high') ||
-         n.type !== 'student'
-       );
+      filteredNodes = baseGraphData.nodes.filter(n =>
+        (n.type === 'student' && (n as any).risk?.toLowerCase() === 'high') ||
+        n.type !== 'student'
+      );
     } else if (filter === 'topics') {
       filteredNodes = baseGraphData.nodes.filter(n => n.type === 'topic');
     }
