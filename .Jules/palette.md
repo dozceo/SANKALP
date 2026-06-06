@@ -13,3 +13,7 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+
+## 2026-06-06 - Dynamic ARIA labels for stateful buttons
+**Learning:** For stateful icon buttons (e.g. play/stop audio), dynamic ARIA labels tied to the component's state (`aria-label={audioPlaying === message.id ? "Stop reading" : "Read aloud"}`) are superior to static screen reader texts because they provide accurate, real-time context to users relying on assistive technologies.
+**Action:** Always check the internal state of a button when adding ARIA labels. If the button performs different actions based on its state, ensure the `aria-label` reflects the *current* actionable state rather than a generic description.
