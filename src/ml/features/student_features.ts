@@ -64,20 +64,22 @@ export function calculatePerformanceTrend(
 
     // Simple linear regression slope
     // x = 0, 1, 2... (chronological)
-    // We reverse the array to be chronological
-    const chronoScores = scores.reverse();
-    const n = chronoScores.length;
+    // ⚡ Bolt: Iterate backwards instead of using .reverse() to prevent mutating the original scores array and avoid O(N) array allocation
+    const n = scores.length;
 
     let sumX = 0;
     let sumY = 0;
     let sumXY = 0;
     let sumXX = 0;
 
+    // We iterate backwards through scores to simulate chronological order
     for (let i = 0; i < n; i++) {
-        sumX += i;
-        sumY += chronoScores[i];
-        sumXY += i * chronoScores[i];
-        sumXX += i * i;
+        const chronoIndex = i;
+        const chronoScore = scores[n - 1 - i];
+        sumX += chronoIndex;
+        sumY += chronoScore;
+        sumXY += chronoIndex * chronoScore;
+        sumXX += chronoIndex * chronoIndex;
     }
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
@@ -108,40 +110,38 @@ export function extractMasteryFeatures(
         };
     }
 
-    // Calculate avg_quiz_score
-    const scores = topicQuizzes.map((q) => q.score);
-    const avg_quiz_score =
-        scores.reduce((sum, score) => sum + score, 0) / scores.length;
-
-    // Calculate attempts_per_topic
+    // ⚡ Bolt: Combine multiple .map() and .reduce() traversals into single loops to minimize O(N) array allocations
     const attempts_per_topic = topicQuizzes.length;
 
-    // Calculate days_since_last_revision
+    let sumScores = 0;
     let latestTimestamp = topicQuizzes[0].timestamp.getTime();
-    for (let i = 1; i < topicQuizzes.length; i++) {
-        const ts = topicQuizzes[i].timestamp.getTime();
+    let totalTime = 0;
+    let totalQuestions = 0;
+
+    for (let i = 0; i < attempts_per_topic; i++) {
+        const q = topicQuizzes[i];
+        sumScores += q.score;
+        totalTime += q.timeSpent;
+        totalQuestions += q.questionsAttempted;
+
+        const ts = q.timestamp.getTime();
         if (ts > latestTimestamp) {
             latestTimestamp = ts;
         }
     }
 
+    const avg_quiz_score = sumScores / attempts_per_topic;
+
     const days_since_last_revision = Math.max(0, Math.floor(
         (referenceDate.getTime() - latestTimestamp) / (1000 * 60 * 60 * 24)
     ));
 
-    // Calculate quiz_score_variance
-    const mean = avg_quiz_score;
-    const variance =
-        scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
-        scores.length;
-    const quiz_score_variance = variance;
+    let sumVariance = 0;
+    for (let i = 0; i < attempts_per_topic; i++) {
+        sumVariance += Math.pow(topicQuizzes[i].score - avg_quiz_score, 2);
+    }
+    const quiz_score_variance = sumVariance / attempts_per_topic;
 
-    // Calculate time_spent_per_question
-    const totalTime = topicQuizzes.reduce((sum, q) => sum + q.timeSpent, 0);
-    const totalQuestions = topicQuizzes.reduce(
-        (sum, q) => sum + q.questionsAttempted,
-        0
-    );
     const time_spent_per_question =
         totalQuestions > 0 ? totalTime / totalQuestions : 0;
 
