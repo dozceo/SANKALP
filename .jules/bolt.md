@@ -1,6 +1,3 @@
-## 2024-05-22 - Performance Optimizations
-**Learning:** React Context providers often trigger unnecessary re-renders when callback functions depend on state that changes frequently (like `currentStudent`). Using functional state updates (`setCurrentStudent(prev => ...)`) removes the dependency and stabilizes the callback reference, preventing context value churn.
-**Action:** Always check context provider values for unstable callback references and use functional updates where possible.
-
-**Learning:** Micro-optimizations in utility functions (like hex parsing in `lightenColor` or avoiding object allocation in `calculateTrend`) can add up in tight loops, especially when used in render cycles or data processing pipelines.
-**Action:** Look for object allocation in loops and see if primitive arrays can be used instead.
+## 2025-02-28 - Optimizing Array Processing in Hot Loops
+**Learning:** Found subtle performance anti-patterns in UI rendering loops and ML feature extraction where chained `.map().filter()` or redundant string allocations (e.g. `toLowerCase()` inside `filter`) created excessive garbage collection pressure. Additionally, using `.reverse()` inside feature extraction functions mutated the underlying data source, leading to both performance degradation (allocations) and correctness bugs.
+**Action:** Always combine array chains (`.map().filter()`, `.map().reduce()`) into a single loop, hoist repeated scalar operations (like string manipulation) out of tight array traversal functions, and iterate backwards over arrays if reverse-chronological processing is needed to avoid mutating data structures.
