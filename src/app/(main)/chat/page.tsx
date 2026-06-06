@@ -112,9 +112,8 @@ export default function ChatPage() {
             <Card className="flex flex-col flex-1">
                 <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
                     <div className="flex items-center gap-2">
-                         <Button variant="ghost" size="icon" onClick={() => setIsAudioChatOpen(true)}>
+                         <Button variant="ghost" size="icon" aria-label="Start Audio Conversation" onClick={() => setIsAudioChatOpen(true)}>
                             <Mic className="h-6 w-6 text-primary" />
-                            <span className="sr-only">Start Audio Conversation</span>
                         </Button>
                         <div>
                             <CardTitle>{t('botName')}</CardTitle>
@@ -154,7 +153,7 @@ export default function ChatPage() {
                                         </div>
                                          {message.role === 'bot' && (
                                             <Button
-                                            size="icon"
+                                            size="icon" aria-label={audioPlaying === message.id ? "Stop reading" : "Read aloud"}
                                             variant="ghost"
                                             className="absolute -bottom-4 -right-4 h-8 w-8 rounded-full bg-background opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                                             onClick={() => handlePlayAudio(message)}
