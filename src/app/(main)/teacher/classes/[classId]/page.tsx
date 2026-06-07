@@ -133,16 +133,18 @@ export default function ClassDetailsPage() {
 
     // Calculate student activity stats
     const studentStats = useMemo(() => {
-        const now = new Date();
+        const now = Date.now();
         const activeStudents = students.filter(s => {
             if (!s.lastLoginDate) return false;
-            const daysSinceLogin = (now.getTime() - new Date(s.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24);
+            const lastLoginTime = typeof s.lastLoginDate === 'string' ? Date.parse(s.lastLoginDate) : new Date(s.lastLoginDate).getTime();
+            const daysSinceLogin = (now - lastLoginTime) / (1000 * 60 * 60 * 24);
             return daysSinceLogin <= 7;
         });
 
         const recentJoins = students.filter(s => {
             if (!s.joinedClassAt) return false;
-            const daysSinceJoin = (now.getTime() - new Date(s.joinedClassAt).getTime()) / (1000 * 60 * 60 * 24);
+            const joinedClassTime = typeof s.joinedClassAt === 'string' ? Date.parse(s.joinedClassAt) : new Date(s.joinedClassAt).getTime();
+            const daysSinceJoin = (now - joinedClassTime) / (1000 * 60 * 60 * 24);
             return daysSinceJoin <= 7;
         });
 
@@ -354,13 +356,19 @@ export default function ClassDetailsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredStudents.map((student) => {
-                                    const daysSinceLogin = student.lastLoginDate
-                                        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24)
-                                        : null;
-                                    const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
+                                {(() => {
+                                    const now = Date.now();
+                                    return filteredStudents.map((student) => {
+                                        let daysSinceLogin: number | null = null;
+                                        if (student.lastLoginDate) {
+                                            const lastLoginTime = typeof student.lastLoginDate === 'string'
+                                                ? Date.parse(student.lastLoginDate)
+                                                : new Date(student.lastLoginDate).getTime();
+                                            daysSinceLogin = (now - lastLoginTime) / (1000 * 60 * 60 * 24);
+                                        }
+                                        const isActive = daysSinceLogin !== null && daysSinceLogin <= 7;
 
-                                    return (
+                                        return (
                                         <TableRow key={student.id}>
                                             <TableCell className="font-medium">{student.name}</TableCell>
                                             <TableCell>{student.email}</TableCell>
@@ -380,8 +388,9 @@ export default function ClassDetailsPage() {
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>
-                                    );
-                                })}
+                                        );
+                                    });
+                                })()}
                             </TableBody>
                         </Table>
                     )}

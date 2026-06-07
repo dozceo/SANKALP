@@ -143,9 +143,13 @@ export default function StudentProfilePage() {
 
     const performanceLevel = getPerformanceLevel(performance.avgScore);
     const topicEntries = Object.entries(performance.topicMastery).sort((a, b) => b[1].avg - a[1].avg);
-    const isActive = student.lastLoginDate
-        ? (new Date().getTime() - new Date(student.lastLoginDate).getTime()) / (1000 * 60 * 60 * 24) <= 7
-        : false;
+    let isActive = false;
+    if (student.lastLoginDate) {
+        const lastLoginTime = typeof student.lastLoginDate === 'string'
+            ? Date.parse(student.lastLoginDate)
+            : new Date(student.lastLoginDate).getTime();
+        isActive = (Date.now() - lastLoginTime) / (1000 * 60 * 60 * 24) <= 7;
+    }
 
     return (
         <div className="space-y-6">
