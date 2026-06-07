@@ -18,9 +18,17 @@ export function ScheduleView() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get upcoming deadlines (Due or upcoming soon)
-    const upcomingDeadlines = useMemo(() => studyMaterials
-        .filter(m => m.status === 'Due' || m.status === 'Upcoming')
-        .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime()), [studyMaterials]);
+    const upcomingDeadlines = useMemo(() => {
+        return studyMaterials
+            .filter(m => m.status === 'Due' || m.status === 'Upcoming')
+            .map(m => ({
+                material: m,
+                // Optimize: parse date once per item using Date.parse for string inputs
+                time: typeof m.nextReview === 'string' ? Date.parse(m.nextReview) : new Date(m.nextReview).getTime()
+            }))
+            .sort((a, b) => a.time - b.time)
+            .map(m => m.material);
+    }, [studyMaterials]);
 
     const handleGeneratePlan = async () => {
         setLoading(true);
@@ -126,8 +134,11 @@ export function ScheduleView() {
                         ) : (
                             <div className="space-y-3">
                                 {upcomingDeadlines.map(material => {
+                                    const nextReviewTime = typeof material.nextReview === 'string'
+                                        ? Date.parse(material.nextReview)
+                                        : new Date(material.nextReview).getTime();
                                     const daysUntil = Math.ceil(
-                                        (new Date(material.nextReview).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                                        (nextReviewTime - Date.now()) / (1000 * 60 * 60 * 24)
                                     );
                                     const isOverdue = daysUntil < 0;
 

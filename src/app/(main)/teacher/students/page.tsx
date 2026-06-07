@@ -58,9 +58,13 @@ const getPerformanceLevel = (progress: number): { level: PerformanceLevel; label
     return { level: "excelling", label: "Excelling", variant: "default" };
 };
 
-const isActive = (lastActivity?: Date): boolean => {
+const isActive = (lastActivity?: Date | string): boolean => {
     if (!lastActivity) return false;
-    const daysSince = (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24);
+    // Optimize: avoid unnecessary new Date() instantiation
+    const lastActivityTime = typeof lastActivity === 'string'
+        ? Date.parse(lastActivity)
+        : new Date(lastActivity).getTime();
+    const daysSince = (Date.now() - lastActivityTime) / (1000 * 60 * 60 * 24);
     return daysSince <= 7;
 };
 
@@ -157,8 +161,8 @@ export default function StudentsPage() {
                 case "performance":
                     return b.progress - a.progress;
                 case "activity":
-                    const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-                    const bTime = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+                    const aTime = a.lastActivity ? (typeof a.lastActivity === 'string' ? Date.parse(a.lastActivity) : new Date(a.lastActivity).getTime()) : 0;
+                    const bTime = b.lastActivity ? (typeof b.lastActivity === 'string' ? Date.parse(b.lastActivity) : new Date(b.lastActivity).getTime()) : 0;
                     return bTime - aTime;
                 case "quizzes":
                     return b.quizzesTaken - a.quizzesTaken;

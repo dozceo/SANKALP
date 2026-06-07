@@ -234,7 +234,9 @@ export default function ClassesPage() {
         case "students":
           return (b.studentIds?.length || 0) - (a.studentIds?.length || 0);
         case "recent":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          const aTime = typeof a.createdAt === 'string' ? Date.parse(a.createdAt) : new Date(a.createdAt).getTime();
+          const bTime = typeof b.createdAt === 'string' ? Date.parse(b.createdAt) : new Date(b.createdAt).getTime();
+          return bTime - aTime;
         case "subject":
           return a.subject.localeCompare(b.subject);
         default:
