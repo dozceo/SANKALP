@@ -13,3 +13,6 @@
 ## 2026-06-21 - Form Toggle Buttons Accessibility
 **Learning:** Custom toggle buttons implemented as raw `button` elements often miss focus states, unlike `shadcn/ui` components.
 **Action:** When auditing forms with custom selection UI (like pills or chips), explicitly check for `focus-visible` styles.
+## 2026-06-08 - Strict Radix A11y Button Audits
+**Learning:** The custom Radix A11y audit script (`scripts/audit-radix-a11y.ts`) evaluates `icon-button-label` violations using simple line-by-line regex parsing rather than AST traversal. If an `aria-label` is on a different line from `size="icon"`, it will falsely flag a violation.
+**Action:** When adding an `aria-label` to a Shadcn UI `<Button>` with `size="icon"`, always place the `aria-label` attribute on the exact same line as the `size="icon"` declaration to pass the audit, even if Prettier might normally wrap it.
