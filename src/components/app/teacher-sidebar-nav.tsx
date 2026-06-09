@@ -97,7 +97,7 @@ export function TeacherSidebarNav() {
                                 </span>
                                 <Button
                                     variant="ghost"
-                                    size="icon"
+                                    size="icon" aria-label={isCopied ? "Copied Teacher ID" : "Copy Teacher ID"}
                                     className="h-6 w-6"
                                     onClick={() => {
                                         navigator.clipboard.writeText(user.uid);
@@ -105,7 +105,6 @@ export function TeacherSidebarNav() {
                                         setTimeout(() => setIsCopied(false), 2000);
                                     }}
                                     title={isCopied ? "Copied" : "Copy ID"}
-                                    aria-label={isCopied ? "Copied User ID" : "Copy User ID"}
                                 >
                                     {isCopied ? (
                                         <Check className="h-3 w-3" />
