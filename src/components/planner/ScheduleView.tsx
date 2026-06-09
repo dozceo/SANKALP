@@ -18,9 +18,19 @@ export function ScheduleView() {
     const studyMaterials = currentStudent?.studyMaterials || [];
 
     // Get upcoming deadlines (Due or upcoming soon)
-    const upcomingDeadlines = useMemo(() => studyMaterials
-        .filter(m => m.status === 'Due' || m.status === 'Upcoming')
-        .sort((a, b) => new Date(a.nextReview).getTime() - new Date(b.nextReview).getTime()), [studyMaterials]);
+    const upcomingDeadlines = useMemo(() => {
+        const filtered = studyMaterials.filter(m => m.status === 'Due' || m.status === 'Upcoming');
+
+        // Schwartzian transform to avoid O(N log N) Date allocations
+        const mapped = filtered.map(m => ({
+            item: m,
+            time: new Date(m.nextReview).getTime()
+        }));
+
+        mapped.sort((a, b) => a.time - b.time);
+
+        return mapped.map(m => m.item);
+    }, [studyMaterials]);
 
     const handleGeneratePlan = async () => {
         setLoading(true);
@@ -125,14 +135,16 @@ export function ScheduleView() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {upcomingDeadlines.map(material => {
-                                    const daysUntil = Math.ceil(
-                                        (new Date(material.nextReview).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-                                    );
-                                    const isOverdue = daysUntil < 0;
+                                {(() => {
+                                    const now = Date.now();
+                                    return upcomingDeadlines.map(material => {
+                                        const daysUntil = Math.ceil(
+                                            (new Date(material.nextReview).getTime() - now) / (1000 * 60 * 60 * 24)
+                                        );
+                                        const isOverdue = daysUntil < 0;
 
-                                    return (
-                                        <div
+                                        return (
+                                            <div
                                             key={material.id}
                                             className="p-4 rounded-lg border hover:border-primary transition-colors"
                                         >
@@ -154,12 +166,13 @@ export function ScheduleView() {
                                                         ? "Due today"
                                                         : `Due in ${daysUntil} ${daysUntil === 1 ? "day" : "days"}`}
                                             </div>
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                                {new Date(material.nextReview).toLocaleDateString()}
+                                                <div className="text-xs text-muted-foreground mt-1">
+                                                    {new Date(material.nextReview).toLocaleDateString()}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    });
+                                })()}
                             </div>
                         )}
                     </CardContent>
